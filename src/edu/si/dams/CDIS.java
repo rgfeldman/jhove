@@ -83,17 +83,20 @@ public class CDIS {
 	private Properties properties = new Properties();
 	
 	private static final String[] requiredProps = {"damsDriver",
-													"damsUrl",
-													"damsUser",
-													"damsPass",
-													"tmsDriver",
-													"tmsUrl",
-													"tmsUser",
-													"tmsPass",
-													"workFolder",
-													"hotFolder",
-													"bagIt",
-													"mediaDrive"};
+							"damsUrl",
+							"damsUser",
+							"damsPass",
+							"tmsDriver",
+							"tmsUrl",
+                                                        "tmsUser",
+							"tmsPass",
+							"workFolder",
+							"hotFolder",
+							"bagIt",
+							"mediaDrive",
+                                                        "siUnit",
+                                                        "CDISTblName"
+                                                };
 
 	public static void main(String[] args) {
 		
@@ -217,11 +220,26 @@ public class CDIS {
 							ingester._log.log(Level.ALL, "ObjectID: {0}", objectID);
 							ingester._log.log(Level.ALL, "Rank: {0}", rank);
 							
-							String title = "acmobj-" + objectNumber.replaceAll("\\.", "") + "-r" + rank;
+                                                        // Get the title, this depends on the siUnit
+                                                        String title = null;
+                                                                                                                  
+                                                        if(ingester.properties.getProperty("siUnit").equals("ACM")) {
+                                                            title = "acmobj-" + objectNumber.replaceAll("\\.", "") + "-r" + rank;
+                                                        }
+                                                        else if (ingester.properties.getProperty("siUnit").equals("CHSDM")) {
+                                                            title = objectID + "_" + rank;
+                                                        }
+                                                        else if (ingester.properties.getProperty("siUnit").equals("FSG") || 
+                                                                ingester.properties.getProperty("siUnit").equals("NMAAHC")) {
+                                                            title = objectNumber + "_" + rank;
+                                                        }
+                                                        else {
+                                                            ingester._log.log(Level.ALL, "Error, unknown siUnit {0}", ingester.properties.getProperty("siUnit"));
+                                                        }
 							
 							//check if UAN already exists for a MediaFile in TMS
 							if(ingester.doesUANExistInTMS(tmsConn, UAN)) {
-								//asset file is already being pointed to in TMS, just fix the Rendition Number, add to TDIS table
+								//asset file is already being pointed to in TMS, just fix the Rendition Number, add to CDIS/TDIS table
 								ingester.replaceTMSRenditionNumber(tmsConn, damsConn, UAN, title, UOIID);
 								
 								ingester._log.log(Level.ALL, "Rendition {0} successfully updated in TMS.", title);
@@ -241,7 +259,7 @@ public class CDIS {
 										byte[] bytes = IOUtils.toByteArray(UANStream);
 										
 										PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
-										stmt.setBytes(1, bytes);
+                                                                                stmt.setBytes(1, bytes);
 										stmt.setString(2, UOIID);
 										
 										DataProvider.executeUpdate(tmsConn, stmt);
@@ -277,7 +295,7 @@ public class CDIS {
 				//pull recently created TMS records.
 				newRenditions = ingester.retrieveNewRenditions(tmsConn);
 				
-				//pull TDIS records with no sync - failed transfers
+				//pull CDIS records with no sync - failed transfers
 				newRenditions.addAll(ingester.retrieveFailedTransfers(tmsConn));
 				//get newly flagged TMS records, check for duplicates with newly created records
 				for(Iterator<String> iter = ingester.getRecentlyFlaggedRenditions(tmsConn).iterator(); iter.hasNext();) {
@@ -313,7 +331,7 @@ public class CDIS {
 				
 				for(int i = 0; i < logs.length; i++) {
 					File tempFile = logs[i];
-					if(tempFile.getName().startsWith("TDIS")) {
+					if(tempFile.getName().startsWith("CDIS")) {
 						//get 30 days before today
 						Calendar thirtyBack = Calendar.getInstance();
 						thirtyBack.add(Calendar.DAY_OF_MONTH, -30);
@@ -388,7 +406,7 @@ public class CDIS {
 					HashMap<String, String> syncPairs = ingester.retrieveUOIIDSForSync(damsConn, fileNames);
 					
 					if(syncPairs != null && !syncPairs.isEmpty()) {
-						//update TDIS with new UOIIDs
+						//update TDIS/CDIS with new UOIIDs
 						boolean result = ingester.syncNewRecords(tmsConn, damsConn, syncPairs);
 						
 						//add renditionIDs to newlySyncedRenditions
@@ -460,7 +478,7 @@ public class CDIS {
 						boolean result = true;
 						if(result) {
 							ingester._log.log(Level.ALL, "File: {0} successfully deleted.", fullPath);
-							//set TDIS.Deleted = 'Yes'
+							//set CDIS.Deleted = 'Yes'
 							boolean deleted = ingester.markAsDeleted(tmsConn, key, pathsAndFiles.get(key));
 							
 						}
@@ -740,7 +758,7 @@ public class CDIS {
 			
 			DataProvider.executeUpdate(tmsConn, query);
 			
-			//create TDIS record
+			//create CDIS record
 			//grab Rendition information
 			query = "select RenditionID, RenditionNumber from MediaRenditions where RenditionID = " +
 					"(select RenditionID from MediaFiles where FileName = '" + UAN + "')";
@@ -760,11 +778,15 @@ public class CDIS {
 				_log.log(Level.ALL, "SQLException caught in replaceTMSRenditionNumber: {0}", e.getMessage());
 			}
 			
-			query = "insert into TDIS(RenditionID, RenditionNumber, UOIID)values(" +
-					renditionID + "," +
-						"'" + renditionNumber + "'," + 
-						"'" + UOIID + "')";
-			
+			query = "insert into " +
+                                properties.getProperty("CDISTblName") +
+                                "(RenditionID, RenditionNumber, UOIID)values(" +
+				renditionID + "," +
+				"'" + renditionNumber + "'," + 
+                        	"'" + UOIID + "')";
+                        
+                        _log.log(Level.ALL,query);
+
 			DataProvider.executeInsert(tmsConn, query);
 			
 			//update SOURCE_SYSTEM_ID in DAMS.SI_ASSET_METADATA
@@ -812,8 +834,12 @@ public class CDIS {
 		
 		String sql = "select RenditionID from MediaRenditions where " +
 				"EnteredDate >= (select top 1 LastRan from TDIS_Log where OperationType = 'sync' order by LastRan desc) AND " +
-				"RenditionID in (select RenditionID from TDIS where OriginalFilePath = '')";
-		
+				"RenditionID in (select RenditionID from " + 
+                                properties.getProperty("CDISTblName") +
+                                " where OriginalFilePath = '')";
+                
+                _log.log(Level.ALL,sql);
+                		
 		try {
 			ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
 			
@@ -946,8 +972,7 @@ public class CDIS {
 				"AND a.CONTENT_TYPE != 'SHORTCUT' " +
 				"AND b.SOURCE_SYSTEM_ID is null " +
 				"AND a.UOI_ID = c.UOI_ID " +
-				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = '" + this.properties.getProperty("categoryNodeId") + "')" + 
-				"AND a.UOI_ID = '8ed932fa984b7467817f031f2f8fd50a35035079'";
+				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = '" + this.properties.getProperty("categoryNodeId") + "')";
 		
 		ResultSet rs = DataProvider.executeSelect(damsConn, sql);
 		
@@ -965,10 +990,14 @@ public class CDIS {
 
 	private ArrayList<String> retrieveFailedTransfers(
 			Connection tmsConn) {
-		//retrieve TDIS records that still have '-1' for UOIID
+		//retrieve CDIS records that still have '-1' for UOIID
 		
 		ArrayList<String> retval = new ArrayList<String>();
-		String sql = "select RenditionID from TDIS where UOIID = '-1'";
+		String sql = "select RenditionID from " +
+                        properties.getProperty("CDISTblName") +
+                        " where UOIID = '-1'";
+                
+                _log.log(Level.ALL,sql);
 		
 		ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
 		
@@ -991,12 +1020,15 @@ public class CDIS {
 		ArrayList<String> fileNames = new ArrayList<String>();
 		HashMap<String, String> pairs = new HashMap<String, String>();
 		
-		//find Renditions that aren't present in TDIS table
+		//find Renditions that aren't present in TDIS/CDIS table
 		String query = "select b.FileName " +
 				"from MediaRenditions a, MediaFiles b " +
 				"where a.PrimaryFileID = b.FileID AND " +
-				"a.RenditionID not in (select RenditionID from TDIS) " +
-				"order by b.FileName";
+				"a.RenditionID not in (select RenditionID from " +
+                                 properties.getProperty("CDISTblName") +
+				" order by b.FileName";
+                
+                _log.log(Level.ALL,query);
 		
 		PreparedStatement stmt;
 		
@@ -1026,7 +1058,7 @@ public class CDIS {
 				pairs.put(rs.getString(1), rs.getString(2));
 			}
 			
-			//create TDIS records
+			//create CDIS records
 			//grab RenditionID, FilePath, FileName
 			for(Iterator<String> damsIter = pairs.keySet().iterator(); damsIter.hasNext();) {
 				
@@ -1041,11 +1073,15 @@ public class CDIS {
 				
 				ResultSet damsRS = DataProvider.executeSelect(tmsConn, grabSQL);
 				if(damsRS.next()) {
-					//insert mapping into TDIS
-					String insertSQL = "insert into TDIS(RenditionID, RenditionNumber, UOIID, OriginalFilePath, OriginalFileName)values(" +
-							damsRS.getString(1) + ", '" + damsRS.getString(2) + "', '" + UOIID + "', '" + damsRS.getString(4) + "', '" +
-							damsRS.getString(3) + "')";
+					//insert mapping into TDIS/CDIS
+					String insertSQL = "insert into " +
+                                                properties.getProperty("CDISTblName") +
+                                                "(RenditionID, RenditionNumber, UOIID, OriginalFilePath, OriginalFileName)values(" +
+						damsRS.getString(1) + ", '" + damsRS.getString(2) + "', '" + UOIID + "', '" + damsRS.getString(4) + "', '" +
+						damsRS.getString(3) + "')";
 					
+                                        _log.log(Level.ALL,insertSQL);
+                                        
 					DataProvider.executeInsert(tmsConn, insertSQL);
 				}
 				
@@ -1066,9 +1102,13 @@ public class CDIS {
 
 	private boolean markAsDeleted(Connection tmsConn, String path, String fileName) {
 		
-		String query = "update TDIS set Deleted = 'Yes' " +
+		String query = "update " +
+                                properties.getProperty("CDISTblName") +
+                                " set Deleted = 'Yes' " +
 				"WHERE OriginalFilePath = ? AND OriginalFileName = ?";
 		
+                 _log.log(Level.ALL,query);
+                
 		PreparedStatement stmt;
 		try {
 			stmt = tmsConn.prepareStatement(query);
@@ -1097,10 +1137,13 @@ public class CDIS {
 		
 		HashMap<String, String> retval = new HashMap<String, String>();
 		String query = "select OriginalFilePath, OriginalFileName " +
-				"from TDIS INNER JOIN MediaRenditions on TDIS.RenditionID = MediaRenditions.RenditionID " +
+				"from " +  properties.getProperty("CDISTblName") +
+                                " INNER JOIN MediaRenditions on " + properties.getProperty("CDISTblName") + ".RenditionID = MediaRenditions.RenditionID " +
 				"INNER JOIN MediaFiles on MediaRenditions.PrimaryFileID = MediaFiles.FileID " +
 				"where PathID = " + IDSPathId + " AND Deleted = 'No'";
 		
+                _log.log(Level.ALL,query);
+                
 		ResultSet rs = DataProvider.executeSelect(tmsConn, query);
 		
 		try {
@@ -1125,6 +1168,8 @@ public class CDIS {
 				"a.RenditionID = b.RenditionID AND " +
 				"b.PrimaryFileID = c.FileID AND c.PathID != ? AND " +
 				"a.UOIID != '-1'";
+                
+                _log.log(Level.ALL,query);
 		
 		try {
 			PreparedStatement stmt = tmsConn.prepareStatement(query);
@@ -1146,18 +1191,20 @@ public class CDIS {
 		
 		ArrayList<String> primaryFileChanges = new ArrayList<String>();
 		
-		String query = "select RenditionID from TDIS where RenditionID in " +
+		String query = "select RenditionID from " +
+                                properties.getProperty("CDISTblName") +
+                                "where RenditionID in " +
 				"(select RenditionID from MediaRenditions where PrimaryFileID in " +
 				"(select FileID from MediaFiles where EnteredDate > ?)) and UOIID != '-1'";
 		
-		//System.out.println("Query: " + query);
+		_log.log(Level.ALL,query);
 		
 		
 		try {
 			PreparedStatement stmt = tmsConn.prepareStatement(query);
 			Timestamp lastRan = getLastRanTime(tmsConn, "sync");
 			java.sql.Date lastRanDate = new java.sql.Date(lastRan.getTime());
-			//System.out.println("Last ran date: " + lastRanDate.toGMTString());
+			
 			stmt.setDate(1, lastRanDate);
 			
 			ResultSet rs = DataProvider.executeSelect(tmsConn, stmt);
@@ -1176,8 +1223,13 @@ public class CDIS {
 
 	private boolean unsyncRendition(String renditionID, Connection tmsConn,
 			Connection damsConn) {
-		//retrieve UOIID from TDIS
-		String query = "select UOIID, OriginalFileName from TDIS where RenditionID = ?";
+		//retrieve UOIID from TDIS/CDIS
+		String query = "select UOIID, OriginalFileName from " +
+                            properties.getProperty("CDISTblName") +
+                             " where RenditionID = ?";
+                
+                _log.log(Level.ALL, query);
+                
 		try {
 			PreparedStatement stmt = tmsConn.prepareStatement(query);
 			stmt.setInt(1, Integer.parseInt(renditionID));
@@ -1229,8 +1281,13 @@ public class CDIS {
 				int result = DataProvider.executeUpdate(damsConn, stmt);
 				
 				if(result == 1) {
-					//update was successful, clear TDIS record
-					query = "delete from TDIS where UOIID = ?";
+					//update was successful, clear TDIS/CDIS record
+					query = "delete from " +
+                                                 properties.getProperty("CDISTblName") +
+                                                 " where UOIID = ?";
+                                        
+                                        _log.log(Level.ALL,query);
+                                        
 					stmt = tmsConn.prepareStatement(query);
 					stmt.setString(1, rs.getString(1));
 					
@@ -1260,8 +1317,12 @@ public class CDIS {
 	private ArrayList<String> retrieveUnsyncedRenditions(Connection tmsConn) {
 		ArrayList<String> renditionIDs = new ArrayList<String>();
 		//retrieve unsynced renditions - renditions with IsColor = 0, and there is a sync record for them
-		String query = "select RenditionID from MediaRenditions where IsColor = 0 and RenditionID in (select RenditionID from TDIS)";
-		try {
+		String query = "select RenditionID from MediaRenditions where IsColor = 0 and RenditionID in (select RenditionID from " +
+                        properties.getProperty("CDISTblName") + ")";
+                
+                _log.log(Level.ALL,query);
+                
+                try {
 			PreparedStatement stmt = tmsConn.prepareStatement(query);
 			
 			ResultSet rs = DataProvider.executeSelect(tmsConn, query);
@@ -1293,7 +1354,12 @@ public class CDIS {
 		
 		String query = "select mf.FileName, mp.Path, mf.RenditionID from MediaFiles mf, MediaPaths mp " +
 				"where mf.PathID = mp.PathID and " +
-				"mf.RenditionID = (select RenditionID from TDIS where UOIID = '" + UOIID + "')"; 
+				"mf.RenditionID = (select RenditionID from " +
+                                 properties.getProperty("CDISTblName") + 
+                                " where UOIID = '" + UOIID + "')"; 
+                                
+                                _log.log(Level.ALL, query);
+                                
 		try {
 			PreparedStatement stmt = tmsConn.prepareStatement(query);
 			ResultSet rs = stmt.executeQuery();
@@ -1304,7 +1370,7 @@ public class CDIS {
 				renditionID = rs.getString(3);
 			}
 			
-			//update TDIS
+			//update CDIS
 			/*
 			query = "update TDIS set OriginalFilePath = '" + filePath + "', OriginalFileName = '" + fileName + "' where UOIID = '" 
 					+ UOIID + "'";
@@ -1327,7 +1393,7 @@ public class CDIS {
 			int rowCount = stmt.executeUpdate();
 			
 			if(rowCount != 1) {
-				_log.log(Level.ALL, "There was an error updating the TDIS table.");
+				_log.log(Level.ALL, "There was an error updating MediaFiles table.");
 				return false;
 			}
 			
@@ -1435,8 +1501,11 @@ public class CDIS {
 		ArrayList<String> renditionIDs = new ArrayList<String>();
 		
 		//create the query
-		String sql = "select RenditionID from TDIS where UOIID in (";
-		
+		String sql = "select RenditionID from " +
+                        properties.getProperty("CDISTblName") + 
+                        " where UOIID in (";
+                _log.log(Level.ALL,sql);
+                
 		for(Iterator<String> iter = syncPairs.keySet().iterator(); iter.hasNext();) {
 			String UOIID = syncPairs.get(iter.next());
 			sql += "'" + UOIID + "'";
@@ -1445,7 +1514,9 @@ public class CDIS {
 			}
 		}
 		sql += ")";
-		////system.out.println("QUERY: " + sql);
+                
+                _log.log(Level.ALL, sql);
+                
 		ResultSet rs;
 		try {
 			PreparedStatement stmt = tmsConn.prepareStatement(sql);
@@ -1472,8 +1543,11 @@ public class CDIS {
 		ArrayList<String> renditionIDs = new ArrayList<String>();
 		
 		//create the query
-		String sql = "select RenditionID from MediaRenditions where IsColor = 1 and RenditionID not in (select RenditionID from TDIS)";
+		String sql = "select RenditionID from MediaRenditions where IsColor = 1 and RenditionID not in (select RenditionID from " + 
+                                properties.getProperty("CDISTblName") + ")";
 		
+                _log.log(Level.ALL,sql);
+                        
 		ResultSet rs;
 		try {
 			PreparedStatement stmt = tmsConn.prepareStatement(sql);
@@ -1497,20 +1571,24 @@ public class CDIS {
 	private boolean syncNewRecords(Connection tmsConn, Connection damsConn,
 			HashMap<String, String> syncPairs) {
 		
-		String query = "update TDIS set UOIID = ? where OriginalFileName = ?";
-		PreparedStatement stmt = null;
-		ResultSet rs = null;
-		//System.out.println("syncpairs: " + syncPairs.keySet().size());
+		String query = "update " + 
+                        properties.getProperty("CDISTblName") +  
+                        " set UOIID = ? where OriginalFileName = ?";
+		_log.log(Level.ALL,query);
+                
+                PreparedStatement stmt = null;                           
+                ResultSet rs = null;
+
 		for(Iterator<String> iter = syncPairs.keySet().iterator();iter.hasNext();) {
 			String key = iter.next();
-			//System.out.println("Key: " + key);
+
 			try {
 				stmt = tmsConn.prepareStatement(query);
 				
 				//syncPairs = (fileName, UOIID)
 				//check if syncPairs has a filename with same name but with .tif
 				String tifFilename = key.replace(".jpg", ".tif");
-				//System.out.println("TIF: " + tifFilename);
+
 				if(syncPairs.keySet().contains(tifFilename) && !key.equals(tifFilename)) {
 					//tif file was ingested alongside, make the metadata sync with that UOIID
 					stmt.setString(1, (String)syncPairs.get(tifFilename));
@@ -1593,8 +1671,12 @@ public class CDIS {
 	private ArrayList<String> retrieveRenditionsPendingSync(Connection tmsConn) {
 		
 		ArrayList<String> fileNames = new ArrayList<String>();
-		String query = "select OriginalFileName from TDIS where UOIID = '-1'";
-		
+		String query = "select OriginalFileName from " +
+                                properties.getProperty("CDISTblName") +
+                                " where UOIID = '-1'";
+                
+		_log.log(Level.ALL, query);
+                
 		Statement stmt;
 		try {
 			stmt = tmsConn.createStatement();
@@ -1618,8 +1700,12 @@ public class CDIS {
 			TMSMediaRendition tempRendition) {
 		
 		String UOIID = null;
-		String query = "select UOIID from TDIS where RenditionID = '" + tempRendition.getRenditionID() + "'";
+		String query = "select UOIID from " +
+                        properties.getProperty("CDISTblName") + 
+                        " where RenditionID = '" + tempRendition.getRenditionID() + "'";
 		
+                _log.log(Level.ALL, query);
+                
 		try {
 			PreparedStatement stmt = tmsConn.prepareStatement(query);
 			ResultSet rs = stmt.executeQuery();
@@ -2190,7 +2276,6 @@ public class CDIS {
 		lineHolder = reader.readLine();
 		while(lineHolder != null) {
 			if(!lineHolder.startsWith("#") && !lineHolder.trim().equals("") && lineHolder.split("=").length > 1) {
-				//properties.setProperty(lineHolder.split("=")[0].trim(), lineHolder.split("=")[1].trim());
 				properties.setProperty(lineHolder.split("=")[0].trim(), lineHolder.substring(lineHolder.indexOf("=")+1));
 			}
 			lineHolder = reader.readLine();
@@ -2200,11 +2285,10 @@ public class CDIS {
 		for(int i = 0; i < requiredProps.length; i++) {
 			String reqProp = requiredProps[i];
 			if(!properties.containsKey(reqProp)) {
-				throw new Exception(reqProp);
+                            throw new Exception(reqProp);
 			}
 		}
 		
-		return;
 	}
 	
 	private HoleyBagData getHoleyBagData(TMSMediaRendition rendition, Connection tmsConn) throws ChecksumException {
