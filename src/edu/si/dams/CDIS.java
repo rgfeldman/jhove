@@ -1,5 +1,5 @@
 /**
- CDIS 2.0 - Smithsonian Anacostia Museum (ACM) Code Branch
+ CDIS 2.0 - Common Code Branch
  CDIS.java
  */
 package edu.si.dams;
@@ -370,15 +370,19 @@ public class CDIS {
                                                                             ingestedFromDAMS.add(title);
                                                                     
                                                                         }
+                                                                        else {
+                                                                            ingester._log.log(Level.ALL, "Error when creating TMS record for {0}, Adding to error report", title);
+                                                                            ingestedFromDAMSFailed.add(title);
+                                                                        }
                                                                     }
                                                                     else {
 									//no Object found for asset in TMS
-									ingester._log.log(Level.ALL, "No Object found in TMS for asset {0}. Skipping...", title);
+									ingester._log.log(Level.ALL, "No Object found in TMS for asset {0}. Skipping and adding to error report...", title);
 									ingestedFromDAMSFailed.add(title);
                                                                         
                                                                     }
                                                             }
-                                                            else  {   // non CHSDM units
+                                                            else  {   // ACM
                                                                 if(objectID != null) {
                                                                         ingester._log.log(Level.ALL,"Creating MediaRecords");
                                                                         
@@ -459,10 +463,10 @@ public class CDIS {
 					boolean success = ingester.createLogEntry(tmsConn, ingester.properties.getProperty("operationType"));
 					
 					if(!success) {
-			        	ingester._log.log(Level.ALL, "There was an error creating the log entry.");
-			        }
-					ingester._log.log(Level.ALL, "Exiting...");
-					return;
+                                            ingester._log.log(Level.ALL, "There was an error creating the log entry.");
+                                        }
+					//ingester._log.log(Level.ALL, "Exiting...");
+					//return;
 				}
 			}
 			else if(ingester.properties.getProperty("operationType").equals("sync")) { //operationType=sync
@@ -865,12 +869,12 @@ public class CDIS {
 					}
 					
 	
-			        ingester._log.log(Level.ALL, "Creating updated record for rendition: {0}", tempRendition.getRenditionNumber());
-			        boolean success = ingester.createIngestRecord(tmsConn, tempRendition);
+                                    ingester._log.log(Level.ALL, "Creating updated record for rendition: {0}", tempRendition.getRenditionNumber());
+                                    boolean success = ingester.createIngestRecord(tmsConn, tempRendition);
 			        
-			        if(!success) {
+                                    if(!success) {
 			        	ingester._log.log(Level.ALL, "There was an error creating the ingest record for rendition: {0}", tempRendition.getRenditionNumber());
-			        }
+                                    }
 	
 			       
 					
@@ -902,21 +906,21 @@ public class CDIS {
 					}
 				}
 		
-			ingester._log.log(Level.ALL, "Creating log entry for {0} operation...", ingester.properties.getProperty("operationType"));
-			boolean success = ingester.createLogEntry(tmsConn, ingester.properties.getProperty("operationType"));
+                                ingester._log.log(Level.ALL, "Creating log entry for {0} operation...", ingester.properties.getProperty("operationType"));
+                                boolean success = ingester.createLogEntry(tmsConn, ingester.properties.getProperty("operationType"));
 			
-			if(!success) {
-	        	ingester._log.log(Level.ALL, "There was an error creating the log entry.");
-	        }
+                                if(!success) {
+                                    ingester._log.log(Level.ALL, "There was an error creating the log entry.");
+                                }
 
 		
-			tmsConn.close();
-			damsConn.close();
-		}
-		catch(SQLException sqlex) {
-			ingester._log.log(Level.ALL, "Exception in main(): {0}", sqlex.getMessage());
-			//sqlex.printStackTrace();
-		}	
+                                tmsConn.close();
+                                damsConn.close();
+                        }
+                        catch(SQLException sqlex) {
+                            ingester._log.log(Level.ALL, "Exception in main(): {0}", sqlex.getMessage());
+                            //sqlex.printStackTrace();
+                        }	
 
 	}
 
@@ -1232,8 +1236,10 @@ public class CDIS {
 					title = rs.getString(1);
 					_log.log(Level.ALL, "NAME: {0}", title);
 					String rank = new String();
+                                        String number = new String();
 					rank = "0";
 					
+                                        // This is not called by CHSDM code
 					if (properties.getProperty("siUnit").equals("ACM")) {
 						if(title.split("-").length > 2) {
 							rank = title.split("-")[2].split("\\.")[0].replace("r", "");
@@ -1242,7 +1248,7 @@ public class CDIS {
 						title = title.split("-")[1].substring(0, 12);
 						retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8, 12), rank);
 					}
-					else {  // for FSG
+					else if (properties.getProperty("siUnit").equals("FSG")) {  
 						if(title.split("_").length == 2) {
 							rank = title.split("_")[1].split("\\.")[0];
 						}
@@ -1250,12 +1256,28 @@ public class CDIS {
 						title = title.split("_")[0];
 						retval.put(title, rank);
 					}
-					
+                                        else if (properties.getProperty("siUnit").equals("NMAAHC")) {
+                                                rank = "001";
+                                                title = title.replaceAll(".jpg", "");
+                                                title = title.replaceAll(".JPG", "");
+                                                title = title.replaceAll("HCA_", "2007.1.69.");
+                                                retval.put(title, rank);
+                                        }
+                                        else if (properties.getProperty("siUnit").equals("CHSDM")){
+                                                _log.log(Level.ALL, "WARNING: CH unit does not use this processing, but uses BARCODE logic instead");
+                                                number = title.split("_")[0];
+                                                rank = (title.split("_")[1]).split("\\.")[0];
+                                                retval.put(number, rank);
+                                        }
+                                        else {
+                                             _log.log(Level.ALL, "Error in determing rank, unknown siUnit {0}", properties.getProperty("siUnit"));
+                                        }
+                                    					
 				}
 			} catch (SQLException e) {
 				_log.log(Level.ALL, "getObjectIDForAsset SQL: {0}", damsSQL);
 				e.printStackTrace();
-			} catch (Exception e) {
+                        } catch (Exception e) {
 				_log.log(Level.ALL, "There was an exception processing asset {0}. Skipping...", title);
 				retval = null;
 			}
@@ -1472,16 +1494,18 @@ public class CDIS {
                     stmt.setInt(5, Integer.parseInt(objectID));
                     stmt.setInt(6, Integer.parseInt(rank));
                         
-                        
-			return (stmt.executeUpdate() != 0);
+                    stmt.executeUpdate();
+                    return true;
+                    
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+                        return false;
 		} catch (NumberFormatException e) {
-                    _log.log(Level.ALL, "Invalid number formatting, TMS record not updated");
+                        _log.log(Level.ALL, "Invalid number formatting, TMS record not updated");
+                        return false;
                 }
 		
-		return false;
 	}
 
 	private HashMap<String, String> retrieveNewAssets(Connection damsConn) {
@@ -1498,7 +1522,16 @@ public class CDIS {
 				"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
 				"AND b.SOURCE_SYSTEM_ID is null " +
 				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = " + this.properties.getProperty("categoryNodeId") + ")";
-                }    
+                }   
+                else if (properties.getProperty("siUnit").equals("NMAAHC")) {
+                    sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b  " +
+				"WHERE a.UOI_ID = b.UOI_ID " +
+				"AND TRIM(UPPER(a.CONTENT_STATE)) = 'NORMAL' " +
+				"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
+				"AND b.SOURCE_SYSTEM_ID is null " +
+				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = " + this.properties.getProperty("categoryNodeId") + ")" +
+				"AND a.NAME like 'HCA%'";
+                }
                 else {
                     sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b, SI_IDS_EXPORT c " +
 				"WHERE a.UOI_ID = b.UOI_ID " +
@@ -2895,6 +2928,7 @@ public class CDIS {
                         bodyBuffer.append("<br/>");
                         bodyBuffer.append("Number of assets ingested from TMS: ");
                         bodyBuffer.append(assetCount);
+                        bodyBuffer.append("<br/><br/>");
 		}
                 
                 assetCount = 0;
@@ -2911,7 +2945,10 @@ public class CDIS {
                         bodyBuffer.append("<br/>");
                         bodyBuffer.append("Number of DAMS assets created in TMS: ");
                         bodyBuffer.append(assetCount);
+                        bodyBuffer.append("<br/><br/>");
 		}
+                
+                assetCount = 0;
 		bodyBuffer.append("<br/>");
 		if(!failedAssets.isEmpty()) {
 			bodyBuffer.append("<br/><br/>");
@@ -2919,19 +2956,31 @@ public class CDIS {
 			bodyBuffer.append("<br/><hr/><br/>");
 			
 			for(Iterator<String> iter = failedAssets.iterator(); iter.hasNext();) {
-				bodyBuffer.append(iter.next());
+				assetCount++;
+                                bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        bodyBuffer.append("<br/>");
+                        bodyBuffer.append("Number of assets errored during ingest process: ");
+                        bodyBuffer.append(assetCount);
+                        bodyBuffer.append("<br/><br/>");
 		}
+                
+                assetCount = 0;
 		bodyBuffer.append("<br/>");
 		if(!ingestedFromDAMSFailed.isEmpty()) {
 			bodyBuffer.append("The following DAMS assets experienced errors during TMS Media record creation, and were skipped as a result: ");
 			bodyBuffer.append("<br/><hr/><br/>");
 			
 			for(Iterator<String> iter = ingestedFromDAMSFailed.iterator(); iter.hasNext();) {
-				bodyBuffer.append(iter.next());
+				assetCount++;
+                                bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        bodyBuffer.append("<br/>");
+                        bodyBuffer.append("Number of assets errored during TMS media Creation: ");
+                        bodyBuffer.append(assetCount);
+                        bodyBuffer.append("<br/><br/>");
 		}
 		
 		bodyBuffer.append("<br/><br/>");
@@ -3030,7 +3079,7 @@ public class CDIS {
                                 bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
-                        bodyBuffer.append("Number of assets unsynced and deleted from the DAMSe: ");
+                        bodyBuffer.append("Number of assets unsynced and deleted from the DAMS: ");
                         bodyBuffer.append(assetCount);
 		}
 		
