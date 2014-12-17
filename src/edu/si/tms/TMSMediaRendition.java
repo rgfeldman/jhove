@@ -211,6 +211,10 @@ public class TMSMediaRendition {
                                         object.setSeriesTitle(rs.getString("ObjectName"));
                                          object.setCaption(rs.getString("ObjectNumber") + " " + rs.getString("ObjectName"));
                                         
+                                         //   all units wanted description + dimensions except for CH
+                                         //    The dimension is added in the update statement...where it and the description is available
+                                         object.setDescription(rs.getString("Description"));
+                                         
                                         if(! properties.getProperty("siUnit").equals("CHSDM")) {
                                             /* Several fields are now commented out, per Allison Halle (CHSM), these fields do not need to be mapped */
                                             object.setLibrarianName(rs.getString("Cataloguer"));
@@ -219,14 +223,8 @@ public class TMSMediaRendition {
                                             object.setAcquisitionDate(rs.getString("CatalogueDateOld"));
                                             object.setDimensions(rs.getString("Dimensions"));
                                             
-                                            /*per Allison Halle (CHSM), Drop the dimension in the description field only requested for CHSM */
-                                            object.setDescription(rs.getString("Description"));
                                         }
-                                        else {
-                                            object.setDescription(rs.getString("Description") + " " + rs.getString("Dimensions"));
-                                           
-                                        }    
-                                        
+           
 					objectData = object;
 					objectPublicAccess = (rs.getInt("PublicAccess") == 1)?"Yes":"No";
 			    }
@@ -1191,7 +1189,13 @@ public class TMSMediaRendition {
 			}
 			if(this.getObjectData().getDescription() != null) {
 				query.append(", ");
-				query.append("DESCRIPTION = '" + scrubString(String.valueOf(this.getObjectData().getDescription())) + "' ");
+                                if(this.getObjectData().getDimensions() != null) {
+                                    query.append("DESCRIPTION = '" + scrubString(String.valueOf(this.getObjectData().getDescription())) + "' ");
+                                }
+                                else {
+                                    query.append("DESCRIPTION = '" + scrubString(String.valueOf(this.getObjectData().getDescription())) + " " + 
+                                                scrubString(String.valueOf(this.getObjectData().getDimensions())) + "' ");
+                                }
 			}
 			if(this.getObjectData().getCredit() != null) {
 				query.append(", ");
