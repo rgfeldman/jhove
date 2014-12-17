@@ -322,6 +322,7 @@ public class CDIS {
 								}
 							}
 							else {
+                                                            boolean MediaCreated;
                                                             if (!ingester.properties.getProperty("siUnit").equals("ACM")) {
                                                                 //grab dimension data
                                                                 dimensions = ingester.getDimensionData(damsConn, UOIID);
@@ -331,7 +332,7 @@ public class CDIS {
                                                                     if(objectID != null) {
 									height = dimensions.keySet().toArray()[0].toString();
 									width = dimensions.get(height);
-									boolean MediaCreated = ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank, height, width);
+									MediaCreated = ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank, height, width);
 									//create BLOB for thumbnail
 									if (MediaCreated) {
                                                                             URL assetURL;
@@ -358,6 +359,7 @@ public class CDIS {
                                                                             } catch (IOException e) {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "IOException when creating thumbnail for asset {0}. Skipping...", UAN);
+                                                                                e.printStackTrace();    
                                                                             } catch (SQLException e) {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);
@@ -386,11 +388,12 @@ public class CDIS {
                                                                 if(objectID != null) {
                                                                         ingester._log.log(Level.ALL,"Creating MediaRecords");
                                                                         
-                                                                        ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank, height, width);
+                                                                        MediaCreated = ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank, height, width);
 									
-									//create BLOB for thumbnail
-									URL assetURL;
-									try {
+                                                                        if (MediaCreated) {
+                                                                            //create BLOB for thumbnail
+                                                                            URL assetURL;
+                                                                            try {
 										assetURL = new URL("http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
 										InputStream UANStream = assetURL.openStream();
 										byte[] bytes = IOUtils.toByteArray(UANStream);
@@ -406,30 +409,43 @@ public class CDIS {
 										DataProvider.executeUpdate(tmsConn, stmt);
 										
 										UANStream.close();
-									} catch (MalformedURLException e) {
+                                                                            } catch (MalformedURLException e) {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "There was a problem retrieving asset with UAN {0} from IDS. No thumbnail will be saved in the database for this asset.", UAN);
-									} catch (IOException e) {
+                                                                            } catch (IOException e) {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "IOException when creating thumbnail for asset {0}. Skipping...", UAN);
-									} catch (SQLException e) {
+                                                                                e.printStackTrace();
+                                                                            } catch (SQLException e) {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);
-									}
+                                                                            }
 									
-									//update DAMS.SOURCE_SYSTEM_IDENTIFIER with rendition number
-									ingester.updateDAMSAsset(damsConn, UOIID, title);
-									ingester._log.log(Level.ALL, "Updated: {0}", title);
-									ingestedFromDAMS.add(title);
+                                                                            //update DAMS.SOURCE_SYSTEM_IDENTIFIER with rendition number
+                                                                            ingester.updateDAMSAsset(damsConn, UOIID, title);
+                                                                            ingester._log.log(Level.ALL, "Updated: {0}", title);
+                                                                            ingestedFromDAMS.add(title);
+                                                                        }
+                                                                        else {
+                                                                            ingester._log.log(Level.ALL, "Error when creating TMS record for {0}, Adding to error report", title);
+                                                                            ingestedFromDAMSFailed.add(title);
+                                                                        }
 								}
-                                                                ingester._log.log(Level.ALL,"ObjectId is null");
-                                                            }    
+                                                                else {
+                                                                    ingester._log.log(Level.ALL, "No Object found in TMS for asset {0}. Skipping and adding to error report...", title);
+                                                                    ingestedFromDAMSFailed.add(title);
+                                                                }    
 								
-							}
+                                                            }
+                                                        }
 						}
 						/*********************************************************************
 						 * END OF NON RENDITION NUMBER SECTION for CHSDM
 						 */
+                                                else {
+                                                    ingester._log.log(Level.ALL, "Unable to obtain objectinfo for uoiid: {0}", UOIID);
+                                                    ingestedFromDAMSFailed.add(UOIID);
+                                                }
 						
 					}
 					ingester._log.log(Level.ALL, "Finished iterating.");
@@ -1277,6 +1293,7 @@ public class CDIS {
 			} catch (SQLException e) {
 				_log.log(Level.ALL, "getObjectIDForAsset SQL: {0}", damsSQL);
 				e.printStackTrace();
+                                retval = null;
                         } catch (Exception e) {
 				_log.log(Level.ALL, "There was an exception processing asset {0}. Skipping...", title);
 				retval = null;
