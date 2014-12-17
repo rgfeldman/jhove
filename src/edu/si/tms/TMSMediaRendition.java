@@ -90,7 +90,7 @@ public class TMSMediaRendition {
 			String mediaSQL = "select mf.FileName, mf.Duration, mf.PixelH, " +
 					"mf.PixelW, mp.Path, mm.PublicCaption, mm.Description, mm.Remarks, " +
 					"mm.Copyright, mm.Restrictions, mr.Quality, mr.Remarks, ms.MediaStatus," +
-					"mr.RenditionNumber, mm.PublicAccess " +
+					"mr.RenditionNumber, mm.PublicAccess, mr.constituents " +
 					"from MediaFiles mf, MediaRenditions mr, MediaMaster mm, MediaStatuses ms, MediaPaths mp " +
 					"where " +
 					"mf.FileID = mr.PrimaryFileID AND " +
@@ -142,10 +142,7 @@ public class TMSMediaRendition {
 				this.setTermsRestrictions(rs.getString(9));
 				this.setUseRestrictions(rs.getString(10));
 				this.setTechnicalQuality(rs.getString(11));
-				this.setDigitalItemNotes(rs.getString(12));
-				//this.setMediaFormat(rs.getString(14));
-				//this.setCaptureDevice(rs.getString(14));
-				//this.setWorkType(rs.getString(14));			
+				this.setDigitalItemNotes(rs.getString(12));		
 				this.setRightsSummary(rs.getString(12));
 				this.setRenditionNumber(rs.getString(14));
 				this.setTitle(rs.getString(14));
@@ -154,8 +151,7 @@ public class TMSMediaRendition {
 				}
 				else {
 					this.setPublicAccess("No");
-				}
-				
+				}		
 			}
 			
 			if(!foundRendition) {
@@ -205,7 +201,6 @@ public class TMSMediaRendition {
 					object.setHoldingUnit(rs.getString("DepartmentID"));
 					object.setObjectID(rs.getString("ObjectID"));
 					object.setMedium(rs.getString("Medium"));
-					object.setCaption(rs.getString("ObjectNumber") + " " + rs.getString("ObjectName"));
 					object.setWorkCreationDate(rs.getString("Dated"));
 					object.setInscribed(rs.getString("Inscribed"));
 					object.setPaperSupport(rs.getString("PaperSupport"));
@@ -214,19 +209,22 @@ public class TMSMediaRendition {
 					object.setClassification(rs.getString("ClassificationID")); //may need to change these to use lookups
 					object.setSubClassification(rs.getString("SubClassID")); //may needs to change these to use lookups
                                         object.setSeriesTitle(rs.getString("ObjectName"));
+                                         object.setCaption(rs.getString("ObjectNumber") + " " + rs.getString("ObjectName"));
                                         
                                         if(! properties.getProperty("siUnit").equals("CHSDM")) {
                                             /* Several fields are now commented out, per Allison Halle (CHSM), these fields do not need to be mapped */
-                                                object.setLibrarianName(rs.getString("Cataloguer"));
-                                                object.setGroupTitle(rs.getString("Exhibitions"));
-                                                object.setNotes(rs.getString("CuratorialRemarks"));
-                                                object.setAcquisitionDate(rs.getString("CatalogueDateOld"));
-                                                object.setDimensions(rs.getString("Dimensions"));
-                                                object.setDescription(rs.getString("Description") + " " + rs.getString("Dimensions"));
-                                                
+                                            object.setLibrarianName(rs.getString("Cataloguer"));
+                                            object.setGroupTitle(rs.getString("Exhibitions"));
+                                            object.setNotes(rs.getString("CuratorialRemarks"));
+                                            object.setAcquisitionDate(rs.getString("CatalogueDateOld"));
+                                            object.setDimensions(rs.getString("Dimensions"));
+                                            
+                                            /*per Allison Halle (CHSM), Drop the dimension in the description field only requested for CHSM */
+                                            object.setDescription(rs.getString("Description"));
                                         }
                                         else {
-                                            object.setDescription(rs.getString("Description"));
+                                            object.setDescription(rs.getString("Description") + " " + rs.getString("Dimensions"));
+                                           
                                         }    
                                         
 					objectData = object;
@@ -324,7 +322,7 @@ public class TMSMediaRendition {
 			this.populateMediaData(conn, renditionID, log);
 		}
 		catch(SQLException sqlex) {
-			log.log(Level.ALL, "Exception occurred in TMSMediaRendition.populateMediaData: " + sqlex.getMessage());
+			log.log(Level.ALL, "Exception occurred in TMSMediaRendition.populateMediaData: {0}", sqlex.getMessage());
 			//sqlex.printStackTrace();
 			return false;
 		}
@@ -333,7 +331,7 @@ public class TMSMediaRendition {
 			this.populateObjectData(conn, renditionID, properties, log);
 		}
 		catch(SQLException sqlex) {
-			log.log(Level.ALL, "Exception occurred in TMSMediaRendition.populateObjectData: " + sqlex.getMessage());
+			log.log(Level.ALL, "Exception occurred in TMSMediaRendition.populateObjectData: {0}", sqlex.getMessage());
 			//sqlex.printStackTrace();
 			return false;
 		}
@@ -343,7 +341,7 @@ public class TMSMediaRendition {
 				this.populateConstituentData(conn);
 			}
 			catch(SQLException sqlex) {
-				log.log(Level.ALL, "Exception occurred in TMSMediaRendition.populateConstituentData: " + sqlex.getMessage());
+				log.log(Level.ALL, "Exception occurred in TMSMediaRendition.populateConstituentData: {0}", sqlex.getMessage());
 				//sqlex.printStackTrace();
 				return false;
 			}
@@ -1038,7 +1036,7 @@ public class TMSMediaRendition {
 			}
 		}
 		catch(SQLException sqlex) {
-			log.log(Level.ALL, "There was an error in isSync function: " + sqlex.getMessage());
+			log.log(Level.ALL, "There was an error in isSync function: {0}", sqlex.getMessage());
 			retval = false;
 		}
 		
@@ -1059,7 +1057,7 @@ public class TMSMediaRendition {
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
-			log.log(Level.ALL, "There was an error retrieving the checksum for rendition " + this.renditionNumber + ": " + e.getMessage());
+			log.log(Level.ALL, "There was an error retrieving the checksum for rendition {0}: {1}", new Object[]{this.renditionNumber, e.getMessage()});
 		}
 		
 		
