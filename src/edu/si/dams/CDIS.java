@@ -75,7 +75,6 @@ import edu.si.tms.TMSMediaRendition;
 import edu.si.tms.audit.AuditTrailReader;
 import edu.si.tms.factory.TMSMediaRenditionFactory;
 
-
 public class CDIS {
 	
 	public Logger _log = null;
@@ -190,12 +189,17 @@ public class CDIS {
 			ArrayList<String> IDSAssets = new ArrayList<String>();
 			ArrayList<String> failedIDS = new ArrayList<String>();
 			ArrayList<String> ingestedFromDAMS = new ArrayList<String>();
+			ArrayList<String> ingestedFromDAMSFailed = new ArrayList<String>();
 			
 			ArrayList<String> unsyncedRenditions = new ArrayList<String>();
 			
 			if(ingester.properties.getProperty("operationType").equals("ingest")) {
 				
 				//if ingestFromDAMS = true, create media records for applicable DAMS assets
+                                String objectNumber = null; //for use in common code nov 2014  
+                                String objectID = null; //for use in common code nov 2014 
+                                String rank = null;
+                                
 				if(ingester.properties.getProperty("ingestFromDAMS") != null && ingester.properties.getProperty("ingestFromDAMS").equals("true")) {
 					//get UOIIDS, UANs for applicable assets
 					HashMap<String, String> newAssets = ingester.retrieveNewAssets(damsConn);
@@ -204,16 +208,74 @@ public class CDIS {
 					
 					//for each
 					for(Iterator<String> iter = newAssets.keySet().iterator(); iter.hasNext();) {
+                                                ingester._log.log(Level.ALL, "++++++++++++++++++++++++++++++++++++NEXT ASSET+++++++++++++++++++++++++");
 						String UOIID = iter.next();
 						String UAN = newAssets.get(UOIID);
 						
 						//pull necessary parameters for media records stored proc
 						//pull objectNumber and Rank
-						HashMap<String, String> objectInfo = ingester.getObjectInfoForAsset(damsConn, UOIID);
-						if(objectInfo != null) {
-							String objectNumber = objectInfo.keySet().toArray()[0].toString();
-							String rank = objectInfo.get(objectNumber);
-							String objectID = ingester.getObjectIDForAsset(tmsConn, objectNumber);
+						 /*************************************************************/
+						//UNCOMMENT THIS FOLLOWING SECTION FOR RENDITION NUMBER INGEST is requested.  
+                                                //This was setup was reqiested for CH UNIT ONLY....and perhaps as a temporary request,
+                                                // KEEP THIS UNCOMMENTED UNLESS OTHERWISE REQUESTED BY CH UNIT!!!!!
+						//get Rendition ID for RenditionNumber
+						/*
+                                                if (ingester.properties.getProperty("siUnit").equals("CHSDM")) {
+                                                
+                                                    HashMap<String, String> renditionInfo = ingester.getRenditionInfo(damsConn, tmsConn, UOIID);
+						
+                                                    if(renditionInfo == null) {
+							//NO RENDITION, ABORT, ADD TO FAILED LIST
+							ingester._log.log(Level.ALL, "No MediaRendition record found for asset with UAN: " + UAN + ". Skipping...");
+							String failedQuery = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = 'FOR LATER REVIEW' where UOI_ID = '" + UOIID + "'";
+							DataProvider.executeUpdate(damsConn, failedQuery);
+							ingestedFromDAMSFailed.add(UAN);
+                                                    }
+                                                    else {
+							//create sync record
+							String query = "insert into CDIS(RenditionID, RenditionNumber, UOIID)values('" + renditionInfo.keySet().toArray()[0].toString() + "', '"
+									+ renditionInfo.get(renditionInfo.keySet().toArray()[0]) + "', '" + UOIID + "')";
+							
+							DataProvider.executeInsert(tmsConn, query);
+							
+							//update MediaInfo for given Rendition
+							ingester.syncFilePath(tmsConn, UOIID, UAN);
+							
+							//update SOURCE_SYSTEM_ID for DAMS asset
+							
+							query = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + renditionInfo.get(renditionInfo.keySet().toArray()[0]) + "' where UOI_ID = '" + UOIID + "'";
+							DataProvider.executeUpdate(damsConn, query);
+							
+							ingestedFromDAMS.add(UAN);
+                                                    }
+                                                }
+                                                */
+                                                //end of  RENDITION NUMBER INGEST
+                                                /*************************************************************/
+                                               
+						
+						/*************************************************************
+						 * COMMENT THE FOLLOWING SECTION WHEN RUNNING RENDITION NUMBER INGEST
+						 */
+                                                HashMap<String, String> objectInfo;
+                                                
+                                                if (ingester.properties.getProperty("siUnit").equals("CHSDM")) {
+                                                    objectInfo = ingester.getObjectInfoFromBarcode(damsConn, tmsConn, UOIID);
+                                                    if(objectInfo != null) {
+                                                        objectID = objectInfo.keySet().toArray()[0].toString();
+                                                        rank = objectInfo.get(objectID);						}
+                                                }
+                                                else {
+                                                    objectInfo = ingester.getObjectInfoForAsset(damsConn, UOIID);
+                                                    if(objectInfo != null) {
+							objectNumber = objectInfo.keySet().toArray()[0].toString();
+							rank = objectInfo.get(objectNumber);
+                                                        objectID = ingester.getObjectIDForAsset(tmsConn, objectNumber);
+                                                    }
+                                                }
+                                                
+                                                if(objectInfo != null) {
+
 							ingester._log.log(Level.ALL, "UOIID: {0}", UOIID);
 							ingester._log.log(Level.ALL, "UAN: {0}", UAN);
 							ingester._log.log(Level.ALL, "IDSPathID: {0}", ingester.properties.getProperty("IDSPathId"));
@@ -229,27 +291,98 @@ public class CDIS {
                                                         else if (ingester.properties.getProperty("siUnit").equals("CHSDM")) {
                                                             title = objectID + "_" + rank;
                                                         }
-                                                        else if (ingester.properties.getProperty("siUnit").equals("FSG") || 
-                                                                ingester.properties.getProperty("siUnit").equals("NMAAHC")) {
+                                                        else if (ingester.properties.getProperty("siUnit").equals("FSG")) {
                                                             title = objectNumber + "_" + rank;
                                                         }
+							else if (ingester.properties.getProperty("siUnit").equals("NMAAHC")) {
+                                                            title = objectNumber + "." + rank;
+							}
                                                         else {
                                                             ingester._log.log(Level.ALL, "Error, unknown siUnit {0}", ingester.properties.getProperty("siUnit"));
                                                         }
 							
+                                                       
+                                                        ingester._log.log(Level.ALL, "title set to: {0}", title);
+                                                        
+                                                        HashMap<String, String> dimensions = null;
+                                                        String height = null;
+                                                        String width = null;
+                                                        
 							//check if UAN already exists for a MediaFile in TMS
 							if(ingester.doesUANExistInTMS(tmsConn, UAN)) {
-								//asset file is already being pointed to in TMS, just fix the Rendition Number, add to CDIS/TDIS table
-								ingester.replaceTMSRenditionNumber(tmsConn, damsConn, UAN, title, UOIID);
-								
-								ingester._log.log(Level.ALL, "Rendition {0} successfully updated in TMS.", title);
+								//asset file is already being pointed to in TMS, just fix the Rendition Number, add to CDIS table
+								boolean result = ingester.replaceTMSRenditionNumber(tmsConn, damsConn, UAN, title, UOIID);
+							
+                                                                if(!result) {
+									ingestedFromDAMSFailed.add(title);
+								}
+								else {
+									ingestedFromDAMS.add(title);
+									ingester._log.log(Level.ALL, "Rendition {0} successfully updated in TMS.", title);
+								}
 							}
 							else {
-						
-								//call media records stored proc
-								//check parameters
-								if(objectID != null) {
-									ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank);
+                                                            if (!ingester.properties.getProperty("siUnit").equals("ACM")) {
+                                                                //grab dimension data
+                                                                dimensions = ingester.getDimensionData(damsConn, UOIID);
+                                                                                                                                  
+                                                                    //call media records stored proc
+                                                                    //check parameters
+                                                                    if(objectID != null) {
+									height = dimensions.keySet().toArray()[0].toString();
+									width = dimensions.get(height);
+									boolean MediaCreated = ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank, height, width);
+									//create BLOB for thumbnail
+									if (MediaCreated) {
+                                                                            URL assetURL;
+                                                                            try {
+										assetURL = new URL("http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
+										
+                                                                                ingester._log.log(Level.ALL, "Object at http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
+                                                                                
+										URLConnection connection = assetURL.openConnection();
+										
+										BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+										
+										PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
+										
+										stmt.setBinaryStream(1, connection.getInputStream(), (int)connection.getContentLength());
+										stmt.setInt(2, (int)connection.getContentLength());
+										stmt.setString(3, UOIID);
+										
+										DataProvider.executeUpdate(tmsConn, stmt);
+										input.close();
+                                                                            } catch (MalformedURLException e) {
+										// TODO Auto-generated catch block
+										ingester._log.log(Level.ALL, "There was a problem retrieving asset with UAN {0} from IDS. No thumbnail will be saved in the database for this asset.", UAN);
+                                                                            } catch (IOException e) {
+										// TODO Auto-generated catch block
+										ingester._log.log(Level.ALL, "IOException when creating thumbnail for asset {0}. Skipping...", UAN);
+                                                                            } catch (SQLException e) {
+										// TODO Auto-generated catch block
+										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);
+									
+                                                                            }
+									
+                                                                            //update DAMS.SOURCE_SYSTEM_IDENTIFIER with rendition number
+                                                                            ingester.updateDAMSAsset(damsConn, UOIID, title);
+                                                                            ingester._log.log(Level.ALL, "Updated: {0}", title);
+                                                                            ingestedFromDAMS.add(title);
+                                                                    
+                                                                        }
+                                                                    }
+                                                                    else {
+									//no Object found for asset in TMS
+									ingester._log.log(Level.ALL, "No Object found in TMS for asset {0}. Skipping...", title);
+									ingestedFromDAMSFailed.add(title);
+                                                                        
+                                                                    }
+                                                            }
+                                                            else  {   // non CHSDM units
+                                                                if(objectID != null) {
+                                                                        ingester._log.log(Level.ALL,"Creating MediaRecords");
+                                                                        
+                                                                        ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank, height, width);
 									
 									//create BLOB for thumbnail
 									URL assetURL;
@@ -258,7 +391,11 @@ public class CDIS {
 										InputStream UANStream = assetURL.openStream();
 										byte[] bytes = IOUtils.toByteArray(UANStream);
 										
-										PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
+										PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions " + 
+                                                                                        "set ThumbBLOB = ? where RenditionID = (" +
+                                                                                            "select RenditionID from " +
+                                                                                            ingester.properties.getProperty("CDISTblName") +
+                                                                                            "where UOIID = ?)");
                                                                                 stmt.setBytes(1, bytes);
 										stmt.setString(2, UOIID);
 										
@@ -281,10 +418,14 @@ public class CDIS {
 									ingester._log.log(Level.ALL, "Updated: {0}", title);
 									ingestedFromDAMS.add(title);
 								}
-								
+                                                                ingester._log.log(Level.ALL,"ObjectId is null");
+                                                            }    
 								
 							}
 						}
+						/*********************************************************************
+						 * END OF NON RENDITION NUMBER SECTION for CHSDM
+						 */
 						
 					}
 					ingester._log.log(Level.ALL, "Finished iterating.");
@@ -292,18 +433,21 @@ public class CDIS {
 					
 				}
 			
-				//pull recently created TMS records.
-				newRenditions = ingester.retrieveNewRenditions(tmsConn);
+				if(ingester.properties.getProperty("ingestFromTMS").equals("true")) {
+					//pull recently created TMS records.
+					newRenditions = ingester.retrieveNewRenditions(tmsConn);
 				
-				//pull CDIS records with no sync - failed transfers
-				newRenditions.addAll(ingester.retrieveFailedTransfers(tmsConn));
-				//get newly flagged TMS records, check for duplicates with newly created records
-				for(Iterator<String> iter = ingester.getRecentlyFlaggedRenditions(tmsConn).iterator(); iter.hasNext();) {
-					String tempString = iter.next();
-					if(!newRenditions.contains(tempString)) {
-						newRenditions.add(tempString);
+					//pull CDIS records with no sync - failed transfers
+					newRenditions.addAll(ingester.retrieveFailedTransfers(tmsConn));
+					//get newly flagged TMS records, check for duplicates with newly created records
+					for(Iterator<String> iter = ingester.getRecentlyFlaggedRenditions(tmsConn).iterator(); iter.hasNext();) {
+						String tempString = iter.next();
+						if(!newRenditions.contains(tempString)) {
+							newRenditions.add(tempString);
+						}
 					}
 				}
+				
 				//check for any other derivatives for these files
 				/*for(Iterator<String> iter = newRenditions.iterator(); iter.hasNext();) {
 					
@@ -351,6 +495,93 @@ public class CDIS {
 					}
 						
 				}
+				
+				//find renditions not in CDIS, IsColor = 1, asset in DAMS with <rendition number>.tif name
+				//
+				/* USED on units where ingestFromDams = True (CH and FSG).... REMOVED UNTIL AFTER RCPP
+                                
+                                if (!ingester.properties.getProperty("siUnit").equals("ACM")) {
+				
+                                    ArrayList<String> renditionsInDAMS = ingester.getAssetsAlreadyInDAMS(damsConn, tmsConn);
+				 
+				
+                                    if(!renditionsInDAMS.isEmpty()) {
+					//build query for DAMS, find assets with name <rendition number>.tif
+					String DAMSQuery = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME, a.NAME from UOIS a, SI_ASSET_METADATA b " +
+									"WHERE a.UOI_ID = b.UOI_ID " +
+									"AND TRIM(UPPER(a.CONTENT_STATE)) = 'NORMAL' " +
+									"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
+									"AND b.SOURCE_SYSTEM_ID is null " +
+									"AND a.NAME in (";
+					for(Iterator<String> iter = renditionsInDAMS.iterator(); iter.hasNext();) {
+						String renditionNumber = iter.next();
+						DAMSQuery += "'" + renditionNumber + ".tif'";
+						if(iter.hasNext()) {
+							DAMSQuery += ", ";
+						}
+						else {
+							DAMSQuery += ")";
+						}
+					}
+					
+					//System.out.println("DAMSQuery: " + DAMSQuery);
+					
+					//grab UOIIDS and UANS
+					ResultSet rs = DataProvider.executeSelect(damsConn, DAMSQuery);
+					HashMap<String, String> renditionUOIIDs = new HashMap<String, String>();
+					HashMap<String, String> renditionUANs = new HashMap<String, String>();
+					try {
+						while(rs.next()) {
+							String assetName = rs.getString(3);
+							String renditionNumber = assetName.replace(".tif", "");
+							String UOIID = rs.getString(1);
+							String UAN = rs.getString(2);
+							renditionUOIIDs.put(renditionNumber, UOIID);
+							renditionUANs.put(renditionNumber, UAN);
+						}
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						ingester._log.log(Level.ALL, "There was an exception retrieving UOIIDS and UANS for sync. Skipping...");
+					}
+					finally {
+						try { if (rs != null) rs.close(); } catch (SQLException se) { ingester._log.log(Level.ALL, "Error closing the statement " + se.getMessage()); }
+					}
+					
+					for(Iterator<String> renditionIter = renditionUOIIDs.keySet().iterator(); renditionIter.hasNext();) {
+						
+						String renditionNumber = renditionIter.next();
+						//create CDIS record
+						String insertQuery = "insert into CDIS(RenditionID, RenditionNumber, UOIID)values(" +
+								"(select RenditionID from MediaRenditions where RenditionNumber = '" + renditionNumber + "'), '" + renditionNumber + "', '" + renditionUOIIDs.get(renditionNumber) + "')";
+						
+						//System.out.println("InsertQuery: " + insertQuery);
+						
+						boolean success = DataProvider.executeInsert(tmsConn, insertQuery);
+						
+						if(success) {
+							//replace file path
+							ingester.syncFilePath(tmsConn, renditionUOIIDs.get(renditionNumber), renditionUANs.get(renditionNumber)); 
+							
+							//update DAMS Asset SOURCE_SYSTEM_IDENTIFER with RenditionNumber
+							String updateQuery = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + renditionNumber + "' where UOI_ID = '" + renditionUOIIDs.get(renditionNumber) + "'";
+							
+							//System.out.println("UpdateQuery: " + updateQuery);
+							
+							DataProvider.executeUpdate(damsConn, updateQuery);
+							
+							IDSAssets.add(renditionNumber);
+						}
+						else {
+							ingester._log.log(Level.ALL, "There was an error syncing IDS derivative for rendition " + renditionNumber + ". Skipping...");
+							failedIDS.add(renditionNumber);
+						}
+                                                
+					
+					}
+                                    }    
+                                }*/
+				
+				
 				
 				//find un-synced renditions
 				unsyncedRenditions = ingester.retrieveUnsyncedRenditions(tmsConn);
@@ -406,7 +637,7 @@ public class CDIS {
 					HashMap<String, String> syncPairs = ingester.retrieveUOIIDSForSync(damsConn, fileNames);
 					
 					if(syncPairs != null && !syncPairs.isEmpty()) {
-						//update TDIS/CDIS with new UOIIDs
+						//update CDIS with new UOIIDs
 						boolean result = ingester.syncNewRecords(tmsConn, damsConn, syncPairs);
 						
 						//add renditionIDs to newlySyncedRenditions
@@ -623,22 +854,6 @@ public class CDIS {
 									failedMetadata.add(tempRendition.getName());
 								}
 	
-								//check if asset requires IDS sync in TMS
-								//boolean tmsCheck = ingester.requiresIDSSync(tmsConn, tempRendition);
-								
-								//check if available for sync in DAMS
-								//if(tmsCheck) {
-								//	String UAN = ingester.eligibleForSync(damsConn, UOIID);
-								
-									//if both, make the sync
-								//	if(UAN != null) {
-								//		boolean result = ingester.syncFilePath(tmsConn, tempRendition, UAN);
-										
-								//		if(!result) {
-								//			ingester._log.log(Level.ALL, "There was an error updating the file path information for rendition " + tempRendition.getRenditionNumber() + ".");
-								//		}
-								//	}
-								//}
 							}
 							
 							
@@ -664,17 +879,17 @@ public class CDIS {
 				ingester._log.log(Level.ALL, "Creating email report for {0} operation...", ingester.properties.getProperty("operationType"));
 				boolean emailResult = false;
 				if(ingester.properties.getProperty("operationType").equals("ingest")) {
-					//create ready.txt in hotfolder
-					File readyFile = new File(hotFolder.getAbsolutePath() + "\\" + "MASTER" + "\\ready.txt");
-					try {
-						readyFile.createNewFile();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						ingester._log.log(Level.ALL, "An error occurred when creating the ready.txt file. Ingestion will occur the next time the ingest process is run nightly.");
-					}
 					if(!successAssets.isEmpty() || 
-								!failedAssets.isEmpty() || !ingestedFromDAMS.isEmpty()) {
-						emailResult = ingester.sendIngestEmail(successAssets, failedAssets, ingestedFromDAMS);
+								!failedAssets.isEmpty() || !ingestedFromDAMS.isEmpty() || !ingestedFromDAMSFailed.isEmpty()) {
+						//create ready.txt in hotfolder
+						File readyFile = new File(hotFolder.getAbsolutePath() + "\\" + "MASTER" + "\\ready.txt");
+						try {
+							readyFile.createNewFile();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							ingester._log.log(Level.ALL, "An error occurred when creating the ready.txt file. Ingestion will occur the next time the ingest process is run nightly.");
+						}
+						emailResult = ingester.sendIngestEmail(successAssets, failedAssets, ingestedFromDAMS, ingestedFromDAMSFailed);
 					}
 				}
 				else if(ingester.properties.getProperty("operationType").equals("sync")) {
@@ -686,8 +901,6 @@ public class CDIS {
 						emailResult = ingester.sendSyncEmail(metadataAssets, IDSAssets, failedMetadata, failedIDS, unsyncedRenditions);
 					}
 				}
-				
-		
 		
 			ingester._log.log(Level.ALL, "Creating log entry for {0} operation...", ingester.properties.getProperty("operationType"));
 			boolean success = ingester.createLogEntry(tmsConn, ingester.properties.getProperty("operationType"));
@@ -695,27 +908,7 @@ public class CDIS {
 			if(!success) {
 	        	ingester._log.log(Level.ALL, "There was an error creating the log entry.");
 	        }
-			
-		
-		
 
-		
-		//try {
-			//set UOIID in TMS
-			/*if(ingester.properties.getProperty("operationType").equals("sync")) {
-				//check for synced assets with no UOIID
-				ArrayList<String> renditionsForUAN = getRenditionsForUAN(tmsConn);
-				
-				//for each rendition pulled, check if there's an asset in DAMS with a valid UAN
-				for(Iterator<String> iter = renditionsForUAN.iterator(); iter.hasNext();) {
-					String renditionNumber = iter.next();
-					
-					boolean synced = ingester.syncIfNeeded(tmsConn, damsConn, renditionNumber);
-					
-					
-				}
-			}*/
-		
 		
 			tmsConn.close();
 			damsConn.close();
@@ -727,34 +920,143 @@ public class CDIS {
 
 	}
 
-	private void replaceTMSRenditionNumber(Connection tmsConn, Connection damsConn, String UAN,
+	private HashMap<String, String> getRenditionInfo(Connection damsConn, Connection tmsConn,
+			String UOIID) {
+		
+		String fileName = null;
+		String renditionID = null;
+		HashMap<String, String> retval = null;
+		
+		String damsQuery = "select NAME from UOIS where UOI_ID = '" + UOIID + "'";
+		
+                _log.log(Level.ALL, "SQL getRenditionInfo: {0}", damsQuery );
+                
+                PreparedStatement stmt = null;
+		ResultSet rs = null;
+		try {
+			stmt = damsConn.prepareStatement(damsQuery);
+			rs = stmt.executeQuery();
+			
+			while(rs.next()) {
+				fileName = rs.getString(1);
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		//have the filename
+		if(fileName != null) {
+			//strip off .tif
+			fileName = fileName.replace(".tif", "");
+                        fileName = fileName.replace(".jpg", "");
+			
+			//get RenditionID of MediaRendition with matching RenditionNumber
+			String tmsQuery = "select RenditionID from MediaRenditions where RenditionNumber = '" + fileName + "'";
+			
+			try {
+				stmt = tmsConn.prepareStatement(tmsQuery);
+				rs = stmt.executeQuery();
+				
+				while(rs.next()) {
+					renditionID = rs.getString(1);
+				}
+				if(renditionID != null) {
+					retval = new HashMap<String, String>();
+					retval.put(renditionID, fileName);
+				}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		
+		
+		return retval;
+	}
+
+	private ArrayList<String> getAssetsAlreadyInDAMS(Connection damsConn,
+			Connection tmsConn) {
+		
+		//get TMS Media Renditions where IsColor = 1, not found in CDIS table
+		String tmsQuery = "select top 5 RenditionNumber from MediaRenditions where IsColor = 1 and RenditionID not in (select RenditionID from CDIS) order by RenditionID asc";
+		
+		ResultSet rs = DataProvider.executeSelect(tmsConn, tmsQuery);
+		
+		ArrayList<String> renditionNumbers = new ArrayList<String>();
+		
+		try {
+			while(rs.next()) {
+				renditionNumbers.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			_log.log(Level.ALL, "There was an exception during getAssetsAlreadyInDAMS. Skipping...");
+		}
+		finally {
+			try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+		}
+		
+		return renditionNumbers;
+	}
+
+	private HashMap<String, String> getDimensionData(Connection damsConn,
+			String UOIID) {
+		
+		String query = "select BITMAP_HEIGHT, BITMAP_WIDTH from UOIS where UOI_ID = '" + UOIID + "'";
+		HashMap<String, String> retval = new HashMap<String, String>();
+		
+		ResultSet rs = DataProvider.executeSelect(damsConn, query);
+		
+		try {
+			while(rs.next()) {
+				retval.put(rs.getString(1), rs.getString(2));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			_log.log(Level.ALL, "There was an exception during getDimensionData, asset with UOI_ID: {0}. Skipping...", UOIID);
+		}
+		finally {
+			try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+		}
+		
+		return retval;
+	}
+
+	private boolean replaceTMSRenditionNumber(Connection tmsConn, Connection damsConn, String UAN,
 			String title, String UOIID) {
 		
 		//make sure FileName is unique
 		
 		String uniqueQuery = "select count(*) from MediaFiles where FileName = '" + UAN + "'";
+                _log.log(Level.ALL, "SQL: Count from MediaFiles {0}", uniqueQuery);
 		
 		ResultSet rs = DataProvider.executeSelect(tmsConn, uniqueQuery);
 		
-		boolean unique = false;
-		
+                int rs_count = 0;
+                
 		try {
 			while(rs.next()) {
-				int count = rs.getInt(1);
-				if(count == 1) {
-					unique = true;
-				}
+                            rs_count = rs.getInt(1);
 			}
 			rs.close();
 		} catch (SQLException e) {
 			_log.log(Level.ALL, "SQLException in replaceTMSRenditionNumber: {0}", e.getMessage());
+			return false;
 		}
 		
-		if(unique) {
+                if (properties.getProperty("siUnit").equals("CHSDM")) {
+                    //Next line commented out Nov 2014, added jpg line also
+                    //title = title.replaceAll("_", ".");
+                    title = title.replaceAll(".tif", "");
+                    title = title.replaceAll(".jpg", "");
+                }
+                
+		if(rs_count == 1) {
 			String query = "update MediaRenditions set RenditionNumber = '" + title + "', IsColor = 1 where " +
 					"RenditionID = (select RenditionID from MediaFiles where FileName = '" + UAN + "')";
 			
-			//_log.log(Level.ALL, "replaceTMSRenditionNumber query: " + query);
+			_log.log(Level.ALL, "replaceTMSRenditionNumber query: " + query);
 			
 			DataProvider.executeUpdate(tmsConn, query);
 			
@@ -762,6 +1064,8 @@ public class CDIS {
 			//grab Rendition information
 			query = "select RenditionID, RenditionNumber from MediaRenditions where RenditionID = " +
 					"(select RenditionID from MediaFiles where FileName = '" + UAN + "')";
+                        
+                        _log.log(Level.ALL, "query: " + query);
 			
 			rs = DataProvider.executeSelect(tmsConn, query);
 			int renditionID = 0;
@@ -776,6 +1080,7 @@ public class CDIS {
 				rs.close();
 			} catch (SQLException e) {
 				_log.log(Level.ALL, "SQLException caught in replaceTMSRenditionNumber: {0}", e.getMessage());
+				return false;
 			}
 			
 			query = "insert into " +
@@ -795,10 +1100,48 @@ public class CDIS {
 			
 			DataProvider.executeUpdate(damsConn, query);
 			
-			
+                        // This next code was only in CH unit line of code
+                        if (properties.getProperty("siUnit").equals("CHSDM")) {
+                            //create BLOB for thumbnail
+                            URL assetURL;
+                            try {
+				assetURL = new URL("http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
+                                
+                                _log.log(Level.ALL, "Object at http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
+				
+				URLConnection connection = assetURL.openConnection();
+				
+				BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				
+				PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
+				                                                              
+				stmt.setBinaryStream(1, connection.getInputStream(), (int)connection.getContentLength());
+				stmt.setInt(2, (int)connection.getContentLength());
+				stmt.setString(3, UOIID);
+				
+				DataProvider.executeUpdate(tmsConn, stmt);
+				
+				input.close();
+                            } catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				this._log.log(Level.ALL, "There was a problem retrieving asset with UAN {0} from IDS. No thumbnail will be saved in the database for this asset.", UAN);
+                            } catch (IOException e) {
+				// TODO Auto-generated catch block
+				this._log.log(Level.ALL, "IOException when creating thumbnail for asset {0}. Skipping...", UAN);
+                            } catch (SQLException e) {
+				// TODO Auto-generated catch block
+				this._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);
+                            } 
+                        }
+			return true;
 		}
+                else if (rs_count == 0) {
+                    _log.log(Level.ALL, "Could not find TMS asset with filename {0}. Skipping...", UAN);
+                    return false;
+                }
 		else {
-			_log.log(Level.ALL, "More than one Media File exists with filename {0}. Skipping...", UAN);
+                    _log.log(Level.ALL, "More than one Media File exists with filename {0}. Skipping...", UAN);
+                    return false;
 		}
 		
 	}
@@ -807,6 +1150,8 @@ public class CDIS {
 		
 		String query = "select count(*) from MediaFiles where FileName = '" + UAN + "'";
 		boolean retval = false;
+                
+                _log.log(Level.ALL, "SQL: doesUANExistInTMS {0}", query);
 		
 		ResultSet rs = DataProvider.executeSelect(tmsConn, query);
 		
@@ -833,12 +1178,12 @@ public class CDIS {
 		ArrayList<String> retval = new ArrayList<String>();
 		
 		String sql = "select RenditionID from MediaRenditions where " +
-				"EnteredDate >= (select top 1 LastRan from TDIS_Log where OperationType = 'sync' order by LastRan desc) AND " +
+				"EnteredDate >= (select top 1 LastRan from " + properties.getProperty("CDISTblName") + "_Log where OperationType = 'sync' order by LastRan desc) AND " +
 				"RenditionID in (select RenditionID from " + 
                                 properties.getProperty("CDISTblName") +
                                 " where OriginalFilePath = '')";
                 
-                _log.log(Level.ALL,sql);
+                _log.log(Level.ALL,"getAssetsIngestedfromDAMS query {0}", sql);
                 		
 		try {
 			ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
@@ -867,8 +1212,10 @@ public class CDIS {
 			String UOIID) {
 				
 			//object Number = assetTitle demarcated xxxx.xxxx.xxxx
-			//ex acmobj-199100760024-r1 --> object number: 1991.0076.0024, rank=1 (base zero)
-			
+			// ACM: ex acmobj-199100760024-r1 --> object number: 1991.0076.0024, rank=1 (base zero)
+			// FSC: ex FSC-P-6655_02 --> object number: FSC-P-6655, rank=2 (base one)
+                        // This is not called from CHSDM unit
+            
 			HashMap<String, String> retval = new HashMap<String, String>();
 			
 			//get title of asset from DAMS
@@ -885,15 +1232,25 @@ public class CDIS {
 					title = rs.getString(1);
 					_log.log(Level.ALL, "NAME: {0}", title);
 					String rank = new String();
-					if(title.split("-").length > 2) {
-						rank = title.split("-")[2].split("\\.")[0].replace("r", "");
+					rank = "0";
+					
+					if (properties.getProperty("siUnit").equals("ACM")) {
+						if(title.split("-").length > 2) {
+							rank = title.split("-")[2].split("\\.")[0].replace("r", "");
+						}
+						//grab first 12 characters
+						title = title.split("-")[1].substring(0, 12);
+						retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8, 12), rank);
 					}
-					else {
-						rank = "0";
+					else {  // for FSG
+						if(title.split("_").length == 2) {
+							rank = title.split("_")[1].split("\\.")[0];
+						}
+						//grab first characters
+						title = title.split("_")[0];
+						retval.put(title, rank);
 					}
-					//grab first 12 characters
-					title = title.split("-")[1].substring(0, 12);
-					retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8, 12), rank);
+					
 				}
 			} catch (SQLException e) {
 				_log.log(Level.ALL, "getObjectIDForAsset SQL: {0}", damsSQL);
@@ -911,12 +1268,149 @@ public class CDIS {
 			return retval;
 	}
 
+	private HashMap<String, String> getObjectInfoFromBarcode(Connection damsConn, Connection tmsConn,
+			String UOIID) {
+			// This is only called from CHSDM unit
+            
+			//ex asset name = <object number>.<three digit rank>
+			//return pairing of object number and rank
+			
+			HashMap<String, String> retval = new HashMap<String, String>();
+			
+			//get title of asset from DAMS
+			String damsSQL = "select NAME from UOIS where UOI_ID = '" + UOIID + "'";
+			String barcode = new String();
+			ResultSet rs = null;
+			ResultSet rs2 = null;
+			PreparedStatement stmt = null;
+			
+			try {
+				stmt = damsConn.prepareStatement(damsSQL);
+				rs = DataProvider.executeSelect(damsConn, stmt);
+				
+				while(rs.next()) {
+					barcode = rs.getString(1);
+					barcode = barcode.replaceAll(".tif", "");
+                                        barcode = barcode.replaceAll(".jpg", "");
+					_log.log(Level.ALL, "BARCODE: {0}", barcode);
+					//title = title.replaceAll("_", ".");
+					//get ObjectID from Components tables
+				}
+				String tmsSQL = "select ObjectID from ObjComponents where ComponentID = (select ID from BCLabels where TableID = 94 and LabelUUID = '" + barcode + "')";
+				stmt = tmsConn.prepareStatement(tmsSQL);
+				rs = DataProvider.executeSelect(tmsConn, stmt);
+                                
+				String number = null;
+				String rank = new String();
+				
+                                while(rs.next()) {
+					number = rs.getString(1);
+					rank = "01";
+				}
+                                
+				if(number == null) {
+                                        
+                                        _log.log(Level.ALL, "Splitting filename-rank");
+                                        
+					//no barcode component was found, use filename as ObjectID
+					if(barcode.contains("_")) {
+						number = barcode.split("_")[0];
+						rank = (barcode.split("_")[1]).split("\\.")[0];
+                                                
+                                                _log.log(Level.ALL, "barcode: {0}", barcode);
+                                                _log.log(Level.ALL, "number: {0}", number);
+                                                _log.log(Level.ALL, "rank {0}", rank);
+					}
+					else {
+                                                _log.log(Level.ALL, "assigning default rank of 01");
+                                                
+						number = barcode;
+						rank = "01";
+					}
+					
+				}
+				//number = title.split("_")[0];
+				//rank = (title.split("_")[1]).split("\\.")[0];
+				retval.put(number, rank);
+			} catch (SQLException e) {
+				_log.log(Level.ALL, "getObjectInfoForAsset SQL: {0}", damsSQL);
+				e.printStackTrace();
+			} catch (Exception e) {
+				_log.log(Level.ALL, "There was an exception parsing the name of asset {0}. Skipping...", barcode);
+				//e.printStackTrace();
+				retval = null;
+			}
+			finally {
+				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+				try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+			}
+			
+			
+			return retval;
+	}
+	
+	private HashMap<String, String> getObjectInfoFromObjectID(Connection damsConn, Connection tmsConn,
+			String UOIID) {
+				
+			//ex asset name = <object number>.<three digit rank>
+			//return pairing of object number and rank
+			
+			HashMap<String, String> retval = new HashMap<String, String>();
+			
+			//get title of asset from DAMS
+			String damsSQL = "select NAME from UOIS where UOI_ID = '" + UOIID + "'";
+			String barcode = new String();
+			ResultSet rs = null;
+			ResultSet rs2 = null;
+			PreparedStatement stmt = null;
+			
+			try {
+				stmt = damsConn.prepareStatement(damsSQL);
+				rs = DataProvider.executeSelect(damsConn, stmt);
+				
+				while(rs.next()) {
+					barcode = rs.getString(1);
+					barcode = barcode.replaceAll(".tif", "");
+                                        barcode = barcode.replaceAll(".jpg", "");
+					_log.log(Level.ALL, "BARCODE: {0}", barcode);
+					//title = title.replaceAll("_", ".");
+					//get ObjectID from Components tables
+				}
+				String tmsSQL = "select ObjectID from ObjComponents where ComponentID = (select ID from BCLabels where TableID = 94 and LabelUUID = '" + barcode + "')";
+				stmt = tmsConn.prepareStatement(tmsSQL);
+				rs = DataProvider.executeSelect(tmsConn, stmt);
+				String number = new String();
+				while(rs.next()) {
+					number = rs.getString(1);
+				}
+				//number = title.split("_")[0];
+				//rank = (title.split("_")[1]).split("\\.")[0];
+				String rank = "01";
+				retval.put(number, rank);
+			} catch (SQLException e) {
+				_log.log(Level.ALL, "getObjectInfoForAsset SQL: {0}", damsSQL);
+				e.printStackTrace();
+			} catch (Exception e) {
+				_log.log(Level.ALL, "There was an exception parsing the name of asset {0}. Skipping...", barcode);
+				//e.printStackTrace();
+				retval = null;
+			}
+			finally {
+				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+				try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+			}
+			
+			
+			return retval;
+	}
+
 	private String getObjectIDForAsset(Connection tmsConn, String objectNumber) {
 		
 		String objectID = null;
 		
 		String sql = "select ObjectID from Objects where ObjectNumber = '" + objectNumber + "'";
-		
+		_log.log(Level.ALL, "getObjectIDForAsset SQL: {0}", sql);
+                
 		ResultSet rs = null;
 		
 		try {
@@ -936,27 +1430,56 @@ public class CDIS {
 		
 	}
 
-	private boolean createMediaRecords(Connection tmsConn, String UOIID, String UAN, String IDSPathID, String renditionNumber, String objectID, String rank) {
+	private boolean createMediaRecords(Connection tmsConn, String UOIID, String UAN, String IDSPathID, String renditionNumber, String objectID, String rank, String height, String width) {
 
 		//call dbo.CreateMediaRecords
 		//@UOIID, @UAN, @IDSPathID, @RenditionNumber, @ObjectID, @Rank
-		
+                
+                _log.log(Level.ALL, "Creating MediaRecord in TMS for Rendition Number {0}", renditionNumber );
+                
+                
+                CallableStatement stmt = null;
+                String renditionDate = null;
+                
 		try {
-			CallableStatement stmt = tmsConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?)}");
+                    if (properties.getProperty("siUnit").equals("ACM")) {
+                         stmt = tmsConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?)}");
+                    }
+                     else
+                    {     
+                        //CHSDM and FSG has extra fields assigned
+			renditionDate = new String();
+			Calendar cal = Calendar.getInstance();
+			SimpleDateFormat df1 = new SimpleDateFormat("MMM-dd-yyyy");
+			renditionDate = df1.format(cal.getTime());
+			renditionNumber = renditionNumber.replaceAll("_", ".");
 			
-			stmt.setString(1, UOIID);
-			stmt.setString(2, UAN);
-			stmt.setInt(3, Integer.parseInt(IDSPathID));
-			stmt.setString(4, renditionNumber);
-			stmt.setInt(5, Integer.parseInt(objectID));
-			stmt.setInt(6, Integer.parseInt(rank));
+                        _log.log(Level.ALL, "Creating MediaRecord in TMS for ObjectId: " + objectID + " rank: " + rank);
+                        
+			stmt = tmsConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?,?,?,?,?)}");
+                        
+                        stmt.setInt(7, Integer.parseInt(height));
+                        stmt.setInt(8, Integer.parseInt(width));
+                        stmt.setInt(9, (Integer.parseInt(rank) == 1?1:0));
+                        stmt.setString(10, renditionDate);
 			
+                    }
+                     
+                    stmt.setString(1, UOIID);
+                    stmt.setString(2, UAN);
+                    stmt.setInt(3, Integer.parseInt(IDSPathID));
+                    stmt.setString(4, renditionNumber);
+                    stmt.setInt(5, Integer.parseInt(objectID));
+                    stmt.setInt(6, Integer.parseInt(rank));
+                        
+                        
 			return (stmt.executeUpdate() != 0);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
+		} catch (NumberFormatException e) {
+                    _log.log(Level.ALL, "Invalid number formatting, TMS record not updated");
+                }
 		
 		return false;
 	}
@@ -965,20 +1488,38 @@ public class CDIS {
 		
 		//retrieve DAMS assets in the given category that have not been synced with TMS
 		
-		HashMap<String, String> retval = new HashMap<String, String>();
-		String sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b, SI_IDS_EXPORT c " +
+                String sql = null;
+                HashMap<String, String> retval = new HashMap<String, String>();
+                
+                if (properties.getProperty("siUnit").equals("CHSDM")) {
+                    sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b " +
 				"WHERE a.UOI_ID = b.UOI_ID " +
-				"AND a.CONTENT_STATE = 'NORMAL' " +
-				"AND a.CONTENT_TYPE != 'SHORTCUT' " +
+				"AND TRIM(UPPER(a.CONTENT_STATE)) = 'NORMAL' " +
+				"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
+				"AND b.SOURCE_SYSTEM_ID is null " +
+				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = " + this.properties.getProperty("categoryNodeId") + ")";
+                }    
+                else {
+                    sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b, SI_IDS_EXPORT c " +
+				"WHERE a.UOI_ID = b.UOI_ID " +
+				"AND TRIM(UPPER(a.CONTENT_STATE)) = 'NORMAL' " +
+				"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
 				"AND b.SOURCE_SYSTEM_ID is null " +
 				"AND a.UOI_ID = c.UOI_ID " +
 				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = '" + this.properties.getProperty("categoryNodeId") + "')";
+                }
 		
+                _log.log(Level.ALL, "SQL: Retrieving new assets {0}", sql);
+                
 		ResultSet rs = DataProvider.executeSelect(damsConn, sql);
-		
+		int count = 0;
 		try {
 			while(rs.next()) {
-				retval.put(rs.getString(1), rs.getString(2));			
+				retval.put(rs.getString(1), rs.getString(2));
+				count++;
+				//if(count >= 250) {
+				//	break;
+				//}
 			}
 		} catch (SQLException e) {
 			_log.log(Level.ALL, "retrieveNewAssets SQL: {0}", sql);
@@ -1020,7 +1561,7 @@ public class CDIS {
 		ArrayList<String> fileNames = new ArrayList<String>();
 		HashMap<String, String> pairs = new HashMap<String, String>();
 		
-		//find Renditions that aren't present in TDIS/CDIS table
+		//find Renditions that aren't present in CDIS table
 		String query = "select b.FileName " +
 				"from MediaRenditions a, MediaFiles b " +
 				"where a.PrimaryFileID = b.FileID AND " +
@@ -1073,7 +1614,7 @@ public class CDIS {
 				
 				ResultSet damsRS = DataProvider.executeSelect(tmsConn, grabSQL);
 				if(damsRS.next()) {
-					//insert mapping into TDIS/CDIS
+					//insert mapping into CDIS
 					String insertSQL = "insert into " +
                                                 properties.getProperty("CDISTblName") +
                                                 "(RenditionID, RenditionNumber, UOIID, OriginalFilePath, OriginalFileName)values(" +
@@ -1164,7 +1705,7 @@ public class CDIS {
 
 		ArrayList<String> renditionList = new ArrayList<String>();
 		
-		String query = "select a.UOIID from TDIS a, MediaRenditions b, MediaFiles c where " +
+		String query = "select a.UOIID from " + properties.getProperty("CDISTblName") + " a, MediaRenditions b, MediaFiles c where " +
 				"a.RenditionID = b.RenditionID AND " +
 				"b.PrimaryFileID = c.FileID AND c.PathID != ? AND " +
 				"a.UOIID != '-1'";
@@ -1223,7 +1764,7 @@ public class CDIS {
 
 	private boolean unsyncRendition(String renditionID, Connection tmsConn,
 			Connection damsConn) {
-		//retrieve UOIID from TDIS/CDIS
+		//retrieve UOIID from CDIS
 		String query = "select UOIID, OriginalFileName from " +
                             properties.getProperty("CDISTblName") +
                              " where RenditionID = ?";
@@ -1281,7 +1822,7 @@ public class CDIS {
 				int result = DataProvider.executeUpdate(damsConn, stmt);
 				
 				if(result == 1) {
-					//update was successful, clear TDIS/CDIS record
+					//update was successful, clear CDIS record
 					query = "delete from " +
                                                  properties.getProperty("CDISTblName") +
                                                  " where UOIID = ?";
@@ -1372,7 +1913,8 @@ public class CDIS {
 			
 			//update CDIS
 			/*
-			query = "update TDIS set OriginalFilePath = '" + filePath + "', OriginalFileName = '" + fileName + "' where UOIID = '" 
+			query = "update "  + properties.getProperty("CDISTblName") +
+                                    " set OriginalFilePath = '" + filePath + "', OriginalFileName = '" + fileName + "' where UOIID = '" 
 					+ UOIID + "'";
 			
 			stmt = tmsConn.prepareStatement(query);
@@ -1380,7 +1922,7 @@ public class CDIS {
 			int rowCount = stmt.executeUpdate();
 			
 			if(rowCount != 1) {
-				_log.log(Level.ALL, "There was an error updating the TDIS table.");
+				_log.log(Level.ALL, "There was an error updating the CDIS table.");
 				return false;
 			}
 			*/
@@ -1397,6 +1939,15 @@ public class CDIS {
 				return false;
 			}
 			
+                         if (properties.getProperty("siUnit").equals("CHSDM")) {
+                            //update MediaRenditions.IsColor, in case ingested from DAMS
+                            query = "update MediaRenditions set IsColor = 1 where RenditionID = " + renditionID;
+                         
+                            DataProvider.executeUpdate(tmsConn, query);
+			
+                            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                         }
+			
 			return true;
 		
 		}
@@ -1408,49 +1959,48 @@ public class CDIS {
 				
 		return false;
 	}
-
-	/*private String eligibleForSync(Connection damsConn, Connection tmsConn, String UOIID) {
-		
-		String query = "select UOI_ID, UAN from SI_IDS_EXPORT where UOI_ID = '" + UOIID + "' AND EXPORT_DATE > ?";
-		Timestamp lastRan = getLastRanTime(tmsConn, "sync");
-		java.sql.Date lastRanDate = new java.sql.Date(lastRan.getTime());
-		String UAN = null;
-		
-		try {
-			PreparedStatement stmt = damsConn.prepareStatement(query);
-			stmt.setDate(1, lastRanDate);
-			ResultSet rs = stmt.executeQuery();
-			if(rs.next()) {
-				UAN = rs.getString(1);
-			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			_log.log(Level.ALL, "Exception in eligibleForSync: " + e.getMessage());
-			_log.log(Level.ALL, "Query: " + query);
-			//e.printStackTrace();
-		}
-		
-		return UAN;
-	}*/
 	
 	private HashMap<String, String> getUANPairs(Connection damsConn, Connection tmsConn, ArrayList<String> UOIIDS) {
 		
-		String query = "select UOI_ID, UAN from SI_IDS_EXPORT where UOI_ID in (";
-		for(Iterator<String> iter = UOIIDS.iterator(); iter.hasNext();) {
+                String query = null;
+                
+                if (properties.getProperty("siUnit").equals("CHSDM")) {
+                    query = "select UOI_ID, OWNING_UNIT_UNIQUE_NAME from SI_ASSET_METADATA where UOI_ID in (";
+                }
+                else {
+                    query = "select UOI_ID, UAN from SI_IDS_EXPORT where UOI_ID in (";
+                }
+                
+                for(Iterator<String> iter = UOIIDS.iterator(); iter.hasNext();) {
 			query += "'" + iter.next() + "'";
 			if(iter.hasNext()) {
 				query += ",";
 			}
 		}
-		query += ") AND EXPORT_DATE > ?";
-		Timestamp lastRan = getLastRanTime(tmsConn, "sync");
-		java.sql.Date lastRanDate = new java.sql.Date(lastRan.getTime());
+                
+                Timestamp lastRan = getLastRanTime(tmsConn, "sync");
+                java.sql.Date lastRanDate = new java.sql.Date(lastRan.getTime());   
+                
+                PreparedStatement stmt;
+                        
+                if (properties.getProperty("siUnit").equals("CHSDM")) {
+                    query += ")";
+                }
+                else {
+                    query += ") AND EXPORT_DATE > ?";
+                     
+                }
+                
+                
 		HashMap<String, String> retval = new HashMap<String, String>();
 		
 		try {
-			PreparedStatement stmt = damsConn.prepareStatement(query);
-			stmt.setDate(1, lastRanDate);
-			ResultSet rs = stmt.executeQuery();
+			stmt = damsConn.prepareStatement(query);
+			if (!properties.getProperty("siUnit").equals("CHSDM")) {
+                            stmt.setDate(1, lastRanDate);
+                        }
+                        
+                        ResultSet rs = stmt.executeQuery();
 			if(rs.next()) {
 				retval.put(rs.getString(1), rs.getString(2));
 			}
@@ -1470,6 +2020,8 @@ public class CDIS {
 		String query = "select PathID from MediaFiles where FileID = (select PrimaryFileID from MediaRenditions where RenditionID = "
 				+ tempRendition.getRenditionID() + ")";
 		
+                _log.log(Level.ALL, "Query: {0}", query);
+                
 		PreparedStatement stmt;
 		String pathID = null;
 		try {
@@ -1736,7 +2288,8 @@ public class CDIS {
 		//create query - UOIS table
 		StringBuffer query = new StringBuffer();
 		query.append("update UOIS set ");
-		query.append("NAME = '" + String.valueOf(tempRendition.getFileName()) + "', ");
+		// Nov2014  Name in metadata was incorrectly being updated, next line commented out
+		// query.append("NAME = '" + String.valueOf(tempRendition.getRenditionNumber()) + "', ");
 		query.append("METADATA_STATE_DT = TO_DATE('" + dateString + "', 'MM/DD/YYYY') ");
 		query.append("where UOI_ID = '" + UOIID + "'");
 		
@@ -1780,27 +2333,20 @@ public class CDIS {
 	    	
 	    	//move asset file to workfolder
 	    	Scanner scanner;
-		    File assetFile = new File(convertMediaPath(tempRendition.getStructuralPath()) + "/" + tempRendition.getFileName());
+                File assetFile;
+                if (properties.getProperty("siUnit").equals("CHSDM")) {
+                    assetFile = new File(tempRendition.getStructuralPath() + "/" + tempRendition.getFileName());
+                }
+                else {
+                    assetFile = new File(convertMediaPath(tempRendition.getStructuralPath()) + "/" + tempRendition.getFileName());
+                }    
 		    //System.out.println("Copying from " + assetFile.getAbsolutePath());
 		    File destFile = new File(workFolder.getAbsolutePath() + "/" + fileName);
 		    _log.log(Level.ALL, "Beginning file copy to work folder...");
 		    _log.log(Level.ALL, "Source file size: {0}", assetFile.length());
 		    boolean isCopying = true;
 		    FileUtils.copyFile(assetFile, destFile);
-		    /*while(isCopying) {
-		    	try {
-	                scanner = new Scanner(destFile);
-	                isCopying = false;
-	            } catch (FileNotFoundException e) {
-	                System.out.println("File not found or is in copy State. ");
-	                try {
-						Thread.sleep(100);
-					} catch (InterruptedException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-	            }
-		    }*/
+		    
 		    _log.log(Level.ALL, "File copy to work folder complete.");
 		    _log.log(Level.ALL, "Beginning file copy to hot folder...");
 		    //if successful, copy both files to hotfolder
@@ -1874,15 +2420,15 @@ public class CDIS {
 						throw new SQLException("There was an error creating the checksum for file " + path + File.separator + fileName);
 					}
 					
-					//place the filename, path, UOIID, and checksum inside the TDIS table
-					sql = "update TDIS set OriginalFilePath = '" + path + "', OriginalFileName = '" + fileName + "', UOIID = '" + uoi + "', " +
+					//place the filename, path, UOIID, and checksum inside the CDIS table
+					sql = "update " + properties.getProperty("CDISTblName") + " set OriginalFilePath = '" + path + "', OriginalFileName = '" + fileName + "', UOIID = '" + uoi + "', " +
 							"Checksum =  '" + checkSum + "' " +
 							"where RenditionNumber = '" + renditionNumber + "'";
 					
 					int success = DataProvider.executeUpdate(tmsConn, sql);
 					
 					if(success == 0) {
-						throw new SQLException("There was an error updating the TMS TDIS record.");
+						throw new SQLException("There was an error updating the TMS CDIS record.");
 					}
 					
 					String idsPath = properties.getProperty("IDSPathId");
@@ -1934,26 +2480,11 @@ public class CDIS {
 		}
 	}
 
-	private static ArrayList<String> getRenditionsForUAN(Connection tmsConn) throws SQLException {
-		
-		ArrayList<String> retval = new ArrayList<String>();
-		String sql = "select RenditionNumber from TDIS where UOIID = '-1'";
-		
-		ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
-		
-		while(rs.next()) {
-			String tempRendition = rs.getString(1);
-			retval.add(tempRendition);
-		}
-		
-		return retval;
-	}
-
 	private boolean createIngestRecord(Connection tmsConn,
 			TMSMediaRendition tempRendition) {
 		
-		//check to make sure the rendition doesn't already exist in the TDIS
-		String sql = "select count(*) from TDIS where RenditionID = " + tempRendition.getRenditionID();
+		//check to make sure the rendition doesn't already exist in the CDIS
+		String sql = "select count(*) from " + properties.getProperty("CDISTblName") + " where RenditionID = " + tempRendition.getRenditionID();
 		
 		ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
 		try {
@@ -1982,11 +2513,13 @@ public class CDIS {
 			}
 		}
 		
-		//insert mapping into TDIS
-		sql = "insert into TDIS(RenditionID, RenditionNumber, UOIID, OriginalFilePath, OriginalFileName)values(" +
+		//insert mapping into CDIS
+		sql = "insert into " + properties.getProperty("CDISTblName") + "(RenditionID, RenditionNumber, UOIID, OriginalFilePath, OriginalFileName)values(" +
 				tempRendition.getRenditionID() + ", '" + tempRendition.getRenditionNumber() + "', -1, '" + filePath + "', '" +
 				fileName + "')";
 		
+                _log.log(Level.ALL, sql);
+                
 		boolean success = false;
 		
 		success = DataProvider.executeInsert(tmsConn, sql);
@@ -1997,11 +2530,13 @@ public class CDIS {
 	
 	private boolean createLogEntry(Connection tmsConn, String operationType) {
 		
-		//insert entry into TDIS_Log
-		String sql = "insert into TDIS_Log(OperationType, LastRan)values('" + operationType + "', CURRENT_TIMESTAMP)";
+		//insert entry into CDIS_Log
+		String sql = "insert into " + properties.getProperty("CDISTblName") + "_Log(OperationType, LastRan)values('" + operationType + "', CURRENT_TIMESTAMP)";
 				
 		boolean success = DataProvider.executeInsert(tmsConn, sql);
-				
+		
+                _log.log(Level.ALL, sql);
+                
 		return success;
 				
 	}
@@ -2111,8 +2646,8 @@ public class CDIS {
 	 * @param tmsConn
 	 * @return List of media rendition IDs for newly created renditions.
 	 * 
-	 * This method will pull the timestamp of the last time the program was run from the TDIS_LOG table.
-	 * It will then find the MediaRendition records which have an EnteredDate > the TDIS_LOG timestamp.
+	 * This method will pull the timestamp of the last time the program was run from the CDIS_LOG table.
+	 * It will then find the MediaRendition records which have an EnteredDate > the CDIS_LOG timestamp.
 	 * It will then return all the MediaRendition RenditionIDs in an ArrayList.
 	 */
 	private ArrayList<String> retrieveNewRenditions(Connection tmsConn) {
@@ -2224,7 +2759,7 @@ public class CDIS {
 		
 		Timestamp retval = null;
 		
-		String sql = "select top 1 LastRan from TDIS_Log where OperationType = '" + opType + "' order by LastRan desc";
+		String sql = "select top 1 LastRan from " + properties.getProperty("CDISTblName") + "_Log where OperationType = '" + opType + "' order by LastRan desc";
 		
 		try {
 			ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
@@ -2276,6 +2811,7 @@ public class CDIS {
 		lineHolder = reader.readLine();
 		while(lineHolder != null) {
 			if(!lineHolder.startsWith("#") && !lineHolder.trim().equals("") && lineHolder.split("=").length > 1) {
+				//properties.setProperty(lineHolder.split("=")[0].trim(), lineHolder.split("=")[1].trim());
 				properties.setProperty(lineHolder.split("=")[0].trim(), lineHolder.substring(lineHolder.indexOf("=")+1));
 			}
 			lineHolder = reader.readLine();
@@ -2285,7 +2821,7 @@ public class CDIS {
 		for(int i = 0; i < requiredProps.length; i++) {
 			String reqProp = requiredProps[i];
 			if(!properties.containsKey(reqProp)) {
-                            throw new Exception(reqProp);
+				throw new Exception(reqProp);
 			}
 		}
 		
@@ -2309,7 +2845,7 @@ public class CDIS {
 		String checksum = new String();
 		
 		if(rendition.isSynced(tmsConn, _log)) {
-			//grab the checksum from the TDIS table
+			//grab the checksum from the CDIS table
 			checksum = rendition.getChecksum(tmsConn, _log);	
 		}
 		else { 
@@ -2322,8 +2858,8 @@ public class CDIS {
 		return item;
 	}
 	
-	public boolean sendIngestEmail(ArrayList<String> successAssets, ArrayList<String> failedAssets, ArrayList<String> ingestedFromDAMS) {
-		
+	public boolean sendIngestEmail(ArrayList<String> successAssets, ArrayList<String> failedAssets, ArrayList<String> ingestedFromDAMS, ArrayList<String> ingestedFromDAMSFailed) {
+                
 		//get server, to, and from 
 		if(!properties.containsKey("emailServer") ||
 				!properties.containsKey("emailTo") ||
@@ -2346,26 +2882,37 @@ public class CDIS {
 		bodyBuffer.append("TMS/DAMS Integration Ingest Report for " + df1.format(testDate));
 		bodyBuffer.append("<br/><br/>");
 		
+                int assetCount = 0;
 		if(!successAssets.isEmpty()) {
 			bodyBuffer.append("The following assets were ingested successfully from TMS: ");
 			bodyBuffer.append("<br/><hr/><br/>");
 			
 			for(Iterator<String> iter = successAssets.iterator(); iter.hasNext();) {
-				bodyBuffer.append(iter.next());
+				assetCount++;
+                                bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        bodyBuffer.append("<br/>");
+                        bodyBuffer.append("Number of assets ingested from TMS: ");
+                        bodyBuffer.append(assetCount);
 		}
-		
+                
+                assetCount = 0;
+		bodyBuffer.append("<br/>");
 		if(!ingestedFromDAMS.isEmpty()) {
 			bodyBuffer.append("The following DAMS assets were created successfully in TMS: ");
 			bodyBuffer.append("<br/><hr/><br/>");
 			
 			for(Iterator<String> iter = ingestedFromDAMS.iterator(); iter.hasNext();) {
+                                assetCount++;
 				bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        bodyBuffer.append("<br/>");
+                        bodyBuffer.append("Number of DAMS assets created in TMS: ");
+                        bodyBuffer.append(assetCount);
 		}
-		
+		bodyBuffer.append("<br/>");
 		if(!failedAssets.isEmpty()) {
 			bodyBuffer.append("<br/><br/>");
 			bodyBuffer.append("The following assets experienced errors during the ingest process, and were skipped as a result:");
@@ -2376,17 +2923,43 @@ public class CDIS {
 				bodyBuffer.append("<br/>");
 			}
 		}
+		bodyBuffer.append("<br/>");
+		if(!ingestedFromDAMSFailed.isEmpty()) {
+			bodyBuffer.append("The following DAMS assets experienced errors during TMS Media record creation, and were skipped as a result: ");
+			bodyBuffer.append("<br/><hr/><br/>");
+			
+			for(Iterator<String> iter = ingestedFromDAMSFailed.iterator(); iter.hasNext();) {
+				bodyBuffer.append(iter.next());
+				bodyBuffer.append("<br/>");
+			}
+		}
 		
 		bodyBuffer.append("<br/><br/>");
 		bodyBuffer.append("Please contact the DAMS Team with any issues related to TMS/DAMS Integration.");
 		bodyBuffer.append("<br/>");
 		
 		try {
-			sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
+			if(successAssets.size() + ingestedFromDAMS.size() + failedAssets.size() + ingestedFromDAMSFailed.size() <= 20) {
+				sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
+			}
+			else {
+				//create attachment file
+				Calendar current = Calendar.getInstance();
+				File attachmentFile = new File("IngestLog-" + (current.get(Calendar.MONTH)+1) + "-" + current.get(Calendar.DAY_OF_MONTH) + "-" + current.get(Calendar.YEAR) + ".txt");
+				FileWriter fw = new FileWriter(attachmentFile);
+				fw.write(bodyBuffer.toString().replace("<br/>", "\n").replace("<hr/>", "---------------------------------"));
+				fw.close();
+				sendEmailWithAttachment(server, emailFrom, emailTo, subject, "Please see the attached CDIS Ingest report.", new String(), new String(), attachmentFile);
+			}
 			return true;
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			_log.log(Level.ALL, "MessagingException caught in sendIngestEmail: {0}", e.getMessage());
+			_log.log(Level.ALL, "Email addresses: {0}", emailTo);
+			return false;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			_log.log(Level.ALL, "IOException caught in sendIngestEmail: {0}", e.getMessage());
 			return false;
 		}
 		
@@ -2417,36 +2990,48 @@ public class CDIS {
 		bodyBuffer.append("TMS/DAMS Metadata Sync Report for " + df1.format(testDate));
 		bodyBuffer.append("<br/><br/>");
 		
+                int assetCount = 0;
 		if(!metadataAssets.isEmpty()) {
 			bodyBuffer.append("The following assets had metadata changes synced from TMS: ");
 			bodyBuffer.append("<br/><hr/><br/>");
 			
 			for(Iterator<String> iter = metadataAssets.iterator(); iter.hasNext();) {
-				bodyBuffer.append(iter.next());
+                                assetCount++;
+                                bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        
+                        bodyBuffer.append("Number of metadata changes synced from TMS: ");
+                        bodyBuffer.append(assetCount);
 		}
 		
+                assetCount = 0;
 		if(!IDSAssets.isEmpty()) {
 			bodyBuffer.append("The following assets are now referencing their IDS derivative files: ");
 			bodyBuffer.append("<br/><hr/><br/>");
 			
 			for(Iterator<String> iter = IDSAssets.iterator(); iter.hasNext();) {
-				bodyBuffer.append(iter.next());
+                                assetCount++;
+                                bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        bodyBuffer.append("Number of assets now referencing their IDS derivative: ");
+                        bodyBuffer.append(assetCount);
 		}
 		
-		
+		assetCount = 0;
 		if(!unsyncedRenditions.isEmpty()) {
 			bodyBuffer.append("<br/><br/>");
 			bodyBuffer.append("The following assets were unsynced and deleted from the DAMS:");
 			bodyBuffer.append("<br/><hr/><br/>");
 			
 			for(Iterator<String> iter = unsyncedRenditions.iterator(); iter.hasNext();) {
-				bodyBuffer.append(iter.next());
+				assetCount++;
+                                bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        bodyBuffer.append("Number of assets unsynced and deleted from the DAMSe: ");
+                        bodyBuffer.append(assetCount);
 		}
 		
 		if(!failedMetadata.isEmpty()) {
@@ -2477,16 +3062,32 @@ public class CDIS {
 		bodyBuffer.append("<br/>");
 		
 		try {
-			sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
+			if(metadataAssets.size() + IDSAssets.size() + unsyncedRenditions.size() + failedMetadata.size() + failedIDS.size() <= 20) {
+				sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
+			}
+			else {
+				//create attachment file
+				Calendar current = Calendar.getInstance();
+				File attachmentFile = new File("MetadataSyncLog-" + (current.get(Calendar.MONTH)+1) + "-" + current.get(Calendar.DAY_OF_MONTH) + "-" + current.get(Calendar.YEAR) + ".txt");
+				FileWriter fw = new FileWriter(attachmentFile);
+				fw.write(bodyBuffer.toString().replace("<br/>", "\n").replace("<hr/>", "---------------------------------"));
+				fw.close();
+				sendEmailWithAttachment(server, emailFrom, emailTo, subject, "Please see the attached CDIS Metadata Sync report.", new String(), new String(), attachmentFile);
+			}
 			return true;
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			_log.log(Level.ALL, "MessagingException caught in sendSyncEmail: {0}", e.getMessage());
+			_log.log(Level.ALL, "Email addresses: {0}", emailTo);
+			return false;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			_log.log(Level.ALL, "IOException caught in sendSyncEmail: {0}", e.getMessage());
 			return false;
 		}
 	}
 	
-	
+
 	public void sendEmail( String emailSrv, String fromAddr, String toEmailAddr, String subject, 
 			String body, String emailBodyTop, String emailBodyBottom)
 	throws MessagingException {
@@ -2511,6 +3112,44 @@ public class CDIS {
 		MimeBodyPart bodyPart = new MimeBodyPart();
 		bodyPart.setContent(emailContent,"text/html");
 		parts.addBodyPart(bodyPart);
+
+		// add the Multipart to the message
+		message.setContent(parts);
+		Transport.send(message);       
+	}
+	
+	private void sendEmailWithAttachment(String emailSrv, String fromAddr,
+			String toEmailAddr, String subject, String body, String emailBodyTop,
+			String emailBodyBottom, File attachmentFile) 
+	throws MessagingException {
+
+		Properties mailProps = new Properties();
+		mailProps.put("mail.smtp.host", emailSrv);      
+		Session session = Session.getDefaultInstance( mailProps, null );
+
+		MimeMessage message = new MimeMessage( session );
+		message.setFrom(new InternetAddress(fromAddr));
+		String[] toEmailAddrArray = toEmailAddr.split(",");
+		for (int i = 0; i < toEmailAddrArray.length; i++) {
+			message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
+		}
+		message.setSubject(subject);         
+
+		// create the Multipart and its parts to it
+		Multipart parts = new MimeMultipart();
+
+		// create and fill the Body
+		String emailContent = emailBodyTop +"<br>"+body+"<br>"+emailBodyBottom;
+		MimeBodyPart bodyPart = new MimeBodyPart();
+		bodyPart.setContent(emailContent,"text/html");
+		parts.addBodyPart(bodyPart);
+		
+		//add the attachment
+		MimeBodyPart attachmentPart = new MimeBodyPart();
+	    DataSource source = new FileDataSource(attachmentFile);
+	    attachmentPart.setDataHandler(new DataHandler(source));
+	    attachmentPart.setFileName(attachmentFile.getName());
+	    parts.addBodyPart(attachmentPart);
 
 		// add the Multipart to the message
 		message.setContent(parts);
