@@ -398,13 +398,12 @@ public class CDIS {
 										InputStream UANStream = assetURL.openStream();
 										byte[] bytes = IOUtils.toByteArray(UANStream);
 										
-										PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions " + 
-                                                                                        "set ThumbBLOB = ? where RenditionID = (" +
-                                                                                            "select RenditionID from " +
-                                                                                            ingester.properties.getProperty("CDISTblName") +
-                                                                                            "where UOIID = ?)");
+                                                                                PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
+										
                                                                                 stmt.setBytes(1, bytes);
 										stmt.setString(2, UOIID);
+                                                                                
+                                                                                //ingester._log.log(Level.ALL,"SQL: {0}", stmt);
 										
 										DataProvider.executeUpdate(tmsConn, stmt);
 										
@@ -1215,14 +1214,16 @@ public class CDIS {
 			_log.log(Level.ALL, "getAssetsIngestedFromDAMS SQL: {0}", sql);
 			e.printStackTrace();
 		}
-		
-		return retval;
+             
+                return retval;
 	}
 
 	private boolean updateDAMSAsset(Connection damsConn, String UOIID, String title) {
 		
 		String sql = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + title + "' where UOI_ID = '" + UOIID + "'";
-		System.out.println("updateDAMSAsset query: " + sql);
+		//System.out.println("updateDAMSAsset query: " + sql);
+                _log.log(Level.ALL,"updateDAMSAsset query: {0}", sql);
+                
 		return (DataProvider.executeUpdate(damsConn, sql) == 1);
 
 		
@@ -1255,14 +1256,35 @@ public class CDIS {
                                         String number = new String();
 					rank = "0";
 					
-                                        // This is not called by CHSDM code
 					if (properties.getProperty("siUnit").equals("ACM")) {
-						if(title.split("-").length > 2) {
-							rank = title.split("-")[2].split("\\.")[0].replace("r", "");
+                                                                                               
+                                                if (!title.startsWith("acmobj-")) {
+                                                    _log.log(Level.ALL, "Error, Invalid Name for ACM unit: {0}", title);
+                                                    retval = null;
+                                                } 
+                                                
+                                                if(title.split("-").length > 2) {                                                       
+							//rank = title.split("-")[2].split("\\.")[0].replace("r", "");
+                                                        
+                                                        //The rank is the name between the -r and the '.' filename extension at the end
+                                                        // We must strip the -r part of the rank...so we add 2 to the start of the index
+                                                        rank = title.substring(title.lastIndexOf("-r")+2, title.lastIndexOf("."));
+
+                                                        //The title is the name after the acmobj- up until the -r for the rank
+                                                        title = title.substring(7, title.lastIndexOf("-"));  //new
 						}
-						//grab first 12 characters
-						title = title.split("-")[1].substring(0, 12);
-						retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8, 12), rank);
+                                                else {
+                                                    //The title is the name after the acmobj- up until the '.' for the filename extension such as .tif
+                                                    title = title.substring(7, title.lastIndexOf(".")); //new
+                                                }
+                                                
+                                                // Add periods after the 4th and 8th characters, this is the format in TMS for ACM client
+						retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8), rank);
+                                                
+                                                _log.log(Level.ALL, "TITLE: {0}", title);
+                                                _log.log(Level.ALL, "RANK: {0}", rank);
+   
+                                               
 					}
 					else if (properties.getProperty("siUnit").equals("FSG")) {  
 						if(title.split("_").length == 2) {
@@ -1280,13 +1302,12 @@ public class CDIS {
                                                 retval.put(title, rank);
                                         }
                                         else if (properties.getProperty("siUnit").equals("CHSDM")){
-                                                _log.log(Level.ALL, "WARNING: CH unit does not use this processing, but uses BARCODE logic instead");
-                                                number = title.split("_")[0];
-                                                rank = (title.split("_")[1]).split("\\.")[0];
-                                                retval.put(number, rank);
+                                                _log.log(Level.ALL, "Error: CH unit does not use this processing, but uses BARCODE logic instead");
+                                                retval = null;
                                         }
                                         else {
                                              _log.log(Level.ALL, "Error in determing rank, unknown siUnit {0}", properties.getProperty("siUnit"));
+                                             retval = null;
                                         }
                                     					
 				}
@@ -1302,7 +1323,6 @@ public class CDIS {
 				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
 				try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
 			}
-			
 			
 			return retval;
 	}
@@ -1562,14 +1582,18 @@ public class CDIS {
                 _log.log(Level.ALL, "SQL: Retrieving new assets {0}", sql);
                 
 		ResultSet rs = DataProvider.executeSelect(damsConn, sql);
-		int count = 0;
+		int recordCount = 0;
+                int MaxRecords = Integer.parseInt(properties.getProperty("maxDAMSIngest"));
+                
 		try {
 			while(rs.next()) {
 				retval.put(rs.getString(1), rs.getString(2));
-				count++;
-				//if(count >= 250) {
-				//	break;
-				//}
+				recordCount++;
+                                
+				if((MaxRecords > 0) && (recordCount > MaxRecords)) {
+                                        _log.log(Level.ALL, "Warning: maximum number of Ingest Records specified in config file", sql);
+					break;
+				}
 			}
 		} catch (SQLException e) {
 			_log.log(Level.ALL, "retrieveNewAssets SQL: {0}", sql);
@@ -2420,100 +2444,6 @@ public class CDIS {
 	    
 	}
 
-	/*private boolean syncIfNeeded(Connection tmsConn, Connection damsConn,
-			String renditionNumber) {
-		
-		boolean retval = false;
-				
-		String sql = "select SI_ASSET_METADATA.title, SI_ASSET_METADATA.UOI_ID, SI_IDS_EXPORT.UAN from " +
-				"SI_ASSET_METADATA INNER JOIN SI_IDS_EXPORT on SI_ASSET_METADATA.UOI_ID = SI_IDS_EXPORT.UOI_ID " +
-				"where SI_IDS_EXPORT.UAN is not null and SI_ASSET_METADATA.title = ?";
-		
-		////system.out.println("SQL: " + sql);
-		
-		try {
-			PreparedStatement testStatement = damsConn.prepareStatement(sql);
-			
-			testStatement.setString(1, renditionNumber);
-			
-			ResultSet rs = DataProvider.executeSelect(damsConn, testStatement);
-			
-			if(rs.next()) {
-				//grab uoi and UAN
-				String uoi = rs.getString(2);
-				String uan = rs.getString(3);
-				
-				//grab original filename and file path
-				sql = "select mf.FileName, mp.Path from MediaFiles mf, MediaPaths mp " +
-						"where mf.PathID = mp.PathID and " +
-						"mf.RenditionID = (select RenditionID from MediaRenditions where RenditionNumber = '" + 
-						renditionNumber + "')";
-				
-				////system.out.println("Sql2: " + sql);
-				
-				ResultSet rs2 = DataProvider.executeSelect(tmsConn, sql);
-				
-				if(rs2.next()) {
-					String fileName = rs2.getString(1);
-					String path = rs2.getString(2);
-					String checkSum = new String();
-					
-					//get checksum for file
-					File tempFile = new File(path + File.separator + fileName);
-					//system.out.println("File: " + path + File.separator + fileName);
-					
-					try {
-						checkSum = ChecksumUtils.getMD5ChecksumAsString(tempFile);
-					}
-					catch(ChecksumException cse) {
-						cse.printStackTrace();
-						throw new SQLException("There was an error creating the checksum for file " + path + File.separator + fileName);
-					}
-					
-					//place the filename, path, UOIID, and checksum inside the CDIS table
-					sql = "update " + properties.getProperty("CDISTblName") + " set OriginalFilePath = '" + path + "', OriginalFileName = '" + fileName + "', UOIID = '" + uoi + "', " +
-							"Checksum =  '" + checkSum + "' " +
-							"where RenditionNumber = '" + renditionNumber + "'";
-					
-					int success = DataProvider.executeUpdate(tmsConn, sql);
-					
-					if(success == 0) {
-						throw new SQLException("There was an error updating the TMS CDIS record.");
-					}
-					
-					String idsPath = properties.getProperty("IDSPathId");
-					
-					//place the new path and filename into the MediaFiles record
-					sql = "update MediaFiles set PathID = " + idsPath + ", FileName = '" + uan + "' where " +
-							"RenditionID = (select RenditionID from MediaRenditions where RenditionNumber = '" + 
-							renditionNumber + "')"; 
-					
-					success = DataProvider.executeUpdate(tmsConn, sql);
-					
-					if(success == 0) {
-						throw new SQLException("There was an error updating the TMS MediaFiles record.");
-					}
-					
-					_log.log(Level.ALL, "Rendition " + renditionNumber + " successfully updated.");
-					
-					return true;
-				}
-				else {
-					throw new SQLException("No asset record found in TMS with title " + renditionNumber);
-				}
-			}
-			else {
-				throw new SQLException("No asset record found in DAMS with title " + renditionNumber);
-			}
-		}
-		catch(SQLException sqlex) {
-			_log.log(Level.ALL, "Error occurred while attempting to sync " + renditionNumber + ".");
-			_log.log(Level.ALL, "Reason: " + sqlex.getMessage());
-			//sqlex.printStackTrace();
-			return false;
-		}
-	}*/
-
 	private String convertMediaPath(String structuralPath) {
 		
 		//get the mediaDrive path specified in the config file
@@ -2925,11 +2855,11 @@ public class CDIS {
 		
 		Date testDate = new Date();
 		SimpleDateFormat df1 = new SimpleDateFormat("MM/dd/yyyy");
-		String subject = "TMS/DAMS Integration Ingest Report for " + df1.format(testDate);
+		String subject = properties.getProperty("siUnit") + ": TMS/DAMS Integration Ingest Report for " + df1.format(testDate);
 		
 		StringBuffer bodyBuffer = new StringBuffer();
 		
-		bodyBuffer.append("TMS/DAMS Integration Ingest Report for " + df1.format(testDate));
+		bodyBuffer.append(properties.getProperty("siUnit") + ": TMS/DAMS Integration Ingest Report for " + df1.format(testDate));
 		bodyBuffer.append("<br/><br/>");
 		
                 int assetCount = 0;
@@ -3049,11 +2979,11 @@ public class CDIS {
 		
 		Date testDate = new Date();
 		SimpleDateFormat df1 = new SimpleDateFormat("MM/dd/yyyy");
-		String subject = "TMS/DAMS Metadata Sync Report for " + df1.format(testDate);
+		String subject = properties.getProperty("siUnit") + ": TMS/DAMS Metadata Sync Report for " + df1.format(testDate);
 		
 		StringBuffer bodyBuffer = new StringBuffer();
 		
-		bodyBuffer.append("TMS/DAMS Metadata Sync Report for " + df1.format(testDate));
+		bodyBuffer.append(properties.getProperty("siUnit") + ": TMS/DAMS Metadata Sync Report for " + df1.format(testDate));
 		bodyBuffer.append("<br/><br/>");
 		
                 int assetCount = 0;
