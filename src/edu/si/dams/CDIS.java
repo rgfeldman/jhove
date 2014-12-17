@@ -5,6 +5,7 @@
 package edu.si.dams;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -15,7 +16,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,6 +28,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.text.spi.DateFormatProvider;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -39,6 +43,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
@@ -68,10 +75,7 @@ import edu.si.tms.TMSMediaRendition;
 import edu.si.tms.audit.AuditTrailReader;
 import edu.si.tms.factory.TMSMediaRenditionFactory;
 
-/**
- * @author davisch
- *
- */
+
 public class CDIS {
 	
 	public Logger _log = null;
@@ -91,23 +95,45 @@ public class CDIS {
 													"bagIt",
 													"mediaDrive"};
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
 		
 		Connection tmsConn, damsConn;
 		
 		CDIS ingester = new CDIS();
+                
+		//validate configuration file.
+		String configFileName = new String();
+                
+		if(args.length < 1) {
+			System.out.println("Missing parameter: <configFileName>");
+			return;
+		}
+		else {
+			configFileName = args[0];
+		}
 		
-                // Set up logger
+		try {
+			ingester.loadProperties(configFileName);
+		}
+		catch(FileNotFoundException fnfe) {
+			System.out.println("Config file path invalid.");
+			return;
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			System.out.println("Exception caught while parsing config file: " + ex.getMessage());
+			return;
+		}
+		
+                System.out.println("Configuration file verified.");
+                
+		 // Set up logger
                 ingester._log = Logger.getLogger(ingester.getClass().getName());
 		ingester._log.setLevel(Level.ALL);
 		Handler fh = null;
-		DateFormat df = new SimpleDateFormat("MM-dd-yyyy");
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		try {
-			//fh = new FileHandler("TDIS.log");
-			fh = new FileHandler("TDIS-" + ingester.properties.getProperty("operationType") + ".log." + df.format(new Date()));
+			fh = new FileHandler("log\\CDISLog-" + ingester.properties.getProperty("operationType") + df.format(new Date()) + ".txt");
 		} catch (SecurityException e) {
 			// TODO Auto-generated catch block
 			ingester._log.log(Level.SEVERE, "SecurityException in main(): {0}", e.getMessage());
@@ -122,40 +148,7 @@ public class CDIS {
 		
                 ingester._log.log(Level.ALL, "Logging Established");
                 fh.flush();
-                
-		//validate configuration file.
-		String configFileName = new String();
-		if(args.length < 1) {
-			System.out.println("Missing parameter: <configFileName>");
-                        ingester._log.log(Level.ALL, "Missing parameter: <configFileName>");
-			return;
-		}
-		else {
-			configFileName = args[0];
-		}
 		
-		try {
-			ingester.loadProperties(configFileName);
-		}
-		catch(FileNotFoundException fnfe) {
-			//ingester._log.log(Level.ALL, "Config file path invalid.");
-			System.out.println("Config file path invalid.");
-			return;
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-			//ingester._log.log(Level.ALL, "Config file missing parameter: " + ex.getMessage());
-			System.out.println("Exception caught while parsing config file: " + ex.getMessage());
-			return;
-		}
-		
-		
-                
-                
-		ingester._log.log(Level.ALL, "Configuration file verified.");
-		//ingester._log.log(Level.INFO, "Configuration file verified. Switching to operation log.");
-		//ingester._log.removeHandler(fh);
-		//fh.close();
 		
 		//establish and verify database connections.
 		try {
@@ -1179,16 +1172,6 @@ public class CDIS {
 		}
 		
 		return primaryFileChanges;
-	}
-
-	private Logger initializeLog() throws SecurityException, IOException {
-		DateFormat df = new SimpleDateFormat("MM-dd-yyyy");
-		FileHandler fh = new FileHandler("TDIS-" + properties.getProperty("operationType") + ".log." + df.format(new Date()));
-		fh.setFormatter(new SimpleFormatter());
-		_log.addHandler(fh);
-		
-		return _log;
-		
 	}
 
 	private boolean unsyncRendition(String renditionID, Connection tmsConn,
@@ -2451,25 +2434,4 @@ public class CDIS {
 	}
 	
 	
-}
-
-class HoleyBagData
-{
-  public int id;
-  public String rrpath;
-  public String filename;
-  public String checksum;
-  public String url;
-  public String xmlFilename;
-  public HoleyBagData(int id, String rrpath, String filename, String checksum,
-      String url, String xmlFilename)
-  {
-    super();
-    this.id = id;
-    this.rrpath = rrpath;
-    this.filename = filename;
-    this.checksum = checksum;
-    this.url = url;
-    this.xmlFilename = xmlFilename;
-  }
 }
