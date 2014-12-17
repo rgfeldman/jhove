@@ -23,7 +23,7 @@ public class TMSMediaRenditionFactory {
 			rendition = (TMSMediaRendition)dataClass.newInstance();
 			
 			rendition.setRepositoryCode(properties.getProperty("repositoryCode"));
-			success = rendition.populate(conn, renditionID, log);
+			success = rendition.populate(conn, renditionID, properties, log);
 			
 		}
 		catch(ClassNotFoundException cnfe) {
