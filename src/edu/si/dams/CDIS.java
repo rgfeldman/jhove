@@ -151,7 +151,9 @@ public class CDIS {
                 ingester._log.log(Level.ALL, "Logging Established");
                 fh.flush();
 		
-		
+                // delete old log files
+		ingester.deleteOldLogs();
+                
 		//establish and verify database connections.
 		try {
 			tmsConn = DataProvider.getConnection(ingester.properties.getProperty("tmsDriver"), 
@@ -398,9 +400,9 @@ public class CDIS {
 										InputStream UANStream = assetURL.openStream();
 										byte[] bytes = IOUtils.toByteArray(UANStream);
 										
-                                                                                PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
-										
-                                                                                stmt.setBytes(1, bytes);
+                                                                            	PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
+                                                                                
+                                                                                stmt.setBytes(1, bytes);                                                     
 										stmt.setString(2, UOIID);
                                                                                 
                                                                                 //ingester._log.log(Level.ALL,"SQL: {0}", stmt);
@@ -485,37 +487,7 @@ public class CDIS {
 				}
 			}
 			else if(ingester.properties.getProperty("operationType").equals("sync")) { //operationType=sync
-				
-				//clear out old log files - older than 30 days
-				//FileUtils.isFileOlder(;, date);
-				File folderDir = new File(".");
-				DateFormat df1 = new SimpleDateFormat("MM-dd-yyyy");
-				File[] logs = folderDir.listFiles();
-				
-				for(int i = 0; i < logs.length; i++) {
-					File tempFile = logs[i];
-					if(tempFile.getName().startsWith("CDIS")) {
-						//get 30 days before today
-						Calendar thirtyBack = Calendar.getInstance();
-						thirtyBack.add(Calendar.DAY_OF_MONTH, -30);
-						Calendar fileCal = Calendar.getInstance();
-						fileCal.setTimeInMillis(tempFile.lastModified());
-						if(thirtyBack.after(fileCal)) {
-							//delete log file
-							boolean deleted = tempFile.delete();
-							if(deleted) {
-								ingester._log.log(Level.ALL, "Log file {0} successfully deleted.", tempFile.getName());
-							}
-							else {
-								ingester._log.log(Level.ALL, "There was an error deleting log file {0}.", tempFile.getName());
-							}
-						}
-						
-					}
-						
-				}
-				
-				//find renditions not in CDIS, IsColor = 1, asset in DAMS with <rendition number>.tif name
+			//find renditions not in CDIS, IsColor = 1, asset in DAMS with <rendition number>.tif name
 				//
 				/* USED on units where ingestFromDams = True (CH and FSG).... REMOVED UNTIL AFTER RCPP
                                 
@@ -858,11 +830,12 @@ public class CDIS {
 						}
 						
 						if(ingester.properties.getProperty("operationType").equals("sync")) {
+                                                        
 							//grab UOIID for rendition
 							String UOIID = ingester.getUOIIDForRendition(tmsConn, tempRendition);
 							if(UOIID != null) {
-								//manually make metadata updates for changed renditions
-								boolean result = ingester.updateMetadataManually(damsConn, tempRendition, UOIID);
+								// make metadata updates for changed renditions
+								boolean result = ingester.updateMetadata(damsConn, tempRendition, UOIID);
 								
 								if(result) {
 									ingester._log.log(Level.ALL, "Successfully synced metadata changes for rendition {0}", tempRendition.getName());
@@ -908,7 +881,7 @@ public class CDIS {
 							// TODO Auto-generated catch block
 							ingester._log.log(Level.ALL, "An error occurred when creating the ready.txt file. Ingestion will occur the next time the ingest process is run nightly.");
 						}
-						emailResult = ingester.sendIngestEmail(successAssets, failedAssets, ingestedFromDAMS, ingestedFromDAMSFailed);
+						emailResult = ingester.generateIngestReport(successAssets, failedAssets, ingestedFromDAMS, ingestedFromDAMSFailed);
 					}
 				}
 				else if(ingester.properties.getProperty("operationType").equals("sync")) {
@@ -917,7 +890,7 @@ public class CDIS {
 							!IDSAssets.isEmpty() ||
 							!failedIDS.isEmpty() ||
 							!unsyncedRenditions.isEmpty()) {
-						emailResult = ingester.sendSyncEmail(metadataAssets, IDSAssets, failedMetadata, failedIDS, unsyncedRenditions);
+						emailResult = ingester.generateSyncReport(metadataAssets, IDSAssets, failedMetadata, failedIDS, unsyncedRenditions);
 					}
 				}
 		
@@ -2353,7 +2326,7 @@ public class CDIS {
 		return UOIID;
 	}
 
-	private boolean updateMetadataManually(Connection damsConn,
+	private boolean updateMetadata(Connection damsConn,
 			TMSMediaRendition tempRendition, String UOIID) {
 		
 		DateFormat df1 = new SimpleDateFormat("MM/dd/yyyy");
@@ -2639,7 +2612,7 @@ public class CDIS {
 		//create the query
 		String sql = "select RenditionID from MediaRenditions where EnteredDate >= ? AND IsColor = 1 AND PrimaryFileID not in (select FileID from MediaFiles where PathID = 9)";
 		
-		//System.out.println("sql: " + sql);
+		_log.log(Level.ALL, "SQL: Get TMS records {0}", sql);
 		
 		ResultSet rs;
 		try {
@@ -2649,8 +2622,18 @@ public class CDIS {
 			
 			rs = DataProvider.executeSelect(tmsConn, stmt);
 			
+                        int recordCount = 0;
+                        
+                        int MaxRecords = Integer.parseInt(properties.getProperty("maxTMSIngest"));
+                        
 			while(rs.next()) {
 				renditionIDs.add(rs.getString(1));
+        
+                                recordCount++;
+                                if((MaxRecords > 0) && (recordCount > MaxRecords)) {
+                                    _log.log(Level.ALL, "Warning: maximum number of TMS Ingest Records specified in config file");
+                                    break;
+                                }
 			}
 		}
 		catch(SQLException sqlex) {
@@ -2838,17 +2821,8 @@ public class CDIS {
 		return item;
 	}
 	
-	public boolean sendIngestEmail(ArrayList<String> successAssets, ArrayList<String> failedAssets, ArrayList<String> ingestedFromDAMS, ArrayList<String> ingestedFromDAMSFailed) {
-                
-		//get server, to, and from 
-		if(!properties.containsKey("emailServer") ||
-				!properties.containsKey("emailTo") ||
-				!properties.containsKey("emailFrom")) {
-			
-			_log.log(Level.ALL, "One or more email parameters are absent from the config file. Skipping email message...");
-			return false;
-		}
-		
+	public boolean generateIngestReport(ArrayList<String> successAssets, ArrayList<String> failedAssets, ArrayList<String> ingestedFromDAMS, ArrayList<String> ingestedFromDAMSFailed) {
+                	
 		String server = (String)properties.get("emailServer");
 		String emailTo = (String)properties.get("emailTo");
 		String emailFrom = (String)properties.get("emailFrom");
@@ -2856,6 +2830,7 @@ public class CDIS {
 		Date testDate = new Date();
 		SimpleDateFormat df1 = new SimpleDateFormat("MM/dd/yyyy");
 		String subject = properties.getProperty("siUnit") + ": TMS/DAMS Integration Ingest Report for " + df1.format(testDate);
+                int totalReportItems = 0;
 		
 		StringBuffer bodyBuffer = new StringBuffer();
 		
@@ -2870,8 +2845,9 @@ public class CDIS {
 			for(Iterator<String> iter = successAssets.iterator(); iter.hasNext();) {
 				assetCount++;
                                 bodyBuffer.append(iter.next());
-				bodyBuffer.append("<br/>");
+				bodyBuffer.append("<br/>");                                
 			}
+                        totalReportItems = assetCount;
                         bodyBuffer.append("<br/>");
                         bodyBuffer.append("Number of assets ingested from TMS: ");
                         bodyBuffer.append(assetCount);
@@ -2887,13 +2863,14 @@ public class CDIS {
 			for(Iterator<String> iter = ingestedFromDAMS.iterator(); iter.hasNext();) {
                                 assetCount++;
 				bodyBuffer.append(iter.next());
-				bodyBuffer.append("<br/>");
+				bodyBuffer.append("<br/>");                                
 			}
-                        bodyBuffer.append("<br/>");
-                        bodyBuffer.append("Number of DAMS assets created in TMS: ");
-                        bodyBuffer.append(assetCount);
-                        bodyBuffer.append("<br/><br/>");
-		}
+                        totalReportItems = totalReportItems + assetCount;
+                }
+                bodyBuffer.append("<br/>");
+                bodyBuffer.append("Number of DAMS assets created in TMS: ");
+                bodyBuffer.append(assetCount);
+                bodyBuffer.append("<br/><br/>");
                 
                 assetCount = 0;
 		bodyBuffer.append("<br/>");
@@ -2907,6 +2884,8 @@ public class CDIS {
                                 bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        totalReportItems = totalReportItems + assetCount;
+                        
                         bodyBuffer.append("<br/>");
                         bodyBuffer.append("Number of assets errored during ingest process: ");
                         bodyBuffer.append(assetCount);
@@ -2922,56 +2901,65 @@ public class CDIS {
 			for(Iterator<String> iter = ingestedFromDAMSFailed.iterator(); iter.hasNext();) {
 				assetCount++;
                                 bodyBuffer.append(iter.next());
-				bodyBuffer.append("<br/>");
+				bodyBuffer.append("<br/>");                                
 			}
-                        bodyBuffer.append("<br/>");
-                        bodyBuffer.append("Number of assets errored during TMS media Creation: ");
-                        bodyBuffer.append(assetCount);
-                        bodyBuffer.append("<br/><br/>");
-		}
+                        totalReportItems = totalReportItems + assetCount;
+                }
+                bodyBuffer.append("<br/>");
+                bodyBuffer.append("Number of assets errored during TMS media Creation: ");
+                bodyBuffer.append(assetCount);
+                bodyBuffer.append("<br/><br/>");
 		
 		bodyBuffer.append("<br/><br/>");
 		bodyBuffer.append("Please contact the DAMS Team with any issues related to TMS/DAMS Integration.");
 		bodyBuffer.append("<br/>");
 		
 		try {
-			if(successAssets.size() + ingestedFromDAMS.size() + failedAssets.size() + ingestedFromDAMSFailed.size() <= 20) {
-				sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
-			}
-			else {
-				//create attachment file
-				Calendar current = Calendar.getInstance();
-				File attachmentFile = new File("IngestLog-" + (current.get(Calendar.MONTH)+1) + "-" + current.get(Calendar.DAY_OF_MONTH) + "-" + current.get(Calendar.YEAR) + ".txt");
-				FileWriter fw = new FileWriter(attachmentFile);
-				fw.write(bodyBuffer.toString().replace("<br/>", "\n").replace("<hr/>", "---------------------------------"));
-				fw.close();
-				sendEmailWithAttachment(server, emailFrom, emailTo, subject, "Please see the attached CDIS Ingest report.", new String(), new String(), attachmentFile);
-			}
-			return true;
+
+                        //create report file for attachment
+                        DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmm");
+			File attachmentFile = new File("rpt\\IngestReport-" + df.format(new Date()) + ".rtf");
+                        FileWriter fw = new FileWriter(attachmentFile);
+			fw.write(bodyBuffer.toString().replace("<br/>", "\n").replace("<hr/>", "---------------------------------"));
+			fw.close();
+			
+                        //validate server, to, and from values 
+                        if(!properties.containsKey("emailServer") ||
+				!properties.containsKey("emailTo") ||
+				!properties.containsKey("emailFrom")) {
+			
+                            _log.log(Level.ALL, "One or more email parameters are absent from the config file. Report generated, but email not sent");
+                            return false;
+                        }
+                        
+			if(totalReportItems > 0 ) {
+                            if(totalReportItems <= 20) {
+    				sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
+                            }
+                            else {		
+                                sendEmailWithAttachment(server, emailFrom, emailTo, subject, "Please see the attached CDIS Ingest report.", new String(), new String(), attachmentFile);
+                            }
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
-			_log.log(Level.ALL, "MessagingException caught in sendIngestEmail: {0}", e.getMessage());
+			_log.log(Level.ALL, "MessagingException caught in generateIngestReport: {0}", e.getMessage());
 			_log.log(Level.ALL, "Email addresses: {0}", emailTo);
 			return false;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			_log.log(Level.ALL, "IOException caught in sendIngestEmail: {0}", e.getMessage());
+			_log.log(Level.ALL, "IOException caught in generateIngestReport: {0}", e.getMessage());
 			return false;
 		}
 		
 	}
 	
-	public boolean sendSyncEmail(ArrayList<String> metadataAssets, ArrayList<String> IDSAssets, ArrayList<String> failedMetadata, ArrayList<String> failedIDS, 
+	public boolean generateSyncReport(ArrayList<String> metadataAssets, ArrayList<String> IDSAssets, ArrayList<String> failedMetadata, ArrayList<String> failedIDS, 
 			ArrayList<String> unsyncedRenditions) {
-		
-		//get server, to, and from 
-		if(!properties.containsKey("emailServer") ||
-				!properties.containsKey("emailTo") ||
-				!properties.containsKey("emailFrom")) {
-			
-			_log.log(Level.ALL, "One or more email parameters are absent from the config file. Skipping email message...");
-			return false;
-		}
 		
 		String server = (String)properties.get("emailServer");
 		String emailTo = (String)properties.get("emailTo");
@@ -2986,7 +2974,9 @@ public class CDIS {
 		bodyBuffer.append(properties.getProperty("siUnit") + ": TMS/DAMS Metadata Sync Report for " + df1.format(testDate));
 		bodyBuffer.append("<br/><br/>");
 		
+                int totalReportItems = 0;
                 int assetCount = 0;
+                
 		if(!metadataAssets.isEmpty()) {
 			bodyBuffer.append("The following assets had metadata changes synced from TMS: ");
 			bodyBuffer.append("<br/><hr/><br/>");
@@ -2996,7 +2986,7 @@ public class CDIS {
                                 bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
-                        
+                        totalReportItems = assetCount;
                         bodyBuffer.append("Number of metadata changes synced from TMS: ");
                         bodyBuffer.append(assetCount);
 		}
@@ -3011,6 +3001,7 @@ public class CDIS {
                                 bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        totalReportItems = totalReportItems + assetCount;
                         bodyBuffer.append("Number of assets now referencing their IDS derivative: ");
                         bodyBuffer.append(assetCount);
 		}
@@ -3026,6 +3017,7 @@ public class CDIS {
                                 bodyBuffer.append(iter.next());
 				bodyBuffer.append("<br/>");
 			}
+                        totalReportItems = totalReportItems + assetCount;
                         bodyBuffer.append("Number of assets unsynced and deleted from the DAMS: ");
                         bodyBuffer.append(assetCount);
 		}
@@ -3058,27 +3050,43 @@ public class CDIS {
 		bodyBuffer.append("<br/>");
 		
 		try {
-			if(metadataAssets.size() + IDSAssets.size() + unsyncedRenditions.size() + failedMetadata.size() + failedIDS.size() <= 20) {
-				sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
-			}
-			else {
-				//create attachment file
-				Calendar current = Calendar.getInstance();
-				File attachmentFile = new File("MetadataSyncLog-" + (current.get(Calendar.MONTH)+1) + "-" + current.get(Calendar.DAY_OF_MONTH) + "-" + current.get(Calendar.YEAR) + ".txt");
-				FileWriter fw = new FileWriter(attachmentFile);
-				fw.write(bodyBuffer.toString().replace("<br/>", "\n").replace("<hr/>", "---------------------------------"));
-				fw.close();
-				sendEmailWithAttachment(server, emailFrom, emailTo, subject, "Please see the attached CDIS Metadata Sync report.", new String(), new String(), attachmentFile);
-			}
-			return true;
+                    
+                    //create report file for attachment
+                    DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmm");
+                    File attachmentFile = new File("rpt\\MetadataSyncReport-" + df.format(new Date()) + ".rtf");
+                    FileWriter fw = new FileWriter(attachmentFile);
+                    fw.write(bodyBuffer.toString().replace("<br/>", "\n").replace("<hr/>", "---------------------------------"));
+                    fw.close();
+                                
+                    //validate server, to, and from values 
+                    if(!properties.containsKey("emailServer") ||
+                        !properties.containsKey("emailTo") ||
+                        !properties.containsKey("emailFrom")) {
+			
+                        _log.log(Level.ALL, "One or more email parameters are absent from the config file. Report generated, but email not sent");
+                        return false;
+                    }
+                    
+                    if(totalReportItems > 0 ) {
+                            if(totalReportItems <= 20) {
+                                sendEmail(server, emailFrom, emailTo, subject, bodyBuffer.toString(), new String(), new String());
+                            }
+                            else {
+                                sendEmailWithAttachment(server, emailFrom, emailTo, subject, "Please see the attached CDIS Metadata Sync report.", new String(), new String(), attachmentFile);                    
+                            }
+                            return true;
+                    }
+                    else {
+                        return false;
+                    }
+                 
 		} catch (MessagingException e) {
-			// TODO Auto-generated catch block
-			_log.log(Level.ALL, "MessagingException caught in sendSyncEmail: {0}", e.getMessage());
+			_log.log(Level.ALL, "MessagingException caught in generateSyncReport: {0}", e.getMessage());
 			_log.log(Level.ALL, "Email addresses: {0}", emailTo);
 			return false;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			_log.log(Level.ALL, "IOException caught in sendSyncEmail: {0}", e.getMessage());
+			_log.log(Level.ALL, "IOException caught in generateSyncReport: {0}", e.getMessage());
 			return false;
 		}
 	}
@@ -3152,5 +3160,34 @@ public class CDIS {
 		Transport.send(message);       
 	}
 	
-	
+	private void deleteOldLogs () {	
+            //clear out old log files - older than 30 days
+            //FileUtils.isFileOlder(;, date);
+            File folderDir = new File("log\\");
+            File[] logs = folderDir.listFiles();
+				
+            for(int i = 0; i < logs.length; i++) {
+		File tempFile = logs[i];
+		if(tempFile.getName().startsWith("CDISLog-")) {
+                    //get 30 days before today
+                    Calendar thirtyBack = Calendar.getInstance();
+                    thirtyBack.add(Calendar.DAY_OF_MONTH, -30);
+                    Calendar fileCal = Calendar.getInstance();
+                    fileCal.setTimeInMillis(tempFile.lastModified());
+                    if(thirtyBack.after(fileCal)) {
+                        //delete log file
+			boolean deleted = tempFile.delete();
+                            if(deleted) {
+                                _log.log(Level.ALL, "Log file {0} successfully deleted.", tempFile.getName());
+                            }
+                            else {
+				_log.log(Level.ALL, "There was an error deleting log file {0}.", tempFile.getName());
+                            }
+                    }
+		
+                }
+						
+            }
+        }
+        
 }
