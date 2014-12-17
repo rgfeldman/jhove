@@ -90,7 +90,7 @@ public class TMSMediaRendition {
 			String mediaSQL = "select mf.FileName, mf.Duration, mf.PixelH, " +
 					"mf.PixelW, mp.Path, mm.PublicCaption, mm.Description, mm.Remarks, " +
 					"mm.Copyright, mm.Restrictions, mr.Quality, mr.Remarks, ms.MediaStatus," +
-					"mr.RenditionNumber, mm.PublicAccess, mr.constituents " +
+					"mr.RenditionNumber, mm.PublicAccess " +
 					"from MediaFiles mf, MediaRenditions mr, MediaMaster mm, MediaStatuses ms, MediaPaths mp " +
 					"where " +
 					"mf.FileID = mr.PrimaryFileID AND " +
@@ -275,7 +275,7 @@ public class TMSMediaRendition {
 		
 	}
 	
-	private void populateConstituentData(Connection tmsconn) throws SQLException {
+	private void populateConstituentData(Connection tmsconn, Properties properties, Logger log) throws SQLException {
 		
 		try {
 			
@@ -290,6 +290,8 @@ public class TMSMediaRendition {
 			
 			ResultSet rs;
 			
+                        log.log(Level.ALL, "SQL: Getting constituent data: {0}", conSQL);
+                        
 			rs = DataProvider.executeSelect(tmsconn, conSQL);
 			
 			String constituentName, roleID, roleName;
@@ -338,7 +340,7 @@ public class TMSMediaRendition {
 		
 		if(this.objectData != null) {
 			try {
-				this.populateConstituentData(conn);
+				this.populateConstituentData(conn, properties, log);
 			}
 			catch(SQLException sqlex) {
 				log.log(Level.ALL, "Exception occurred in TMSMediaRendition.populateConstituentData: {0}", sqlex.getMessage());
@@ -350,7 +352,7 @@ public class TMSMediaRendition {
 		return true;
 			
 	}
-	
+
 	public XMLBuilder getMetadataXMP() {
 		
 		XMLBuilder xml = null;
@@ -1056,7 +1058,6 @@ public class TMSMediaRendition {
 				retval = rs.getString(1);
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			log.log(Level.ALL, "There was an error retrieving the checksum for rendition {0}: {1}", new Object[]{this.renditionNumber, e.getMessage()});
 		}
 		
@@ -1113,7 +1114,7 @@ public class TMSMediaRendition {
 		
 		query.append("update SI_ASSET_METADATA set ");
 		query.append("SOURCE_SYSTEM_ID = '" + String.valueOf(this.getTitle()) + "' ");
-		//query.append("SECOND_TITLE = '" + String.valueOf(this.getRenditionNumber()) + "', ");
+
 		if(this.getTitle() != null) {
 			query.append(", ");
 			query.append("TITLE = '" + scrubString(String.valueOf(this.getTitle())) + "' ");
@@ -1122,10 +1123,7 @@ public class TMSMediaRendition {
 			query.append(", ");
 			query.append("KEYWORDS = '" + scrubString(String.valueOf(this.getCaption())) + "' ");
 		}
-		/*if(this.getDescription() != null) {
-			query.append(", ");
-			query.append("DESCRIPTION = '" + scrubString(String.valueOf(this.getDescription())) + "' ");
-		}*/
+
 		if(this.getColor() != null) {
 			query.append(", ");
 			query.append("COLOR = '" + scrubString(String.valueOf(this.getColor())) + "' ");
@@ -1142,10 +1140,11 @@ public class TMSMediaRendition {
 			query.append(", ");
 			query.append("MEDIA_DIMENSIONS = '" + scrubString(String.valueOf(this.getMediaDimensions())) + "' ");
 		}
-		if(this.getStructuralPath() != null) {
-			query.append(", ");
-			query.append("STRUCTURAL_PATH = '" + scrubString(String.valueOf(this.getStructuralPath())) + "' ");
-		}
+                //Dec 2014, Structural Path no longer needed in metadata sync per Isabel/Duy
+		//if(this.getStructuralPath() != null) {
+		//	query.append(", ");
+		//	query.append("STRUCTURAL_PATH = '" + scrubString(String.valueOf(this.getStructuralPath())) + "' ");
+		//}
 		if(this.getWorkNotes() != null) {
 			query.append(", ");
 			query.append("WORK_NOTES = '" + scrubString(String.valueOf(this.getWorkNotes())) + "' ");
@@ -1163,10 +1162,7 @@ public class TMSMediaRendition {
 			query.append(", ");
 			query.append("USE_RESTRICTIONS = '" + scrubString(String.valueOf(this.getUseRestrictions())) + "' ");
 		}
-		/*if(this.getTechnicalQuality() != null) {
-			query.append(", ");
-			query.append("TECHNICAL_QUALITY = '" + String.valueOf(this.getTechnicalQuality()) + "' ");
-		}*/
+
 		if(this.getDigitalItemNotes() != null) {
 			query.append(", ");
 			query.append("DIGITAL_ITEM_NOTES = '" + scrubString(String.valueOf(this.getDigitalItemNotes())) + "' ");
@@ -1182,28 +1178,13 @@ public class TMSMediaRendition {
 				}
 			}
 		}
-		/*if(this.getMediaFormat() != null) {
-			query.append(", ");
-			query.append("MEDIA_FORMAT = '" + String.valueOf(this.getMediaFormat()) + "' ");
-		}*/
+
 		if(this.getCaptureDevice() != null) {
 			query.append(", ");
 			query.append("CAPTURE_DEVICE = '" + scrubString(String.valueOf(this.getCaptureDevice())) + "' ");
 		}
-		/*if(this.getWorkType() != null) {
-			query.append(", ");
-			query.append("WORK_TYPE = '" + String.valueOf(this.getWorkType()) + "' ");
-		}*/
-		/*if(this.getRightsSummary() != null) {
-			query.append(", ");
-			query.append("RIGHTS_SUMMARY = '" + String.valueOf(this.getRightsSummary()) + "'");
-		}*/
 		
 		if(this.getObjectData() != null) {
-			/*if(this.getObjectData().getCaption() != null) {
-				query.append(", ");
-				query.append("CAPTION = '" + scrubString(String.valueOf(this.getObjectData().getCaption())) + "' ");
-			}*/
 			if(this.getObjectData().getSeriesTitle() != null) {
 				query.append(", ");
 				query.append("SERIES_TITLE = '" + scrubString(String.valueOf(this.getObjectData().getSeriesTitle())) + "' ");
@@ -1212,10 +1193,6 @@ public class TMSMediaRendition {
 				query.append(", ");
 				query.append("DESCRIPTION = '" + scrubString(String.valueOf(this.getObjectData().getDescription())) + "' ");
 			}
-			/*if(this.getObjectData().getClassification() != null) {
-				query.append(", ");
-				query.append("KEYWORDS = '" + scrubString(String.valueOf(this.getObjectData().getClassification())) + "' ");
-			}*/
 			if(this.getObjectData().getCredit() != null) {
 				query.append(", ");
 				query.append("CREDIT = '" + scrubString(String.valueOf(this.getObjectData().getCredit())) + "' ");
@@ -1240,18 +1217,10 @@ public class TMSMediaRendition {
 				query.append(", ");
 				query.append("NOTES = '" + scrubString(String.valueOf(this.getObjectData().getNotes())) + "' ");
 			}
-			/*if(this.getObjectData().getHoldingUnit() != null) {
-				query.append(", ");
-				query.append("HOLDING_UNIT = '" + scrubString(String.valueOf(this.getObjectData().getHoldingUnit())) + "' ");
-			}*/
 			if(this.getObjectData().getAcquisitionNotes() != null) {
 				query.append(", ");
 				query.append("ACQUISITION_NOTES = '" + scrubString(String.valueOf(this.getObjectData().getAcquisitionDate())) + "' ");
 			}
-			/*if(this.getObjectData().getMedium() != null) {
-				query.append(", ");
-				query.append("PHYSICAL_MEDIUM = '" + String.valueOf(this.getObjectData().getMedium()) + "' ");
-			}*/
 			if(this.getObjectData().getDimensions() != null) {
 				query.append(", ");
 				query.append("CONTAINER_DIMENSIONS = '" + scrubString(String.valueOf(this.getObjectData().getDimensions())) + "' ");
@@ -1260,10 +1229,6 @@ public class TMSMediaRendition {
 				query.append(", ");
 				query.append("PRIMARY_CREATOR = '" + scrubString(String.valueOf(this.getObjectData().getPrimaryCreator())) + "' ");
 			}
-			/*if(this.getObjectData().getPrimaryCreatorRole() != null) {
-				query.append(", ");
-				query.append("PRIMARY_CREATOR_ROLE = '" + String.valueOf(this.getObjectData().getPrimaryCreatorRole()) + "' ");
-			}*/
 			if(this.getObjectData().getPrimarySubject() != null) {
 				query.append(", ");
 				query.append("PRIMARY_SUBJECT = '" + scrubString(String.valueOf(this.getObjectData().getPrimarySubject())) + "' ");
