@@ -133,7 +133,7 @@ public class CDIS {
                 ingester._log = Logger.getLogger(ingester.getClass().getName());
 		ingester._log.setLevel(Level.ALL);
 		Handler fh = null;
-		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+		DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmm");
 		try {
 			fh = new FileHandler("log\\CDISLog-" + ingester.properties.getProperty("operationType") + df.format(new Date()) + ".txt");
 		} catch (SecurityException e) {
@@ -602,8 +602,9 @@ public class CDIS {
 				
 				if(!renditionsRequiringIDSPath.isEmpty()) {
 					//find UOIID and UAN mapping for matching assets
-					HashMap<String, String> UOIIDSandUANS = ingester.getUANPairs(damsConn, tmsConn, renditionsRequiringIDSPath);
-					//ingester._log.log(Level.ALL, "UOIID/UAN Pairs: " + UOIIDSandUANS.size());
+				
+                                        HashMap<String, String> UOIIDSandUANS = ingester.getUANPairs(damsConn, tmsConn, renditionsRequiringIDSPath);
+                                        ingester._log.log(Level.ALL, "UOIID/UAN Pairs: " + UOIIDSandUANS.size());
 					
 					for(Iterator<String> iter = UOIIDSandUANS.keySet().iterator(); iter.hasNext();) {
 						String UOIID = iter.next();
@@ -908,8 +909,13 @@ public class CDIS {
                         catch(SQLException sqlex) {
                             ingester._log.log(Level.ALL, "Exception in main(): {0}", sqlex.getMessage());
                             //sqlex.printStackTrace();
-                        }	
-
+                        }
+                        finally {
+                              try { if (damsConn != null) damsConn.close(); } catch (SQLException se) { ingester._log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                              try { if (tmsConn != null) tmsConn.close(); } catch (SQLException se) { ingester._log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                                 
+                        }
+                        
 	}
 
 	private HashMap<String, String> getRenditionInfo(Connection damsConn, Connection tmsConn,
@@ -936,6 +942,10 @@ public class CDIS {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		//have the filename
 		if(fileName != null) {
@@ -961,6 +971,10 @@ public class CDIS {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+                        finally {
+                             try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                              try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }
 		}
 		
 		
@@ -1031,12 +1045,14 @@ public class CDIS {
 			while(rs.next()) {
                             rs_count = rs.getInt(1);
 			}
-			rs.close();
 		} catch (SQLException e) {
 			_log.log(Level.ALL, "SQLException in replaceTMSRenditionNumber: {0}", e.getMessage());
 			return false;
 		}
-		
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
+                
                 if (properties.getProperty("siUnit").equals("CHSDM")) {
                     //Next line commented out Nov 2014, added jpg line also
                     //title = title.replaceAll("_", ".");
@@ -1045,13 +1061,15 @@ public class CDIS {
                 }
                 
 		if(rs_count == 1) {
-			String query = "update MediaRenditions set RenditionNumber = '" + title + "', IsColor = 1 where " +
-					"RenditionID = (select RenditionID from MediaFiles where FileName = '" + UAN + "')";
+                        String query;
+			//query = "update MediaRenditions set RenditionNumber = '" + title + "', IsColor = 1 where " +
+			//		"RenditionID = (select RenditionID from MediaFiles where FileName = '" + UAN + "')";
 			
-			_log.log(Level.ALL, "replaceTMSRenditionNumber query: " + query);
+			//_log.log(Level.ALL, "replaceTMSRenditionNumber query: " + query);
 			
-			DataProvider.executeUpdate(tmsConn, query);
-			
+			//DataProvider.executeUpdate(tmsConn, query);
+                        
+                    
 			//create CDIS record
 			//grab Rendition information
 			query = "select RenditionID, RenditionNumber from MediaRenditions where RenditionID = " +
@@ -1069,11 +1087,13 @@ public class CDIS {
 					renditionNumber = rs.getString(2);
 				}
 				
-				rs.close();
 			} catch (SQLException e) {
 				_log.log(Level.ALL, "SQLException caught in replaceTMSRenditionNumber: {0}", e.getMessage());
 				return false;
 			}
+                        finally {
+                             try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }
 			
 			query = "insert into " +
                                 properties.getProperty("CDISTblName") +
@@ -1087,10 +1107,10 @@ public class CDIS {
 			DataProvider.executeInsert(tmsConn, query);
 			
 			//update SOURCE_SYSTEM_ID in DAMS.SI_ASSET_METADATA
-			query = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + renditionNumber + "' where UOI_ID = '" + UOIID + "'";
+			//query = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + renditionNumber + "' where UOI_ID = '" + UOIID + "'";
+			_log.log(Level.ALL,query);
 			
-			
-			DataProvider.executeUpdate(damsConn, query);
+			//DataProvider.executeUpdate(damsConn, query);
 			
                         // This next code was only in CH unit line of code
                         if (properties.getProperty("siUnit").equals("CHSDM")) {
@@ -1176,18 +1196,21 @@ public class CDIS {
                                 " where OriginalFilePath = '')";
                 
                 _log.log(Level.ALL,"getAssetsIngestedfromDAMS query {0}", sql);
-                		
+                	
+                ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
+                
 		try {
-			ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
-			
+				
 			while(rs.next()) {
 				retval.add(rs.getString(1));
 			}
 		} catch (SQLException e) {
 			_log.log(Level.ALL, "getAssetsIngestedFromDAMS SQL: {0}", sql);
 			e.printStackTrace();
-		}
-             
+		} finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
+                             
                 return retval;
 	}
 
@@ -1290,12 +1313,14 @@ public class CDIS {
                                 retval = null;
                         } catch (Exception e) {
 				_log.log(Level.ALL, "There was an exception processing asset {0}. Skipping...", title);
+                                e.printStackTrace();
 				retval = null;
 			}
 			finally {
 				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
 				try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
-			}
+                                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }
 			
 			return retval;
 	}
@@ -1542,6 +1567,15 @@ public class CDIS {
 				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = " + this.properties.getProperty("categoryNodeId") + ")" +
 				"AND a.NAME like 'HCA%'";
                 }
+                else if (properties.getProperty("siUnit").equals("FSG")) {
+                    sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b  " +
+				"WHERE a.UOI_ID = b.UOI_ID " +
+				"AND TRIM(UPPER(a.CONTENT_STATE)) = 'NORMAL' " +
+				"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
+				"AND b.SOURCE_SYSTEM_ID is null " +
+				"AND UPPER(PUBLIC_USE) = 'YES' " +
+                                "AND b.OWNING_UNIT_UNIQUE_NAME like 'FS-%'";
+                }
                 else {
                     sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b, SI_IDS_EXPORT c " +
 				"WHERE a.UOI_ID = b.UOI_ID " +
@@ -1571,7 +1605,9 @@ public class CDIS {
 		} catch (SQLException e) {
 			_log.log(Level.ALL, "retrieveNewAssets SQL: {0}", sql);
 			e.printStackTrace();
-		}
+		} finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return retval;
 	}
@@ -1596,8 +1632,11 @@ public class CDIS {
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
+		} 
+		finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
+                
 		return retval;
 	}
 
@@ -1619,10 +1658,11 @@ public class CDIS {
                 _log.log(Level.ALL,query);
 		
 		PreparedStatement stmt;
-		
+		ResultSet rs = null;
+                
 		try {
 			stmt = tmsConn.prepareStatement(query);
-			ResultSet rs = DataProvider.executeSelect(tmsConn, stmt);
+			rs = DataProvider.executeSelect(tmsConn, stmt);
 			int count = 0;
 			while(rs.next() && count < 999) {
 				fileNames.add(rs.getString(1));
@@ -1645,7 +1685,8 @@ public class CDIS {
 			while(rs.next()) {
 				pairs.put(rs.getString(1), rs.getString(2));
 			}
-			
+			rs.close();
+                        
 			//create CDIS records
 			//grab RenditionID, FilePath, FileName
 			for(Iterator<String> damsIter = pairs.keySet().iterator(); damsIter.hasNext();) {
@@ -1675,15 +1716,15 @@ public class CDIS {
 				
 				//check the color checkbox in dams
 				
-			}
-			
-			
-			
-			
+			}	
+			       	
 		}
 		catch(SQLException sqlex) {
 			sqlex.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1697,7 +1738,7 @@ public class CDIS {
 		
                  _log.log(Level.ALL,query);
                 
-		PreparedStatement stmt;
+		PreparedStatement stmt = null;
 		try {
 			stmt = tmsConn.prepareStatement(query);
 			stmt.setString(1, path);
@@ -1715,8 +1756,10 @@ public class CDIS {
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
+		} 
+                finally {
+                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return false;
 	}
@@ -1743,6 +1786,9 @@ public class CDIS {
 			_log.log(Level.ALL, "There was an error in the getPurgeable function: {0}", e.getMessage());
 			return null;
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		
 		return retval;
@@ -1759,11 +1805,14 @@ public class CDIS {
                 
                 _log.log(Level.ALL,query);
 		
+                ResultSet rs = null;
+                PreparedStatement stmt = null;
+                
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(query);
+			stmt = tmsConn.prepareStatement(query);
 			stmt.setInt(1, Integer.parseInt(properties.get("IDSPathId").toString()));
 			
-			ResultSet rs = DataProvider.executeSelect(tmsConn, stmt);
+			rs = DataProvider.executeSelect(tmsConn, stmt);
 			while(rs.next()) {
 				renditionList.add(rs.getString(1));
 			}
@@ -1771,6 +1820,10 @@ public class CDIS {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return renditionList;
 	}
@@ -1787,15 +1840,17 @@ public class CDIS {
 		
 		_log.log(Level.ALL,query);
 		
-		
+		ResultSet rs = null;
+                PreparedStatement stmt = null;
+                
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(query);
+			stmt = tmsConn.prepareStatement(query);
 			Timestamp lastRan = getLastRanTime(tmsConn, "sync");
 			java.sql.Date lastRanDate = new java.sql.Date(lastRan.getTime());
 			
 			stmt.setDate(1, lastRanDate);
 			
-			ResultSet rs = DataProvider.executeSelect(tmsConn, stmt);
+			rs = DataProvider.executeSelect(tmsConn, stmt);
 			while(rs.next()) {
 				primaryFileChanges.add(rs.getString(1));
 				//System.out.println("retrievePrimaryFileChanges Adding: " + rs.getString(1));
@@ -1805,6 +1860,10 @@ public class CDIS {
 			_log.log(Level.ALL, "SQLException caught in retrievePrimaryFileChanges: {0}", e.getMessage());
 			_log.log(Level.ALL, "Query: {0}", query);
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return primaryFileChanges;
 	}
@@ -1817,11 +1876,14 @@ public class CDIS {
                              " where RenditionID = ?";
                 
                 _log.log(Level.ALL, query);
+                ResultSet rs = null;
+                ResultSet rs2 = null;
+                PreparedStatement stmt = null;
                 
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(query);
+			stmt = tmsConn.prepareStatement(query);
 			stmt.setInt(1, Integer.parseInt(renditionID));
-			ResultSet rs = DataProvider.executeSelect(tmsConn, stmt);
+			rs = DataProvider.executeSelect(tmsConn, stmt);
 			
 			if(rs.next()) {
 				String UOIID = rs.getString(1);
@@ -1849,7 +1911,7 @@ public class CDIS {
 					stmt = damsConn.prepareStatement(query);
 					stmt.setString(1, fileName);
 					_log.log(Level.ALL, "Filename: {0}", fileName);
-					ResultSet rs2 = DataProvider.executeSelect(damsConn, stmt);
+					rs2 = DataProvider.executeSelect(damsConn, stmt);
 					rs2.next();
 					UOIID = rs2.getString(1);
 					
@@ -1899,6 +1961,12 @@ public class CDIS {
 			_log.log(Level.ALL, "Query: {0}", query);
 			//e.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (rs2 != null) rs2.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
+               
 		return false;
 	}
 
@@ -1910,10 +1978,13 @@ public class CDIS {
                 
                 _log.log(Level.ALL,query);
                 
+                ResultSet rs = null;
+                PreparedStatement stmt= null;
+                
                 try {
-			PreparedStatement stmt = tmsConn.prepareStatement(query);
+			stmt = tmsConn.prepareStatement(query);
 			
-			ResultSet rs = DataProvider.executeSelect(tmsConn, query);
+			rs = DataProvider.executeSelect(tmsConn, query);
 			while(rs.next()) {
 				renditionIDs.add(rs.getString(1));
 				_log.log(Level.ALL, "Unsyncing rendition {0} in retrieveUnsyncedRenditions. Query: {1}", new Object[]{rs.getString(1), query});
@@ -1925,6 +1996,10 @@ public class CDIS {
 			_log.log(Level.ALL, "Query: {0}", query);
 			//e.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		return renditionIDs;
 	}
 
@@ -1948,9 +2023,12 @@ public class CDIS {
                                 
                                 _log.log(Level.ALL, query);
                                 
+                ResultSet rs = null;   
+                PreparedStatement stmt = null;
+                
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(query);
-			ResultSet rs = stmt.executeQuery();
+			stmt = tmsConn.prepareStatement(query);
+			rs = stmt.executeQuery();
 			
 			if(rs.next()) {
 				fileName = rs.getString(1);
@@ -1993,6 +2071,7 @@ public class CDIS {
                             DataProvider.executeUpdate(tmsConn, query);
 			
                             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                            try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
                          }
 			
 			return true;
@@ -2003,6 +2082,10 @@ public class CDIS {
 			_log.log(Level.ALL, "Query: {0}", query);
 			//sqlex.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 				
 		return false;
 	}
@@ -2011,7 +2094,9 @@ public class CDIS {
 		
                 String query = null;
                 
-                if (properties.getProperty("siUnit").equals("CHSDM")) {
+                HashMap<String, String> pairings = new HashMap<String, String>();
+                
+                if ((properties.getProperty("siUnit").equals("CHSDM")) || (properties.getProperty("siUnit").equals("FSG"))) {
                     query = "select UOI_ID, OWNING_UNIT_UNIQUE_NAME from SI_ASSET_METADATA where UOI_ID in (";
                 }
                 else {
@@ -2028,9 +2113,9 @@ public class CDIS {
                 Timestamp lastRan = getLastRanTime(tmsConn, "sync");
                 java.sql.Date lastRanDate = new java.sql.Date(lastRan.getTime());   
                 
-                PreparedStatement stmt;
+                PreparedStatement stmt = null;
                         
-                if (properties.getProperty("siUnit").equals("CHSDM")) {
+                if ((properties.getProperty("siUnit").equals("CHSDM")) || (properties.getProperty("siUnit").equals("FSG"))) {
                     query += ")";
                 }
                 else {
@@ -2038,18 +2123,21 @@ public class CDIS {
                      
                 }
                 
+                _log.log(Level.ALL, "Query: {0}", query);
                 
 		HashMap<String, String> retval = new HashMap<String, String>();
 		
+                ResultSet rs = null;
 		try {
 			stmt = damsConn.prepareStatement(query);
-			if (!properties.getProperty("siUnit").equals("CHSDM")) {
+			if ((!properties.getProperty("siUnit").equals("CHSDM")) && (!properties.getProperty("siUnit").equals("FSG"))) {
                             stmt.setDate(1, lastRanDate);
                         }
                         
-                        ResultSet rs = stmt.executeQuery();
-			if(rs.next()) {
-				retval.put(rs.getString(1), rs.getString(2));
+                        rs = stmt.executeQuery();
+			while(rs.next()) {
+				//retval.put(rs.getString(1), rs.getString(2));
+                                pairings.put(rs.getString(1), rs.getString(2));
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -2057,8 +2145,12 @@ public class CDIS {
 			_log.log(Level.ALL, "Query: {0}", query);
 			//e.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
-		return retval;
+		return pairings;
 	}
 
 	private boolean requiresIDSSync(Connection tmsConn,
@@ -2069,11 +2161,13 @@ public class CDIS {
 		
                 _log.log(Level.ALL, "Query: {0}", query);
                 
-		PreparedStatement stmt;
+                ResultSet rs = null;
+                
+		PreparedStatement stmt = null;
 		String pathID = null;
 		try {
 			stmt = tmsConn.prepareStatement(query);
-			ResultSet rs = stmt.executeQuery();
+			rs = stmt.executeQuery();
 			
 			if(rs.next()) {
 				pathID = rs.getString(1);
@@ -2085,6 +2179,10 @@ public class CDIS {
 			_log.log(Level.ALL, "Query: {0}", query);
 			//e.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		if(pathID != null && pathID.equals(properties.get("IDSPathId"))) {
 			return false;
@@ -2115,10 +2213,11 @@ public class CDIS {
 		sql += ")";
                 
                 _log.log(Level.ALL, sql);
+                PreparedStatement stmt = null;
                 
-		ResultSet rs;
+		ResultSet rs = null;
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(sql);
+			stmt = tmsConn.prepareStatement(sql);
 			
 			rs = DataProvider.executeSelect(tmsConn, stmt);
 			
@@ -2132,6 +2231,10 @@ public class CDIS {
 			//sqlex.printStackTrace();
 			return null;
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return renditionIDs;
 	}
@@ -2147,9 +2250,10 @@ public class CDIS {
 		
                 _log.log(Level.ALL,sql);
                         
-		ResultSet rs;
+                PreparedStatement stmt = null;
+		ResultSet rs = null;
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(sql);
+			stmt = tmsConn.prepareStatement(sql);
 			
 			rs = DataProvider.executeSelect(tmsConn, stmt);
 			
@@ -2163,6 +2267,10 @@ public class CDIS {
 			//sqlex.printStackTrace();
 			return null;
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return renditionIDs;
 	}
@@ -2215,6 +2323,10 @@ public class CDIS {
 				_log.log(Level.ALL, "Message: {0}", e.getMessage());
 				
 			}
+                        finally {
+                            try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                             try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }
 		}
 		
 		
@@ -2247,13 +2359,15 @@ public class CDIS {
 					"where NAME like '" + FilenameUtils.removeExtension(fileName) + "%' " +
 					"and b.SOURCE_SYSTEM_ID = 'TMS IMPORT'" +
 					"and a.UOI_ID = b.UOI_ID " +
-					"and a.CONTENT_STATE != 'DELETED'";
+					"and a.CONTENT_STATE != 'DELETED' ";
 			
 			try {
 				stmt = damsConn.createStatement();
 				rs = stmt.executeQuery(query);
-				
+				                                
 				while(rs.next()) {
+                                        _log.log(Level.ALL,"Pairings: {0}", rs.getString(2));
+                                        
 					pairings.put(rs.getString(1), rs.getString(2));
 				}
 			} catch (SQLException e) {
@@ -2261,6 +2375,10 @@ public class CDIS {
 				_log.log(Level.ALL, "SQLException thrown while retrieving UOI_ID for file {0}. Skipping...", fileName);
 				_log.log(Level.ALL, "Message: {0}", e.getMessage());
 			}
+                        finally {
+                            try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                            try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }
 			
 		}
 		
@@ -2276,10 +2394,12 @@ public class CDIS {
                 
 		_log.log(Level.ALL, query);
                 
+                ResultSet rs = null;
+                
 		Statement stmt;
 		try {
 			stmt = tmsConn.createStatement();
-			ResultSet rs = stmt.executeQuery(query);
+			rs = stmt.executeQuery(query);
 
 			while(rs.next()) {
 				fileNames.add(rs.getString(1));
@@ -2291,6 +2411,9 @@ public class CDIS {
 			_log.log(Level.ALL, "Exception in retrieveRenditionsPendingSync: {0}", e.getMessage());
 			_log.log(Level.ALL, "Query: {0}", query);
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return fileNames;
 	}
@@ -2305,9 +2428,12 @@ public class CDIS {
 		
                 _log.log(Level.ALL, query);
                 
+                ResultSet rs = null;
+                PreparedStatement stmt = null;
+                
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(query);
-			ResultSet rs = stmt.executeQuery();
+			stmt = tmsConn.prepareStatement(query);
+			rs = stmt.executeQuery();
 			
 			if(rs.next()) {
 				UOIID = rs.getString(1);
@@ -2321,6 +2447,10 @@ public class CDIS {
 			_log.log(Level.ALL, "Query: {0}", query);
 			//e.printStackTrace();
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		
 		return UOIID;
@@ -2387,7 +2517,7 @@ public class CDIS {
                 else {
                     assetFile = new File(convertMediaPath(tempRendition.getStructuralPath()) + "/" + tempRendition.getFileName());
                 }    
-		    //System.out.println("Copying from " + assetFile.getAbsolutePath());
+		    System.out.println("Copying from " + assetFile.getAbsolutePath());
 		    File destFile = new File(workFolder.getAbsolutePath() + "/" + fileName);
 		    _log.log(Level.ALL, "Beginning file copy to work folder...");
 		    _log.log(Level.ALL, "Source file size: {0}", assetFile.length());
@@ -2413,7 +2543,7 @@ public class CDIS {
 			// TODO Auto-generated catch block
 	    	_log.log(Level.ALL, "TransformerException in placeInHotFolder: {0}", e.getMessage());
 			return false;
-		}
+            }
 	    
 	}
 
@@ -2451,6 +2581,10 @@ public class CDIS {
 			_log.log(Level.ALL, "There was an error retrieving the sync data for rendition {0}. Skipping...", tempRendition.getRenditionNumber());
 			return false;
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
+                
 		
 		String filePath = tempRendition.getStructuralPath();
 		String fileName = new String();
@@ -2614,9 +2748,11 @@ public class CDIS {
 		
 		_log.log(Level.ALL, "SQL: Get TMS records {0}", sql);
 		
-		ResultSet rs;
+                PreparedStatement stmt = null;
+                
+		ResultSet rs = null;
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(sql);
+			stmt = tmsConn.prepareStatement(sql);
 			
 			stmt.setTimestamp(1, lastRan);
 			
@@ -2628,7 +2764,6 @@ public class CDIS {
                         
 			while(rs.next()) {
 				renditionIDs.add(rs.getString(1));
-        
                                 recordCount++;
                                 if((MaxRecords > 0) && (recordCount > MaxRecords)) {
                                     _log.log(Level.ALL, "Warning: maximum number of TMS Ingest Records specified in config file");
@@ -2642,6 +2777,10 @@ public class CDIS {
 			//sqlex.printStackTrace();
 			return null;
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return renditionIDs;
 	}
@@ -2653,11 +2792,11 @@ public class CDIS {
 		HashMap<String, ArrayList<String>> auditValues = new HashMap<String, ArrayList<String>>();
 		Timestamp lastRan = getLastRanTime(tmsConn, "sync");
 		//get the AuditTrail table values
-		ResultSet rs;
+		ResultSet rs = null;
 		String sql = "select TableName, ObjectID from AuditTrail where EnteredDate >= ?";
-		
+		PreparedStatement stmt = null;
 		try {
-			PreparedStatement stmt = tmsConn.prepareStatement(sql);
+			stmt = tmsConn.prepareStatement(sql);
 			stmt.setTimestamp(1, lastRan);
 			rs = DataProvider.executeSelect(tmsConn, stmt);
 			
@@ -2714,6 +2853,10 @@ public class CDIS {
 			//sqlex.printStackTrace();
 			return null;
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return renditionIDs;
 	}
@@ -2724,8 +2867,9 @@ public class CDIS {
 		
 		String sql = "select top 1 LastRan from " + properties.getProperty("CDISTblName") + "_Log where OperationType = '" + opType + "' order by LastRan desc";
 		
+                ResultSet rs = null;
 		try {
-			ResultSet rs = DataProvider.executeSelect(tmsConn, sql);
+			rs = DataProvider.executeSelect(tmsConn, sql);
 		
 			if(rs.next()) {
 				retval = rs.getTimestamp(1);
@@ -2741,6 +2885,9 @@ public class CDIS {
 			//sqlex.printStackTrace();
 			return new Timestamp(System.currentTimeMillis() - 24 * 60 * 60 * 1000L);
 		}
+                finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
 		
 		return retval;
 	}
@@ -2989,6 +3136,7 @@ public class CDIS {
                         totalReportItems = assetCount;
                         bodyBuffer.append("Number of metadata changes synced from TMS: ");
                         bodyBuffer.append(assetCount);
+                        bodyBuffer.append("<br/>");
 		}
 		
                 assetCount = 0;
@@ -3004,6 +3152,7 @@ public class CDIS {
                         totalReportItems = totalReportItems + assetCount;
                         bodyBuffer.append("Number of assets now referencing their IDS derivative: ");
                         bodyBuffer.append(assetCount);
+                        bodyBuffer.append("<br/>");
 		}
 		
 		assetCount = 0;
