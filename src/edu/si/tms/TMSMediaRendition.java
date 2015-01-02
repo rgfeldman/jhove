@@ -50,7 +50,6 @@ public class TMSMediaRendition {
 	private String fileName;
 	private String publicAccess;
 	private String objectPublicAccess;
-	
 	private TMSObject objectData = null;
 	
 	
@@ -160,6 +159,7 @@ public class TMSMediaRendition {
 			
 		}
 		catch(SQLException sqlex) {
+                        sqlex.printStackTrace();
 			throw new SQLException("SQLException thrown in populateMediaData", sqlex);
 		}
 		
@@ -1284,7 +1284,14 @@ public class TMSMediaRendition {
 		
 		//System.out.println("Scrubbed string: " + newString);
 		
-		return newString;
+                if (newString != null) {
+                    if (newString.length() > 1999) {
+                        return newString.substring(0,1999);
+                    }
+                }
+                
+                return newString;
+                       
 	}
 
 }
