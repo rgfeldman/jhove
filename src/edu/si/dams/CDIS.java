@@ -575,13 +575,13 @@ public class CDIS {
 				
 				
 				//find un-synced renditions
-				unsyncedRenditions = ingester.retrieveUnsyncedRenditions(tmsConn);
+				//unsyncedRenditions = ingester.retrieveUnsyncedRenditions(tmsConn);
 				
-				if(!unsyncedRenditions.isEmpty()) {
-					for(Iterator<String> iter = unsyncedRenditions.iterator(); iter.hasNext();) {
-						boolean result = ingester.unsyncRendition(iter.next(), tmsConn, damsConn);
-					}
-				}
+				//if(!unsyncedRenditions.isEmpty()) {
+				//	for(Iterator<String> iter = unsyncedRenditions.iterator(); iter.hasNext();) {
+				//		boolean result = ingester.unsyncRendition(iter.next(), tmsConn, damsConn);
+				//	}
+				//}
 				
 				//find renditions with primary file change
 				/*ArrayList<String> newPrimaryRenditions = ingester.retrievePrimaryFileChanges(tmsConn);
@@ -683,70 +683,11 @@ public class CDIS {
 				}
 			}
 			
-			if(ingester.properties.getProperty("operationType").equals("purge")) { //operationType=purge
-				//determine which assets are eligible for purging
-				//criteria is: synced with DAMS, path set to IDS
-				
-				HashMap<String, String> pathsAndFiles = ingester.getPurgeable(tmsConn, ingester.properties.get("IDSPathId").toString());  
-				
-				if(pathsAndFiles != null) {
-					//cycle through the paths and files
-					for(Iterator<String> iter = pathsAndFiles.keySet().iterator(); iter.hasNext();) {
-						//create the full path
-						String key = iter.next();
-						String fullPath = key + "\\" + pathsAndFiles.get(key);
-						ingester._log.log(Level.ALL, "File {0} to be deleted.", fullPath);
-						File purgeFile = new File(fullPath);
-						//boolean result = purgeFile.delete();
-						boolean result = true;
-						if(result) {
-							ingester._log.log(Level.ALL, "File: {0} successfully deleted.", fullPath);
-							//set CDIS.Deleted = 'Yes'
-							boolean deleted = ingester.markAsDeleted(tmsConn, key, pathsAndFiles.get(key));
-							
-						}
-						else {
-							ingester._log.log(Level.ALL, "There was an error deleting file: {0}.", fullPath);
-						}
-						
-					}
-				}
-				else {
-					ingester._log.log(Level.ALL, "There was an error during the purge process. Skipping...");
-				}
-				
-				
-				
-			}
 			
 			//populate data objects from TMS data.
 			ArrayList<TMSMediaRendition> renditionObjects = ingester.loadTMSData(tmsConn, newRenditions, ingester.properties.getProperty("operationType"));
 			ingester._log.log(Level.ALL, "Populated data objects from TMS data.");
-			
-			if(ingester.properties.get("bagIt").equals("true")) {
-				//initiate bag creation
-				//bagName = new Date().getTime()+"";
 				
-				//ingester._log.log(Level.ALL, "  creating bag " + bagName + " for " + fileName);
-				//item = ingester.getHoleyBagData(tempRendition, tmsConn);
-		        //File bag = ingester.buildBag(ingester._log, tmsConn, hotFolder, bagName, tempRendition, item, xml);
-				
-				 // If we've gotten this far we've done all we can do successfully.
-		        // the rest is up to the artesia ingester on the DAM.  Log OK:
-		        //logdata.setBagname(bagname);
-		        //logdata.setEnd(new Date());
-		        //logdata.setStatus(DBLogger.OK);
-		        //dbLogger.write(conn, logdata, logDS);
-				
-				//} catch (BagException e) {
-				// TODO Auto-generated catch block
-				//e.printStackTrace();
-			//} catch (ChecksumException e) {
-				// TODO Auto-generated catch block
-			//	e.printStackTrace();
-			//} 
-			}
-			
 			
 			File hotFolder = new File(ingester.properties.getProperty("hotFolder"));
 			File workFolder = new File(ingester.properties.getProperty("workFolder"));
@@ -759,76 +700,74 @@ public class CDIS {
 				for(Iterator<TMSMediaRendition> iter = renditionObjects.iterator(); iter.hasNext();) {
 					TMSMediaRendition tempRendition = iter.next();
 					
-					if(ingester.properties.getProperty("bagIt").equals("false")) {
-						String fileName = new String();
-						if(tempRendition.getName().contains("\\")) {
-							fileName = tempRendition.getName().split("\\\\")[tempRendition.getName().split("\\\\").length-1];
+					String fileName = new String();
+					if(tempRendition.getName().contains("\\")) {
+						fileName = tempRendition.getName().split("\\\\")[tempRendition.getName().split("\\\\").length-1];
+					}
+					else {
+						fileName = tempRendition.getName();
+					}
+						////system.out.println("Filename: " + fileName);
+					XMLBuilder xml = tempRendition.getMetadataXMP();
+						
+					String filePath = tempRendition.getStructuralPath() + "\\" + tempRendition.getName();
+						
+					if(ingester.properties.getProperty("operationType").equals("ingest")) {
+						//copy file to hotfolder
+						boolean result = ingester.placeInHotFolder(hotFolder, tempRendition, xml, workFolder);
+						if(result) {
+							ingester._log.log(Level.ALL, "Asset {0} successfully moved to hotfolder at location {1}", new Object[]{tempRendition.getFileName(), hotFolder.getAbsolutePath()});
+							successAssets.add(tempRendition.getFileName());
 						}
 						else {
-							fileName = tempRendition.getName();
+							ingester._log.log(Level.ALL, "Error occurred while moving asset {0}. Skipping...", tempRendition.getFileName());
+							failedAssets.add(tempRendition.getFileName());
 						}
-						////system.out.println("Filename: " + fileName);
-						XMLBuilder xml = tempRendition.getMetadataXMP();
-						
-						String filePath = tempRendition.getStructuralPath() + "\\" + tempRendition.getName();
-						
-						if(ingester.properties.getProperty("operationType").equals("ingest")) {
-							//copy file to hotfolder
-							boolean result = ingester.placeInHotFolder(hotFolder, tempRendition, xml, workFolder);
-							if(result) {
-								ingester._log.log(Level.ALL, "Asset {0} successfully moved to hotfolder at location {1}", new Object[]{tempRendition.getFileName(), hotFolder.getAbsolutePath()});
-								successAssets.add(tempRendition.getFileName());
-							}
-							else {
-								ingester._log.log(Level.ALL, "Error occurred while moving asset {0}. Skipping...", tempRendition.getFileName());
-								failedAssets.add(tempRendition.getFileName());
-							}
 							
-							//check if asset has a TIFF associated with it
-							if(!tempRendition.getName().endsWith("tif")) {
-								String tiffPath = ingester.convertMediaPath(tempRendition.getStructuralPath()) + "\\" + tempRendition.getName().replace("jpg", "tif");
-								File tiff = new File(tiffPath);
-								if(tiff.exists()) {
-									//high resolution file available
-									//copy file to hotfolder
-									//move asset file to workfolder
-							    	Scanner scanner;
-								    File destFile = new File(workFolder.getAbsolutePath() + "\\" + tempRendition.getName().replace("jpg", "tif"));
-								    //System.out.println("Copying from " + tiffPath);
-								    ingester._log.log(Level.ALL, "Beginning file copy to work folder...");
-								    ingester._log.log(Level.ALL, "Source file size: {0}", tiff.length());
-								    boolean isCopying = true;
-								    try {
-								    	FileUtils.copyFile(tiff, destFile);
-									    /*while(isCopying) {
-									    	try {
-								                scanner = new Scanner(destFile);
-								                isCopying = false;
-								            } catch (FileNotFoundException e) {
-								                System.out.println("File not found or is in copy State. ");
-								                try {
-													Thread.sleep(100);
-												} catch (InterruptedException e1) {
-													// TODO Auto-generated catch block
-													e1.printStackTrace();
-												}
-								            }
-									    }*/
-									    ingester._log.log(Level.ALL, "File copy to work folder complete.");
-									    ingester._log.log(Level.ALL, "Beginning file copy to hot folder...");
-									    //if successful, copy both files to hotfolder
-									    
-										FileUtils.copyFile(destFile, new File(hotFolder.getAbsolutePath() + "\\" + "MASTER" + "\\" + tempRendition.getName().replace("jpg", "tif")));
-									} catch (IOException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
+						//check if asset has a TIFF associated with it
+						if(!tempRendition.getName().endsWith("tif")) {
+							String tiffPath = ingester.convertMediaPath(tempRendition.getStructuralPath()) + "\\" + tempRendition.getName().replace("jpg", "tif");
+							File tiff = new File(tiffPath);
+							if(tiff.exists()) {
+								//high resolution file available
+								//copy file to hotfolder
+								//move asset file to workfolder
+                                                                Scanner scanner;
+                                                                File destFile = new File(workFolder.getAbsolutePath() + "\\" + tempRendition.getName().replace("jpg", "tif"));
+                                                                //System.out.println("Copying from " + tiffPath);
+                                                                ingester._log.log(Level.ALL, "Beginning file copy to work folder...");
+                                                                ingester._log.log(Level.ALL, "Source file size: {0}", tiff.length());
+                                                                boolean isCopying = true;
+                                                            try {
+							    	FileUtils.copyFile(tiff, destFile);
+								    /*while(isCopying) {
+								    	try {
+							                scanner = new Scanner(destFile);
+							                isCopying = false;
+							            } catch (FileNotFoundException e) {
+							                System.out.println("File not found or is in copy State. ");
+							                try {
+												Thread.sleep(100);
+											} catch (InterruptedException e1) {
+												// TODO Auto-generated catch block
+												e1.printStackTrace();
+											}
+							            }
+								    }*/
+								    ingester._log.log(Level.ALL, "File copy to work folder complete.");
+								    ingester._log.log(Level.ALL, "Beginning file copy to hot folder...");
+								    //if successful, copy both files to hotfolder
 								    
-								    ingester._log.log(Level.ALL, "File copy to hot folder complete.");
+									FileUtils.copyFile(destFile, new File(hotFolder.getAbsolutePath() + "\\" + "MASTER" + "\\" + tempRendition.getName().replace("jpg", "tif")));
+                                                            } catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+                                                            }
+							ingester._log.log(Level.ALL, "File copy to hot folder complete.");
 									
-								}
 							}
 						}
+						
 						
 						if(ingester.properties.getProperty("operationType").equals("sync")) {
                                                         
@@ -836,7 +775,7 @@ public class CDIS {
 							String UOIID = ingester.getUOIIDForRendition(tmsConn, tempRendition);
 							if(UOIID != null) {
 								// make metadata updates for changed renditions
-								boolean result = ingester.updateMetadata(damsConn, tempRendition, UOIID);
+								result = ingester.updateMetadata(damsConn, tempRendition, UOIID);
 								
 								if(result) {
 									ingester._log.log(Level.ALL, "Successfully synced metadata changes for rendition {0}", tempRendition.getName());
@@ -852,11 +791,7 @@ public class CDIS {
 							
 						}
 					}
-					else { //bagIt = true
-						//bag stuff here, will fill in later
-						
-					}
-					
+										
 	
                                     ingester._log.log(Level.ALL, "Creating updated record for rendition: {0}", tempRendition.getRenditionNumber());
                                     boolean success = ingester.createIngestRecord(tmsConn, tempRendition);
@@ -1764,35 +1699,6 @@ public class CDIS {
 		return false;
 	}
 
-	private HashMap<String, String> getPurgeable(Connection tmsConn, String IDSPathId) {
-		
-		HashMap<String, String> retval = new HashMap<String, String>();
-		String query = "select OriginalFilePath, OriginalFileName " +
-				"from " +  properties.getProperty("CDISTblName") +
-                                " INNER JOIN MediaRenditions on " + properties.getProperty("CDISTblName") + ".RenditionID = MediaRenditions.RenditionID " +
-				"INNER JOIN MediaFiles on MediaRenditions.PrimaryFileID = MediaFiles.FileID " +
-				"where PathID = " + IDSPathId + " AND Deleted = 'No'";
-		
-                _log.log(Level.ALL,query);
-                
-		ResultSet rs = DataProvider.executeSelect(tmsConn, query);
-		
-		try {
-			while(rs.next()) {
-				retval.put(rs.getString(1), rs.getString(2));
-			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			_log.log(Level.ALL, "There was an error in the getPurgeable function: {0}", e.getMessage());
-			return null;
-		}
-                finally {
-                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
-                }
-		
-		
-		return retval;
-	}
 
 	private ArrayList<String> renditionsForIDSSync(Connection tmsConn) {
 
