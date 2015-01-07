@@ -91,7 +91,6 @@ public class CDIS {
 							"tmsPass",
 							"workFolder",
 							"hotFolder",
-							"bagIt",
 							"mediaDrive",
                                                         "siUnit",
                                                         "CDISTblName"
@@ -677,8 +676,8 @@ public class CDIS {
 					boolean success = ingester.createLogEntry(tmsConn, ingester.properties.getProperty("operationType"));
 					
 					if(!success) {
-			        	ingester._log.log(Level.ALL, "There was an error creating the log entry.");
-			        }
+                                            ingester._log.log(Level.ALL, "There was an error creating the log entry.");
+                                        }
 					ingester._log.log(Level.ALL, "Exiting...");
 				}
 			}
@@ -740,20 +739,7 @@ public class CDIS {
                                                                 boolean isCopying = true;
                                                             try {
 							    	FileUtils.copyFile(tiff, destFile);
-								    /*while(isCopying) {
-								    	try {
-							                scanner = new Scanner(destFile);
-							                isCopying = false;
-							            } catch (FileNotFoundException e) {
-							                System.out.println("File not found or is in copy State. ");
-							                try {
-												Thread.sleep(100);
-											} catch (InterruptedException e1) {
-												// TODO Auto-generated catch block
-												e1.printStackTrace();
-											}
-							            }
-								    }*/
+								    
 								    ingester._log.log(Level.ALL, "File copy to work folder complete.");
 								    ingester._log.log(Level.ALL, "Beginning file copy to hot folder...");
 								    //if successful, copy both files to hotfolder
@@ -767,25 +753,23 @@ public class CDIS {
 									
 							}
 						}
+                                        }	
 						
-						
-						if(ingester.properties.getProperty("operationType").equals("sync")) {
+					if(ingester.properties.getProperty("operationType").equals("sync")) {
                                                         
-							//grab UOIID for rendition
-							String UOIID = ingester.getUOIIDForRendition(tmsConn, tempRendition);
-							if(UOIID != null) {
-								// make metadata updates for changed renditions
-								result = ingester.updateMetadata(damsConn, tempRendition, UOIID);
+						//grab UOIID for rendition
+						String UOIID = ingester.getUOIIDForRendition(tmsConn, tempRendition);
+						if(UOIID != null) {
+							// make metadata updates for changed renditions
+							boolean result = ingester.updateMetadata(damsConn, tempRendition, UOIID);
 								
-								if(result) {
-									ingester._log.log(Level.ALL, "Successfully synced metadata changes for rendition {0}", tempRendition.getName());
-									metadataAssets.add(tempRendition.getName());
-								}
-								else {
-									ingester._log.log(Level.ALL, "There was an error syncing metadata changes for rendition {0}. Skipping...", tempRendition.getName());
-									failedMetadata.add(tempRendition.getName());
-								}
-	
+							if(result) {
+								ingester._log.log(Level.ALL, "Successfully synced metadata changes for rendition {0}", tempRendition.getName());
+								metadataAssets.add(tempRendition.getName());
+							}
+							else {
+								ingester._log.log(Level.ALL, "There was an error syncing metadata changes for rendition {0}. Skipping...", tempRendition.getName());
+								failedMetadata.add(tempRendition.getName());
 							}
 							
 							
@@ -968,10 +952,18 @@ public class CDIS {
 			String title, String UOIID) {
 		
 		//make sure FileName is unique
-		
-		String uniqueQuery = "select count(*) from MediaFiles where FileName = '" + UAN + "'";
+		String uniqueQuery = null;
+                
+                //grab Rendition information from TMS based on the UAN.  for FSG, we need to strip the directory name off
+                if (properties.getProperty("siUnit").equals("FSG")) {
+                     uniqueQuery = "select count(*) from MediaFiles where SUBSTRING(FileName,PATINDEX('%\\%',FileName)+1,LEN(FileName)) = '" + UAN + "'";
+                } 
+                else {
+                    uniqueQuery = "select count(*) from MediaFiles where FileName = '" + UAN + "'";
+                }
+                
                 _log.log(Level.ALL, "SQL: Count from MediaFiles {0}", uniqueQuery);
-		
+                
 		ResultSet rs = DataProvider.executeSelect(tmsConn, uniqueQuery);
 		
                 int rs_count = 0;
@@ -1006,9 +998,16 @@ public class CDIS {
                         
                     
 			//create CDIS record
-			//grab Rendition information
-			query = "select RenditionID, RenditionNumber from MediaRenditions where RenditionID = " +
+			//grab Rendition information based on the UAN.  for FSG, we need to strip the directory name off
+			
+                        if (properties.getProperty("siUnit").equals("FSG")) {
+                            query = "selecT RenditionID, RenditionNumber from MediaRenditions where RenditionID = " +
+                                    "(select RenditionID from MediaFiles where SUBSTRING(FileName,PATINDEX('%\\%',FileName)+1,LEN(FileName)) = '" + UAN  + "')";
+                        }
+                        else {
+                            query = "select RenditionID, RenditionNumber from MediaRenditions where RenditionID = " +
 					"(select RenditionID from MediaFiles where FileName = '" + UAN + "')";
+                        }
                         
                         _log.log(Level.ALL, "query: " + query);
 			
@@ -1060,12 +1059,14 @@ public class CDIS {
 				
 				BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 				
-				PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
+				PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select distinct RenditionID from CDIS where UOIID = ?)");
 				                                                              
 				stmt.setBinaryStream(1, connection.getInputStream(), (int)connection.getContentLength());
 				stmt.setInt(2, (int)connection.getContentLength());
 				stmt.setString(3, UOIID);
 				
+                                _log.log(Level.ALL,"Update MediaRenditions with UOIID: {0}", UOIID);
+                                
 				DataProvider.executeUpdate(tmsConn, stmt);
 				
 				input.close();
@@ -1095,7 +1096,14 @@ public class CDIS {
 
 	private boolean doesUANExistInTMS(Connection tmsConn, String UAN) {
 		
-		String query = "select count(*) from MediaFiles where FileName = '" + UAN + "'";
+		String query = null;
+                if (properties.getProperty("siUnit").equals("FSG")) {
+                    query = "select count(*) from MediaFiles where SUBSTRING(FileName,PATINDEX('%\\%',FileName)+1,LEN(FileName)) = '" + UAN  + "'";
+                }
+                else {
+                     query = "select count(*) from MediaFiles where FileName = '" + UAN + "'";
+                }
+                
 		boolean retval = false;
                 
                 _log.log(Level.ALL, "SQL: doesUANExistInTMS {0}", query);
@@ -1209,8 +1217,15 @@ public class CDIS {
                                                     title = title.substring(7, title.lastIndexOf(".")); //new
                                                 }
                                                 
-                                                // Add periods after the 4th and 8th characters, this is the format in TMS for ACM client
-						retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8), rank);
+                                                if(title.split("_").length < 8) {
+                                                  // Add periods after the 4th and 8th characters, this is the format in TMS for ACM client
+                                                	retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8), rank);
+                                                }
+                                                else {
+                                                    _log.log(Level.ALL, "Title {0} not in expected format", title);
+                                                    retval = null;
+                                                }
+                                                
                                                 
                                                 _log.log(Level.ALL, "TITLE: {0}", title);
                                                 _log.log(Level.ALL, "RANK: {0}", rank);
@@ -1254,7 +1269,6 @@ public class CDIS {
 			finally {
 				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
 				try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
-                                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
                         }
 			
 			return retval;
@@ -2524,7 +2538,7 @@ public class CDIS {
 	private boolean createLogEntry(Connection tmsConn, String operationType) {
 		
 		//insert entry into CDIS_Log
-		String sql = "insert into " + properties.getProperty("CDISTblName") + "_Log(OperationType, LastRan)values('" + operationType + "', CURRENT_TIMESTAMP)";
+		String sql = "insert into CDIS_Log(OperationType, LastRan)values('" + operationType + "', CURRENT_TIMESTAMP)";
 				
 		boolean success = DataProvider.executeInsert(tmsConn, sql);
 		
@@ -2534,7 +2548,7 @@ public class CDIS {
 				
 	}
 
-	private File buildBag(Logger logger, Connection conn, File workFolder, String bagname, TMSMediaRendition asset, HoleyBagData item, XMLBuilder xml) throws BagException
+	/* private File buildBag(Logger logger, Connection conn, File workFolder, String bagname, TMSMediaRendition asset, HoleyBagData item, XMLBuilder xml) throws BagException
 	  {
 	    // Create folder structure of the bag:
 	    File bagFolder = Bagger.makeFolderStructure(logger, workFolder, bagname);
@@ -2602,7 +2616,8 @@ public class CDIS {
 	    
 	    return bagFolder;
 	  }
-
+        */
+        
 	/**
 	 * @param Connection tmsConn - connection to the TMS database
 	 * @param ArrayList<String> newRenditions - the rendition numbers of the new renditions
@@ -2771,7 +2786,7 @@ public class CDIS {
 		
 		Timestamp retval = null;
 		
-		String sql = "select top 1 LastRan from " + properties.getProperty("CDISTblName") + "_Log where OperationType = '" + opType + "' order by LastRan desc";
+		String sql = "select top 1 LastRan from CDIS_Log where OperationType = '" + opType + "' order by LastRan desc";
 		
                 ResultSet rs = null;
 		try {
