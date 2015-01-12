@@ -75,6 +75,8 @@ import edu.si.tms.TMSMediaRendition;
 import edu.si.tms.audit.AuditTrailReader;
 import edu.si.tms.factory.TMSMediaRenditionFactory;
 
+import CDIS_redesigned.MetaData;
+
 public class CDIS {
 	
 	public Logger _log = null;
@@ -181,6 +183,8 @@ public class CDIS {
 		}
 		ingester._log.log(Level.ALL, "Connection to DAMS database established.");
 		
+
+                
 		ArrayList<String> newRenditions = new ArrayList<String>();
 			ArrayList<String> newlySyncedRenditions = new ArrayList<String>();
 			
@@ -311,7 +315,7 @@ public class CDIS {
 							//check if UAN already exists for a MediaFile in TMS
 							if(ingester.doesUANExistInTMS(tmsConn, UAN)) {
 								//asset file is already being pointed to in TMS, just fix the Rendition Number, add to CDIS table
-								boolean result = ingester.replaceTMSRenditionNumber(tmsConn, damsConn, UAN, title, UOIID);
+								boolean result = ingester.replaceTMSRenditionNumber(tmsConn, damsConn, UAN, title, UOIID, objectNumber);
 							
                                                                 if(!result) {
 									ingestedFromDAMSFailed.add(title);
@@ -358,12 +362,11 @@ public class CDIS {
 										ingester._log.log(Level.ALL, "There was a problem retrieving asset with UAN {0} from IDS. No thumbnail will be saved in the database for this asset.", UAN);
                                                                             } catch (IOException e) {
 										// TODO Auto-generated catch block
-										ingester._log.log(Level.ALL, "IOException when creating thumbnail for asset {0}. Skipping...", UAN);
+										ingester._log.log(Level.ALL, "IOException when creating thumbnail for asset {0}. TMS Thumbnail not created.", UAN);
                                                                                 e.printStackTrace();    
                                                                             } catch (SQLException e) {
 										// TODO Auto-generated catch block
-										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);
-									
+										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);        
                                                                             }
 									
                                                                             //update DAMS.SOURCE_SYSTEM_IDENTIFIER with rendition number
@@ -485,7 +488,11 @@ public class CDIS {
 				}
 			}
 			else if(ingester.properties.getProperty("operationType").equals("sync")) { //operationType=sync
-			//find renditions not in CDIS, IsColor = 1, asset in DAMS with <rendition number>.tif name
+                        
+                            MetaData mda = new MetaData();
+                            mda.sync(tmsConn, damsConn, "1");
+			
+                                //find renditions not in CDIS, IsColor = 1, asset in DAMS with <rendition number>.tif name
 				//
 				/* USED on units where ingestFromDams = True (CH and FSG).... REMOVED UNTIL AFTER RCPP
                                 
@@ -755,7 +762,9 @@ public class CDIS {
                                         }	
 						
 					if(ingester.properties.getProperty("operationType").equals("sync")) {
-                                                        
+                                                
+                                                
+                                                
 						//grab UOIID for rendition
 						String UOIID = ingester.getUOIIDForRendition(tmsConn, tempRendition);
 						if(UOIID != null) {
@@ -948,7 +957,7 @@ public class CDIS {
 	}
 
 	private boolean replaceTMSRenditionNumber(Connection tmsConn, Connection damsConn, String UAN,
-			String title, String UOIID) {
+			String title, String UOIID, String objectNumber) {
 		
 		//make sure FileName is unique
 		String uniqueQuery = null;
@@ -1040,20 +1049,53 @@ public class CDIS {
 			DataProvider.executeInsert(tmsConn, query);
 			
 			//update SOURCE_SYSTEM_ID in DAMS.SI_ASSET_METADATA
-			//query = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + renditionNumber + "' where UOI_ID = '" + UOIID + "'";
-			_log.log(Level.ALL,query);
+                        if (objectNumber!=null) {
+                            query = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + objectNumber + "' where UOI_ID = '" + UOIID + "'";
+                        }
+                        else {
+                            query = "update SI_ASSET_METADATA set SOURCE_SYSTEM_ID = '" + renditionNumber + "' where UOI_ID = '" + UOIID + "'";
+                        }
+                        _log.log(Level.ALL,query);
 			
-			//DataProvider.executeUpdate(damsConn, query);
+			DataProvider.executeUpdate(damsConn, query);
 			
                         // This next code was only in CH unit line of code
                         if (properties.getProperty("siUnit").equals("CHSDM")) {
                             //create BLOB for thumbnail
                             URL assetURL;
                             try {
-				assetURL = new URL("http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
                                 
-                                _log.log(Level.ALL, "Object at http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
+                                String ThumbBlobSql = "select  o.object_name_location from uois u, object_stacks o" +
+                                                      " where u.uoi_id= " + UOIID +
+                                                      " and u.thumb_nail_obj_id = o.object_id ";
+                                
+                                rs = DataProvider.executeSelect(damsConn, ThumbBlobSql);
+                                
+                                String objectLocation = null;
+                                
+                                try {
+                                    while(rs.next()) {
+					objectLocation = rs.getString(1);
+                                    }
 				
+                                } catch (SQLException e) {
+                                    _log.log(Level.ALL, "SQLException getting objectLocation from dams: {0}", e.getMessage());
+                                    return false;
+                                }
+                                finally {
+                                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                                }
+                                
+                                assetURL = new URL("T:\\" + objectLocation );
+                                
+                                if (assetURL != null) {
+                                    _log.log(Level.ALL, "Object on drive at: {0}", assetURL);
+                                }
+                                else {
+                                    assetURL = new URL("http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
+                                    _log.log(Level.ALL, "Object at {0}", assetURL);
+                                }
+                                				
 				URLConnection connection = assetURL.openConnection();
 				
 				BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -1502,7 +1544,7 @@ public class CDIS {
 				"WHERE a.UOI_ID = b.UOI_ID " +
 				"AND TRIM(UPPER(a.CONTENT_STATE)) = 'NORMAL' " +
 				"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
-				"AND b.SOURCE_SYSTEM_ID is null " +
+				"AND b.SOURCE_SYSTEM_ID is null  " +
 				"AND a.UOI_ID in (select UOI_ID from NODES_FOR_UOIS where NODE_ID = " + this.properties.getProperty("categoryNodeId") + ")";
                 }   
                 else if (properties.getProperty("siUnit").equals("NMAAHC")) {
@@ -2386,6 +2428,8 @@ public class CDIS {
 		int result = DataProvider.executeUpdate(damsConn, queryUOIS);
 		result = DataProvider.executeUpdate(damsConn, queryMetadata);
 		
+                
+                
 		//if(result == 1) {
 			return true;
 		//}
