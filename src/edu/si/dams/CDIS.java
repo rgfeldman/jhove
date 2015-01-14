@@ -341,22 +341,51 @@ public class CDIS {
 									if (MediaCreated) {
                                                                             URL assetURL;
                                                                             try {
-										assetURL = new URL("http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
-										
-                                                                                ingester._log.log(Level.ALL, "Object at http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
                                                                                 
-										URLConnection connection = assetURL.openConnection();
+                                                                                    String objectLocation = null;
+                                                                                    ResultSet rs = null;
+                                                                                    assetURL = null;
+                                                                                    
+                                                                                    try {
+                                                                                        String ThumbBlobSql = "select  o.object_name_location from uois u, object_stacks o" +
+                                                                                        " where u.uoi_id = '" + UOIID + "'" +
+                                                                                        " and u.thumb_nail_obj_id = o.object_id ";
+                                
+                                                                                        ingester._log.log (Level.ALL, "ThumbBlobSql: {0}", ThumbBlobSql);
+                                                                                        
+                                                                                        rs = DataProvider.executeSelect(damsConn, ThumbBlobSql);
+                                
+                                                                                        while(rs.next()) {
+                                                                                            objectLocation = rs.getString(1);
+                                                                                        }
+                                                                                        
+                                                                                        assetURL = new URL("file:///T:\\" + objectLocation );
+                                                                                        
+                                                                                        ingester._log.log(Level.ALL, "Object found at {0}", objectLocation);
+                                                                                        ingester._log.log(Level.ALL, "URL {0}", assetURL);
+                                                                                        
+                                                                                    } catch (SQLException e) {
+                                                                                    // TODO Auto-generated catch block
+                                                                                        ingester._log.log(Level.ALL, "SQLException when getting location name for UOIID: {0}, getting from IDS", UAN); 
+                                                                                    }
+                                                                                    finally  {
+                                                                                       try { if (rs != null) rs.close(); } catch (SQLException se) { ingester._log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                                                                                    }
+                                                                                    
+                                                                                    ingester._log.log(Level.ALL, "Object at {0}", objectLocation);
+                                                                                
+                                                                                    URLConnection connection = assetURL.openConnection();
 										
-										BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                                                                                    BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 										
-										PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
+                                                                                    PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
 										
-										stmt.setBinaryStream(1, connection.getInputStream(), (int)connection.getContentLength());
-										stmt.setInt(2, (int)connection.getContentLength());
-										stmt.setString(3, UOIID);
+                                                                                    stmt.setBinaryStream(1, connection.getInputStream(), (int)connection.getContentLength());
+                                                                                    stmt.setInt(2, (int)connection.getContentLength());
+                                                                                    stmt.setString(3, UOIID);
 										
-										DataProvider.executeUpdate(tmsConn, stmt);
-										input.close();
+                                                                                    DataProvider.executeUpdate(tmsConn, stmt);
+                                                                                    input.close();
                                                                             } catch (MalformedURLException e) {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "There was a problem retrieving asset with UAN {0} from IDS. No thumbnail will be saved in the database for this asset.", UAN);
@@ -368,7 +397,7 @@ public class CDIS {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);        
                                                                             }
-									
+                                                                            
                                                                             //update DAMS.SOURCE_SYSTEM_IDENTIFIER with rendition number
                                                                             ingester.updateDAMSAsset(damsConn, UOIID, title);
                                                                             ingester._log.log(Level.ALL, "Updated: {0}", title);
@@ -1066,7 +1095,7 @@ public class CDIS {
                             try {
                                 
                                 String ThumbBlobSql = "select  o.object_name_location from uois u, object_stacks o" +
-                                                      " where u.uoi_id= " + UOIID +
+                                                      " where u.uoi_id = '" + UOIID + "'" +
                                                       " and u.thumb_nail_obj_id = o.object_id ";
                                 
                                 rs = DataProvider.executeSelect(damsConn, ThumbBlobSql);
@@ -1085,17 +1114,10 @@ public class CDIS {
                                 finally {
                                     try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
                                 }
-                                
-                                assetURL = new URL("T:\\" + objectLocation );
-                                
-                                if (assetURL != null) {
-                                    _log.log(Level.ALL, "Object on drive at: {0}", assetURL);
-                                }
-                                else {
-                                    assetURL = new URL("http://ids-internal.si.edu/ids/deliveryService/id/" + UAN + "/192");
-                                    _log.log(Level.ALL, "Object at {0}", assetURL);
-                                }
-                                				
+                                 _log.log(Level.ALL, "ObjectLocation: {0}", objectLocation );
+                                 
+                                assetURL = new URL("file:///T:\\" + objectLocation );                            
+                                                                                            				
 				URLConnection connection = assetURL.openConnection();
 				
 				BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -2413,7 +2435,8 @@ public class CDIS {
 		query.append("update UOIS set ");
 		// Nov2014  Name in metadata was incorrectly being updated, next line commented out
 		// query.append("NAME = '" + String.valueOf(tempRendition.getRenditionNumber()) + "', ");
-		query.append("METADATA_STATE_DT = TO_DATE('" + dateString + "', 'MM/DD/YYYY') ");
+		query.append("METADATA_STATE_DT = TO_DATE('" + dateString + "', 'MM/DD/YYYY') ,");
+                query.append("metadata_state_user_id = '22246'");
 		query.append("where UOI_ID = '" + UOIID + "'");
 		
 		String queryUOIS = query.toString();
@@ -2693,7 +2716,8 @@ public class CDIS {
 		Timestamp lastRan = getLastRanTime(tmsConn, "ingest");
 		
 		//create the query
-		String sql = "select RenditionID from MediaRenditions where EnteredDate >= ? AND IsColor = 1 AND PrimaryFileID not in (select FileID from MediaFiles where PathID = 9)";
+		String sql = "select RenditionID from MediaRenditions where EnteredDate >= ? AND IsColor = 1 AND PrimaryFileID not in " +
+                                " (select FileID from MediaFiles where PathID = " + properties.getProperty("IDSPathId") + ")";
 		
 		_log.log(Level.ALL, "SQL: Get TMS records {0}", sql);
 		
