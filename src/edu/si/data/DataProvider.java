@@ -72,7 +72,7 @@ public class DataProvider {
 	public static ResultSet executeSelect(Connection conn, PreparedStatement statement) {
 		
 		PreparedStatement stmt = statement;
-		ResultSet rs;
+		ResultSet rs = null;
 		
 		try {
 			rs = stmt.executeQuery();
@@ -81,8 +81,7 @@ public class DataProvider {
 			sqlex.printStackTrace();
 			return null;
 		}
-		
-		
+                		
 		return rs;
 	}
 	
@@ -143,7 +142,9 @@ public class DataProvider {
 			sqlex.printStackTrace();
 			return 0;
 		}
-		
+		finally {
+			try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+		}
 		
 		return rowCount;
 		
