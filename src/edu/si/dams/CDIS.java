@@ -340,12 +340,15 @@ public class CDIS {
 									//create BLOB for thumbnail
 									if (MediaCreated) {
                                                                             URL assetURL;
+                                                                            PreparedStatement stmt = null;
+                                                                            BufferedReader input = null;
+                                                                            
                                                                             try {
                                                                                 
                                                                                     String objectLocation = null;
                                                                                     ResultSet rs = null;
                                                                                     assetURL = null;
-                                                                                    
+                                                                                                                                                                       
                                                                                     try {
                                                                                         String ThumbBlobSql = "select  o.object_name_location from uois u, object_stacks o" +
                                                                                         " where u.uoi_id = '" + UOIID + "'" +
@@ -376,16 +379,16 @@ public class CDIS {
                                                                                 
                                                                                     URLConnection connection = assetURL.openConnection();
 										
-                                                                                    BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                                                                                    input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 										
-                                                                                    PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
+                                                                                    stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
 										
                                                                                     stmt.setBinaryStream(1, connection.getInputStream(), (int)connection.getContentLength());
                                                                                     stmt.setInt(2, (int)connection.getContentLength());
                                                                                     stmt.setString(3, UOIID);
 										
                                                                                     DataProvider.executeUpdate(tmsConn, stmt);
-                                                                                    input.close();
+                                                                                   
                                                                             } catch (MalformedURLException e) {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "There was a problem retrieving asset with UAN {0} from IDS. No thumbnail will be saved in the database for this asset.", UAN);
@@ -397,7 +400,11 @@ public class CDIS {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);        
                                                                             }
-                                                                            
+                                                                            finally {
+                                                                                try { if (stmt != null) stmt.close(); } catch (SQLException se) { ingester._log.log(Level.ALL, "Error closing the statement " + se.getMessage()); }
+                                                                                try { if (input != null) input.close(); } catch (IOException io) { ingester._log.log(Level.ALL, "Error closing the statement " + io.getMessage()); }  
+                                                                            }
+                                                                                                                                                  
                                                                             //update DAMS.SOURCE_SYSTEM_IDENTIFIER with rendition number
                                                                             ingester.updateDAMSAsset(damsConn, UOIID, title);
                                                                             ingester._log.log(Level.ALL, "Updated: {0}", title);
@@ -421,7 +428,8 @@ public class CDIS {
                                                                         ingester._log.log(Level.ALL,"Creating MediaRecords");
                                                                         
                                                                         MediaCreated = ingester.createMediaRecords(tmsConn, UOIID, UAN, ingester.properties.getProperty("IDSPathId"), title, objectID, rank, height, width);
-									
+									PreparedStatement stmt = null;
+                                                                        
                                                                         if (MediaCreated) {
                                                                             //create BLOB for thumbnail
                                                                             URL assetURL;
@@ -430,7 +438,7 @@ public class CDIS {
 										InputStream UANStream = assetURL.openStream();
 										byte[] bytes = IOUtils.toByteArray(UANStream);
 										
-                                                                            	PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
+                                                                            	stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
                                                                                 
                                                                                 stmt.setBytes(1, bytes);                                                     
 										stmt.setString(2, UOIID);
@@ -451,6 +459,9 @@ public class CDIS {
 										// TODO Auto-generated catch block
 										ingester._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);
                                                                             }
+                                                                            finally {
+                                                                                try { if (stmt != null) stmt.close(); } catch (SQLException se) { ingester._log.log(Level.ALL, "Error closing the statement " + se.getMessage()); }                                                                               
+                                                                            }  
 									
                                                                             //update DAMS.SOURCE_SYSTEM_IDENTIFIER with rendition number
                                                                             ingester.updateDAMSAsset(damsConn, UOIID, title);
@@ -964,8 +975,8 @@ public class CDIS {
 
 	private HashMap<String, String> getDimensionData(Connection damsConn,
 			String UOIID) {
-		
-		String query = "select BITMAP_HEIGHT, BITMAP_WIDTH from UOIS where UOI_ID = '" + UOIID + "'";
+			
+                String query = "select BITMAP_HEIGHT, BITMAP_WIDTH from UOIS where UOI_ID = '" + UOIID + "'";
 		HashMap<String, String> retval = new HashMap<String, String>();
 		
 		ResultSet rs = DataProvider.executeSelect(damsConn, query);
@@ -1064,7 +1075,7 @@ public class CDIS {
 				return false;
 			}
                         finally {
-                             try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                             try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the resultSet {0}", se.getMessage()); }
                         }
 			
 			query = "insert into CDIS " +
@@ -1092,6 +1103,9 @@ public class CDIS {
                         if (properties.getProperty("siUnit").equals("CHSDM")) {
                             //create BLOB for thumbnail
                             URL assetURL;
+                            BufferedReader input = null;
+                            PreparedStatement stmt = null;
+                            
                             try {
                                 
                                 String ThumbBlobSql = "select  o.object_name_location from uois u, object_stacks o" +
@@ -1112,7 +1126,7 @@ public class CDIS {
                                     return false;
                                 }
                                 finally {
-                                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the result set {0}", se.getMessage()); }
                                 }
                                  _log.log(Level.ALL, "ObjectLocation: {0}", objectLocation );
                                  
@@ -1120,9 +1134,9 @@ public class CDIS {
                                                                                             				
 				URLConnection connection = assetURL.openConnection();
 				
-				BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 				
-				PreparedStatement stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select distinct RenditionID from CDIS where UOIID = ?)");
+				stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? where RenditionID = (select distinct RenditionID from CDIS where UOIID = ?)");
 				                                                              
 				stmt.setBinaryStream(1, connection.getInputStream(), (int)connection.getContentLength());
 				stmt.setInt(2, (int)connection.getContentLength());
@@ -1131,8 +1145,8 @@ public class CDIS {
                                 _log.log(Level.ALL,"Update MediaRenditions with UOIID: {0}", UOIID);
                                 
 				DataProvider.executeUpdate(tmsConn, stmt);
-				
-				input.close();
+                                
+                                				
                             } catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				this._log.log(Level.ALL, "There was a problem retrieving asset with UAN {0} from IDS. No thumbnail will be saved in the database for this asset.", UAN);
@@ -1143,6 +1157,10 @@ public class CDIS {
 				// TODO Auto-generated catch block
 				this._log.log(Level.ALL, "SQLException when updating thumbnail for asset {0}. Skipping...", UAN);
                             } 
+                            finally {
+                                try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement " + se.getMessage()); }
+                                try { if (input != null) input.close(); } catch (IOException io) { _log.log(Level.ALL, "Error closing the statement " + io.getMessage()); }
+                            }
                         }
 			return true;
 		}
@@ -1337,7 +1355,7 @@ public class CDIS {
 	}
 
 	private HashMap<String, String> getObjectInfoFromBarcode(Connection damsConn, Connection tmsConn,
-			String UOIID) {
+            String UOIID) {
 			// This is only called from CHSDM unit
             
 			//ex asset name = <object number>.<three digit rank>
@@ -1349,7 +1367,6 @@ public class CDIS {
 			String damsSQL = "select NAME from UOIS where UOI_ID = '" + UOIID + "'";
 			String barcode = new String();
 			ResultSet rs = null;
-			ResultSet rs2 = null;
 			PreparedStatement stmt = null;
 			
 			try {
@@ -1364,19 +1381,41 @@ public class CDIS {
 					//title = title.replaceAll("_", ".");
 					//get ObjectID from Components tables
 				}
-				String tmsSQL = "select ObjectID from ObjComponents where ComponentID = (select ID from BCLabels where TableID = 94 and LabelUUID = '" + barcode + "')";
-				stmt = tmsConn.prepareStatement(tmsSQL);
-				rs = DataProvider.executeSelect(tmsConn, stmt);
                                 
-				String number = null;
-				String rank = new String();
-				
-                                while(rs.next()) {
-					number = rs.getString(1);
-					rank = "01";
-				}
+                        } catch (SQLException e) {
+				_log.log(Level.ALL, "getObjectInfoForAsset SQL: {0}", damsSQL);
+				e.printStackTrace();
+                        } finally {
+				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+				try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }
+                            
                                 
-				if(number == null) {
+			String tmsSQL = "select ObjectID from ObjComponents where ComponentID = (select ID from BCLabels where TableID = 94 and LabelUUID = '" + barcode + "')";
+			
+                        String number = null;
+                        String rank = new String();
+                        
+                        try {
+                            stmt = tmsConn.prepareStatement(tmsSQL);
+                        
+                            rs = DataProvider.executeSelect(tmsConn, stmt);
+                                                          
+                            while(rs.next()) {
+				number = rs.getString(1);
+				rank = "01";
+                            }
+                            
+                        } catch (SQLException e) {
+				_log.log(Level.ALL, "getObjectInfoForAsset SQL: {0}", damsSQL);
+				e.printStackTrace();
+                        }    
+                        finally {
+				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                                try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }
+                                
+                                if(number == null) {
                                         
                                         _log.log(Level.ALL, "Splitting filename-rank");
                                         
@@ -1400,18 +1439,7 @@ public class CDIS {
 				//number = title.split("_")[0];
 				//rank = (title.split("_")[1]).split("\\.")[0];
 				retval.put(number, rank);
-			} catch (SQLException e) {
-				_log.log(Level.ALL, "getObjectInfoForAsset SQL: {0}", damsSQL);
-				e.printStackTrace();
-			} catch (Exception e) {
-				_log.log(Level.ALL, "There was an exception parsing the name of asset {0}. Skipping...", barcode);
-				//e.printStackTrace();
-				retval = null;
-			}
-			finally {
-				try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
-				try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
-			}
+			
 			
 			
 			return retval;
@@ -1429,7 +1457,6 @@ public class CDIS {
 			String damsSQL = "select NAME from UOIS where UOI_ID = '" + UOIID + "'";
 			String barcode = new String();
 			ResultSet rs = null;
-			ResultSet rs2 = null;
 			PreparedStatement stmt = null;
 			
 			try {
@@ -1666,7 +1693,7 @@ public class CDIS {
                 
                 _log.log(Level.ALL,query);
 		
-		PreparedStatement stmt;
+		PreparedStatement stmt = null;
 		ResultSet rs = null;
                 
 		try {
@@ -1677,61 +1704,74 @@ public class CDIS {
 				fileNames.add(rs.getString(1));
 				count++;
 			}
-			
-			
-			String damsQuery = "select UOI_ID, NAME from UOIS where NAME in (";
-			
-			for(Iterator<String> iter = fileNames.iterator(); iter.hasNext();) {
-				damsQuery += "'" + iter.next() + "'";
-				if(iter.hasNext()) {
-					damsQuery += ", ";
-				}
-			}
-			damsQuery += ")";
-			
-			rs = DataProvider.executeSelect(damsConn, damsQuery);
-			
-			while(rs.next()) {
-				pairs.put(rs.getString(1), rs.getString(2));
-			}
-			rs.close();
-                        
-			//create CDIS records
-			//grab RenditionID, FilePath, FileName
-			for(Iterator<String> damsIter = pairs.keySet().iterator(); damsIter.hasNext();) {
-				
-				String UOIID = damsIter.next();
-				String assetName = pairs.get(UOIID);
-				
-				String grabSQL = "select a.RenditionID, a.RenditionNumber, b.FileName, c.Path " +
-						"from MediaRenditions a, MediaFiles b, MediaPaths c " +
-						"WHERE b.FileName = '" + pairs.get(UOIID) + "' " +
-								"AND a.PrimaryFileID = b.FileID " +
-								"AND b.PathID = c.PathID";
-				
-				ResultSet damsRS = DataProvider.executeSelect(tmsConn, grabSQL);
-				if(damsRS.next()) {
-					//insert mapping into CDIS
-					String insertSQL = "insert into CDIS " +
-                                                "(RenditionID, RenditionNumber, UOIID, OriginalFilePath, OriginalFileName)values(" +
-						damsRS.getString(1) + ", '" + damsRS.getString(2) + "', '" + UOIID + "', '" + damsRS.getString(4) + "', '" +
-						damsRS.getString(3) + "')";
-					
-                                        _log.log(Level.ALL,insertSQL);
-                                        
-					DataProvider.executeInsert(tmsConn, insertSQL);
-				}
-				
-				//check the color checkbox in dams
-				
-			}	
-			       	
-		}
+                }	
 		catch(SQLException sqlex) {
 			sqlex.printStackTrace();
 		}
                 finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }
+		
+                String damsQuery = "select UOI_ID, NAME from UOIS where NAME in (";
+			
+		for(Iterator<String> iter = fileNames.iterator(); iter.hasNext();) {
+			damsQuery += "'" + iter.next() + "'";
+			if(iter.hasNext()) {
+				damsQuery += ", ";
+			}
+		}
+		damsQuery += ")";
+		
+                try {
+			rs = DataProvider.executeSelect(damsConn, damsQuery);
+			
+			while(rs.next()) {
+				pairs.put(rs.getString(1), rs.getString(2));
+			}
+                }       
+                catch(SQLException sqlex) {
+                            sqlex.printStackTrace();
+                } finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                }	
+                        
+		//create CDIS records
+		//grab RenditionID, FilePath, FileName
+		for(Iterator<String> damsIter = pairs.keySet().iterator(); damsIter.hasNext();) {
+			
+			String UOIID = damsIter.next();
+			String assetName = pairs.get(UOIID);
+				
+			String grabSQL = "select a.RenditionID, a.RenditionNumber, b.FileName, c.Path " +
+					"from MediaRenditions a, MediaFiles b, MediaPaths c " +
+					"WHERE b.FileName = '" + pairs.get(UOIID) + "' " +
+							"AND a.PrimaryFileID = b.FileID " +
+							"AND b.PathID = c.PathID";
+			
+			ResultSet damsRS = null;
+                        
+                        try {
+                        
+                            damsRS = DataProvider.executeSelect(tmsConn, grabSQL);
+                            if(damsRS.next()) {
+				//insert mapping into CDIS
+				String insertSQL = "insert into CDIS " +
+                                        "(RenditionID, RenditionNumber, UOIID, OriginalFilePath, OriginalFileName)values(" +
+					damsRS.getString(1) + ", '" + damsRS.getString(2) + "', '" + UOIID + "', '" + damsRS.getString(4) + "', '" +
+					damsRS.getString(3) + "')";
+					
+                                       _log.log(Level.ALL,insertSQL);
+                                        
+					DataProvider.executeInsert(tmsConn, insertSQL);
+                            }			
+			}	
+                        catch(SQLException sqlex) {
+                            sqlex.printStackTrace();
+                        }
+                        finally {
+                              try { if (damsRS != null) damsRS.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        }      	
                 }
 		// TODO Auto-generated method stub
 		return null;
@@ -2044,7 +2084,6 @@ public class CDIS {
                             DataProvider.executeUpdate(tmsConn, query);
 			
                             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-                            try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
                          }
 			
 			return true;
@@ -2365,7 +2404,7 @@ public class CDIS {
                 
                 ResultSet rs = null;
                 
-		Statement stmt;
+		Statement stmt = null;
 		try {
 			stmt = tmsConn.createStatement();
 			rs = stmt.executeQuery(query);
@@ -2382,6 +2421,7 @@ public class CDIS {
 		}
                 finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
                 }
 		
 		return fileNames;
@@ -2447,7 +2487,7 @@ public class CDIS {
 		String queryMetadata = tempRendition.getMetadataQuery(UOIID);
 		_log.log(Level.ALL, "Metadata query: {0}", queryMetadata);
 		
-		PreparedStatement stmt = null;
+		//PreparedStatement stmt = null;
 		int result = DataProvider.executeUpdate(damsConn, queryUOIS);
 		result = DataProvider.executeUpdate(damsConn, queryMetadata);
 		
