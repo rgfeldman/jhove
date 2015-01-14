@@ -84,9 +84,7 @@ public class TMSMediaRendition {
 	
 	private void populateMediaData(Connection tmsconn, String renditionID, Logger log) throws SQLException {
 		
-		try {
-			
-			String mediaSQL = "select mf.FileName, mf.Duration, mf.PixelH, " +
+		String mediaSQL = "select mf.FileName, mf.Duration, mf.PixelH, " +
 					"mf.PixelW, mp.Path, mm.PublicCaption, mm.Description, mm.Remarks, " +
 					"mm.Copyright, mm.Restrictions, mr.Quality, mr.Remarks, ms.MediaStatus," +
 					"mr.RenditionNumber, mm.PublicAccess " +
@@ -99,13 +97,15 @@ public class TMSMediaRendition {
 					"mr.RenditionID = " + renditionID;
 			
 			
-			log.log(Level.ALL, "SQL: " + mediaSQL);
+		log.log(Level.ALL, "SQL: " + mediaSQL);
 			
-			ResultSet rs;
+		ResultSet rs;
 			
-			rs = DataProvider.executeSelect(tmsconn, mediaSQL);
-			boolean foundRendition = false;
+		rs = DataProvider.executeSelect(tmsconn, mediaSQL);
+		boolean foundRendition = false;
 			
+                try {
+                            
 			while(rs.next()) {
 				
 				foundRendition = true;
@@ -162,37 +162,48 @@ public class TMSMediaRendition {
                         sqlex.printStackTrace();
 			throw new SQLException("SQLException thrown in populateMediaData", sqlex);
 		}
-		
+                finally  {
+                   try { if (rs != null) rs.close(); } catch (SQLException se) { System.out.println("error closing resultSet in populateMediaData"); }
+                }
+                
 	}
 	
 	private void populateObjectData(Connection tmsconn, String renditionID , Properties properties, Logger log) throws SQLException {
-		
-		try {
 			
-			TMSObject object = new TMSObject();
-			int count = 0;
-			//check if only one object, if not, exit
-			String countSQL = "select count(*) from Objects where ObjectID in " +
+		TMSObject object = new TMSObject();
+		int count = 0;
+		//check if only one object, if not, exit
+		String countSQL = "select count(*) from Objects where ObjectID in " +
 					"(select ID from MediaXrefs where TableID = 108 and MediaMasterID = " +
 					"(select MediaMasterID from MediaRenditions where RenditionID = " + renditionID + "))";
-			Statement countStmt = tmsconn.createStatement();
-			ResultSet countrs = countStmt.executeQuery(countSQL);
+                Statement countStmt = tmsconn.createStatement();
+		ResultSet countrs = countStmt.executeQuery(countSQL);
 			
-			while(countrs.next()) {
-				count = countrs.getInt(1);
-			}
+                try {
+                    while(countrs.next()) {
+			count = countrs.getInt(1);
+                    }
+                    
+                }finally  {
+                   try { if (countStmt != null) countStmt.close(); } catch (SQLException se) { System.out.println("error closing countStmt in populateObjectData"); }
+                   try { if (countrs != null) countrs.close(); } catch (SQLException se) { System.out.println("error closing countrs in populateObjectData"); }
+                }
 			
-			if(count <= 1) {
-				//pull from Objects table
-				Statement stmt = tmsconn.createStatement();
-				String objectSQL = "select * from Objects where ObjectID = " +
+		if(count <= 1) {
+			//pull from Objects table
+			//Statement stmt = tmsconn.createStatement();
+			String objectSQL = "select * from Objects where ObjectID = " +
 						"(select ID from MediaXrefs where TableID = 108 and MediaMasterID = " +
 						"(select MediaMasterID from MediaRenditions where RenditionID = " + renditionID + "))";
-				ResultSet rs;
 				
-				rs = DataProvider.executeSelect(tmsconn, objectSQL);
+                        ResultSet rs = null;
 				
-			    if(rs.next()){
+                        try {
+                                    
+                                
+                                rs = DataProvider.executeSelect(tmsconn, objectSQL);
+				
+                                if(rs.next()){
 					
 					this.setTitle(rs.getString("ObjectNumber"));
 					object.setCredit(rs.getString("CreditLine"));
@@ -209,7 +220,7 @@ public class TMSMediaRendition {
 					object.setClassification(rs.getString("ClassificationID")); //may need to change these to use lookups
 					object.setSubClassification(rs.getString("SubClassID")); //may needs to change these to use lookups
                                         object.setSeriesTitle(rs.getString("ObjectName"));
-                                         object.setCaption(rs.getString("ObjectNumber") + " " + rs.getString("ObjectName"));
+                                        object.setCaption(rs.getString("ObjectNumber") + " " + rs.getString("ObjectName"));
                                         
                                          //   all units wanted description + dimensions except for CH
                                          //    The dimension is added in the update statement...where it and the description is available
@@ -227,14 +238,24 @@ public class TMSMediaRendition {
            
 					objectData = object;
 					objectPublicAccess = (rs.getInt("PublicAccess") == 1)?"Yes":"No";
-			    }
-			    else {
-			    	log.log(Level.ALL, "No object record associated with this rendition. Skipping Object fields...");
-			    	objectData = null;
-			    	objectPublicAccess = "Yes";
-			    }
-			}
-			else {
+                                }
+                                else {
+                                    log.log(Level.ALL, "No object record associated with this rendition. Skipping Object fields...");
+                                    objectData = null;
+                                     objectPublicAccess = "Yes";
+                                }
+                                
+                        }catch(SQLException sqlex) {
+                                    sqlex.printStackTrace();
+                                    throw new SQLException("SQLException thrown in populateObjectData", sqlex);
+                        }
+                        finally  {
+                                    //try { if (stmt != null) stmt.close(); } catch (SQLException se) { System.out.println("error closing stmt in populateObjectData"); }
+                                    try { if (rs != null) rs.close(); } catch (SQLException se) { System.out.println("error closing resultSet in populateObjectData"); }
+                        }
+                                
+                }			
+                else {
 				log.log(Level.ALL, "Multiple object records associated with this rendition. Skipping Object fields...");
 				objectData = null;
 				//get public access data for these objects
@@ -242,10 +263,15 @@ public class TMSMediaRendition {
 						"(select ID from MediaXrefs where TableID = 108 and MediaMasterID = " +
 						"(select MediaMasterID from MediaRenditions where RenditionID = " + renditionID + ")) AND " +
 								"PublicAccess = 1";
-				Statement publicStmt = tmsconn.createStatement();
-				ResultSet publicRS = publicStmt.executeQuery(query);
+				Statement publicStmt = null;
+                                ResultSet publicRS = null;
+                                
+                                try {
+                                
+                                    publicStmt= tmsconn.createStatement();
+                                    publicRS = publicStmt.executeQuery(query);
 				
-				if(publicRS.next()) {
+                                    if(publicRS.next()) {
 					int publicCount = publicRS.getInt(1);
 					if(publicCount > 0) {
 						objectPublicAccess = "Yes";
@@ -253,41 +279,38 @@ public class TMSMediaRendition {
 					else {
 						objectPublicAccess = "No";
 					}
-				}
-				else {
+                                    }
+                                    else {
 					log.log(Level.ALL, "No count record returned for object public use check. Setting to false.");
 					objectPublicAccess = "No";
-				}
-			}
-			
-			
-			
-			
-		}
-		catch(SQLException sqlex) {
-			sqlex.printStackTrace();
-			throw new SQLException("SQLException thrown in populateObjectData", sqlex);
-		}
-		
-		
+                                    }
+                                    
+                                }catch(SQLException sqlex) {
+                                    sqlex.printStackTrace();
+                                    throw new SQLException("SQLException thrown in publicObject query", sqlex);
+                                }
+                                finally  {
+                                    try { if (publicStmt != null) publicStmt.close(); } catch (SQLException se) { System.out.println("error closing stmt in populateObjectData"); }
+                                    try { if (publicRS != null) publicRS.close(); } catch (SQLException se) { System.out.println("error closing resultSet in populateObjectData"); }
+                                }   
+                                    
+                }
 		
 	}
 	
 	private void populateConstituentData(Connection tmsconn, Properties properties, Logger log) throws SQLException {
 		
-		try {
-			
-			//pull from Constituents table
-			Statement stmt = tmsconn.createStatement();
-			String conSQL = "select a.AlphaSort, b.RoleID, b.Role " +
+		//pull from Constituents table
+		String conSQL = "select a.AlphaSort, b.RoleID, b.Role " +
 					"from Constituents a, Roles b, ObjConXrefs c " +
 					"where a.ConstituentID = c.ConstituentID AND " +
 					"b.RoleID = c.RoleID AND " +
 					"(c.RoleID = 1 OR c.RoleID = 21) AND " +
 					"c.ObjectID = " + objectData.getObjectID();
 			
-			ResultSet rs;
+		ResultSet rs = null;
 			
+                try {      
                         log.log(Level.ALL, "SQL: Getting constituent data: {0}", conSQL);
                         
 			rs = DataProvider.executeSelect(tmsconn, conSQL);
@@ -311,7 +334,9 @@ public class TMSMediaRendition {
 		catch(SQLException sqlex) {
 			throw new SQLException("SQLException thrown in populateConstituentsData", sqlex);
 		}
-		
+		finally  {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { System.out.println("error closing resultSet in populateConstituentsData"); }
+                } 
 		
 		
 	}
@@ -1039,6 +1064,10 @@ public class TMSMediaRendition {
 			log.log(Level.ALL, "There was an error in isSync function: {0}", sqlex.getMessage());
 			retval = false;
 		}
+                finally  {
+                   try { if (rs != null) rs.close(); } catch (SQLException se) { System.out.println("error closing resultSet in isSynced"); }
+                }
+                
 		
 		return retval;
 	}
@@ -1058,6 +1087,9 @@ public class TMSMediaRendition {
 		} catch (SQLException e) {
 			log.log(Level.ALL, "There was an error retrieving the checksum for rendition {0}: {1}", new Object[]{this.renditionNumber, e.getMessage()});
 		}
+                finally  {
+                   try { if (rs != null) rs.close(); } catch (SQLException se) { System.out.println("error closing resultSet in getChecksum"); }
+                }
 		
 		
 		return retval;
