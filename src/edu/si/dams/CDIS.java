@@ -76,6 +76,7 @@ import edu.si.tms.audit.AuditTrailReader;
 import edu.si.tms.factory.TMSMediaRenditionFactory;
 
 import CDIS_redesigned.MetaData;
+import CDIS_redesigned.ImageFilePath;
 
 public class CDIS {
 	
@@ -438,7 +439,7 @@ public class CDIS {
 										InputStream UANStream = assetURL.openStream();
 										byte[] bytes = IOUtils.toByteArray(UANStream);
 										
-                                                                            	stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ? where RenditionID = (select RenditionID from TDIS where UOIID = ?)");
+                                                                            	stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ? where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
                                                                                 
                                                                                 stmt.setBytes(1, bytes);                                                     
 										stmt.setString(2, UOIID);
@@ -529,8 +530,7 @@ public class CDIS {
 			}
 			else if(ingester.properties.getProperty("operationType").equals("sync")) { //operationType=sync
                         
-                            MetaData mda = new MetaData();
-                            mda.sync(tmsConn, damsConn, "1");
+                            
 			
                                 //find renditions not in CDIS, IsColor = 1, asset in DAMS with <rendition number>.tif name
 				//
@@ -645,6 +645,7 @@ public class CDIS {
 				ArrayList<String> renditionsRequiringIDSPath = ingester.renditionsForIDSSync(tmsConn);
 				//ingester._log.log(Level.ALL, "Renditions requiring IDS Path: " + renditionsRequiringIDSPath.size());
 				
+                                if(!ingester.properties.getProperty("SyncRedesigned").equals("true")) {
 				if(!renditionsRequiringIDSPath.isEmpty()) {
 					//find UOIID and UAN mapping for matching assets
 				
@@ -665,7 +666,7 @@ public class CDIS {
 						}
 					}
 				}
-							
+                                }			
 				
 				//retrieve UOIIDs of newly ingested objects
 				ArrayList<String> fileNames = ingester.retrieveRenditionsPendingSync(tmsConn);
@@ -699,7 +700,14 @@ public class CDIS {
 					}
 					
 				}
-				
+                                
+                                if(ingester.properties.getProperty("SyncRedesigned").equals("true")) {
+                                    
+                                    MetaData mda = new MetaData();
+                                    mda.sync(tmsConn, damsConn, ingester.properties);
+                                    
+                                }
+                                         
 				//pull newly created assets ingested from DAMS
 				//EnteredDate >= LastRan, PathID = IDSPathId, IsColor = 1
 				ArrayList<String> DAMSIngestedAssets = ingester.getAssetsIngestedfromDAMS(tmsConn);
@@ -727,6 +735,8 @@ public class CDIS {
 					ingester._log.log(Level.ALL, "Exiting...");
 				}
 			}
+                        
+
 			
 			
 			//populate data objects from TMS data.
@@ -800,11 +810,10 @@ public class CDIS {
 							}
 						}
                                         }	
-						
-					if(ingester.properties.getProperty("operationType").equals("sync")) {
-                                                
-                                                
-                                                
+					
+                                        if(! ingester.properties.getProperty("SyncRedesigned").equals("true")) {
+                                            if(ingester.properties.getProperty("operationType").equals("sync")) {
+                                                     
 						//grab UOIID for rendition
 						String UOIID = ingester.getUOIIDForRendition(tmsConn, tempRendition);
 						if(UOIID != null) {
@@ -822,8 +831,8 @@ public class CDIS {
 							
 							
 						}
-					}
-										
+                                            }
+                                        }					
 	
                                     ingester._log.log(Level.ALL, "Creating updated record for rendition: {0}", tempRendition.getRenditionNumber());
                                     boolean success = ingester.createIngestRecord(tmsConn, tempRendition);

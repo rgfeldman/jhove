@@ -12,6 +12,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
+import java.util.HashMap;
 
 /**
  *
@@ -19,43 +21,57 @@ import org.w3c.dom.NodeList;
  */
 public class xmlConfig {
     
-    ArrayList<String>SelectStmt = new ArrayList<String>();
+    Document doc;
+    HashMap <String,String[]> SelectStmtHash ;
     
-    public ArrayList<String> getSelectStmt() {
-        return this.SelectStmt;
+    public HashMap <String,String[]> getSelectStmtHash() {
+        return this.SelectStmtHash;
     }
-    
-    private void addSelectStmt (String SelectStmt) {
-        this.SelectStmt.add(SelectStmt);
+       
+    private void addSelectStmtHash (String SelectStmt, String[] selectType) {
+        this.SelectStmtHash.put(SelectStmt, selectType);
     }
         
-    public void read() {
+    public void read(String metaDataXmlFile) {
         //need to use reflection invoke
 
-        
-    
         System.out.println("In MetaData sync Redesigned code");
+        
+        //initialize the hashmap
+        this.SelectStmtHash = new HashMap <String, String[]>();
     
         try {
             //Class cls = Class.forName("CDIS_redesigned.MetaDataTarget");
             //Object obj = cls.newInstance();
             
             //Locate the metaData xml file
-            File file = new File("conf\\metaData.xml");
+            File file = new File(metaDataXmlFile);
         
             //Set up the doc which will hold the xml file
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
-            Document doc = db.parse(file);
+            this.doc = db.parse(file);
             doc.getDocumentElement().normalize();
 
             System.out.println("Root element " + doc.getDocumentElement().getNodeName());
+            
+            getElementByTag ("query");
+       
+        } catch (Exception e) {
+            e.printStackTrace();
+        }   
 
+    }
+    
+    private void getElementByTag (String tagName) {
+        
+            // Move this part to a new method, and call it twice, once for each query tag
             // Look for the query tags
-            NodeList nodeLst = doc.getElementsByTagName("query");
+            NodeList nodeLst = this.doc.getElementsByTagName(tagName);
             
             String selectSql = null;
-      
+            String selectType[] = new String[2];
+            
             // For each query tag found....
             for (int s = 0; s < nodeLst.getLength(); s++) {
 
@@ -64,22 +80,26 @@ public class xmlConfig {
                 if (fstNode.getNodeType() == Node.ELEMENT_NODE) {
                     selectSql = fstNode.getTextContent();
                     
+                    Element e = (Element)fstNode;
+                    String queryType = e.getAttribute("type");
+                    String delimiter = e.getAttribute("delimiter");
+                    
                     System.out.println("SQL: " + selectSql);
+                   
+                    selectType[0] = tagName;
+                    selectType[1] = delimiter;
+                    
+                    System.out.println("SQL Query Type: " + selectType[0]);
+                    System.out.println("SQL Query delimiter: " + selectType[1]);
                     
                     if (selectSql != null ) { 
                         // populate objects attribute with the SQL that was obtained
-                        addSelectStmt(selectSql);
+                        //addSelectStmt(selectSql);
+                        addSelectStmtHash(selectSql, selectType);
                     }
                     
                 }
             }
-       
-        } catch (Exception e) {
-            e.printStackTrace();
-        }   
-
     }
-    //create the hash array in The default constructor
-
     
 }

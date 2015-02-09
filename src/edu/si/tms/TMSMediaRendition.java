@@ -120,18 +120,6 @@ public class TMSMediaRendition {
 					this.setMasterObjectName(rs.getString(1));
 				}
 				this.setFileName(rs.getString(1));
-				/*if(rs.getString(2).equals("8-Bit Grayscale")) {
-					this.setColor("No");
-					this.setBitDepth("8-bit");
-				}
-				else if(rs.getString(2).equals("True Color")) {
-					this.setColor("Yes");
-					this.setBitDepth("16-bit");
-				}
-				else {
-					this.setColor(null);
-					this.setBitDepth(null);
-				}*/
 				this.setDuration(rs.getString(2));
 				this.setMediaDimensions(rs.getString(3) + "x" + rs.getString(4));
 				this.setStructuralPath(rs.getString(5));
