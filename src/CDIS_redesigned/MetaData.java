@@ -5,6 +5,7 @@
  */
 package CDIS_redesigned;
 
+import CDIS_redesigned.CollectionsSystem.ImageFilePath;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,10 +14,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import edu.si.data.DataProvider;
-import CDIS_redesigned.DAMSDatabase.SiAssetMetaData;
-import CDIS_redesigned.SourceDatabase.CDISTable;
+import CDIS_redesigned.DAMS.Database.SiAssetMetaData;
+import CDIS_redesigned.CollectionsSystem.Database.CDISTable;
+import CDIS_redesigned.StatisticsReport;
+import CDIS_redesigned.xmlConfig;
 
 public class MetaData {
 
@@ -31,6 +36,7 @@ public class MetaData {
     int NumberOfSyncedRenditions;
     Connection tmsConn;
     Connection damsConn;
+    Logger logger;
 
     private void setSqlUpdate(String sqlUpdate) {
         this.sqlUpdate = sqlUpdate;
@@ -41,11 +47,12 @@ public class MetaData {
     }
 
     // This is the primary method for metadata sync that handles the sync process
-    public void sync(Connection tmsConn, Connection damsConn, Properties properties) {
+    public void sync(Connection tmsConn, Connection damsConn, Properties properties, Logger logger) {
 
          //assign the database connections for later use
         this.tmsConn = tmsConn;
         this.damsConn = damsConn;
+        this.logger = logger;
         
         //obtain properties values from the config file
         this.siUnit = properties.getProperty("siUnit");
@@ -75,7 +82,7 @@ public class MetaData {
         // Grab all the records where the ids or isRestriced flag has been changed.  need to update IDS on these
         restrictUpdatedCDISIdLst = getRestrictUpdatedRenditon();
 
-        StatReport.populateHeader(this.siUnit);
+        StatReport.populateHeader(this.siUnit, "sync");
         
         StatReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), restrictUpdatedCDISIdLst.size(), "meta");
         
@@ -105,7 +112,8 @@ public class MetaData {
         
         // Send the report by email if there is an email list
         if (this.emailTo != null) {
-            System.out.println("Need to email the report");
+            logger.log(Level.ALL, "Need to email the report");
+            
             StatReport.send(this.siUnit, this.emailTo);
         }
         
@@ -132,13 +140,12 @@ public class MetaData {
 
         ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
 
-        // this needs to get the record with the max metadaDataSyncDate
+        // this needs to get the record with the max metadaDataSyncDate if it is not unique
         String sql = "select CDIS_ID "
                 + "from CDIS "
-                + "where MetaDataSyncDate is NULL "
-                + "and RenditionID = 26268";
-
-        System.out.println("updateStatment: " + sql);
+                + "where MetaDataSyncDate is NULL ";
+        
+        logger.log(Level.ALL, "updateStatment: " + sql);
 
         ResultSet rs;
 
@@ -146,7 +153,7 @@ public class MetaData {
 
         try {
             while (rs.next()) {
-                CDISIdList.add(rs.getInt(1));
+                        CDISIdList.add(rs.getInt(1));
             }
 
         } catch (Exception e) {
@@ -170,7 +177,7 @@ public class MetaData {
 
         ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
         
-        String sql = "select CDIS_ID " +
+        String sql = "select distinct CDIS_ID " +
                      "from CDIS a, " +
                      "AuditTrail b, " +
                      "MediaRenditions c " +
@@ -182,6 +189,7 @@ public class MetaData {
         ResultSet rs;
 
         rs = DataProvider.executeSelect(this.tmsConn, sql);
+        logger.log(Level.ALL, "sql select: " + sql);
 
         try {
             while (rs.next()) {
@@ -249,7 +257,7 @@ public class MetaData {
 
                     rs = DataProvider.executeSelect(this.tmsConn, stmt);
 
-                    System.out.println("Getting information for CDIS_ID: " + cdisTbl.getCDIS_ID());
+                    logger.log(Level.ALL, "Getting information for CDIS_ID: " + cdisTbl.getCDIS_ID());
 
                     // Get the supplemental information for the current RenditionID that we are looping through
                     if (rs.next()) {
@@ -272,7 +280,7 @@ public class MetaData {
                         if (updateDamsCount > 0) {
                             
                             if (updateDamsCount > 1) {
-                                System.out.println("unexpected condition, updated more than a single row in dams for uoiid: " + cdisTbl.getUOIID());
+                                logger.log(Level.ALL, "unexpected condition, updated more than a single row in dams for uoiid: " + cdisTbl.getUOIID());
                             }
                             
                             statRpt.writeUpdateStats(cdisTbl, "metaData", true);
@@ -333,8 +341,9 @@ public class MetaData {
                 + " max_ids_size = '" + siAsst.getMaxIdsSize() + "',"
                 + " other_constraints = '" + siAsst.getOtherConstraints() + "',"
                 + " primary_creator = '" + siAsst.getPrimaryCreator() + "',"
+                + " rights_holder = '" + siAsst.getRightsHolder() + "',"
                 + " series_title = '" + siAsst.getSeriesTitle() + "',"
-                + " source_system_Id = '" + siAsst.getSourceSystemId() + "',"
+                + " source_system_id = '" + siAsst.getSourceSystemId() + "',"
                 + " terms_and_restrictions = '" + siAsst.getTermsAndRestrictions() + "',"
                 + " title = '" + siAsst.getTitle() + "',"
                 + " use_restrictions = '" + siAsst.getUseRestrictions() + "',"
@@ -347,7 +356,7 @@ public class MetaData {
 
         setSqlUpdate(updateStatement);
 
-        System.out.println("updateStatment: " + updateStatement);
+        logger.log(Level.ALL, "updateStatment: " + updateStatement);
 
     }
 
@@ -358,7 +367,7 @@ public class MetaData {
         String sqlType;
         String delimiter;
 
-        System.out.println("Mapping Data for metadata");
+        logger.log(Level.ALL, "Mapping Data for metadata");
         
         //setting defaults
          siAsst.setIsRestricted("Yes");
@@ -379,7 +388,7 @@ public class MetaData {
             sql = sql.replace("?RenditionID?", String.valueOf(cdisTbl.getRenditionId()));
             sql = sql.replace("?ObjectID?", String.valueOf(cdisTbl.getObjectId()));
 
-            System.out.println("select Statement: " + sql);
+            logger.log(Level.ALL, "select Statement: " + sql);
 
             rs = DataProvider.executeSelect(this.tmsConn, sql);
 
@@ -390,7 +399,7 @@ public class MetaData {
                     
                     if (selectCount > 1) {
                         if (sqlType.equals("singleResult")) {
-                            System.out.println("Warning: Select statement expected to return single row, returned multiple rows");
+                            logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows");
                         }
                     }
                     
@@ -449,6 +458,11 @@ public class MetaData {
                             siAsst.setPrimaryCreator(rs.getString("primary_creator"));
                         }
                     }
+                    if (sql.contains("AS rights_holder")) {
+                        if (rs.getString("rights_holder") != null) {
+                            siAsst.setRightsHolder(rs.getString("rights_holder"));
+                        }
+                    }
                     if (sql.contains("AS series_title")) {
                         if (rs.getString("series_title") != null) {
                             siAsst.setSeriesTitle(rs.getString("series_title"));
@@ -504,7 +518,7 @@ public class MetaData {
                     "IDSRestrict = '" + newIDSRestrict + "' " +
                     "where CDIS_ID = " + cdisTbl.getCDIS_ID();
 
-        System.out.println("updateStatment: " + sql);
+        logger.log(Level.ALL, "updateStatment: " + sql);
 
         int updateCount = DataProvider.executeUpdate(this.tmsConn, sql);
 
@@ -516,20 +530,32 @@ public class MetaData {
     // We only want to trigger IDS in certain conditions...this is configurable in the config file.
     private int updateMetaDataStateDate(CDISTable cdisTbl, String newIDSRestrict) {
         int updateCount = 0;
+        boolean sendIDSSync = true;
 
+        // If the update flag is set to never, we dont have to update for IDS, just return
+        if (this.flagForIDS.equals("never")) {
+            sendIDSSync = false;
+        }
         // If the restriction has not changed from what is in the database, we may not need to flag for IDS
-        if (this.flagForIDS.equals("ifRestrictUpdated")) {
+        else if (this.flagForIDS.equals("ifRestrictUpdated")) {
             if (cdisTbl.getIDSRestrict().equals(newIDSRestrict)) {
-                System.out.println("Flag for IDS not needed");
-                return 0;
+                logger.log(Level.ALL, "Flag for IDS not needed");
+                sendIDSSync = false;
+            }
+        }
+        // for ifRestricted we send to IDS if the value is Yes or a number
+        else if (this.flagForIDS.equals("ifRestricted")) {
+            if (! newIDSRestrict.equals("No")) {
+                sendIDSSync = true;
             }
         }
         
+        // We have not met any of the above conditions, we should update for IDS
         String sql = "update UOIS set metadata_state_dt = SYSDATE " +
                     "where UOI_ID = '" + cdisTbl.getUOIID() + "'";
         
-        System.out.println("updateUOIIS Statment: " + sql);
-        //updateCount = DataProvider.executeUpdate(this.damsConn, sql);
+        logger.log(Level.ALL, "updateUOIIS Statment: " + sql);
+        updateCount = DataProvider.executeUpdate(this.damsConn, sql);
         
         return (updateCount);
 

@@ -5,7 +5,7 @@
  */
 package CDIS_redesigned;
 
-import CDIS_redesigned.SourceDatabase.CDISTable;
+import CDIS_redesigned.CollectionsSystem.Database.CDISTable;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -74,9 +74,14 @@ public class StatisticsReport {
         }
     }
     
-    public void populateHeader (String siUnit) {
+    public void populateHeader (String siUnit, String operationType) {
         
-        this.headerFileWrt.append ("CDIS 2.0: Synchronization Report and Statistics\n");
+        if (operationType.equals("sync") ) {
+            this.headerFileWrt.append ("CDIS 2.0: Synchronization Report and Statistics\n");
+        }
+        else if (operationType.equals("link") ) {
+            this.headerFileWrt.append ("CDIS 2.0: DAMS/Collections Link Report and Statistics\n");
+        }
         this.headerFileWrt.append ("siUnit: " + siUnit + "\n");
         this.headerFileWrt.append ("Batch Number: " + this.timestamp + "\n\n\n");
        
@@ -96,6 +101,9 @@ public class StatisticsReport {
         }
         if (syncType.equals("ids")) {
             this.headerFileWrt.append("Renditions to IDS path sync in Source DataBase: " + neverSyncedSize + "\n\n\n");
+        }
+        if (syncType.equals("link")) {
+             this.headerFileWrt.append("/Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");
         }
         
     }

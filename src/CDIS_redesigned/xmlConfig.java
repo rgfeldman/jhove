@@ -14,12 +14,13 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/**
- *
- * @author rfeldman
- */
+        
 public class xmlConfig {
+    
+    private final static Logger logger = Logger.getLogger(CDIS_new.class.getName());
     
     Document doc;
     HashMap <String,String[]> SelectStmtHash ;
@@ -59,6 +60,7 @@ public class xmlConfig {
        
         } catch (Exception e) {
             e.printStackTrace();
+            logger.log(Level.FINE, "Error, unable to open or read XML file: {0}", metaDataXmlFile);
         }   
 
     }

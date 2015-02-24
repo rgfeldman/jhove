@@ -76,7 +76,8 @@ import edu.si.tms.audit.AuditTrailReader;
 import edu.si.tms.factory.TMSMediaRenditionFactory;
 
 import CDIS_redesigned.MetaData;
-import CDIS_redesigned.ImageFilePath;
+import CDIS_redesigned.CollectionsSystem.ImageFilePath;
+import CDIS_redesigned.CDIS_new;
 
 public class CDIS {
 	
@@ -127,6 +128,16 @@ public class CDIS {
 			System.out.println("Exception caught while parsing config file: " + ex.getMessage());
 			return;
 		}
+                
+                CDIS_new cdis_new = new CDIS_new();
+                
+                if (ingester.properties.getProperty("linkRedesigned").equals("true")) {
+                    cdis_new.execute("link");
+                    return;
+                }
+                else {
+                    System.out.println(ingester.properties.getProperty("linkRedesigned"));
+                }
 		
                 System.out.println("Configuration file verified.");
                 
@@ -316,7 +327,7 @@ public class CDIS {
 							//check if UAN already exists for a MediaFile in TMS
 							if(ingester.doesUANExistInTMS(tmsConn, UAN)) {
 								//asset file is already being pointed to in TMS, just fix the Rendition Number, add to CDIS table
-								boolean result = ingester.replaceTMSRenditionNumber(tmsConn, damsConn, UAN, title, UOIID, objectNumber);
+								boolean result = ingester.replaceTMSRenditionNumber(tmsConn, damsConn, UAN, title, UOIID, objectNumber, objectID);
 							
                                                                 if(!result) {
 									ingestedFromDAMSFailed.add(title);
@@ -356,9 +367,10 @@ public class CDIS {
                                                                                         " and u.thumb_nail_obj_id = o.object_id ";
                                 
                                                                                         ingester._log.log (Level.ALL, "ThumbBlobSql: {0}", ThumbBlobSql);
-                                                                                        
-                                                                                        rs = DataProvider.executeSelect(damsConn, ThumbBlobSql);
-                                
+		
+                                                                                         stmt = damsConn.prepareStatement(ThumbBlobSql);
+                                                                                         rs = stmt.executeQuery();
+                              
                                                                                         while(rs.next()) {
                                                                                             objectLocation = rs.getString(1);
                                                                                         }
@@ -645,7 +657,7 @@ public class CDIS {
 				ArrayList<String> renditionsRequiringIDSPath = ingester.renditionsForIDSSync(tmsConn);
 				//ingester._log.log(Level.ALL, "Renditions requiring IDS Path: " + renditionsRequiringIDSPath.size());
 				
-                                if(!ingester.properties.getProperty("SyncRedesigned").equals("true")) {
+                                if(!ingester.properties.getProperty("syncRedesigned").equals("true")) {
 				if(!renditionsRequiringIDSPath.isEmpty()) {
 					//find UOIID and UAN mapping for matching assets
 				
@@ -701,10 +713,10 @@ public class CDIS {
 					
 				}
                                 
-                                if(ingester.properties.getProperty("SyncRedesigned").equals("true")) {
+                                if(ingester.properties.getProperty("syncRedesigned").equals("true")) {
                                     
                                     MetaData mda = new MetaData();
-                                    mda.sync(tmsConn, damsConn, ingester.properties);
+                                    mda.sync(tmsConn, damsConn, ingester.properties, ingester._log);
                                     
                                 }
                                          
@@ -736,9 +748,10 @@ public class CDIS {
 				}
 			}
                         
-
 			
-			
+                        
+                            
+                        
 			//populate data objects from TMS data.
 			ArrayList<TMSMediaRendition> renditionObjects = ingester.loadTMSData(tmsConn, newRenditions, ingester.properties.getProperty("operationType"));
 			ingester._log.log(Level.ALL, "Populated data objects from TMS data.");
@@ -767,7 +780,9 @@ public class CDIS {
 						
 					String filePath = tempRendition.getStructuralPath() + "\\" + tempRendition.getName();
 						
+                                        
 					if(ingester.properties.getProperty("operationType").equals("ingest")) {
+                                            if(ingester.properties.getProperty("ingestFromTMS").equals("true")) { 
 						//copy file to hotfolder
 						boolean result = ingester.placeInHotFolder(hotFolder, tempRendition, xml, workFolder);
 						if(result) {
@@ -809,11 +824,14 @@ public class CDIS {
 									
 							}
 						}
-                                        }	
-					
-                                        if(! ingester.properties.getProperty("SyncRedesigned").equals("true")) {
-                                            if(ingester.properties.getProperty("operationType").equals("sync")) {
-                                                     
+                                            }
+                                        }
+                                        
+                                        
+                                        
+					if(ingester.properties.getProperty("operationType").equals("sync")) {
+                                            if(! ingester.properties.getProperty("syncRedesigned").equals("true")) {
+                                                 
 						//grab UOIID for rendition
 						String UOIID = ingester.getUOIIDForRendition(tmsConn, tempRendition);
 						if(UOIID != null) {
@@ -988,25 +1006,31 @@ public class CDIS {
                 String query = "select BITMAP_HEIGHT, BITMAP_WIDTH from UOIS where UOI_ID = '" + UOIID + "'";
 		HashMap<String, String> retval = new HashMap<String, String>();
 		
-		ResultSet rs = DataProvider.executeSelect(damsConn, query);
+                PreparedStatement stmt = null;
+                ResultSet rs = null;
+                
+                try {
+                    stmt = damsConn.prepareStatement(query);
+                    rs = stmt.executeQuery();
+
+                    while(rs.next()) {
+			retval.put(rs.getString(1), rs.getString(2));
+                    }
 		
-		try {
-			while(rs.next()) {
-				retval.put(rs.getString(1), rs.getString(2));
-			}
-		} catch (SQLException e) {
+                } catch (SQLException e) {
 			// TODO Auto-generated catch block
 			_log.log(Level.ALL, "There was an exception during getDimensionData, asset with UOI_ID: {0}. Skipping...", UOIID);
 		}
 		finally {
 			try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                        try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
 		}
 		
 		return retval;
 	}
 
 	private boolean replaceTMSRenditionNumber(Connection tmsConn, Connection damsConn, String UAN,
-			String title, String UOIID, String objectNumber) {
+			String title, String UOIID, String objectNumber, String objectID) {
 		
 		//make sure FileName is unique
 		String uniqueQuery = null;
@@ -1088,9 +1112,10 @@ public class CDIS {
                         }
 			
 			query = "insert into CDIS " +
-                                "(RenditionID, RenditionNumber, UOIID)values(" +
+                                "(RenditionID, RenditionNumber, objectID, UOIID)values(" +
 				renditionID + "," +
 				"'" + renditionNumber + "'," + 
+                                "'" + objectID + "'," + 
                         	"'" + UOIID + "')";
                         
                         _log.log(Level.ALL,query);
@@ -1121,7 +1146,8 @@ public class CDIS {
                                                       " where u.uoi_id = '" + UOIID + "'" +
                                                       " and u.thumb_nail_obj_id = o.object_id ";
                                 
-                                rs = DataProvider.executeSelect(damsConn, ThumbBlobSql);
+                                stmt = damsConn.prepareStatement(ThumbBlobSql);
+                                rs = stmt.executeQuery();
                                 
                                 String objectLocation = null;
                                 
@@ -1273,9 +1299,9 @@ public class CDIS {
 			ResultSet rs = null;
 			PreparedStatement stmt = null;
 			
-			try {
-				stmt = damsConn.prepareStatement(damsSQL);
-				rs = DataProvider.executeSelect(damsConn, stmt);
+			try {                              
+                                stmt = damsConn.prepareStatement(damsSQL);
+                                rs = stmt.executeQuery();
 				
 				while(rs.next()) {
 					title = rs.getString(1);
@@ -1306,7 +1332,7 @@ public class CDIS {
                                                     title = title.substring(7, title.lastIndexOf(".")); //new
                                                 }
                                                 
-                                                if(title.split("_").length < 8) {
+                                                if(title.split("_").length < 8 && title.length() > 8) {
                                                   // Add periods after the 4th and 8th characters, this is the format in TMS for ACM client
                                                 	retval.put(title.substring(0, 4) + "." + title.substring(4, 8) + "." + title.substring(8), rank);
                                                 }
@@ -1380,7 +1406,7 @@ public class CDIS {
 			
 			try {
 				stmt = damsConn.prepareStatement(damsSQL);
-				rs = DataProvider.executeSelect(damsConn, stmt);
+				rs = stmt.executeQuery();                                                          
 				
 				while(rs.next()) {
 					barcode = rs.getString(1);
@@ -1470,7 +1496,7 @@ public class CDIS {
 			
 			try {
 				stmt = damsConn.prepareStatement(damsSQL);
-				rs = DataProvider.executeSelect(damsConn, stmt);
+				rs = stmt.executeQuery();
 				
 				while(rs.next()) {
 					barcode = rs.getString(1);
@@ -1554,8 +1580,9 @@ public class CDIS {
                         //CHSDM and FSG has extra fields assigned
 			renditionDate = new String();
 			Calendar cal = Calendar.getInstance();
-			SimpleDateFormat df1 = new SimpleDateFormat("MMM-dd-yyyy");
-			renditionDate = df1.format(cal.getTime());
+			SimpleDateFormat df1;
+                        df1 = new SimpleDateFormat("yyyy-MM-dd");
+                        renditionDate = df1.format(cal.getTime());
 			renditionNumber = renditionNumber.replaceAll("_", ".");
 			
                         _log.log(Level.ALL, "Creating MediaRecord in TMS for ObjectId: " + objectID + " rank: " + rank);
@@ -1621,7 +1648,8 @@ public class CDIS {
 				"AND TRIM(UPPER(a.CONTENT_TYPE)) != 'SHORTCUT' " +
 				"AND b.SOURCE_SYSTEM_ID is null " +
 				"AND UPPER(PUBLIC_USE) = 'YES' " +
-                                "AND b.OWNING_UNIT_UNIQUE_NAME like 'FS-%'";
+                                "AND b.OWNING_UNIT_UNIQUE_NAME like 'FS-%'" +
+                                "AND TO_CHAR(a.METADATA_STATE_DT,'YYYY-MM-DD') = '2015-02-19'";
                 }
                 else {
                     sql = "select a.UOI_ID, b.OWNING_UNIT_UNIQUE_NAME from UOIS a, SI_ASSET_METADATA b, SI_IDS_EXPORT c " +
@@ -1634,12 +1662,17 @@ public class CDIS {
                 }
 		
                 _log.log(Level.ALL, "SQL: Retrieving new assets {0}", sql);
-                
-		ResultSet rs = DataProvider.executeSelect(damsConn, sql);
+                           
+                PreparedStatement stmt = null;
+                ResultSet rs = null;
+                                
 		int recordCount = 0;
                 int MaxRecords = Integer.parseInt(properties.getProperty("maxDAMSIngest"));
                 
 		try {
+                        stmt = damsConn.prepareStatement(sql);
+			rs = stmt.executeQuery();
+                                
 			while(rs.next()) {
 				retval.put(rs.getString(1), rs.getString(2));
 				recordCount++;
@@ -1654,6 +1687,7 @@ public class CDIS {
 			e.printStackTrace();
 		} finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
                 }
 		
 		return retval;
@@ -1733,7 +1767,8 @@ public class CDIS {
 		damsQuery += ")";
 		
                 try {
-			rs = DataProvider.executeSelect(damsConn, damsQuery);
+                        stmt = damsConn.prepareStatement(damsQuery);
+			rs = stmt.executeQuery();
 			
 			while(rs.next()) {
 				pairs.put(rs.getString(1), rs.getString(2));
@@ -1743,6 +1778,7 @@ public class CDIS {
                             sqlex.printStackTrace();
                 } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
+                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { _log.log(Level.ALL, "Error closing the statement {0}", se.getMessage()); }
                 }	
                         
 		//create CDIS records
@@ -1936,7 +1972,9 @@ public class CDIS {
 					stmt = damsConn.prepareStatement(query);
 					stmt.setString(1, fileName);
 					_log.log(Level.ALL, "Filename: {0}", fileName);
-					rs2 = DataProvider.executeSelect(damsConn, stmt);
+					
+                                        rs2 = stmt.executeQuery();
+                                        
 					rs2.next();
 					UOIID = rs2.getString(1);
 					
@@ -2535,12 +2573,16 @@ public class CDIS {
                     assetFile = new File(tempRendition.getStructuralPath() + "/" + tempRendition.getFileName());
                 }
                 else {
-                    assetFile = new File(convertMediaPath(tempRendition.getStructuralPath()) + "/" + tempRendition.getFileName());
+                    assetFile = new File(convertMediaPath(tempRendition.getStructuralPath()) + tempRendition.getFileName());
+                    System.out.println("Copying from " + convertMediaPath(tempRendition.getStructuralPath()) + "/" + tempRendition.getFileName());
                 }    
-		    System.out.println("Copying from " + assetFile.getAbsolutePath());
+		    
 		    File destFile = new File(workFolder.getAbsolutePath() + "/" + fileName);
 		    _log.log(Level.ALL, "Beginning file copy to work folder...");
 		    _log.log(Level.ALL, "Source file size: {0}", assetFile.length());
+                    _log.log(Level.ALL, "Structural Path: {0}", tempRendition.getStructuralPath());
+                    _log.log(Level.ALL, "Source file size: {0}", assetFile.length());
+                    
 		    boolean isCopying = true;
 		    FileUtils.copyFile(assetFile, destFile);
 		    
