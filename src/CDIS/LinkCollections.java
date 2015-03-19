@@ -61,7 +61,7 @@ public class LinkCollections  {
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedDamsRenditions (cdis_new);
         
-        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, 0, "link");
+        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, "link");
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
         linkUANtoFilename (cdis_new.xmlSelectHash, statReport);    
@@ -80,7 +80,7 @@ public class LinkCollections  {
         Statement stmt = null;
         
         String sql = "update SI_ASSET_METADATA set source_system_id = '" + cdisTbl.getRenditionNumber() + "' " +
-                    "where UOIID = '" + cdisTbl.getUOIID() + "'";
+                    "where UOI_ID = '" + cdisTbl.getUOIID() + "'";
 
         logger.log(Level.FINEST, "SQL! {0}", sql);
         
@@ -109,13 +109,15 @@ public class LinkCollections  {
         ResultSet rs = null;
         String sql = null;
         String owning_unit_unique_name = null;     
-        String newSql = null;
+        String currentIterationSql = null;
         String sqlTypeArr[] = null;
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
         for (String key : SelectHash.keySet()) {     
               
-            if (sqlTypeArr[0].equals("TMSSelect")) {   
+            sqlTypeArr = SelectHash.get(key);
+            
+            if (sqlTypeArr[0].equals("checkAgainstCollections")) {   
                 sql = key;    
             }
         }
@@ -127,55 +129,61 @@ public class LinkCollections  {
                 CDISTable cdisTbl = new CDISTable();
                 
                 // set the temporary newSql variable to contain the sql with the UAN from the never linked Rendition hash
-                newSql = sql.replace("?owning_unit_unique_name?", neverLinkedDamsRendtion.get(key));
+                currentIterationSql = sql.replace("?owning_unit_unique_name?", neverLinkedDamsRendtion.get(key));
                 
                 cdisTbl.setUOIID(key);
                 
                 //logger.log(Level.FINER,"checking for UOI_ID " + cdisTbl.getUOIID() + " UAN: " + neverLinkedDamsRendtion.get(key));
-                //logger.log(Level.FINEST,"SQL " + newSql);
+                logger.log(Level.FINEST,"SQL " + currentIterationSql);
                               
-                stmt = tmsConn.prepareStatement(newSql);
+                stmt = tmsConn.prepareStatement(currentIterationSql);
                 rs = stmt.executeQuery();              
                         
                 if (rs.next()) {
-                    cdisTbl.setRenditionId(rs.getInt(1));
-                    cdisTbl.setRenditionNumber(rs.getString(2));           
                     
-                    logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisTbl.getUOIID() + " RenditionID: " + rs.getInt(1));
-                    
-                    // Get the objectID for the CDIS table by the renditionID if is is ontainable
-                    TMSObject tmsObject = new TMSObject();
-                    tmsObject.populateObjectIDByRenditionId (cdisTbl.getRenditionId(), tmsConn);                            
-                    
-                    // Set the objectID in the CDIS table object equal to the ObjectID in the Object object
-                    cdisTbl.setObjectId( tmsObject.getObjectID() );
-                    
-                    // add linking record to CDIS table
-                    boolean recordCreated = cdisTbl.createRecord (cdisTbl, tmsConn);
-        
-                    // If we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
-                    if (recordCreated) {
-                        // update the SourceSystemID in DAMS with this value
-                        int updatedRows = updateDAMSSourceSystemID(cdisTbl);
+                    try {
                         
-                        if (updatedRows == 1) {
-                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", true);
+                        cdisTbl.setRenditionId(rs.getInt(1));
+                        cdisTbl.setRenditionNumber(rs.getString(2));           
+                    
+                        logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisTbl.getUOIID() + " RenditionID: " + rs.getInt(1));
+                    
+                        // Get the objectID for the CDIS table by the renditionID if is is ontainable
+                        TMSObject tmsObject = new TMSObject();
+                        tmsObject.populateObjectIDByRenditionId (cdisTbl.getRenditionId(), tmsConn);                            
+                    
+                        // Set the objectID in the CDIS table object equal to the ObjectID in the Object object
+                        cdisTbl.setObjectId( tmsObject.getObjectID() );
+                    
+                        // add linking record to CDIS table
+                        boolean recordCreated = cdisTbl.createRecord (cdisTbl, tmsConn);
+        
+                        // If we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
+                        if (recordCreated) {
+                            // update the SourceSystemID in DAMS with this value
+                            int updatedRows = updateDAMSSourceSystemID(cdisTbl);
+                        
+                            if (updatedRows == 1) {
+                                statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", true);
+                            }
+                            else if (updatedRows == 0) {
+                                statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
+                            }
                         }
-                        else if (updatedRows == 0) {
+                        else{
+                            logger.log(Level.FINER,"ERROR: CDIS record not created for UOIID! " + cdisTbl.getUOIID());
                             statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
                         }
-                    }
-                    else{
-                        logger.log(Level.FINER,"ERROR: CDIS record not created for UOIID! " + cdisTbl.getUOIID());
+                        
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisTbl.getUOIID());
                         statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
                     }
-                    
                 }
-
                 
             } catch (Exception e) {
                 e.printStackTrace();
-        
             }finally {
                 try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
@@ -218,8 +226,10 @@ public class LinkCollections  {
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
         for (String key : cdis_new.xmlSelectHash.keySet()) {     
-              
-            if (sqlTypeArr[0].equals("RetrieveDamsRenditions")) {   
+            
+            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            
+            if (sqlTypeArr[0].equals("retrieveDamsRenditions")) {   
                 sql = key;    
                 logger.log(Level.FINEST, "SQL: {0}", sql);
             }

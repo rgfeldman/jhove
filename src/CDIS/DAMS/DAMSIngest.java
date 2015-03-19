@@ -19,6 +19,10 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.logging.Level;
 import com.jamesmurty.utils.XMLBuilder;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.Properties;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -30,6 +34,10 @@ public class DAMSIngest {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     Connection damsConn;
     Connection tmsConn;
+    Integer numberMediaFilesToIngest;
+    Integer numberXmlFilesToIngest;
+    String workFolderDir;
+    String damsDropOffLocation;
     
     HashMap <String,String> renditionsForDAMS; 
     
@@ -53,7 +61,7 @@ public class DAMSIngest {
         for (String key : cdis_new.xmlSelectHash.keySet()) {
             
             sqlTypeArr = cdis_new.xmlSelectHash.get(key);
-            if (sqlTypeArr[0].equals("TMSSelectList")) {   
+            if (sqlTypeArr[0].equals("checkForExistingDAMSRendition")) {   
                 sql = key;    
               
             }
@@ -63,9 +71,9 @@ public class DAMSIngest {
         if ( sql != null) {           
         
             //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
-            for (String RenditionID : renditionsForDAMS.keySet()) {
+            for (String renditionID : renditionsForDAMS.keySet()) {
                 
-                String tmsFileName = renditionsForDAMS.get(RenditionID);
+                String tmsFileName = renditionsForDAMS.get(renditionID);
                     
                 sql = sql.replaceAll("\\?fileName\\?", tmsFileName);
                 
@@ -78,11 +86,22 @@ public class DAMSIngest {
                     if ( rs.next()) {   
                             
                             //build XML file
-                        
-                            //If the rendition is not in dams:
-                            //Find the image on the media drive
+                            MetaXMLFile metaXmlFile = new MetaXMLFile();
+                            metaXmlFile.contentCreate(); 
                             
-                            //copy the image to the hotfolder in DAMS
+                            // Create the metadata xml file into the work folder
+                            boolean metaFileCreated = metaXmlFile.create(cdis_new, tmsFileName, metaXmlFile.xml);
+                            
+                            if (!metaFileCreated) {
+                                logger.log(Level.FINE, "Error, metadata XML file not able to be created, obtaining next rendition");
+                                continue;
+                            }
+                            
+                            logger.log(Level.FINER, "MetaData XML file created successfully");
+                                         
+                            //Find the image on the media drive
+                            MediaFile mediaFile = new MediaFile();
+                            mediaFile.create(cdis_new, tmsFileName, Integer.parseInt(renditionID), this.tmsConn);
                         
                     }
                     else {
@@ -145,10 +164,57 @@ public class DAMSIngest {
         return;
     }
     
+    private void moveFilesToDamsDropOff () {
+                
+        //establish vars to hold the dropoff locations for the media and the XML files
+        File damsXMLDropOffDir =  new File(this.damsDropOffLocation + "MetaData");
+        File damsMediaDropOffDir =  new File(this.damsDropOffLocation + "Master");
+                
+        
+        File workFolderDir = new File(this.workFolderDir);
+        File[] filesForDams = workFolderDir.listFiles();
+        
+        // For each file in work folder, move to the xml dropoff location, or the media dropoff location
+        for(int i = 0; i < filesForDams.length; i++) {
+            File fileForDams = filesForDams[i];
+            try {
+                if(fileForDams.getName().endsWith(".xml")) {
+                    //move the XML file to the XML directory
+                    FileUtils.moveFileToDirectory(fileForDams, damsXMLDropOffDir, false);
+                    numberMediaFilesToIngest ++;
+                }
+                else {
+                    //move the image to the image directory
+                    FileUtils.moveFileToDirectory(fileForDams, damsMediaDropOffDir, false);
+                    numberXmlFilesToIngest ++;
+                }
+            } catch (Exception e) {
+                    e.printStackTrace();
+            } 
+        }
+        
+    }
+    
+    private void createReadyFile () {
+        try {
+            if (numberMediaFilesToIngest > 1) {
+                //Create the ready.txt file and put in the media location
+                File readyFile = new File (this.damsDropOffLocation + "ready.txt");
+            
+                readyFile.createNewFile();
+            
+            }
+            } catch (Exception e) {
+                    e.printStackTrace();
+            }
+    }
+    
      public void ingest (CDIS cdis_new, StatisticsReport statReport) {
          
         this.damsConn = cdis_new.damsConn;
         this.tmsConn = cdis_new.tmsConn;
+        this.workFolderDir = cdis_new.properties.getProperty("workFolder");
+        this.damsDropOffLocation = cdis_new.properties.getProperty("damsDropOffLocation");
         
         logger.log(Level.FINER, "In redesigned Ingest to Collections area");
         
@@ -162,7 +228,14 @@ public class DAMSIngest {
         
         // check if the renditions are in dams
         checkDAMSForRendition(cdis_new);
-                
-
+        
+        // move the media file and XML file from the work folder to the DAMS hotfolder location
+        moveFilesToDamsDropOff();
+        
+        // Create ready.txt file to indicate to the DAMS ingest process that there is a batch of files awaiting for ingest
+        createReadyFile();
+        
+        // Add TMS-INGEST to the source_system_id in DAMS
+        
      }
 }

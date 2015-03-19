@@ -19,6 +19,7 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.logging.Handler;
 import CDIS.CollectionsSystem.TMSIngest;
+import CDIS.CollectionsSystem.Thumbnail;
 import CDIS.DAMS.DAMSIngest;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -167,7 +168,11 @@ public class CDIS {
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             
-            xml.read(cdis_new.operationType, cdis_new.properties.getProperty("xmlSQLFile"));
+            boolean xmlReturn = xml.read(cdis_new.operationType, cdis_new.properties.getProperty("xmlSQLFile"));
+            if (! xmlReturn) {
+                logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
+                return;
+            }
             
             cdis_new.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
             
@@ -185,7 +190,12 @@ public class CDIS {
                 linkcollections.link(cdis_new, statReport);
             }
             else if (cdis_new.operationType.equals("sync")) {
-                // Need to write this code
+                 MetaData metaData = new MetaData();
+                 metaData.sync(cdis_new, statReport);
+            }
+            else if (cdis_new.operationType.equals("thumbnailSync")) {
+                 Thumbnail thumbnail = new Thumbnail();
+                 thumbnail.sync(cdis_new, statReport);
             }
             else {
                 logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");

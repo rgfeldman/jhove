@@ -5,7 +5,6 @@
  */
 package CDIS.CollectionsSystem;
 
-
 import java.io.BufferedReader;
 import java.sql.ResultSet;
 import java.sql.Connection;
@@ -25,6 +24,8 @@ import java.util.logging.Logger;
 
 import CDIS.CDIS;
 import CDIS.CollectionsSystem.Database.TMSRendition;
+import CDIS.StatisticsReport;
+import java.util.HashMap;
 import org.apache.commons.io.IOUtils;
 
 
@@ -35,7 +36,14 @@ public class Thumbnail {
     
     String damsImageLocation;
     Connection damsConn;
+    Connection tmsConn;
     String uoiid;
+    
+    HashMap <Integer,String> thumbnailsToSync;  
+    
+    private void addthumbnailsToSync (Integer renditionID, String UOIID) {
+        this.thumbnailsToSync.put(renditionID, UOIID); 
+    }
     
     private boolean getDamsLocation () {
         
@@ -78,9 +86,7 @@ public class Thumbnail {
         
         getDamsLocation ();
         
-        imageFile = "\\\\smb.si-osmisilon1.si.edu\\prodartesiarepo\\" + this.damsImageLocation;
-             
-        
+        imageFile = "\\\\smb.si-osmisilon1.si.edu\\prodartesiarepo\\" + this.damsImageLocation; 
               
         // Capture the image as a binary stream
         try {
@@ -104,9 +110,6 @@ public class Thumbnail {
 											
             stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
                     " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionNumber =  ? ) ");
-            
-            //            stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?" +
-            //        " where RenditionID = (select RenditionID from CDIS where UOIID = ?)");
 			
             stmt.setBytes(1, bytes);
             stmt.setInt(2, imageFileSize);
@@ -115,7 +118,7 @@ public class Thumbnail {
             int recordsUpdated = stmt.executeUpdate();
             
             if ((recordsUpdated) != 1 ) {
-                logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + tmsRendition.getRenditionID());
+                logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + tmsRendition.getRenditionId());
             }
                     
          }catch(Exception e) {
@@ -124,6 +127,64 @@ public class Thumbnail {
 	
         return true;
                                                             
+    }
+    
+    private void populateRenditionsToUpdate (CDIS cdis_new) {
+        ResultSet rs = null;
+        PreparedStatement stmt = null;
+        String owning_unit_unique_name = null;
+        String sqlTypeArr[] = null;
+        String sql = null;
+        
+        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
+        for (String key : cdis_new.xmlSelectHash.keySet()) {     
+            
+            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            
+            if (sqlTypeArr[0].equals("retrieveRenditionIds")) {   
+                sql = key;    
+                logger.log(Level.FINEST, "SQL: {0}", sql);
+            }
+        }
+                
+        try {
+            
+            stmt = tmsConn.prepareStatement(sql);                                
+            rs = stmt.executeQuery();
+        
+            // For each record in the sql query, add it to the unlinked rendition List
+            while (rs.next()) {   
+                addthumbnailsToSync(rs.getInt("RenditiodID"), rs.getString("uoiid"));
+                logger.log(Level.FINER,"Adding TMS rendition for Thumbnail update {0}", rs.getInt("RenditionID") );
+            }
+            int numRecords = this.thumbnailsToSync.size();
+        
+            logger.log(Level.FINER,"Number of records in DAMS that are unsynced: {0}", numRecords);
+            
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+        return;
+        
+    }
+    
+    public void sync (CDIS cdis_new, StatisticsReport statReport) {
+        
+        this.tmsConn = cdis_new.tmsConn;
+        
+        //Populate the header information in the report file
+        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "thumbnailSync"); 
+        
+        //Get a list of RenditionIDs that require syncing from the sql XML file
+        populateRenditionsToUpdate (cdis_new);
+        
+        //create the thumbnail in TMS from those DAMS images (cdis_new.damsConn, cdis_new.tmsConn, "", tmsRendition)
+    
     }
     
 }

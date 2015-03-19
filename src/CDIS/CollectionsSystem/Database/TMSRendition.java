@@ -27,7 +27,7 @@ public class TMSRendition {
     int pixelH;
     int pixelW;
     int rank;
-    int renditionID;
+    int renditionId;
     String renditionNumber;
     String fileName;
     
@@ -52,8 +52,8 @@ public class TMSRendition {
         return this.rank;
     }
     
-    public int getRenditionID () {
-        return this.renditionID;
+    public int getRenditionId () {
+        return this.renditionId;
     }
     
     public String getRenditionNumber() {
@@ -83,8 +83,8 @@ public class TMSRendition {
         this.rank = rank;
     }
     
-    private void setRenditionID (int renditionID) {
-        this.renditionID = renditionID;
+    private void setRenditionId (int renditionId) {
+        this.renditionId = renditionId; 
     }
     
     public void setRenditionNumber (String renditionNumber) {
@@ -93,7 +93,35 @@ public class TMSRendition {
     
     
     
-    
+    public void populateRenditionIdByRenditionNumber (TMSRendition tmsRendition, Connection tmsConn) {
+        String sql = "Select RenditionID " +
+                     "From MediaRenditions " +
+                     "Where RenditionNumber = '" + tmsRendition.getRenditionNumber() + "'";
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
+        ResultSet rs = null;
+        PreparedStatement stmt = null;
+        
+        try {
+		stmt = tmsConn.prepareStatement(sql);
+		rs = stmt.executeQuery();
+              
+                if (rs.next()) {
+                    tmsRendition.setRenditionId(rs.getInt(1));
+                }        
+	}
+            
+	catch(SQLException sqlex) {
+		sqlex.printStackTrace();
+	}
+        finally {
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+	}
+        
+        
+    }
     
     public int populateTMSRenditionBarcode (String name, Connection tmsConn) {
     
@@ -131,11 +159,57 @@ public class TMSRendition {
         return objectID;
          
     }
+    
+    public void populateIsPrimary(Integer ObjectID, Connection tmsConn) {
+        //Now that we have the rank, need to set the primary flag
+        
+        ResultSet rs = null;
+        PreparedStatement stmt = null;
+        int numRows = 0;
+        
+        if (this.getRank() == 1) {
+            //Check to make sure if we dont have a rank 1 for this object already
+            
+            String sql = "SELECT count(*) from MediaXrefs " + 
+                         "WHERE ID = " + ObjectID + 
+                         " and PrimaryDisplay = 1";
+            
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+             try {
+		stmt = tmsConn.prepareStatement(sql);
+		rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    numRows = rs.getInt(1);
+                }
+                
+             }
+             catch(SQLException sqlex) {
+		sqlex.printStackTrace();
+            }
+            finally {
+                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            }
+            
+            if (numRows == 0) {
+                this.setIsPrimary(true);
+            }
+            else {
+                this.setIsPrimary(false);
+            }
+        }
+        else { 
+            this.setIsPrimary(false);
+        }
+        
+    }
      
     public String populateTMSRendition(String uoiid, TMSRendition tmsRendition, Connection damsConn) {
         
         String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + uoiid + "'";
-        String damsRenditionName = null;
+        String damsImageFileName = null;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -147,8 +221,9 @@ public class TMSRendition {
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
-                    damsRenditionName = rs.getString(1).replace(".jpg", "");
-                    damsRenditionName = damsRenditionName.replace(".tif", "");
+                    damsImageFileName = rs.getString(1).replace(".jpg", "");
+                    damsImageFileName = damsImageFileName.replaceAll(".tif", "");
+                    damsImageFileName = damsImageFileName.replaceAll(".TIF", ""); 
 
                     this.setPixelH(rs.getInt("bitmap_height"));
                     this.setPixelW(rs.getInt("bitmap_width"));
@@ -164,27 +239,30 @@ public class TMSRendition {
             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
 	}
         
-        // Get the rank from the last number after the '-' 
-        //first populate the default rank as 1
-        this.setRank(1);
-        
-        String[] tmpString = damsRenditionName.split("_");   
-        String charRank = tmpString[tmpString.length-1];
-        
-        logger.log(Level.FINER, "new RenditionNumber: {0}", tmsRendition.getRenditionNumber());
-        logger.log(Level.FINER, "Rank: {0}", charRank);
-        
-        this.setRank(Integer.parseInt(charRank));      
-        
-        // the isPrimary flag is based on the rank
-        if ( tmsRendition.getRank() == 1 ) {
-            this.setIsPrimary(true);
+        // Get the rank from the last number after the '_' 
+        String charRank = null;
+        if (damsImageFileName.contains("_")) {
+            int p = damsImageFileName.lastIndexOf("_");
+            charRank = damsImageFileName.substring(p+1);
+            
+            try {
+                this.setRank(Integer.parseInt(charRank));
+                
+            } catch (Exception e ) {
+                //rank is not an int...set rank to one as default, and set to primary
+                this.setRank(1); 
+            }
         }
         else {
-            this.setIsPrimary(false);
-        }     
+            // dams Filename doesnt contain underscore, set the rank to 1
+            this.setRank(1);     
+        }
+        
+        
+        logger.log(Level.FINER, "DAMS imageFileName: {0}", damsImageFileName);
+        logger.log(Level.FINER, "Rank: {0}", this.getRank());
        
-        return damsRenditionName;
+        return damsImageFileName;
     }   
   
 }

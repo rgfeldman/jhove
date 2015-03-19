@@ -88,6 +88,21 @@ public class CDISTable {
         this.UOIID = UOIID;
     }
     
+    // Update CDIS table to log this transaction
+    public int updateIDSSyncDate(CDISTable cdisTbl, Connection tmsConn) {
+        
+        String sql = "update CDIS " +
+                    "set SyncIDSPathDate = SYSDATETIME() " +
+                    "where RenditionID = " + cdisTbl.getRenditionId();
+
+        logger.log(Level.FINEST,"SQL! " + sql);
+
+        int updateCount = DataProvider.executeUpdate(tmsConn, sql);
+
+        return (updateCount);
+
+    }
+    
     public boolean createRecord(CDISTable cdisTbl, Connection tmsConn) {
         
         boolean inserted = false;

@@ -39,12 +39,49 @@ public class TMSObject {
     private void setObjectNumber (String objectNumber) {
         this.objectNumber = objectNumber;
     }
-    
-    public boolean populateObjectFromRenditionNumber (String damsRenditionName, Connection tmsConn){
-
-        String tmpObjectNumber = damsRenditionName.substring(0, damsRenditionName.lastIndexOf("_"));
-        setObjectNumber(tmpObjectNumber.replaceAll("_", "."));
         
+    
+    public boolean populateObjectFromRenditionNumber (String damsImageFileName, CDIS cdis_new, Connection tmsConn){
+
+        // populate ObjectNumber using various formats specified in the config file
+        String imageToObjectTrunc = cdis_new.properties.getProperty("damsImageNameToTMSObjectTrunc");
+        String tmsObjectNumberFormat = cdis_new.properties.getProperty("tmsObjectNumberFormat");
+        String tmpObjectNumber = null;
+        
+        logger.log(Level.FINER,"Need to find Object for filename...before reformat " + damsImageFileName);
+        
+        if (imageToObjectTrunc.equals("firstDash")) {
+            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.indexOf("-"));
+        }
+        else if (imageToObjectTrunc.equals("lastDash")) {
+            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("-"));
+        }
+        else if (imageToObjectTrunc.equals("lastUnderscore")) {
+            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("_"));        
+        }
+        else if (imageToObjectTrunc.equals("lastUnderscore")) {
+            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("_"));        
+        }
+        else if (imageToObjectTrunc.equals("dropStringacmobj-")) {
+            tmpObjectNumber = damsImageFileName.replaceAll("acmobj-", ""); 
+        }
+        else {
+            tmpObjectNumber = damsImageFileName;
+        }
+        
+        if (tmsObjectNumberFormat.equals("underscoreToDot")) {
+            setObjectNumber(tmpObjectNumber.replaceAll("_", "."));
+        }
+        else if (tmsObjectNumberFormat.equals("dotsEveryFour")) {
+            setObjectNumber(tmpObjectNumber.substring(0, 4) + "." + tmpObjectNumber.substring(4, 8) + "." +  tmpObjectNumber.substring(8));
+        }
+        else {
+            setObjectNumber(tmpObjectNumber);
+        }
+        
+        logger.log(Level.FINER,"NEW TMS ObjectNumber: " + getObjectNumber());
+    
+        // Obtain the ObjectID based on the ObjectName that was determined above. 
         PreparedStatement stmt = null;
         ResultSet rs = null;
         

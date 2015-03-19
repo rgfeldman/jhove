@@ -206,7 +206,20 @@ public class SiAssetMetaData {
     }
     
     public void setMaxIdsSize(String maxIdsSize) {
-        this.maxIdsSize = scrubString(maxIdsSize);
+        
+        maxIdsSize = scrubString(maxIdsSize);
+        
+        //make sure our maxIDS Size is an Int
+        try {
+            Integer maxIdsSizeInt = Integer.parseInt(maxIdsSize);
+            
+            this.maxIdsSize = maxIdsSizeInt.toString();
+            
+        } catch (Exception e) {
+            // We didnt have a valid (numeric) max ids size, set it to the default (null)
+            //dont set maxIds size to anything
+        }
+        
     }
     
     public void setOtherConstraints(String otherConstraints) {

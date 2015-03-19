@@ -41,6 +41,29 @@ public class MediaRecord {
     Connection tmsConn;
     
     
+    private boolean formatNewRenditionName (CDIS cdis_new, String damsImageFileName, TMSRendition tmsRendition) {
+        
+        logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
+        
+        //NMAAHC wants RenditionNumber with '.'s instead of underscores
+        if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("underscoreToDot")  ) {  
+            String damsRenditionNameUnderscoreToDot = damsImageFileName.replaceAll("_", ".");      
+            tmsRendition.setRenditionNumber(damsRenditionNameUnderscoreToDot);
+        
+        } else if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("none")) {
+            tmsRendition.setRenditionNumber(damsImageFileName);
+        }
+        else {
+            logger.log(Level.FINER, "unable to create Rendition number, Invalid name formatting option: {0}", cdis_new.properties.getProperty("newRenditionNameFormat"));
+            return false;
+        }
+        
+        logger.log(Level.FINER, "Formatted name: {0}", tmsRendition.getRenditionNumber());
+        
+        return true;
+        
+    }
+    
     public boolean create (CDIS cdis_new, SiAssetMetaData siAsst, TMSRendition tmsRendition, TMSObject tmsObject) {
  
         this.tmsConn = cdis_new.tmsConn;    
@@ -56,26 +79,24 @@ public class MediaRecord {
         // if the barcode is set, use the name to get the barcode info,
         //else use the name to get rendition name with the rendition
         
-        String damsRenditionName = tmsRendition.populateTMSRendition(siAsst.getUoiid(), tmsRendition, damsConn);
+        String damsImageFileName = tmsRendition.populateTMSRendition(siAsst.getUoiid(), tmsRendition, damsConn);
         
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
         
         if (cdis_new.properties.getProperty("locateByBarcode").equals("true")) {
             //tmsRendition.setRenditionNumber( ObjectID);
-            Integer objectId = tmsRendition.populateTMSRenditionBarcode(damsRenditionName, tmsConn);
+            Integer objectId = tmsRendition.populateTMSRenditionBarcode(damsImageFileName, tmsConn);
             tmsRendition.setRenditionNumber( objectId.toString() + "_01" );
             
             tmsObject.setObjectID(objectId);
             
         }
         else {
-            //NMAAHC wants RenditionNumber with '.'s instead of underscores
-            String damsRenditionNameUnderscoreToDot = damsRenditionName.replaceAll("_", "."); 
             
-            tmsRendition.setRenditionNumber(damsRenditionNameUnderscoreToDot);
+            formatNewRenditionName (cdis_new, damsImageFileName, tmsRendition);
             
-            boolean objectPopulated = tmsObject.populateObjectFromRenditionNumber(damsRenditionName, tmsConn);
+            boolean objectPopulated = tmsObject.populateObjectFromRenditionNumber(damsImageFileName, cdis_new, tmsConn);
             if (! objectPopulated) {
                 // we were unable to populate the object, return with a failure indicator
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");
@@ -83,10 +104,18 @@ public class MediaRecord {
             }
         }
         
+        // Set the primaryRenditionFlag
+        tmsRendition.populateIsPrimary(tmsObject.getObjectID(), tmsConn);
+        
         
         logger.log(Level.FINER, "about to create TMS media Record:");
         logger.log(Level.FINER, "ObjectID: " + tmsObject.getObjectID());
         logger.log(Level.FINER, "RenditionNumber: {0}", tmsRendition.getRenditionNumber());
+        logger.log(Level.FINER, "Rank: " + tmsRendition.getRank());
+        logger.log(Level.FINER, "PixelH: " + tmsRendition.getPixelH());
+        logger.log(Level.FINER, "PixelW: " + tmsRendition.getPixelW());
+        logger.log(Level.FINER, "IsPrimary: " + tmsRendition.getIsPrimary()); 
+        logger.log(Level.FINER, "IDSPath: " + cdis_new.properties.getProperty("IDSPathId")); 
         
         
         CallableStatement stmt = null;
@@ -117,6 +146,7 @@ public class MediaRecord {
             
         }catch(SQLException sqlex) {
 		sqlex.printStackTrace();
+                return false;
 	}
         finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }

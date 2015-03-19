@@ -33,7 +33,7 @@ public class XmlSqlConfig {
         this.SelectStmtHash.put(SelectStmt, selectType);
     }
         
-    public void read(String operationType, String metaDataXmlFile) {
+    public boolean read(String operationType, String metaDataXmlFile) {
         
         //initialize the hashmap
         this.SelectStmtHash = new HashMap <String, String[]>();
@@ -58,8 +58,10 @@ public class XmlSqlConfig {
         } catch (Exception e) {
             e.printStackTrace();
             logger.log(Level.FINE, "Error, unable to open or read XML file: {0}", metaDataXmlFile);
+            return false;
         }   
-
+        return true;
+        
     }
     
     private void getElementByTag (String operationType, String tagName) {

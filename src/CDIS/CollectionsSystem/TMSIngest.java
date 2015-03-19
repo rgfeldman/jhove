@@ -58,7 +58,7 @@ public class TMSIngest {
                     stmt = damsConn.prepareStatement(sql);                                
                     rs = stmt.executeQuery();
         
-                    if (rs.next()) {           
+                    while (rs.next()) {           
                         logger.log(Level.FINER, "Adding uoi_id to unsynced hash: " + rs.getString("UOI_ID") + " " + rs.getString("OWNING_UNIT_UNIQUE_NAME") );
                         addNeverLinkedDamsRendtion(rs.getString("UOI_ID"), rs.getString("OWNING_UNIT_UNIQUE_NAME"));
                     }   
@@ -88,7 +88,7 @@ public class TMSIngest {
         for (String key : cdis_new.xmlSelectHash.keySet()) {
             
             sqlTypeArr = cdis_new.xmlSelectHash.get(key);
-            if (sqlTypeArr[0].equals("TMSSelectList")) {   
+            if (sqlTypeArr[0].equals("checkForExistingTMSRendition")) {   
                 sql = key;    
               
             }
@@ -104,12 +104,14 @@ public class TMSIngest {
                 siAsst.setOwningUnitUniqueName(neverLinkedDamsRendtion.get(UOI_ID));
                 siAsst.setUoiid(UOI_ID);
                     
-                sql = sql.replaceAll("\\?owning_unit_unique_name\\?", siAsst.getOwningUnitUniqueName());
+                logger.log(Level.FINEST, "UOI_ID {0}", UOI_ID);
+                
+                String currentIterationSql = sql.replaceAll("\\?owning_unit_unique_name\\?", siAsst.getOwningUnitUniqueName());
                 
                 logger.log(Level.FINEST, "SQL: {0}", sql);
                 
                 try {
-                    stmt = tmsConn.prepareStatement(sql);                                
+                    stmt = tmsConn.prepareStatement(currentIterationSql);                                
                     rs = stmt.executeQuery();
                        
                     if ( rs.next()) {   
@@ -121,8 +123,13 @@ public class TMSIngest {
                             
                         if ( ! mediaCreated ) {
                             logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
-                            return;
+                            statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            continue; //Go to the next record in the for-sloop
                         }
+                        
+                        // Set the renditionID for the rendition just created
+                        tmsRendition.populateRenditionIdByRenditionNumber(tmsRendition, tmsConn);
+                        logger.log(Level.FINER, "RenditionID for newly created media: " );
                         
                         //Create the thumbnail image
                         Thumbnail thumbnail = new Thumbnail();
@@ -131,7 +138,7 @@ public class TMSIngest {
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");
                             statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
-                            return;
+                            continue; //Go to the next record in the for-sloop
                         }
                         
                         logger.log(Level.FINER, "Media Creation and thumbnail creation complete");
@@ -143,7 +150,7 @@ public class TMSIngest {
                         //Populate cdisTbl Object based on renditionNumber
                         cdisTbl.setRenditionNumber(tmsRendition.getRenditionNumber());
                         cdisTbl.setUOIID(siAsst.getUoiid());
-                        cdisTbl.setRenditionId(9999999);
+                        cdisTbl.setRenditionId(tmsRendition.getRenditionId());
                         cdisTbl.setObjectId (tmsObject.getObjectID());
                         
                         //Insert into cdisTbl
@@ -152,17 +159,29 @@ public class TMSIngest {
                         if (! recordCreated) {
                             logger.log(Level.FINER, "Insert to CDIS table failed");
                             statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
-                            return;
+                            continue;
+                        }
+                        
+                        int rowsUpdated = cdisTbl.updateIDSSyncDate(cdisTbl, tmsConn);
+                        
+                        if (rowsUpdated != 1) {    
+                            logger.log(Level.FINER, "IDS Sync date update failed");
+                            statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            continue;
                         }
                          
                         statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", true);
                         
-                        // update source_system_id 
+                        
                     }
                     else {
                         logger.log(Level.FINER, "Media Already exists: Media does not need to be created");
                     }
 
+                } catch (SQLException se) {
+                    logger.log(Level.SEVERE, "Fatal Error, check query XML file, CheckForExistingTMSRendition tag for syntax");
+                    se.printStackTrace();
+                    return;
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {

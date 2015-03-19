@@ -26,11 +26,11 @@ public class ImageFilePath {
     Connection damsConn;
     int IDSPathId;
     
-    public void sync(Connection tmsConn, Connection damsConn, Properties properties, StatisticsReport StatReport) {
+    public void sync(Connection tmsConn, Connection damsConn, Integer idsPathID, StatisticsReport StatReport) {
         //assign the database connections for later use
         this.tmsConn = tmsConn;
         this.damsConn = damsConn;
-        this.IDSPathId = Integer.parseInt(properties.getProperty("IDSPathId"));
+        this.IDSPathId = idsPathID;
         
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
 
@@ -38,7 +38,7 @@ public class ImageFilePath {
         neverSyncedCDISIdLst = getNeverSyncedImagePath();
         
         // handle the statistics report, report on the statistics upfront
-        StatReport.populateStats (neverSyncedCDISIdLst.size(), 0, 0, "ids");
+        StatReport.populateStats (neverSyncedCDISIdLst.size(), 0, "ids");
         
         CDISTable cdisTbl = new CDISTable();
         
@@ -143,7 +143,7 @@ public class ImageFilePath {
                     // If se updated the filepath successfully, then log the transaction in the CDIS table
                     if (updateCount > 0) { 
                         //update CDIS with the current IDSSyncDate
-                        updateCDISTbl(cdisTbl);
+                        cdisTbl.updateIDSSyncDate(cdisTbl, tmsConn);
                         
                         //Create the IDS report
                         StatRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "idsPath", true);
@@ -229,18 +229,4 @@ public class ImageFilePath {
         
     }
     
-    // Update CDIS table to log this transaction
-    private int updateCDISTbl(CDISTable cdisTbl) {
-        
-        String sql = "update CDIS " +
-                    "set SyncIDSPathDate = SYSDATETIME() " +
-                    "where CDIS_ID = " + cdisTbl.getCDIS_ID();
-
-        System.out.println("updateStatment: " + sql);
-
-        int updateCount = DataProvider.executeUpdate(this.tmsConn, sql);
-
-        return (updateCount);
-
-    }
 }

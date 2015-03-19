@@ -73,18 +73,18 @@ public class StatisticsReport {
             
         File folderDir = new File(folder);
         File[] logs = folderDir.listFiles();
-				
-        for(int i = 0; i < logs.length; i++) {
-            File tempFile = logs[i];
-            if(tempFile.getName().startsWith(fileNamePrefix)) {
+	
+        if (logs != null) {
+            for(int i = 0; i < logs.length; i++) {
+                File tempFile = logs[i];
+                if(tempFile.getName().startsWith(fileNamePrefix)) {
                     
-                long diff = new Date().getTime() - tempFile.lastModified();
-                if (diff > numDays * 24 * 60 * 60 * 1000) {
-                    tempFile.delete();
-                }
+                    long diff = new Date().getTime() - tempFile.lastModified();
+                    if (diff > numDays * 24 * 60 * 60 * 1000) {
+                        tempFile.delete();
+                    }
+                }				
             }
-						
-            
         }
         
     }
@@ -101,37 +101,42 @@ public class StatisticsReport {
         
     public void populateHeader (String siUnit, String operationType) {
         
-        if (operationType.equals("sync") ) {
-            this.headerFileWrt.append ("CDIS 2.0: Synchronization Report and Statistics\n");
+        if (operationType.equals("ingestToCollections") ) {
+            this.headerFileWrt.append ("CDIS 2.0: DAMS/Collections TMS Media Creation Report and Statistics\n");
+        }
+        else if (operationType.equals("ingestToDAMS") ) {
+            this.headerFileWrt.append ("CDIS 2.0: Collections to DAMS Image Creation Report and Statistics\n");
         }
         else if (operationType.equals("link") ) {
             this.headerFileWrt.append ("CDIS 2.0: DAMS/Collections Link Report and Statistics\n");
         }
-        else if (operationType.equals("ingestToCollections") ) {
-            this.headerFileWrt.append ("CDIS 2.0: DAMS/Collections TMS Media Creation Report and Statistics\n");
+        else if (operationType.equals("sync") ) {
+            this.headerFileWrt.append ("CDIS 2.0: Synchronization Report and Statistics\n");
+        }
+        else if (operationType.equals("thumbnailSync") ) {
+            this.headerFileWrt.append ("CDIS 2.0: Thumbnail Synchronization Report and Statistics\n");
         }
         this.headerFileWrt.append ("siUnit: " + siUnit + "\n");
         this.headerFileWrt.append ("Batch Number: " + this.timestamp + "\n\n\n");
        
     }
     
-    public void populateStats (int neverSyncedSize, int sourceUpdatedSize, int restrictupdatedSize, String operationType) {
+    public void populateStats (int neverSyncedSize, int sourceUpdatedSize, String operationType) {
                 
         if (operationType.equals("meta")) {
             // Get count of number of Renditions to Sync, and send to Report File
             this.headerFileWrt.append("Renditions to metadata sync not synced before: " + neverSyncedSize + "\n");
             this.headerFileWrt.append("Renditions where DAMS needs metadata changes: " + sourceUpdatedSize + "\n");
-            this.headerFileWrt.append("Renditions where DAMS needs restrict changes: " + restrictupdatedSize + "\n\n");
         
-            int TotalRend = neverSyncedSize + sourceUpdatedSize + restrictupdatedSize;
+            int TotalRend = neverSyncedSize + sourceUpdatedSize;
         
             this.headerFileWrt.append("Total Number of Renditions to MetaData sync: " + TotalRend + "\n\n\n");
         }
         else if (operationType.equals("ids")) {
-            this.headerFileWrt.append("Renditions to IDS path sync in Source DataBase: " + neverSyncedSize + "\n\n\n");
+            this.headerFileWrt.append("Renditions to IDS path sync in Collections DataBase: " + neverSyncedSize + "\n\n\n");
         }
         else if (operationType.equals("link")) {
-             this.headerFileWrt.append("/Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");
+             this.headerFileWrt.append("Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");
         }
         
     }

@@ -25,9 +25,8 @@ import CDIS.XmlSqlConfig;
 
 public class MetaData {
 
-    /**
-     * @param args the command line arguments
-     */
+    private final static Logger logger = Logger.getLogger(CDIS.class.getName());
+
     String sqlUpdate;
     String siUnit;
     String emailTo;
@@ -36,7 +35,7 @@ public class MetaData {
     int NumberOfSyncedRenditions;
     Connection tmsConn;
     Connection damsConn;
-    Logger logger;
+    
 
     private void setSqlUpdate(String sqlUpdate) {
         this.sqlUpdate = sqlUpdate;
@@ -47,31 +46,26 @@ public class MetaData {
     }
 
     // This is the primary method for metadata sync that handles the sync process
-    public void sync(Connection tmsConn, Connection damsConn, Properties properties, Logger logger) {
+    public void sync(CDIS cdis_new, StatisticsReport statReport) {
 
          //assign the database connections for later use
-        this.tmsConn = tmsConn;
-        this.damsConn = damsConn;
-        this.logger = logger;
+        this.damsConn = cdis_new.damsConn;
+        this.tmsConn = cdis_new.tmsConn;
         
         //obtain properties values from the config file
-        this.siUnit = properties.getProperty("siUnit");
-        if (properties.getProperty("emailTo") != null) {
-            this.emailTo = properties.getProperty("emailTo");
+        this.siUnit = cdis_new.properties.getProperty("siUnit");
+        if (cdis_new.properties.getProperty("emailTo") != null) {
+            this.emailTo = cdis_new.properties.getProperty("emailTo");
         }
-        this.flagForIDS = properties.getProperty("flagForIDS");
-        this.metaDataXmlFile = properties.getProperty("metaDataXmlFile");
-        
-        // read the XML config file and obtain the selectStatements
-        XmlSqlConfig xml = new XmlSqlConfig();
-        xml.read("sync", this.metaDataXmlFile);
-        
+        this.flagForIDS = cdis_new.properties.getProperty("flagForIDS");
+        //this.metaDataXmlFile = cdis_new.properties.getProperty("metaDataXmlFile");
+        Integer idsPath = Integer.parseInt(cdis_new.properties.getProperty("IDSPathId"));
+               
         StatisticsReport StatReport = new StatisticsReport();
         
          // initialize renditionID lists for sync
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
         ArrayList<Integer> sourceUpdatedCDISIdLst = new ArrayList<Integer>();
-        ArrayList<Integer> restrictUpdatedCDISIdLst = new ArrayList<Integer>();
 
         // Grab all the records that have NEVER EVER been synced by CDIS yet
         neverSyncedCDISIdLst = getNeverSyncedRendition();
@@ -79,12 +73,9 @@ public class MetaData {
         //Grab all the records that have been synced in the past, but have been updated
         sourceUpdatedCDISIdLst = getSourceUpdatedRendition();
 
-        // Grab all the records where the ids or isRestriced flag has been changed.  need to update IDS on these
-        restrictUpdatedCDISIdLst = getRestrictUpdatedRenditon();
-
         StatReport.populateHeader(this.siUnit, "sync");
         
-        StatReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), restrictUpdatedCDISIdLst.size(), "meta");
+        StatReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), "meta");
         
 
 
@@ -93,18 +84,15 @@ public class MetaData {
         // I have broken this up to make this more trackable and in case we want to exclude certain types of
         // sync for certain units
         if (!neverSyncedCDISIdLst.isEmpty()) {
-            processRenditionList(neverSyncedCDISIdLst, xml, StatReport);
+            processRenditionList(neverSyncedCDISIdLst, cdis_new.xmlSelectHash, StatReport);
         }
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
-            processRenditionList(sourceUpdatedCDISIdLst, xml, StatReport);
-        }
-        if (!restrictUpdatedCDISIdLst.isEmpty()) {
-            processRenditionList(restrictUpdatedCDISIdLst, xml, StatReport);
+            processRenditionList(sourceUpdatedCDISIdLst, cdis_new.xmlSelectHash, StatReport);
         }
         
         //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
         ImageFilePath imgPath = new ImageFilePath();
-        imgPath.sync(tmsConn, damsConn, properties, StatReport);
+        imgPath.sync(tmsConn, damsConn, idsPath , StatReport);
 
         //put together the ids ssync report
         StatReport.compile("link");
@@ -152,7 +140,8 @@ public class MetaData {
 
         try {
             while (rs.next()) {
-                        CDISIdList.add(rs.getInt(1));
+                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
+                    CDISIdList.add(rs.getInt(1));
             }
 
         } catch (Exception e) {
@@ -210,19 +199,7 @@ public class MetaData {
         return CDISIdList;
     }
 
-    private ArrayList<Integer> getRestrictUpdatedRenditon() {
-
-        ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
-        
-        ResultSet rs;
-        
-        /* this is currently not coded.  the idea behind it is to get changes in the restriction status 
-        this may take an extensive join, not sure if we need to implement this */
-        
-        return CDISIdList;
-    }
-
-    private void processRenditionList(ArrayList<Integer> CDISIdList, XmlSqlConfig xml, StatisticsReport statRpt) {
+    private void processRenditionList(ArrayList<Integer> CDISIdList, HashMap <String,String[]> SelectHash, StatisticsReport statRpt) {
 
         // For each Rendition Number in list, obtain information from CDIS table
         PreparedStatement stmt = null;
@@ -270,20 +247,18 @@ public class MetaData {
                         cdisTbl.setObjectId(rs.getInt("objectID"));
 
                         // execute the SQL statment to obtain the metadata.  They key value is RenditionID
-                        mapData(xml.getSelectStmtHash(), cdisTbl, siAsst);
+                        mapData(SelectHash, cdisTbl, siAsst);
 
                         generateUpdate(siAsst, cdisTbl);
 
                         // Perform the update to the Dams Data
                         int updateDamsCount = updateDamsData();
                      
+                         logger.log(Level.FINER, "DAMS Rows updated: " + updateDamsCount );
+                        
                         // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
-                        if (updateDamsCount > 0) {
-                            
-                            if (updateDamsCount > 1) {
-                                logger.log(Level.ALL, "unexpected condition, updated more than a single row in dams for uoiid: " + cdisTbl.getUOIID());
-                            }
-                            
+                        if (updateDamsCount == 1) {
+
                             statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "metaData", true);
                            
                             //calcute the new IDSRestriction value
@@ -293,10 +268,18 @@ public class MetaData {
                             if (! this.flagForIDS.equals("never")) {
                                 updateMetaDataStateDate(cdisTbl, newIDSRestrict);
                             }
-                            updateCDISTbl(cdisTbl, newIDSRestrict);
+                            
+                            logger.log(Level.ALL, "About to update CDIS table");
+                            
+                            int cdisRecordsUpdated = updateCDISTbl(cdisTbl, newIDSRestrict);
+                            if (cdisRecordsUpdated != 1) {
+                                logger.log(Level.ALL, "Error, CDIS Table not updated");
+                            }
                         }
                         else {
+                            logger.log(Level.ALL, "Error, CDIS Table not updated, metadata not synced");
                             statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "metaData", false);
+                            
                         }
                     }
 
@@ -566,20 +549,24 @@ public class MetaData {
      // Get the new restrictions.  We record these in case there are any restriction changes later because restriction changes trigger IDS
     private String calcNewIDSRestrict (SiAssetMetaData siAsst) {
        
-        String IDSRestrict;
+        String IDSRestrict = null;
         
         if (siAsst.getIsRestricted().equals("Yes")) {
             IDSRestrict = "Yes";
         }
         else {
-            int maxIdsSizeInt = Integer.parseInt(siAsst.getMaxIdsSize());
+            try {
+                int maxIdsSizeInt = Integer.parseInt(siAsst.getMaxIdsSize());
             
-            if (maxIdsSizeInt > 0) {
-                IDSRestrict = Integer.toString(maxIdsSizeInt);       
-            }
-            else {
-                IDSRestrict = "No";
-            }
+                if (maxIdsSizeInt > 0) {
+                    IDSRestrict = Integer.toString(maxIdsSizeInt);       
+                }
+                else {
+                    IDSRestrict = "No";
+                }
+            } catch (Exception e) {
+                    IDSRestrict = "No";
+            }    
         }
         return IDSRestrict;
     }
