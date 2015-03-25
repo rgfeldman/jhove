@@ -151,6 +151,7 @@ public class CDIS_ORIGINAL {
                 }
                 else if (ingester.properties.getProperty("redesigned").equals("thumbnailSync")) {
                     cdis_new.execute("thumbnailSync");
+                    return;
                 }
                 else {
                     
@@ -2828,7 +2829,7 @@ public class CDIS_ORIGINAL {
                 /*RGF this above is a kludge for Freer Sackler */
                 String sql = "select RenditionID from MediaRenditions where IsColor = 1 AND PrimaryFileID not in " +
                                 " (select FileID from MediaFiles where PathID = " + properties.getProperty("IDSPathId") + 
-                                ") and RenditionID in (205508)";
+                                ") and RenditionID in (205561)";
                 
 		
 		_log.log(Level.ALL, "SQL: Get TMS records {0}", sql);

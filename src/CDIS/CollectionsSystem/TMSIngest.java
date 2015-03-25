@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +27,7 @@ public class TMSIngest {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     Connection damsConn;
     Connection tmsConn;
-    HashMap <String,String> neverLinkedDamsRendtion;  
+    LinkedHashMap <String,String> neverLinkedDamsRendtion;  
     
     private void addNeverLinkedDamsRendtion (String UOIID, String uan) {
         this.neverLinkedDamsRendtion.put(UOIID, uan); 
@@ -133,7 +133,7 @@ public class TMSIngest {
                         
                         //Create the thumbnail image
                         Thumbnail thumbnail = new Thumbnail();
-                        boolean thumbCreated = thumbnail.create(damsConn, tmsConn, siAsst.getUoiid(), tmsRendition);
+                        boolean thumbCreated = thumbnail.update(damsConn, tmsConn, siAsst.getUoiid(), tmsRendition.getRenditionId());
                             
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");
@@ -164,10 +164,13 @@ public class TMSIngest {
                         
                         int rowsUpdated = cdisTbl.updateIDSSyncDate(cdisTbl, tmsConn);
                         
-                        if (rowsUpdated != 1) {    
+                        if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
                             statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
                             continue;
+                        }
+                        else if (rowsUpdated > 1) {
+                            logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
                         }
                          
                         statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", true);
@@ -203,10 +206,10 @@ public class TMSIngest {
        
         logger.log(Level.FINER, "In redesigned Ingest to Collections area");
         
-        this.neverLinkedDamsRendtion = new HashMap<String, String>();
+        this.neverLinkedDamsRendtion = new LinkedHashMap<String, String>();
         
         // Populate the header for the report file
-        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "IngestToCollections");
+        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToCollections");
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedRenditions (cdis_new);

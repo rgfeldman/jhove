@@ -62,8 +62,16 @@ public class TMSObject {
         else if (imageToObjectTrunc.equals("lastUnderscore")) {
             tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("_"));        
         }
-        else if (imageToObjectTrunc.equals("dropStringacmobj-")) {
-            tmpObjectNumber = damsImageFileName.replaceAll("acmobj-", ""); 
+        else if (imageToObjectTrunc.equals("dropACMPrefixSuffix")) {
+            if (damsImageFileName.startsWith("ACM-acmobj-")) {
+                tmpObjectNumber = damsImageFileName.replaceAll("ACM-acmobj-", "");
+            }
+            else {
+                tmpObjectNumber = damsImageFileName.replaceAll("acmobj-", "");  
+            }
+            if (tmpObjectNumber.contains("-")) {
+                tmpObjectNumber = tmpObjectNumber.substring(0, tmpObjectNumber.indexOf("-"));
+            }
         }
         else {
             tmpObjectNumber = damsImageFileName;

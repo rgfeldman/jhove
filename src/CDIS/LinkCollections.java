@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.logging.Logger;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import edu.si.data.DataProvider;
 import java.io.BufferedReader;
@@ -22,6 +22,7 @@ import java.sql.Connection;
 
 import CDIS.CollectionsSystem.Database.CDISTable;
 import CDIS.CollectionsSystem.Database.TMSObject;
+import CDIS.CollectionsSystem.Thumbnail;
 
 
         
@@ -31,9 +32,9 @@ public class LinkCollections  {
     
     Connection tmsConn;
     Connection damsConn;
-    HashMap <String,String> neverLinkedDamsRendtion;    
+    LinkedHashMap <String,String> neverLinkedDamsRendtion;    
 
-    public HashMap <String,String> getNeverLinkedDamsRendtion() {
+    public LinkedHashMap <String,String> getNeverLinkedDamsRendtion() {
         return this.neverLinkedDamsRendtion;
     }
        
@@ -56,15 +57,15 @@ public class LinkCollections  {
         statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "link"); 
         
         //Establish the hash to hold the unlinked DAMS rendition List
-        this.neverLinkedDamsRendtion = new HashMap <String, String>();
+        this.neverLinkedDamsRendtion = new LinkedHashMap <String, String>();
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedDamsRenditions (cdis_new);
         
-        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, "link");
+        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, 0, "link");
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
-        linkUANtoFilename (cdis_new.xmlSelectHash, statReport);    
+        linkUANtoFilename (cdis_new, statReport);    
         
     }
     
@@ -103,7 +104,7 @@ public class LinkCollections  {
     }
     
     
-    private void linkUANtoFilename(HashMap <String,String[]> SelectHash, StatisticsReport statRpt) {
+    private void linkUANtoFilename(CDIS cdis_new, StatisticsReport statRpt) {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -112,10 +113,12 @@ public class LinkCollections  {
         String currentIterationSql = null;
         String sqlTypeArr[] = null;
         
+        
+        
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : SelectHash.keySet()) {     
+        for (String key : cdis_new.xmlSelectHash.keySet()) {     
               
-            sqlTypeArr = SelectHash.get(key);
+            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
             
             if (sqlTypeArr[0].equals("checkAgainstCollections")) {   
                 sql = key;    
@@ -146,7 +149,7 @@ public class LinkCollections  {
                         cdisTbl.setRenditionId(rs.getInt(1));
                         cdisTbl.setRenditionNumber(rs.getString(2));           
                     
-                        logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisTbl.getUOIID() + " RenditionID: " + rs.getInt(1));
+                        logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisTbl.getUOIID() + " RenditionID: " + cdisTbl.getRenditionId());
                     
                         // Get the objectID for the CDIS table by the renditionID if is is ontainable
                         TMSObject tmsObject = new TMSObject();
@@ -158,20 +161,27 @@ public class LinkCollections  {
                         // add linking record to CDIS table
                         boolean recordCreated = cdisTbl.createRecord (cdisTbl, tmsConn);
         
-                        // If we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
-                        if (recordCreated) {
-                            // update the SourceSystemID in DAMS with this value
-                            int updatedRows = updateDAMSSourceSystemID(cdisTbl);
-                        
-                            if (updatedRows == 1) {
-                                statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", true);
-                            }
-                            else if (updatedRows == 0) {
-                                statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
-                            }
-                        }
-                        else{
+                        if (! recordCreated) {
                             logger.log(Level.FINER,"ERROR: CDIS record not created for UOIID! " + cdisTbl.getUOIID());
+                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
+                            //get the next id from the list
+                            continue;
+                        }
+                        
+                        //Update the TMS blob
+                        if (cdis_new.properties.getProperty("updateTMSThumbnail").equals("true") ) {
+                            Thumbnail thumbnail = new Thumbnail();
+                            thumbnail.update (damsConn, tmsConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
+                        }
+                        
+                        // we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
+                        // update the SourceSystemID in DAMS with this value
+                        int updatedRows = updateDAMSSourceSystemID(cdisTbl);
+                        
+                        if (updatedRows == 1) {
+                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", true);
+                        }
+                        else {
                             statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
                         }
                         

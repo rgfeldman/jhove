@@ -16,7 +16,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import com.jamesmurty.utils.XMLBuilder;
 import java.io.File;
@@ -39,7 +39,7 @@ public class DAMSIngest {
     String workFolderDir;
     String damsDropOffLocation;
     
-    HashMap <String,String> renditionsForDAMS; 
+    LinkedHashMap <String,String> renditionsForDAMS; 
     
     private void addRenditionsForDAMS (String renditionID, String filename) {
         this.renditionsForDAMS.put(renditionID, filename); 
@@ -218,10 +218,10 @@ public class DAMSIngest {
         
         logger.log(Level.FINER, "In redesigned Ingest to Collections area");
         
-        this.renditionsForDAMS = new HashMap<String, String>();
+        this.renditionsForDAMS = new LinkedHashMap<String, String>();
         
         // Populate the header for the report file
-        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "IngestToDAMS");
+        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToDAMS");
         
         //Get the records from TMS that may need to go to DAMS
         populateRenditionsFromTMS (cdis_new);

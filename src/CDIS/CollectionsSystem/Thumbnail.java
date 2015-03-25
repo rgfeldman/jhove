@@ -21,13 +21,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.LinkedHashMap;
+import org.apache.commons.io.IOUtils;
 
 import CDIS.CDIS;
 import CDIS.CollectionsSystem.Database.TMSRendition;
 import CDIS.StatisticsReport;
-import java.util.HashMap;
-import org.apache.commons.io.IOUtils;
-
 
 
 public class Thumbnail {
@@ -38,28 +37,40 @@ public class Thumbnail {
     Connection damsConn;
     Connection tmsConn;
     String uoiid;
+    String renditionNumber;
     
-    HashMap <Integer,String> thumbnailsToSync;  
+    LinkedHashMap <Integer,String> thumbnailsToSync;  
     
     private void addthumbnailsToSync (Integer renditionID, String UOIID) {
         this.thumbnailsToSync.put(renditionID, UOIID); 
     }
     
+    /*  Method :        getDamsLocation
+        Arguments:      
+        Description:    Obtains the location of the thumnail image from the DAMS databasae 
+        RFeldman 3/2015
+    */
     private boolean getDamsLocation () {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
         
         String sql = "select o.object_name_location from uois u, object_stacks o" +
-        " where u.uoi_id = '" + uoiid + "'" +
+        " where u.uoi_id = '" + this.uoiid + "'" +
         " and u.thumb_nail_obj_id = o.object_id ";
            
+        logger.log(Level.FINEST,"SQL! " + sql);
+        
         try {
             stmt = damsConn.prepareStatement(sql);
             rs = stmt.executeQuery();
         
-            while(rs.next()) {
+            if(rs.next()) {
                 this.damsImageLocation = rs.getString(1);
+            }
+            else {
+                logger.log(Level.FINEST,"Error: Unable to obtain image location for uoiid: " + this.uoiid);
+                return false;
             }
         } catch(Exception e) {
 		e.printStackTrace();
@@ -73,7 +84,12 @@ public class Thumbnail {
         
     }
     
-    public boolean create(Connection damsConn, Connection tmsConn, String uoiid, TMSRendition tmsRendition) {
+    /*  Method :        update
+        Arguments:      
+        Description:    Finds the physical image and Updates the thumbnail image in TMS with the image 
+        RFeldman 3/2015
+    */
+    public boolean update(Connection damsConn, Connection tmsConn, String uoiid, Integer renditionID) {
         
         this.uoiid = uoiid;
         this.damsConn = damsConn;
@@ -84,7 +100,12 @@ public class Thumbnail {
         int imageFileSize = 0;
         byte[] bytes = null;
         
-        getDamsLocation ();
+        boolean locationFound = getDamsLocation ();
+        
+        if (! locationFound) {
+            logger.log(Level.FINER, "Not updating thumbnail, image could not be located from database");
+            return false;
+        }
         
         imageFile = "\\\\smb.si-osmisilon1.si.edu\\prodartesiarepo\\" + this.damsImageLocation; 
               
@@ -97,28 +118,32 @@ public class Thumbnail {
             
             imageFileSize = bytes.length; 
                     
-            logger.log(Level.FINER, "Found DAMS file: " + imageFile + "Size: " + imageFileSize );
-            
+            logger.log(Level.FINER, "Found DAMS file: " + imageFile + " Size: " + imageFileSize ); 
             
         } catch(Exception e) {
             e.printStackTrace();
             
 	}
         
+        logger.log(Level.FINER, "Updating Thumbnail for RenditionID: " + renditionID);
+        
         //Input the binary stream into the update statement for the table...and execute
         try {
 											
             stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
-                    " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionNumber =  ? ) ");
+                    " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionID =  ? ) ");
 			
             stmt.setBytes(1, bytes);
             stmt.setInt(2, imageFileSize);
-            stmt.setString(3, tmsRendition.getRenditionNumber());
+            stmt.setInt(3, renditionID);
         
             int recordsUpdated = stmt.executeUpdate();
             
             if ((recordsUpdated) != 1 ) {
-                logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + tmsRendition.getRenditionId());
+                logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + renditionID);
+            }
+            else {
+                logger.log(Level.FINER, "Thumbnail successfully updated for renditionID: " + renditionID);
             }
                     
          }catch(Exception e) {
@@ -129,6 +154,11 @@ public class Thumbnail {
                                                             
     }
     
+    /*  Method :        populateRenditionsToUpdate
+        Arguments:      
+        Description:    Populate a list of thumnails that need to be updated 
+        RFeldman 3/2015
+    */
     private void populateRenditionsToUpdate (CDIS cdis_new) {
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -154,8 +184,8 @@ public class Thumbnail {
         
             // For each record in the sql query, add it to the unlinked rendition List
             while (rs.next()) {   
-                addthumbnailsToSync(rs.getInt("RenditiodID"), rs.getString("uoiid"));
-                logger.log(Level.FINER,"Adding TMS rendition for Thumbnail update {0}", rs.getInt("RenditionID") );
+                addthumbnailsToSync(rs.getInt("RenditionID"), rs.getString("uoiid"));
+                logger.log(Level.FINER,"Adding TMS renditionID for Thumbnail update: " + rs.getInt("RenditionID") );
             }
             int numRecords = this.thumbnailsToSync.size();
         
@@ -173,18 +203,32 @@ public class Thumbnail {
         
     }
     
+    /*  Method :        sync
+        Arguments:      
+        Description:    Thumbnail sync driver 
+        RFeldman 3/2015
+    */
     public void sync (CDIS cdis_new, StatisticsReport statReport) {
         
         this.tmsConn = cdis_new.tmsConn;
+        this.damsConn = cdis_new.damsConn;
         
         //Populate the header information in the report file
         statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "thumbnailSync"); 
+        
+        this.thumbnailsToSync = new LinkedHashMap <Integer, String>();
         
         //Get a list of RenditionIDs that require syncing from the sql XML file
         populateRenditionsToUpdate (cdis_new);
         
         //create the thumbnail in TMS from those DAMS images (cdis_new.damsConn, cdis_new.tmsConn, "", tmsRendition)
-    
+        for (Integer key : thumbnailsToSync.keySet()) {
+             boolean blobUpdated = update (damsConn, tmsConn, thumbnailsToSync.get(key), key);
+        }
+        
+        // Get the renditionNumber for the report
+        //statReport.writeUpdateStats(this.uoiid, this.renditionNumber, "thumbnailSync", true);
+        
     }
     
 }

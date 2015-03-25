@@ -35,7 +35,7 @@ public class MetaData {
     int NumberOfSyncedRenditions;
     Connection tmsConn;
     Connection damsConn;
-    
+    int successfulUpdateCount;
 
     private void setSqlUpdate(String sqlUpdate) {
         this.sqlUpdate = sqlUpdate;
@@ -61,8 +61,6 @@ public class MetaData {
         //this.metaDataXmlFile = cdis_new.properties.getProperty("metaDataXmlFile");
         Integer idsPath = Integer.parseInt(cdis_new.properties.getProperty("IDSPathId"));
                
-        StatisticsReport StatReport = new StatisticsReport();
-        
          // initialize renditionID lists for sync
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
         ArrayList<Integer> sourceUpdatedCDISIdLst = new ArrayList<Integer>();
@@ -73,44 +71,30 @@ public class MetaData {
         //Grab all the records that have been synced in the past, but have been updated
         sourceUpdatedCDISIdLst = getSourceUpdatedRendition();
 
-        StatReport.populateHeader(this.siUnit, "sync");
-        
-        StatReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), "meta");
-        
-
+        statReport.populateHeader(this.siUnit, "sync");
 
         // Loop through all the rendition IDs we determined we needed to sync
         // while i could have chosen to call the processRendition only one time instead of three, for now
         // I have broken this up to make this more trackable and in case we want to exclude certain types of
         // sync for certain units
         if (!neverSyncedCDISIdLst.isEmpty()) {
-            processRenditionList(neverSyncedCDISIdLst, cdis_new.xmlSelectHash, StatReport);
+            processRenditionList(neverSyncedCDISIdLst, cdis_new.xmlSelectHash, statReport);
         }
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
-            processRenditionList(sourceUpdatedCDISIdLst, cdis_new.xmlSelectHash, StatReport);
+            processRenditionList(sourceUpdatedCDISIdLst, cdis_new.xmlSelectHash, statReport);
         }
+        
+        statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, "meta");
         
         //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
         ImageFilePath imgPath = new ImageFilePath();
-        imgPath.sync(tmsConn, damsConn, idsPath , StatReport);
-
-        //put together the ids ssync report
-        StatReport.compile("link");
-        
-        // Send the report by email if there is an email list
-        if (this.emailTo != null) {
-            logger.log(Level.ALL, "Need to email the report");
-            
-            StatReport.send(this.siUnit, this.emailTo, "sync");
-        }
+        imgPath.sync(tmsConn, damsConn, idsPath , statReport);
         
         try {
             damsConn.commit();
         } catch (Exception e) {
             e.printStackTrace();
-        } finally { 
-        
-        }
+        } 
         
     }
 
@@ -130,7 +114,8 @@ public class MetaData {
         // this needs to get the record with the max metadaDataSyncDate if it is not unique
         String sql = "select CDIS_ID "
                 + "from CDIS "
-                + "where MetaDataSyncDate is NULL ";
+                + "where MetaDataSyncDate is NULL "
+                + "order by CDIS_ID";
         
         logger.log(Level.ALL, "updateStatment: " + sql);
 
@@ -260,6 +245,7 @@ public class MetaData {
                         if (updateDamsCount == 1) {
 
                             statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "metaData", true);
+                            successfulUpdateCount ++;
                            
                             //calcute the new IDSRestriction value
                             String newIDSRestrict = calcNewIDSRestrict(siAsst);

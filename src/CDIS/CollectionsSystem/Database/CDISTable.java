@@ -91,13 +91,15 @@ public class CDISTable {
     // Update CDIS table to log this transaction
     public int updateIDSSyncDate(CDISTable cdisTbl, Connection tmsConn) {
         
+        int updateCount = 0;
+        
         String sql = "update CDIS " +
                     "set SyncIDSPathDate = SYSDATETIME() " +
                     "where RenditionID = " + cdisTbl.getRenditionId();
 
         logger.log(Level.FINEST,"SQL! " + sql);
 
-        int updateCount = DataProvider.executeUpdate(tmsConn, sql);
+        updateCount = DataProvider.executeUpdate(tmsConn, sql);
 
         return (updateCount);
 

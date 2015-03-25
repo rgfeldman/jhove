@@ -15,10 +15,6 @@ import java.sql.Connection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author rfeldman
- */
 public class TMSRendition {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
@@ -27,6 +23,7 @@ public class TMSRendition {
     int pixelH;
     int pixelW;
     int rank;
+    String charRank;
     int renditionId;
     String renditionNumber;
     String fileName;
@@ -50,6 +47,10 @@ public class TMSRendition {
     
     public int getRank() {
         return this.rank;
+    }
+    
+    public String getcharRank() {
+        return this.charRank;
     }
     
     public int getRenditionId () {
@@ -123,16 +124,26 @@ public class TMSRendition {
         
     }
     
-    public int populateTMSRenditionBarcode (String name, Connection tmsConn) {
+     /*  Method :       getObjectIDFromBarcode
+        Arguments:      
+        Description:    obtains the objectID from a barcoded DAMS image
+        RFeldman 3/2015
+    */
+    public int getObjectIDFromBarcode (String barcode, Connection tmsConn) {
     
         int objectID = 0;
         
+        //Strip all characters in the barcode after the underscore to look up the label
+        if (barcode.contains("_")) {
+           barcode = barcode.substring(0,barcode.indexOf("_")); 
+        }
+        
         String sql = "Select ObjectID " +
               "from BCLabels bcl, " +
-              "ObjComponents obc" +
-              "where bcl.id = obc.component_id " +
-              "and obc.TableID = 94 " +
-              "and obc.LabelUUID = '" + name + "'";
+              "ObjComponents obc " +
+              "where bcl.id = obc.Componentid " +
+              "and bcl.TableID = 94 " +
+              "and bcl.LabelUUID = '" + barcode + "'";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -146,6 +157,9 @@ public class TMSRendition {
                 if (rs.next()) {
                     objectID = rs.getInt(1);
                 }        
+                else {
+                    logger.log(Level.FINEST, "Unable to find Object from Barcode:{0}", barcode);
+                }
 	}
             
 	catch(SQLException sqlex) {
@@ -160,6 +174,11 @@ public class TMSRendition {
          
     }
     
+    /*  Method :        populateIsPrimary
+        Arguments:      
+        Description:    calculates and populates the isPrimary member variable
+        RFeldman 3/2015
+    */
     public void populateIsPrimary(Integer ObjectID, Connection tmsConn) {
         //Now that we have the rank, need to set the primary flag
         
@@ -206,7 +225,12 @@ public class TMSRendition {
         
     }
      
-    public String populateTMSRendition(String uoiid, TMSRendition tmsRendition, Connection damsConn) {
+    /*  Method :        populateRenditionFromDamsInfo
+        Arguments:      
+        Description:    determines and populates the tmsRendition member variables from information in DAMS
+        RFeldman 3/2015
+    */
+    public String populateRenditionFromDamsInfo(String uoiid, TMSRendition tmsRendition, Connection damsConn) {
         
         String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + uoiid + "'";
         String damsImageFileName = null;
@@ -241,10 +265,24 @@ public class TMSRendition {
         
         // Get the rank from the last number after the '_' 
         String charRank = null;
-        if (damsImageFileName.contains("_")) {
-            int p = damsImageFileName.lastIndexOf("_");
-            charRank = damsImageFileName.substring(p+1);
+        if (damsImageFileName.contains("-r")) {
+            int startPos = damsImageFileName.lastIndexOf("-r") + 2;
             
+            if (damsImageFileName.substring(startPos).contains("-") ) {
+                charRank = damsImageFileName.substring(startPos,damsImageFileName.lastIndexOf("-"));
+            }
+            else {
+                charRank = damsImageFileName.substring(startPos);
+            }
+        }
+        else if (damsImageFileName.contains("_")) {
+            int pos = damsImageFileName.lastIndexOf("_");
+            charRank = damsImageFileName.substring(pos+1);
+        }
+        
+        logger.log(Level.FINER, "Char Rank: {0}", charRank);
+        
+        if (charRank != null) {
             try {
                 this.setRank(Integer.parseInt(charRank));
                 
@@ -253,11 +291,11 @@ public class TMSRendition {
                 this.setRank(1); 
             }
         }
+        
         else {
             // dams Filename doesnt contain underscore, set the rank to 1
             this.setRank(1);     
         }
-        
         
         logger.log(Level.FINER, "DAMS imageFileName: {0}", damsImageFileName);
         logger.log(Level.FINER, "Rank: {0}", this.getRank());

@@ -25,6 +25,7 @@ public class ImageFilePath {
     Connection tmsConn;
     Connection damsConn;
     int IDSPathId;
+    int successfulUpdateCount;
     
     public void sync(Connection tmsConn, Connection damsConn, Integer idsPathID, StatisticsReport StatReport) {
         //assign the database connections for later use
@@ -37,13 +38,13 @@ public class ImageFilePath {
         //Get list of renditions to sync
         neverSyncedCDISIdLst = getNeverSyncedImagePath();
         
-        // handle the statistics report, report on the statistics upfront
-        StatReport.populateStats (neverSyncedCDISIdLst.size(), 0, "ids");
-        
         CDISTable cdisTbl = new CDISTable();
         
         //loop through the list, and update the pathname
         processRenditionList (neverSyncedCDISIdLst, StatReport);
+        
+        // handle the statistics report, report on the statistics
+        StatReport.populateStats (neverSyncedCDISIdLst.size(), 0, this.successfulUpdateCount, "ids");
         
     }
     
@@ -147,6 +148,7 @@ public class ImageFilePath {
                         
                         //Create the IDS report
                         StatRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "idsPath", true);
+                        successfulUpdateCount ++;
                         
                     }
                     else {

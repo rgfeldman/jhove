@@ -15,7 +15,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.logging.Level;
 import org.apache.commons.io.IOUtils;
 import java.sql.CallableStatement;
@@ -26,6 +25,8 @@ import CDIS.CollectionsSystem.Database.TMSRendition;
 import CDIS.CollectionsSystem.Database.TMSObject;
 import CDIS.CDIS;
 import CDIS.DAMS.Database.SiAssetMetaData;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.logging.Logger;
 
 
@@ -44,6 +45,7 @@ public class MediaRecord {
     private boolean formatNewRenditionName (CDIS cdis_new, String damsImageFileName, TMSRendition tmsRendition) {
         
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
+        String tmpRenditionNumber = null;
         
         //NMAAHC wants RenditionNumber with '.'s instead of underscores
         if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("underscoreToDot")  ) {  
@@ -52,6 +54,23 @@ public class MediaRecord {
         
         } else if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("none")) {
             tmsRendition.setRenditionNumber(damsImageFileName);
+        }
+        else if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("dropACMPrefixSuffix")) {
+            if (damsImageFileName.startsWith("ACM-")) {
+                tmpRenditionNumber = damsImageFileName.replaceAll("ACM-", "");
+            }
+            else {
+                tmpRenditionNumber = damsImageFileName;
+            }
+            if (tmpRenditionNumber.substring(7).contains("-")) {
+                
+                // Chop off everything in the body (after acmboj-) following the last dash....except in the cases where it has the rank number 
+                if (! tmpRenditionNumber.substring(tmpRenditionNumber.lastIndexOf("-")).startsWith("r")) { 
+                    // Safe to chop off the end, the last dash does not contain a -r 
+                    tmpRenditionNumber = tmpRenditionNumber.substring(0, tmpRenditionNumber.lastIndexOf("-"));
+                }
+            }
+            tmsRendition.setRenditionNumber(tmpRenditionNumber);
         }
         else {
             logger.log(Level.FINER, "unable to create Rendition number, Invalid name formatting option: {0}", cdis_new.properties.getProperty("newRenditionNameFormat"));
@@ -77,22 +96,37 @@ public class MediaRecord {
         
         //Get the rendition name, and the dimensions
         // if the barcode is set, use the name to get the barcode info,
-        //else use the name to get rendition name with the rendition
-        
-        String damsImageFileName = tmsRendition.populateTMSRendition(siAsst.getUoiid(), tmsRendition, damsConn);
+        //else use the name to get rendition name with the rendition   
+        String damsImageFileName = tmsRendition.populateRenditionFromDamsInfo(siAsst.getUoiid(), tmsRendition, damsConn);
         
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
-        
+        Integer objectId = 0;
         if (cdis_new.properties.getProperty("locateByBarcode").equals("true")) {
-            //tmsRendition.setRenditionNumber( ObjectID);
-            Integer objectId = tmsRendition.populateTMSRenditionBarcode(damsImageFileName, tmsConn);
-            tmsRendition.setRenditionNumber( objectId.toString() + "_01" );
-            
-            tmsObject.setObjectID(objectId);
-            
+            objectId = tmsRendition.getObjectIDFromBarcode(damsImageFileName, tmsConn);
+
+            if (objectId == 0) {
+                logger.log(Level.FINER, "Unable to Find obtain object Data for barcode.  Will check to see if we find the object with alternate method");
+            }
+            else {
+                // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
+                if (cdis_new.properties.getProperty("appendTimestampToRenditionName").equals("true"))  {
+                    DateFormat df = new SimpleDateFormat("kkmmss");
+                    //String rankString = 
+                    
+                    tmsRendition.setRenditionNumber( objectId.toString() + "_" + String.format("%03d", tmsRendition.getRank()) + "_" + df.format(new Date()));
+                }
+                else {
+                    // For barcode objects, the renditionNumber is the objectID plus the rank
+                    tmsRendition.setRenditionNumber( objectId.toString() + "_" + tmsRendition.getRank() );
+                }
+                tmsObject.setObjectID(objectId);
+            }
         }
-        else {
+        
+        // If we were unable to find object from barcode logic, or if we never stepped into the barcode logic,
+        // then we still need to find the objectID and the new renditionNumber
+        if (objectId == 0) {
             
             formatNewRenditionName (cdis_new, damsImageFileName, tmsRendition);
             
@@ -107,7 +141,6 @@ public class MediaRecord {
         // Set the primaryRenditionFlag
         tmsRendition.populateIsPrimary(tmsObject.getObjectID(), tmsConn);
         
-        
         logger.log(Level.FINER, "about to create TMS media Record:");
         logger.log(Level.FINER, "ObjectID: " + tmsObject.getObjectID());
         logger.log(Level.FINER, "RenditionNumber: {0}", tmsRendition.getRenditionNumber());
@@ -117,11 +150,11 @@ public class MediaRecord {
         logger.log(Level.FINER, "IsPrimary: " + tmsRendition.getIsPrimary()); 
         logger.log(Level.FINER, "IDSPath: " + cdis_new.properties.getProperty("IDSPathId")); 
         
-        
         CallableStatement stmt = null;
             
         try {
 
+            // Call stored procedure to create media record in TMS
             stmt = tmsConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?,?,?,?,?)}");
                         
             stmt.setString(1, siAsst.getUoiid());

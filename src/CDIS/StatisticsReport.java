@@ -121,19 +121,21 @@ public class StatisticsReport {
        
     }
     
-    public void populateStats (int neverSyncedSize, int sourceUpdatedSize, String operationType) {
+    public void populateStats (int neverSyncedSize, int sourceUpdatedSize, int successCount, String operationType) {
                 
         if (operationType.equals("meta")) {
             // Get count of number of Renditions to Sync, and send to Report File
             this.headerFileWrt.append("Renditions to metadata sync not synced before: " + neverSyncedSize + "\n");
-            this.headerFileWrt.append("Renditions where DAMS needs metadata changes: " + sourceUpdatedSize + "\n");
+            this.headerFileWrt.append("Renditions where DAMS needs changed metadata: " + sourceUpdatedSize + "\n");
         
             int TotalRend = neverSyncedSize + sourceUpdatedSize;
         
-            this.headerFileWrt.append("Total Number of Renditions to MetaData sync: " + TotalRend + "\n\n\n");
+            this.headerFileWrt.append("Total Number of Renditions to Metadata sync: " + TotalRend + "\n");
+            this.headerFileWrt.append("Total Number of Successful Metadata Updates: " + successCount + "\n\n\n");
         }
         else if (operationType.equals("ids")) {
-            this.headerFileWrt.append("Renditions to IDS path sync in Collections DataBase: " + neverSyncedSize + "\n\n\n");
+            this.headerFileWrt.append("Renditions to IDS path sync in Collections DataBase: " + neverSyncedSize + "\n");
+            this.headerFileWrt.append("Total Number of Successful updates to point to IDS: " + successCount + "\n\n\n");
         }
         else if (operationType.equals("link")) {
              this.headerFileWrt.append("Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");
@@ -178,7 +180,7 @@ public class StatisticsReport {
                     FileUtils.writeStringToFile(reportFile, successStr, true);
                 }
                 else {
-                    FileUtils.writeStringToFile(reportFile, "No Records synced\n", true);
+                    FileUtils.writeStringToFile(reportFile, "No Records synced/ingested in this batch\n", true);
                 }
             }
             
@@ -235,8 +237,12 @@ public class StatisticsReport {
                 message.setSubject("CDIS 2.0: " + siUnit + " Ingest to DAMS Report for batch number " + timestamp);         
                 emailContent = "<br>"+"Please see the attached CDIS DAMS Ingest report for "+ timestamp + "<br>";              
             }
+            else if (operationType.equals("thumbnailSync")) {
+                message.setSubject("CDIS 2.0: " + siUnit + " TMS Thumbnail Sync for batch number " + timestamp);
+            }
             else { 
                 System.out.println("Error, invalid operationType for Report");
+                emailContent = "<br>"+"Please see the attached CDIS DAMS Ingest report for "+ timestamp + "<br>"; 
             } 
                 
 		// create the Multipart and its parts to it

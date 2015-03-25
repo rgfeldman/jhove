@@ -23,6 +23,8 @@ import CDIS.CollectionsSystem.Thumbnail;
 import CDIS.DAMS.DAMSIngest;
 import java.sql.SQLException;
 import java.util.HashMap;
+import com.artesia.common.encryption.encryption.EncryptDecrypt;
+import org.apache.commons.logging.LogFactory;
 
 
 public class CDIS {
@@ -43,10 +45,12 @@ public class CDIS {
         
         //establish and verify database connections.
 	try {
+                String tmsPass = EncryptDecrypt.decryptString(cdis_new.properties.getProperty("tmsPass"));
+                
 		cdis_new.tmsConn = DataProvider.getConnection(cdis_new.properties.getProperty("tmsDriver"), 
                         cdis_new.properties.getProperty("tmsUrl"), 
 			cdis_new.properties.getProperty("tmsUser"), 
-			cdis_new.properties.getProperty("tmsPass"));
+			tmsPass);
                 
                 
 	} catch(Exception ex) {
@@ -57,10 +61,13 @@ public class CDIS {
         logger.log(Level.FINER, "Connection to TMS database established.");
         
         try {
-		cdis_new.damsConn = DataProvider.getConnection(cdis_new.properties.getProperty("damsDriver"), 
+            
+            String damsPass = EncryptDecrypt.decryptString(cdis_new.properties.getProperty("damsPass"));
+            
+            cdis_new.damsConn = DataProvider.getConnection(cdis_new.properties.getProperty("damsDriver"), 
 					cdis_new.properties.getProperty("damsUrl"), 
 					cdis_new.properties.getProperty("damsUser"), 
-					cdis_new.properties.getProperty("damsPass"));
+					damsPass);
                 
         } catch(Exception ex) {
 		ex.printStackTrace();
