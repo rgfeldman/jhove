@@ -150,6 +150,11 @@ public class MediaRecord {
         logger.log(Level.FINER, "IsPrimary: " + tmsRendition.getIsPrimary()); 
         logger.log(Level.FINER, "IDSPath: " + cdis_new.properties.getProperty("IDSPathId")); 
         
+        // Insert into Media Master
+        // Insert into MediaRendition
+        // Insert into MediaFiles
+        // Insert into MediaXrefs
+        
         CallableStatement stmt = null;
             
         try {
@@ -177,6 +182,9 @@ public class MediaRecord {
             
             stmt.executeUpdate();
             
+            
+            
+            
         }catch(SQLException sqlex) {
 		sqlex.printStackTrace();
                 return false;
@@ -188,7 +196,5 @@ public class MediaRecord {
         return true;
         
     }
-    
-   
     
 }

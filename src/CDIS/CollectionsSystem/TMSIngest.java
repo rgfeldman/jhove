@@ -25,9 +25,11 @@ import CDIS.DAMS.Database.SiAssetMetaData;
 public class TMSIngest {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
+    
     Connection damsConn;
     Connection tmsConn;
     LinkedHashMap <String,String> neverLinkedDamsRendtion;  
+    int successCount;
     
     private void addNeverLinkedDamsRendtion (String UOIID, String uan) {
         this.neverLinkedDamsRendtion.put(UOIID, uan); 
@@ -108,7 +110,7 @@ public class TMSIngest {
                 
                 String currentIterationSql = sql.replaceAll("\\?owning_unit_unique_name\\?", siAsst.getOwningUnitUniqueName());
                 
-                logger.log(Level.FINEST, "SQL: {0}", sql);
+                logger.log(Level.FINEST, "SQL: {0}", currentIterationSql);
                 
                 try {
                     stmt = tmsConn.prepareStatement(currentIterationSql);                                
@@ -174,7 +176,7 @@ public class TMSIngest {
                         }
                          
                         statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", true);
-                        
+                        this.successCount++;
                         
                     }
                     else {
@@ -216,6 +218,8 @@ public class TMSIngest {
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
         linkUANtoFilename (cdis_new, statReport);  
+        
+        statReport.populateStats (0, 0, this.successCount, "ingestToCollections");
         
     }
 }

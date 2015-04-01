@@ -58,8 +58,6 @@ public class MetaData {
             this.emailTo = cdis_new.properties.getProperty("emailTo");
         }
         this.flagForIDS = cdis_new.properties.getProperty("flagForIDS");
-        //this.metaDataXmlFile = cdis_new.properties.getProperty("metaDataXmlFile");
-        Integer idsPath = Integer.parseInt(cdis_new.properties.getProperty("IDSPathId"));
                
          // initialize renditionID lists for sync
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
@@ -69,7 +67,7 @@ public class MetaData {
         neverSyncedCDISIdLst = getNeverSyncedRendition();
 
         //Grab all the records that have been synced in the past, but have been updated
-        sourceUpdatedCDISIdLst = getSourceUpdatedRendition();
+        sourceUpdatedCDISIdLst = getCISUpdatedRendition();
 
         statReport.populateHeader(this.siUnit, "sync");
 
@@ -83,19 +81,7 @@ public class MetaData {
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
             processRenditionList(sourceUpdatedCDISIdLst, cdis_new.xmlSelectHash, statReport);
         }
-        
         statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, "meta");
-        
-        //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
-        ImageFilePath imgPath = new ImageFilePath();
-        imgPath.sync(tmsConn, damsConn, idsPath , statReport);
-        
-        try {
-            damsConn.commit();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-        
     }
 
     private int updateDamsData() {
@@ -144,20 +130,44 @@ public class MetaData {
         return CDISIdList;
     }
 
-    // get Renditions by CDIS_ID that have been synced before, but have been updated in the source (TMS), and we requre those updates
-    // need to populate objectID in the query before this works for us
-    private ArrayList<Integer> getSourceUpdatedRendition() {
+    // get Renditions by CDIS_ID that have been previously synced, but have been updated in the Collection System (CIS), and we requre those updates
+    private ArrayList<Integer> getCISUpdatedRendition() {
 
         ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
         
+        // need to check the audit trail.  The objectID in the audittrail table may correspond to the 
+        // renditionID, mediaMasterID or the objectID
+        
         String sql = "select distinct CDIS_ID " +
-                     "from CDIS a, " +
-                     "AuditTrail b, " +
-                     "MediaRenditions c " +
-                     "where a.objectID = b.objectID " +
-                     "and a.RenditionId = c.RenditionId " +
-                     "and c.isColor = '1' " +
-                     "and b.EnteredDate > a.MetaDataSyncDate";
+                    "from CDIS a, " +
+                    "AuditTrail b, " +
+                    "MediaRenditions c " +
+                    "where a.objectID = b.objectID " +
+                    "and a.RenditionId = c.RenditionId " +
+                    "and b.tableName = 'Objects' " +
+                    "and c.isColor = '1' " +
+                    "and b.EnteredDate > a.MetaDataSyncDate " +
+                    "union " +
+                    "select distinct CDIS_ID " +
+                    "from CDIS a, " +
+                    "AuditTrail b, " +
+                    "MediaRenditions c " +
+                    "where a.renditionID = b.objectID " +
+                    "and a.RenditionId = c.RenditionId " +
+                    "and b.tableName = 'mediaRenditions' " +
+                    "and c.isColor = '1' " +
+                    "and b.EnteredDate > a.MetaDataSyncDate " +
+                    "union " +
+                    "select distinct CDIS_ID " +
+                    "from CDIS a, " +
+                    "AuditTrail b, " + 
+                    "MediaRenditions c " +
+                    "where c.mediaMasterID = b.ObjectID " +
+                    "and a.RenditionId = c.RenditionId " +
+                    "and b.tableName = 'mediaMaster' " +
+                    "and c.isColor = '1' " +
+                    "and b.EnteredDate > a.MetaDataSyncDate ";
+                     
         
         ResultSet rs;
 
@@ -297,7 +307,12 @@ public class MetaData {
     }
     
     
-    // generate the update statement which will update the DAMS database
+    /*  Method :        generateUpdate
+        Arguments:      
+        Returns:      
+        Description:    generates the update sql for updating metadata in the DAMS SI_ASSET_METADATA table
+        RFeldman 2/2015
+    */
     private void generateUpdate(SiAssetMetaData siAsst, CDISTable cdisTbl) {
 
         String updateStatement = "UPDATE SI_ASSET_METADATA "
@@ -330,6 +345,12 @@ public class MetaData {
 
     }
 
+    /*  Method :        mapData
+        Arguments:      
+        Returns:      
+        Description:    maps the information obtained from the TMS select statement to the appropriate member variables
+        RFeldman 2/2015
+    */
     private void mapData(HashMap <String,String[]> metaDataSelectHash, CDISTable cdisTbl, SiAssetMetaData siAsst) {
         ResultSet rs;
         String sql;
@@ -480,7 +501,12 @@ public class MetaData {
 
     }
 
-    // Update CDIS table to log this transaction
+   /*  Method :        updateCDISTbl
+        Arguments:      
+        Returns:      
+        Description:    Update the CDIS table with the new values for when this rendition is re-synced.
+        RFeldman 2/2015
+    */
     private int updateCDISTbl(CDISTable cdisTbl, String newIDSRestrict) {
         
         String sql = "update CDIS " +
@@ -496,27 +522,38 @@ public class MetaData {
 
     }
 
-    // Update the UOIS table with the MetaDataStateDate.  This will trigger IDS.
-    // We only want to trigger IDS in certain conditions...this is configurable in the config file.
-    private int updateMetaDataStateDate(CDISTable cdisTbl, String newIDSRestrict) {
+    /*  Method :        updateMetaDataStateDate
+        Arguments:      
+        Returns:      
+        Description:    Update the UOIS table with the MetaDataStateDate.  This will trigger IDS.
+        RFeldman 2/2015
+    */
+    private void updateMetaDataStateDate(CDISTable cdisTbl, String newIDSRestrict) {
         int updateCount = 0;
-        boolean sendIDSSync = true;
-
+        String previousRestriction = null;
+        
         // If the update flag is set to never, we dont have to update for IDS, just return
         if (this.flagForIDS.equals("never")) {
-            sendIDSSync = false;
+            return;
         }
         // If the restriction has not changed from what is in the database, we may not need to flag for IDS
-        else if (this.flagForIDS.equals("ifRestrictUpdated")) {
-            if (cdisTbl.getIDSRestrict().equals(newIDSRestrict)) {
-                logger.log(Level.ALL, "Flag for IDS not needed");
-                sendIDSSync = false;
+        else if (this.flagForIDS.equals("default")) {
+            previousRestriction = cdisTbl.getIDSRestrict();
+            
+            if (previousRestriction != null) {
+                if (previousRestriction.equals(newIDSRestrict)) {
+                    logger.log(Level.ALL, "Flag for IDS not needed");
+                    return;  
+                }
             }
         }
         // for ifRestricted we send to IDS if the value is Yes or a number
         else if (this.flagForIDS.equals("ifRestricted")) {
             if (! newIDSRestrict.equals("No")) {
-                sendIDSSync = true;
+ 
+            }
+            else {
+                return;
             }
         }
         
@@ -526,13 +563,17 @@ public class MetaData {
                     "where UOI_ID = '" + cdisTbl.getUOIID() + "'";
         
         logger.log(Level.ALL, "updateUOIIS Statment: " + sql);
-        updateCount = DataProvider.executeUpdate(this.damsConn, sql);
         
-        return (updateCount);
+        DataProvider.executeUpdate(this.damsConn, sql);
 
     }
     
-     // Get the new restrictions.  We record these in case there are any restriction changes later because restriction changes trigger IDS
+    /*  Method :        calcNewIDSRestrict
+        Arguments:      
+        Returns:      
+        Description:    calculates the new restriction for insert/compare into the CDIS table
+        RFeldman 2/2015
+    */
     private String calcNewIDSRestrict (SiAssetMetaData siAsst) {
        
         String IDSRestrict = null;

@@ -239,7 +239,7 @@ public class LinkCollections  {
             
             sqlTypeArr = cdis_new.xmlSelectHash.get(key);
             
-            if (sqlTypeArr[0].equals("retrieveDamsRenditions")) {   
+            if (sqlTypeArr[0].equals("retrieveDamsImages")) {   
                 sql = key;    
                 logger.log(Level.FINEST, "SQL: {0}", sql);
             }

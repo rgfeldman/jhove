@@ -95,7 +95,7 @@ public class TMSRendition {
     
     
     public void populateRenditionIdByRenditionNumber (TMSRendition tmsRendition, Connection tmsConn) {
-        String sql = "Select RenditionID " +
+        String sql = "Select max (RenditionID) " +
                      "From MediaRenditions " +
                      "Where RenditionNumber = '" + tmsRendition.getRenditionNumber() + "'";
         

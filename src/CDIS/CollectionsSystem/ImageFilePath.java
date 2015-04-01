@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 
+import CDIS.CDIS;
 import CDIS.DAMS.Database.SiAssetMetaData;
 import CDIS.CollectionsSystem.Database.CDISTable;
 import CDIS.StatisticsReport;
@@ -27,11 +28,11 @@ public class ImageFilePath {
     int IDSPathId;
     int successfulUpdateCount;
     
-    public void sync(Connection tmsConn, Connection damsConn, Integer idsPathID, StatisticsReport StatReport) {
+    public void sync(CDIS cdis_new, StatisticsReport StatReport) {
         //assign the database connections for later use
-        this.tmsConn = tmsConn;
-        this.damsConn = damsConn;
-        this.IDSPathId = idsPathID;
+        this.tmsConn = cdis_new.tmsConn;
+        this.damsConn = cdis_new.damsConn;
+        this.IDSPathId = Integer.parseInt(cdis_new.properties.getProperty("IDSPathId"));
         
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
 

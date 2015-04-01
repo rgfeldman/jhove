@@ -5,6 +5,7 @@
  */
 package CDIS;
 
+import CDIS.CollectionsSystem.ImageFilePath;
 import java.io.FileInputStream;
 import java.util.Properties;
 import java.sql.Connection;
@@ -199,6 +200,10 @@ public class CDIS {
             else if (cdis_new.operationType.equals("sync")) {
                  MetaData metaData = new MetaData();
                  metaData.sync(cdis_new, statReport);
+        
+                 //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
+                ImageFilePath imgPath = new ImageFilePath();
+                imgPath.sync(cdis_new, statReport);
             }
             else if (cdis_new.operationType.equals("thumbnailSync")) {
                  Thumbnail thumbnail = new Thumbnail();
@@ -216,11 +221,13 @@ public class CDIS {
                 logger.log(Level.FINER, "Need to email the report");
                 statReport.send(cdis_new.properties.getProperty("siUnit"), cdis_new.properties.getProperty("emailReportTo"), cdis_new.operationType);
             }
- 
         
+ 
         } catch (Exception e) {
                 e.printStackTrace();
         } finally {
+            try { if ( cdis_new.damsConn != null)  cdis_new.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            
             try { if ( cdis_new.tmsConn != null)  cdis_new.tmsConn.close(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( cdis_new.damsConn != null)  cdis_new.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         

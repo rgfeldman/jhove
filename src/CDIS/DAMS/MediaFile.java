@@ -26,10 +26,10 @@ public class MediaFile {
         
         
         String sql = "Select Path " +
-                    "From MediaPaths  mp ," +
+                    "From MediaPaths  mp, " +
                     "MediaFiles mf " +
                     "Where mp.PathID = mf.PathID " +
-                    "AND RenditionNumber = '" + renditionID;
+                    "AND RenditionID = " + renditionID;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -58,18 +58,38 @@ public class MediaFile {
     public void create(CDIS cdis_new, String tmsFileName, int renditionID, Connection tmsConn){
         
         this.tmsConn = tmsConn;
+        String pathlessFileName = tmsFileName;
+        String sourceFilePath = null;
+        String destinationFilePath = null;
+        
+        logger.log(Level.FINEST, "mediaFile Name : " + tmsFileName);
+        logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
                
         //Get the full tms pathname from the RenditionID
         populateMediaPathLocation (renditionID);
         
         // configure from and to filenames
-        File sourceFile = new File(mediaPathLocation + tmsFileName);
-        File destFile = new File (cdis_new.properties.getProperty("workFolder") + tmsFileName);
+        sourceFilePath = mediaPathLocation + tmsFileName;  
+        File sourceFile = new File(sourceFilePath);
+        
+        if (tmsFileName.contains("\\")) {
+            pathlessFileName = tmsFileName.substring(tmsFileName.lastIndexOf("\\"));
+        }
+        
+        if (tmsFileName.contains("/")) {
+            pathlessFileName = tmsFileName.substring(tmsFileName.lastIndexOf("/"));
+        }
+        
+        destinationFilePath = cdis_new.properties.getProperty("workFolder") + "\\" + pathlessFileName; 
+        File destFile = new File (destinationFilePath);
                         
+        logger.log(Level.FINEST, "Copying mediaFile from : " + sourceFilePath);
+        logger.log(Level.FINEST, "Copying mediaFile to: " + destinationFilePath);
+        
         try {
             // Copy from tms source location to workfile location
             FileUtils.copyFile(sourceFile, destFile);
-        
+            
         } catch (Exception e) {
                     e.printStackTrace();
         }

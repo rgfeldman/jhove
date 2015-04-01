@@ -102,10 +102,10 @@ public class StatisticsReport {
     public void populateHeader (String siUnit, String operationType) {
         
         if (operationType.equals("ingestToCollections") ) {
-            this.headerFileWrt.append ("CDIS 2.0: DAMS/Collections TMS Media Creation Report and Statistics\n");
+            this.headerFileWrt.append ("CDIS 2.0: DAMS to TMS: Media Creation Report and Statistics\n");
         }
-        else if (operationType.equals("ingestToDAMS") ) {
-            this.headerFileWrt.append ("CDIS 2.0: Collections to DAMS Image Creation Report and Statistics\n");
+        else if (operationType.equals("ingestToDams") ) {
+            this.headerFileWrt.append ("CDIS 2.0: Collections to DAMS: Image Creation Report and Statistics\n");
         }
         else if (operationType.equals("link") ) {
             this.headerFileWrt.append ("CDIS 2.0: DAMS/Collections Link Report and Statistics\n");
@@ -136,6 +136,9 @@ public class StatisticsReport {
         else if (operationType.equals("ids")) {
             this.headerFileWrt.append("Renditions to IDS path sync in Collections DataBase: " + neverSyncedSize + "\n");
             this.headerFileWrt.append("Total Number of Successful updates to point to IDS: " + successCount + "\n\n\n");
+        }
+        else if (operationType.startsWith("ingest")) {
+            this.headerFileWrt.append("Total Number of Successful Ingest Records: " + successCount + "\n\n\n");
         }
         else if (operationType.equals("link")) {
              this.headerFileWrt.append("Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");
