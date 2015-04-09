@@ -22,6 +22,7 @@ import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.StatisticsReport;
 import edu.si.CDIS.XmlSqlConfig;
+import java.util.regex.*;
 
 public class MetaData {
 
@@ -60,7 +61,10 @@ public class MetaData {
         }
         this.flagForIDS = cdis_new.properties.getProperty("flagForIDS");
                
-         // initialize renditionID lists for sync
+        // Get required column names
+        getRequiredColumnNames(cdis_new.xmlSelectHash);
+
+        // initialize renditionID lists for sync
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
         ArrayList<Integer> sourceUpdatedCDISIdLst = new ArrayList<Integer>();
 
@@ -327,6 +331,8 @@ public class MetaData {
                     
                     for(Iterator<String> iter = columnsToUpdate.iterator(); iter.hasNext();) {
                         String column = iter.next();
+                        
+                        //logger.log(Level.ALL, "Processing Column: " + column);
                          
                         if (column.equals("credit")) {
                             updateStatement = updateStatement + " credit = '" + siAsst.getCredit() + "',";
@@ -370,6 +376,9 @@ public class MetaData {
                         else if (column.equals("work_creation_date")) {
                             updateStatement = updateStatement + " work_creation_date = '" + siAsst.getWorkCreationDate() + "',";
                         }
+                        else {
+                            logger.log(Level.ALL, "Error attempting to map unhandled column: " + column);
+                        }
                     }
                 }
 
@@ -386,6 +395,38 @@ public class MetaData {
 
     }
 
+    /*  Method :        getRequiredColumnNames
+        Arguments:      
+        Returns:      
+        Description:    obtains the required columns for the metadata update and adds each one to the columnsToUpdate 
+        RFeldman 4/2015
+    */
+    private void getRequiredColumnNames(HashMap <String,String[]> metaDataSelectHash) {
+        
+        this.columnsToUpdate = new ArrayList<String>();
+    
+        for (String key : metaDataSelectHash.keySet()) {
+            
+            String sql = key;
+             // Split the sql string on whitespace characters, then take the next column and add to array containing
+            // the variables that we want to update
+            int wordNum = 0;
+            String[] words = sql.split("\\s+");
+            for (String word : words) {
+                
+                if (word.equalsIgnoreCase("AS")) {
+                    
+                    String column = words[wordNum+1].replace(",","");
+                    //logger.log(Level.ALL, "Adding column to stack: " + column);
+                    
+                    columnsToUpdate.add(column);
+                }
+                wordNum ++;
+            } 
+        }
+
+    }
+    
     /*  Method :        mapData
         Arguments:      
         Returns:      
@@ -399,16 +440,12 @@ public class MetaData {
         String sqlType;
         String delimiter;
         
-        this.columnsToUpdate = new ArrayList<String>();
 
         logger.log(Level.ALL, "Mapping Data for metadata");
         
         //setting defaults
-         siAsst.setIsRestricted("Yes");
-         siAsst.setMaxIdsSize("0");
+        siAsst.setIsRestricted("Yes");
 
-        //for (Iterator<String> iter = metaDataSelect.iterator(); iter.hasNext();) {
-        //for (Iterator<String> iter = metaDataSelectHash.iterator(); iter.hasNext();) {
         for (String key : metaDataSelectHash.keySet()) {
 
             // Get the sql value from the hasharray
@@ -425,7 +462,7 @@ public class MetaData {
             logger.log(Level.ALL, "select Statement: " + sql);
 
             rs = DataProvider.executeSelect(this.tmsConn, sql);
-
+            
             // populate the metadata object with the values found from the database query
             try {
                 while (rs.next()) {
@@ -435,34 +472,34 @@ public class MetaData {
                         if (sqlType.equals("singleResult")) {
                             logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows");
                         }
-                    }
+                    }                   
                     
                     if (sql.contains("AS caption")) {
-                        columnsToUpdate.add("caption");
                         if (rs.getString("caption") != null) {
-                            siAsst.setCaption(rs.getString("caption"));
+                            if (sqlType.equals("cursorAppend")) {
+                                siAsst.appendCaption(rs.getString("caption"),delimiter);
+                            }
+                            else {
+                                siAsst.setCaption(rs.getString("caption"));
+                            }
                         }
                     }
                     if (sql.contains("AS credit")) {
-                        columnsToUpdate.add("credit");
                         if (rs.getString("credit") != null) {
                             siAsst.setCredit(rs.getString("credit"));
                         }
                     }
                     if (sql.contains("AS digital_item_notes")) {
-                        columnsToUpdate.add("digital_item_notes");
                         if (rs.getString("digital_item_notes") != null) {
                             siAsst.setDigitalItemNotes(rs.getString("digital_item_notes"));
                         }
                     }
                     if (sql.contains("AS description")) {
-                        columnsToUpdate.add("description");
                         if (rs.getString("description") != null) {
                             siAsst.setDescription(rs.getString("description"));
                         }
                     }
                     if (sql.contains("AS group_title")) {
-                        columnsToUpdate.add("group_title");
                         if (rs.getString("group_title") != null) {
                             siAsst.setGroupTitle(rs.getString("group_title"));
                         }
@@ -473,7 +510,6 @@ public class MetaData {
                         }
                     }
                     if (sql.contains("AS keywords")) {
-                        columnsToUpdate.add("keywords");
                         if (rs.getString("keywords") != null) {
                             if (sqlType.equals("cursorAppend")) {
                                 siAsst.appendKeywords(rs.getString("keywords"),delimiter);
@@ -489,25 +525,21 @@ public class MetaData {
                         }
                     }
                     if (sql.contains("AS other_constraints")) {
-                        columnsToUpdate.add("other_constraints");
                         if (rs.getString("other_constraints") != null) {
                             siAsst.setOtherConstraints(rs.getString("other_constraints"));
                         }
                     }
                     if (sql.contains("AS primary_creator")) {
-                        columnsToUpdate.add("primary_creator");
                         if (rs.getString("primary_creator") != null) {
                             siAsst.setPrimaryCreator(rs.getString("primary_creator"));
                         }
                     }
                     if (sql.contains("AS rights_holder")) {
-                        columnsToUpdate.add("rights_holder");
                         if (rs.getString("rights_holder") != null) {
                             siAsst.setRightsHolder(rs.getString("rights_holder"));
                         }
                     }
                     if (sql.contains("AS series_title")) {
-                        columnsToUpdate.add("series_title");
                         if (rs.getString("series_title") != null) {
                             siAsst.setSeriesTitle(rs.getString("series_title"));
                         }
@@ -518,25 +550,21 @@ public class MetaData {
                         }
                     }
                     if (sql.contains("AS terms_and_restrictions")) {
-                        columnsToUpdate.add("terms_and_restrictions");
                         if (rs.getString("terms_and_restrictions") != null) {
                             siAsst.setTermsAndRestrictions(rs.getString("terms_and_restrictions"));
                         }
                     }
                     if (sql.contains("AS title")) {
-                        columnsToUpdate.add("title");
                         if (rs.getString("title") != null) {
                             siAsst.setTitle(rs.getString("title"));
                         }
                     }
                     if (sql.contains("AS use_restrictions")) {
-                        columnsToUpdate.add("use_restrictions");
                         if (rs.getString("use_restrictions") != null) {
                             siAsst.setUseRestrictions(rs.getString("use_restrictions"));
                         }
                     }
                     if (sql.contains("AS work_creation_date")) {
-                        columnsToUpdate.add("work_creation_date");
                         if (rs.getString("work_creation_date") != null) {
                             siAsst.setWorkCreationDate(rs.getString("work_creation_date"));
                         }
@@ -553,9 +581,7 @@ public class MetaData {
                     e.printStackTrace();
                 }
             }
-
         }
-
     }
 
    /*  Method :        updateCDISTbl

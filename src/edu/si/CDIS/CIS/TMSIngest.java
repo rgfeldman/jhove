@@ -210,7 +210,7 @@ public class TMSIngest {
         this.neverLinkedDamsRendtion = new LinkedHashMap<String, String>();
         
         // Populate the header for the report file
-        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToCollections");
+        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToCIS");
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedRenditions (cdis_new);
@@ -218,7 +218,7 @@ public class TMSIngest {
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
         linkUANtoFilename (cdis_new, statReport);  
         
-        statReport.populateStats (0, 0, this.successCount, "ingestToCollections");
+        statReport.populateStats (0, 0, this.successCount, "ingestToCIS");
         
     }
 }

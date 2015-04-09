@@ -101,7 +101,7 @@ public class StatisticsReport {
         
     public void populateHeader (String siUnit, String operationType) {
         
-        if (operationType.equals("ingestToCollections") ) {
+        if (operationType.equals("ingestToCIS") ) {
             this.headerFileWrt.append ("CDIS 2.0: DAMS to TMS: Media Creation Report and Statistics\n");
         }
         else if (operationType.equals("ingestToDams") ) {
@@ -232,7 +232,7 @@ public class StatisticsReport {
                 message.setSubject("CDIS 2.0: " + siUnit + " DAMS/Collections Link Report for batch number " + timestamp);         
                 emailContent = "<br>"+"Please see the attached CDIS Link report for "+ timestamp + "<br>";
             }
-            else if (operationType.equals("ingestToCollections")) {
+            else if (operationType.equals("ingestToCIS")) {
                 message.setSubject("CDIS 2.0: " + siUnit + " TMS Media Creation Report for batch number " + timestamp);         
                 emailContent = "<br>"+"Please see the attached CDIS TMS Ingest report for "+ timestamp + "<br>";                  
             }

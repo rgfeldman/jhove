@@ -110,6 +110,23 @@ public class SiAssetMetaData {
     
     // set functions
     
+    public void appendCaption(String caption, String delimiter) {
+        caption = scrubString(caption);
+        
+        if ( this.caption != null ) {
+            
+            if (this.caption.length() + caption.length() > 4000 ) {
+                this.caption = this.caption += delimiter + caption.substring(0,3999);
+            }
+            else {
+                this.caption = this.caption += delimiter + caption;
+            }
+        }
+        else {
+                this.caption = caption;
+        }
+    }
+        
     public void appendKeywords(String keywords, String delimiter) {
         keywords = scrubString(keywords);
         
@@ -123,10 +140,8 @@ public class SiAssetMetaData {
             }
         }
         else {
-                this.keywords = keywords;
-            
+                this.keywords = keywords;   
         }
-        
     }
     
     public void setCaption(String caption) {

@@ -14,15 +14,18 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
+import java.net.URI;
 
 
 public class MediaFile {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     String mediaPathLocation;
+    String mediaDrive;
     Connection tmsConn;
 
     public void populateMediaPathLocation(int renditionID) {
+        
         
         
         String sql = "Select Path " +
@@ -37,16 +40,23 @@ public class MediaFile {
         PreparedStatement stmt = null;
         
         try {
+                
 		stmt = tmsConn.prepareStatement(sql);
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
-                    this.mediaPathLocation = rs.getString(1);
+                    String mediaPath = rs.getString(1);
+ 
+                    this.mediaPathLocation = mediaPath;
+                    
                 }        
+                
+                
+                
 	}
             
-	catch(SQLException sqlex) {
-		sqlex.printStackTrace();
+	catch(Exception e) {
+		e.printStackTrace();
 	}
         finally {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
@@ -58,39 +68,29 @@ public class MediaFile {
     public void create(CDIS cdis_new, String tmsFileName, int renditionID, Connection tmsConn){
         
         this.tmsConn = tmsConn;
-        String pathlessFileName = tmsFileName;
-        String sourceFilePath = null;
-        String destinationFilePath = null;
         
         logger.log(Level.FINEST, "mediaFile Name : " + tmsFileName);
-        logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
-               
+        
         //Get the full tms pathname from the RenditionID
         populateMediaPathLocation (renditionID);
         
+        logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
+        
         // configure from and to filenames
-        sourceFilePath = mediaPathLocation + tmsFileName;  
-        File sourceFile = new File(sourceFilePath);
-        
-        if (tmsFileName.contains("\\")) {
-            pathlessFileName = tmsFileName.substring(tmsFileName.lastIndexOf("\\"));
-        }
-        
-        if (tmsFileName.contains("/")) {
-            pathlessFileName = tmsFileName.substring(tmsFileName.lastIndexOf("/"));
-        }
-        
-        destinationFilePath = cdis_new.properties.getProperty("workFolder") + "\\" + pathlessFileName; 
-        File destFile = new File (destinationFilePath);
+        File sourceFile = new File(mediaPathLocation + tmsFileName);
+         
+        File destFile = new File (cdis_new.properties.getProperty("workFolder") + "//" + sourceFile.getName());
                         
-        logger.log(Level.FINEST, "Copying mediaFile from : " + sourceFilePath);
-        logger.log(Level.FINEST, "Copying mediaFile to: " + destinationFilePath);
+        logger.log(Level.FINEST, "Copying mediaFile from : " + mediaPathLocation + tmsFileName);
+        logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis_new.properties.getProperty("workFolder") + "//" + sourceFile.getName());
         
         try {
             // Copy from tms source location to workfile location
             FileUtils.copyFile(sourceFile, destFile);
+           
             
         } catch (Exception e) {
+            logger.log(Level.FINEST, "Unable to move file to WorkFolder");
                     e.printStackTrace();
         }
         

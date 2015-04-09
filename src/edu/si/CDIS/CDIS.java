@@ -184,7 +184,7 @@ public class CDIS {
             
             cdis_new.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
             
-            if (cdis_new.operationType.equals("ingestToCollections")) {          
+            if (cdis_new.operationType.equals("ingestToCIS")) {          
                 TMSIngest tmsIngest = new TMSIngest();
                 tmsIngest.ingest(cdis_new, statReport);
             }

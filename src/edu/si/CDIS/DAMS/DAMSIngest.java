@@ -164,7 +164,7 @@ public class DAMSIngest {
             try {
                 //move the image to the image directory
                 logger.log(Level.FINER, "Moving image file to : " + this.damsHotFolder);
-                    
+                
                 FileUtils.moveFileToDirectory(fileForDams, damsMediaDropOffDir, false);
                 this.numberMediaFilesToIngest ++;
       
@@ -188,7 +188,7 @@ public class DAMSIngest {
         try {
             if (numberMediaFilesToIngest > 0) {
                 //Create the ready.txt file and put in the media location
-                readyFilewithPath = this.damsHotFolder + "\ready.txt";
+                readyFilewithPath = this.damsHotFolder + "\\ready.txt";
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 

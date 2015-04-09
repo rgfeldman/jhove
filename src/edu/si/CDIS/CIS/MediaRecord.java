@@ -47,15 +47,11 @@ public class MediaRecord {
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
         String tmpRenditionNumber = null;
         
-        //NMAAHC wants RenditionNumber with '.'s instead of underscores
-        if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("underscoreToDot")  ) {  
-            String damsRenditionNameUnderscoreToDot = damsImageFileName.replaceAll("_", ".");      
-            tmsRendition.setRenditionNumber(damsRenditionNameUnderscoreToDot);
+        String rendDelimeter = cdis_new.properties.getProperty("renditionNumberDelimiter");
+        String imageNameDelimeter = cdis_new.properties.getProperty("imageNameDelimiter");
         
-        } else if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("none")) {
-            tmsRendition.setRenditionNumber(damsImageFileName);
-        }
-        else if (cdis_new.properties.getProperty("newRenditionNameFormat").equals ("dropACMPrefixSuffix")) {
+        // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
+        if (rendDelimeter.equals("ACM")) {
             if (damsImageFileName.startsWith("ACM-")) {
                 tmpRenditionNumber = damsImageFileName.replaceAll("ACM-", "");
             }
@@ -71,6 +67,12 @@ public class MediaRecord {
                 }
             }
             tmsRendition.setRenditionNumber(tmpRenditionNumber);
+        }
+        else if (! rendDelimeter.equals (imageNameDelimeter) ) {
+            tmsRendition.setRenditionNumber (damsImageFileName.replaceAll(imageNameDelimeter, rendDelimeter));      
+        }
+        else if (rendDelimeter.equals (imageNameDelimeter)) {
+            tmsRendition.setRenditionNumber(damsImageFileName);
         }
         else {
             logger.log(Level.FINER, "unable to create Rendition number, Invalid name formatting option: {0}", cdis_new.properties.getProperty("newRenditionNameFormat"));
