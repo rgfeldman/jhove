@@ -44,11 +44,6 @@ public class StatisticsReport {
     // This is the default constructor...initialize the files
     StatisticsReport () {
         
-        // Delete old tmp files
-        deleteOldLogs("tmp","success",3);
-        deleteOldLogs("tmp","fail",3);
-        deleteOldLogs("tmp","header",3);
-        
         //get the date timestamp for use in the report file
         DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmmss");
         this.timestamp = df.format(new Date());
@@ -69,25 +64,7 @@ public class StatisticsReport {
         }
     }
     
-    private void deleteOldLogs (String folder, String fileNamePrefix, int numDays) {	
-            
-        File folderDir = new File(folder);
-        File[] logs = folderDir.listFiles();
-	
-        if (logs != null) {
-            for(int i = 0; i < logs.length; i++) {
-                File tempFile = logs[i];
-                if(tempFile.getName().startsWith(fileNamePrefix)) {
-                    
-                    long diff = new Date().getTime() - tempFile.lastModified();
-                    if (diff > numDays * 24 * 60 * 60 * 1000) {
-                        tempFile.delete();
-                    }
-                }				
-            }
-        }
-        
-    }
+    
     
     // Write out stats to the report file for this run
     //public void writeUpdateStats(CDISTable cdisTbl, String syncType, boolean successFlag) {
@@ -113,24 +90,23 @@ public class StatisticsReport {
         else if (operationType.equals("sync") ) {
             this.headerFileWrt.append ("CDIS 2.0: Synchronization Report and Statistics\n");
         }
-        else if (operationType.equals("thumbnailSync") ) {
+        else if (operationType.equals("thumbnailSync") ) { 
             this.headerFileWrt.append ("CDIS 2.0: Thumbnail Synchronization Report and Statistics\n");
         }
         this.headerFileWrt.append ("siUnit: " + siUnit + "\n");
         this.headerFileWrt.append ("Batch Number: " + this.timestamp + "\n\n\n");
-       
     }
     
     public void populateStats (int neverSyncedSize, int sourceUpdatedSize, int successCount, String operationType) {
                 
         if (operationType.equals("meta")) {
             // Get count of number of Renditions to Sync, and send to Report File
-            this.headerFileWrt.append("Renditions to metadata sync not synced before: " + neverSyncedSize + "\n");
-            this.headerFileWrt.append("Renditions where DAMS needs changed metadata: " + sourceUpdatedSize + "\n");
+            this.headerFileWrt.append("DAMS images that have not been synced before: " + neverSyncedSize + "\n");
+            this.headerFileWrt.append("DAMS images that need updated metadata: " + sourceUpdatedSize + "\n");
         
             int TotalRend = neverSyncedSize + sourceUpdatedSize;
         
-            this.headerFileWrt.append("Total Number of Renditions to Metadata sync: " + TotalRend + "\n");
+            this.headerFileWrt.append("Total Number of Images to Metadata sync: " + TotalRend + "\n");
             this.headerFileWrt.append("Total Number of Successful Metadata Updates: " + successCount + "\n\n\n");
         }
         else if (operationType.equals("ids")) {
@@ -158,8 +134,6 @@ public class StatisticsReport {
         headerFileWrt.close();
         successFileWrt.close();
         
-        deleteOldLogs("rpt","Rpt_", 14);
-        
         // File to write
         reportFile = new File("rpt\\Rpt_" + operationType + this.timestamp + ".rtf");
 
@@ -176,7 +150,12 @@ public class StatisticsReport {
                 
                 sucessStr = FileUtils.readFileToString(this.successFile);
                 FileUtils.writeStringToFile(reportFile, "================================================================\n", true);
-                FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
+                if (operationType.equals("ingestToDams")) {
+                    FileUtils.writeStringToFile(reportFile, "Files Sent to DAMS:\n", true);
+                }
+                else {
+                    FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
+                }
             
                 if (this.successFile.length() > 0 ) {
                     String successStr = FileUtils.readFileToString(this.successFile); 
@@ -191,8 +170,12 @@ public class StatisticsReport {
             if(this.failFile.exists()) {
                 failStr = FileUtils.readFileToString(this.failFile);
                 FileUtils.writeStringToFile(reportFile, "================================================================\n", true);
-                FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
-                
+                if (operationType.equals("ingestToDams")) {
+                    FileUtils.writeStringToFile(reportFile, "Failed FileNames\n", true);
+                }
+                else {
+                    FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
+                }
                 if (this.failFile.length() > 0 ) { 
                     failStr = FileUtils.readFileToString(this.failFile);
                     FileUtils.writeStringToFile(reportFile, failStr, true);
@@ -229,7 +212,7 @@ public class StatisticsReport {
                 emailContent = "<br>"+"Please see the attached CDIS Metadata Sync report for "+ timestamp + "<br>";
             }
             else if (operationType.equals("link")) {
-                message.setSubject("CDIS 2.0: " + siUnit + " DAMS/Collections Link Report for batch number " + timestamp);         
+                message.setSubject("CDIS 2.0: " + siUnit + " DAMS/CIS Link Report for batch number " + timestamp);         
                 emailContent = "<br>"+"Please see the attached CDIS Link report for "+ timestamp + "<br>";
             }
             else if (operationType.equals("ingestToCIS")) {

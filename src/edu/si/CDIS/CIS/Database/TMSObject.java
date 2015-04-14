@@ -6,6 +6,7 @@
 package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
+import edu.si.CDIS.utilties.Transform;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,28 +42,29 @@ public class TMSObject {
     }
         
     
-    public boolean populateObjectFromRenditionNumber (String damsImageFileName, CDIS cdis_new, Connection tmsConn){
+    /*  Method :        populateObjectFromImageName
+        Arguments:      
+        Returns:      
+        Description:    Finds the objectID and populates object member variables based on the DAMS image name 
+        RFeldman 2/2015
+    */
+    public boolean populateObjectFromImageName (String damsImageFileName, CDIS cdis_new, Connection tmsConn){
 
         // populate ObjectNumber using various formats specified in the config file
-        String imageToObjectTrunc = cdis_new.properties.getProperty("damsImageNameToTMSObjectTrunc");
-        String tmsObjectNumberFormat = cdis_new.properties.getProperty("tmsObjectNumberFormat");
+        String damsDelimiter = cdis_new.properties.getProperty("damsDelimiter");
+        String tmsDelimiter = cdis_new.properties.getProperty("tmsDelimiter");
+        int imageObjectTrunc = Integer.parseInt(cdis_new.properties.getProperty("imageObjectTrunc"));
+        
         String tmpObjectNumber = null;
+        
+        Transform transform = new Transform();
         
         logger.log(Level.FINER,"Need to find Object for filename...before reformat " + damsImageFileName);
         
-        if (imageToObjectTrunc.equals("firstDash")) {
-            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.indexOf("-"));
-        }
-        else if (imageToObjectTrunc.equals("lastDash")) {
-            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("-"));
-        }
-        else if (imageToObjectTrunc.equals("lastUnderscore")) {
-            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("_"));        
-        }
-        else if (imageToObjectTrunc.equals("lastUnderscore")) {
-            tmpObjectNumber = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("_"));        
-        }
-        else if (imageToObjectTrunc.equals("dropACMPrefixSuffix")) {
+        //Find the objectNumber based on the Rendition number
+        tmpObjectNumber = transform.transform(damsImageFileName,damsDelimiter,tmsDelimiter,0,imageObjectTrunc);
+        
+        if (damsDelimiter.equals("ACM")) {
             if (damsImageFileName.startsWith("ACM-acmobj-")) {
                 tmpObjectNumber = damsImageFileName.replaceAll("ACM-acmobj-", "");
             }
@@ -77,10 +79,7 @@ public class TMSObject {
             tmpObjectNumber = damsImageFileName;
         }
         
-        if (tmsObjectNumberFormat.equals("underscoreToDot")) {
-            setObjectNumber(tmpObjectNumber.replaceAll("_", "."));
-        }
-        else if (tmsObjectNumberFormat.equals("dotsEveryFour")) {
+        if (tmsDelimiter.equals("dotsEveryFour")) {
             setObjectNumber(tmpObjectNumber.substring(0, 4) + "." + tmpObjectNumber.substring(4, 8) + "." +  tmpObjectNumber.substring(8));
         }
         else {
@@ -120,6 +119,12 @@ public class TMSObject {
         return true;
     }
     
+    /*  Method :        populateObjectIDByRenditionId
+        Arguments:      
+        Returns:      
+        Description:    Finds, and sets the objectID based on the RenditionID 
+        RFeldman 2/2015
+    */
     public void populateObjectIDByRenditionId (Integer renditionId, Connection tmsConn) {
         
         PreparedStatement stmt = null;

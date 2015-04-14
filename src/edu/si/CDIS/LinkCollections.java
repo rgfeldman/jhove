@@ -102,7 +102,39 @@ public class LinkCollections  {
         
     }
     
+    private void setForDamsFlag(int RenditionId) {
+        
+        int recordsUpdated = 0;
+        Statement stmt = null;
+        
+        String sql = "update mediaRenditions " +
+                    "set IsColor = 1 " +
+                    "where IsColor = 0 and RenditionID = " + RenditionId;
+        
+         logger.log(Level.FINEST, "SQL! {0}", sql);
+         
+         try {
+            recordsUpdated = DataProvider.executeUpdate(this.tmsConn, sql);
+        
+            stmt = this.damsConn.createStatement();
+            recordsUpdated = stmt.executeUpdate(sql);
+        
+            logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+                e.printStackTrace();
+        }finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+         
+        
+    }
     
+    /*  Method :        linkUANtoFilename
+        Arguments:     
+        Description:    Connects the filename in TMS with the DAMS UAN
+        RFeldman 4/2015
+    */
     private void linkUANtoFilename(CDIS cdis_new, StatisticsReport statRpt) {
         
         PreparedStatement stmt = null;
@@ -111,8 +143,6 @@ public class LinkCollections  {
         String owning_unit_unique_name = null;     
         String currentIterationSql = null;
         String sqlTypeArr[] = null;
-        
-        
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
         for (String key : cdis_new.xmlSelectHash.keySet()) {     
@@ -171,6 +201,10 @@ public class LinkCollections  {
                         if (cdis_new.properties.getProperty("updateTMSThumbnail").equals("true") ) {
                             Thumbnail thumbnail = new Thumbnail();
                             thumbnail.update (damsConn, tmsConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
+                        }
+                        
+                        if (cdis_new.properties.getProperty("setForDamsFlag").equals("true") ) {
+                            setForDamsFlag(cdisTbl.getRenditionId());
                         }
                         
                         // we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id

@@ -25,6 +25,7 @@ import edu.si.CDIS.DAMS.DAMSIngest;
 import java.sql.SQLException;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
+import java.io.File;
 import org.apache.commons.logging.LogFactory;
 
 
@@ -32,9 +33,7 @@ public class CDIS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     private static FileHandler fh = null;
-    
-    
-    
+   
     public Connection tmsConn;
     public Connection damsConn;
     public String operationType;
@@ -42,15 +41,15 @@ public class CDIS {
     public HashMap <String,String[]> xmlSelectHash;
             
     // handles database connections
-    public boolean connectToDatabases (CDIS cdis_new) {
+    public boolean connectToDatabases () {
         
         //establish and verify database connections.
 	try {
-                String tmsPass = EncryptDecrypt.decryptString(cdis_new.properties.getProperty("tmsPass"));
+                String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("tmsPass"));
                 
-		cdis_new.tmsConn = DataProvider.getConnection(cdis_new.properties.getProperty("tmsDriver"), 
-                        cdis_new.properties.getProperty("tmsUrl"), 
-			cdis_new.properties.getProperty("tmsUser"), 
+		this.tmsConn = DataProvider.getConnection(this.properties.getProperty("tmsDriver"), 
+                        this.properties.getProperty("tmsUrl"), 
+			this.properties.getProperty("tmsUser"), 
 			tmsPass);
                 
                 
@@ -63,11 +62,11 @@ public class CDIS {
         
         try {
             
-            String damsPass = EncryptDecrypt.decryptString(cdis_new.properties.getProperty("damsPass"));
+            String damsPass = EncryptDecrypt.decryptString(this.properties.getProperty("damsPass"));
             
-            cdis_new.damsConn = DataProvider.getConnection(cdis_new.properties.getProperty("damsDriver"), 
-					cdis_new.properties.getProperty("damsUrl"), 
-					cdis_new.properties.getProperty("damsUser"), 
+            this.damsConn = DataProvider.getConnection(this.properties.getProperty("damsDriver"), 
+					this.properties.getProperty("damsUrl"), 
+					this.properties.getProperty("damsUser"), 
 					damsPass);
                 
         } catch(Exception ex) {
@@ -82,7 +81,7 @@ public class CDIS {
     }
     
     // set the logger parameters
-    private boolean setLogger (CDIS cdis_new) {
+    private boolean setLogger () {
 
         //log All events
         logger.setLevel(Level.ALL);
@@ -91,7 +90,7 @@ public class CDIS {
 	DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmm");
 	
         try {
-		fh = new FileHandler("log\\CDISLog-" + cdis_new.operationType + df.format(new Date()) + ".txt");
+		fh = new FileHandler("log\\CDISLog-" + this.operationType + df.format(new Date()) + ".txt");
 	
         } catch (Exception e) {
 		e.printStackTrace();
@@ -110,18 +109,16 @@ public class CDIS {
     }
     
     //asign the properties from the ini file to the properties object
-    private boolean readIni (CDIS cdis_new) {
-        
-        
-        
-        cdis_new.properties = new Properties();
+    private boolean readIni () {
+       
+        this.properties = new Properties();
         
         String iniFile = "conf\\config.ini";
                 
         try {
             logger.log(Level.FINER, "Loading ini file: " + iniFile);
             
-            cdis_new.properties.load(new FileInputStream(iniFile));
+            this.properties.load(new FileInputStream(iniFile));
             
             logger.log(Level.FINER, "Ini File loaded");
             
@@ -136,36 +133,68 @@ public class CDIS {
         
     }
     
+    public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
+            
+        File folderDir = new File(folder);
+        File[] logs = folderDir.listFiles();
+	
+        if (logs != null) {
+            for(int i = 0; i < logs.length; i++) {
+                File tempFile = logs[i];
+                if(tempFile.getName().startsWith(fileNamePrefix)) {
+                    
+                    long diff = new Date().getTime() - tempFile.lastModified();
+                    if (diff > numDays * 24 * 60 * 60 * 1000) {
+                        tempFile.delete();
+                    }
+                }				
+            }
+        }
+        
+    }
+    
     // the main execute function...this later will be changed to the main routine 
     //public static void main(String[] args) {
-    public void execute(String operationType) {
+    public static void main(String[] args) {
        
-        
         CDIS cdis_new = new CDIS();
         
+        // Delete old tmp, log and report files
+        cdis_new.deleteLogs("tmp","success",3);
+        cdis_new.deleteLogs("tmp","fail",3);
+        cdis_new.deleteLogs("tmp","header",3);
+        cdis_new.deleteLogs("rpt","Rpt_",12);
+        cdis_new.deleteLogs("log","CDISLog-",12);
+        
+        // Check if the required number of arguments are inputted
+        if(args.length < 1) {
+            System.out.println("Missing parameter: <operationType>");
+            return;
+	}
+	else {
+            cdis_new.operationType = args[0];
+	}
+
         try {
         
-            //String operationType = args[0];
-            cdis_new.operationType = operationType;
-       
             cdis_new.properties = new Properties();
         
             //set the logger
-            boolean loggingSet = setLogger(cdis_new);
+            boolean loggingSet = cdis_new.setLogger();
             if (! loggingSet) {
                 System.out.println("Fatal Error: Failure to set Logger, exiting");
                 return;
             }
         
             //handle the ini file
-            boolean iniRead = readIni (cdis_new);
+            boolean iniRead = cdis_new.readIni ();
             if (! iniRead) {
                 logger.log(Level.SEVERE, "Fatal Error: Failure to Load ini file, exiting");
                 return;
             }
         
        
-            boolean databaseConnected = connectToDatabases(cdis_new);
+            boolean databaseConnected = cdis_new.connectToDatabases();
             if (! databaseConnected) {
                 logger.log(Level.SEVERE, "Fatal Error: Failure to Connect to database");
                 return;

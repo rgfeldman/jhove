@@ -233,7 +233,7 @@ public class TMSRendition {
     public String populateRenditionFromDamsInfo(String uoiid, TMSRendition tmsRendition, Connection damsConn) {
         
         String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + uoiid + "'";
-        String damsImageFileName = null;
+        String extensionlessImageName = null;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -245,10 +245,9 @@ public class TMSRendition {
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
-                    damsImageFileName = rs.getString(1).replace(".jpg", "");
-                    damsImageFileName = damsImageFileName.replaceAll(".tif", "");
-                    damsImageFileName = damsImageFileName.replaceAll(".TIF", ""); 
-
+                    //Drop the extension off of the image name
+                    extensionlessImageName = rs.getString(1).substring(0, rs.getString(1).lastIndexOf("."));
+                   
                     this.setPixelH(rs.getInt("bitmap_height"));
                     this.setPixelW(rs.getInt("bitmap_width"));
                 }        
@@ -265,19 +264,19 @@ public class TMSRendition {
         
         // Get the rank from the last number after the '_' 
         String charRank = null;
-        if (damsImageFileName.contains("-r")) {
-            int startPos = damsImageFileName.lastIndexOf("-r") + 2;
+        if (extensionlessImageName.contains("-r")) {
+            int startPos = extensionlessImageName.lastIndexOf("-r") + 2;
             
-            if (damsImageFileName.substring(startPos).contains("-") ) {
-                charRank = damsImageFileName.substring(startPos,damsImageFileName.lastIndexOf("-"));
+            if (extensionlessImageName.substring(startPos).contains("-") ) {
+                charRank = extensionlessImageName.substring(startPos,extensionlessImageName.lastIndexOf("-"));
             }
             else {
-                charRank = damsImageFileName.substring(startPos);
+                charRank = extensionlessImageName.substring(startPos);
             }
         }
-        else if (damsImageFileName.contains("_")) {
-            int pos = damsImageFileName.lastIndexOf("_");
-            charRank = damsImageFileName.substring(pos+1);
+        else if (extensionlessImageName.contains("_")) {
+            int pos = extensionlessImageName.lastIndexOf("_");
+            charRank = extensionlessImageName.substring(pos+1);
         }
         
         logger.log(Level.FINER, "Char Rank: {0}", charRank);
@@ -297,10 +296,10 @@ public class TMSRendition {
             this.setRank(1);     
         }
         
-        logger.log(Level.FINER, "DAMS imageFileName: {0}", damsImageFileName);
+        logger.log(Level.FINER, "DAMS imageFileName: {0}", extensionlessImageName);
         logger.log(Level.FINER, "Rank: {0}", this.getRank());
        
-        return damsImageFileName;
+        return extensionlessImageName;
     }   
   
 }

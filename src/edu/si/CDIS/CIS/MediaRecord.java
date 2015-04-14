@@ -47,11 +47,11 @@ public class MediaRecord {
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
         String tmpRenditionNumber = null;
         
-        String rendDelimeter = cdis_new.properties.getProperty("renditionNumberDelimiter");
-        String imageNameDelimeter = cdis_new.properties.getProperty("imageNameDelimiter");
+        String tmsDelimiter = cdis_new.properties.getProperty("tmsDelimiter");
+        String damsDelimiter = cdis_new.properties.getProperty("damsDelimiter");
         
         // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
-        if (rendDelimeter.equals("ACM")) {
+        if (tmsDelimiter.equals("ACM")) {
             if (damsImageFileName.startsWith("ACM-")) {
                 tmpRenditionNumber = damsImageFileName.replaceAll("ACM-", "");
             }
@@ -68,10 +68,10 @@ public class MediaRecord {
             }
             tmsRendition.setRenditionNumber(tmpRenditionNumber);
         }
-        else if (! rendDelimeter.equals (imageNameDelimeter) ) {
-            tmsRendition.setRenditionNumber (damsImageFileName.replaceAll(imageNameDelimeter, rendDelimeter));      
+        else if (! tmsDelimiter.equals (damsDelimiter) ) {
+            tmsRendition.setRenditionNumber (damsImageFileName.replaceAll(damsDelimiter, tmsDelimiter));      
         }
-        else if (rendDelimeter.equals (imageNameDelimeter)) {
+        else if (tmsDelimiter.equals (damsDelimiter)) {
             tmsRendition.setRenditionNumber(damsImageFileName);
         }
         else {
@@ -132,7 +132,7 @@ public class MediaRecord {
             
             formatNewRenditionName (cdis_new, damsImageFileName, tmsRendition);
             
-            boolean objectPopulated = tmsObject.populateObjectFromRenditionNumber(damsImageFileName, cdis_new, tmsConn);
+            boolean objectPopulated = tmsObject.populateObjectFromImageName(damsImageFileName, cdis_new, tmsConn);
             if (! objectPopulated) {
                 // we were unable to populate the object, return with a failure indicator
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");

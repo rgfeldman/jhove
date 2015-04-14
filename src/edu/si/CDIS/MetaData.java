@@ -352,6 +352,9 @@ public class MetaData {
                         else if (column.equals("keywords")) {
                             updateStatement = updateStatement + " keywords = '" + siAsst.getKeywords() + "',";
                         }
+                        else if (column.equals("named_person")) {
+                            updateStatement = updateStatement + " named_person = '" + siAsst.getNamedPerson() + "',";
+                        }
                         else if (column.equals("other_constraints")) {
                             updateStatement = updateStatement + " other_constraints = '" + siAsst.getOtherConstraints() + "',";
                         }
@@ -522,6 +525,16 @@ public class MetaData {
                     if (sql.contains("AS max_ids_size")) {
                         if (rs.getString("max_ids_size") != null) {
                             siAsst.setMaxIdsSize(rs.getString("max_ids_size"));
+                        }
+                    }
+                    if (sql.contains("AS named_person")) {
+                        if (sqlType.equals("cursorAppend")) {
+                            if (rs.getString("named_person") != null) {
+                                siAsst.appendNamedPerson(rs.getString("named_person"),delimiter);
+                            }
+                            else {
+                                siAsst.setNamedPerson(rs.getString("named_person"));
+                            }
                         }
                     }
                     if (sql.contains("AS other_constraints")) {

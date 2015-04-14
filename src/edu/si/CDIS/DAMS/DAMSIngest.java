@@ -46,6 +46,13 @@ public class DAMSIngest {
         return "";
     }
     
+    /*  Method :        checkDAMSForImage
+        Arguments:      
+        Returns:      
+        Description:    Goes through the list of RenditionIDs from TMS.  To avoid duplicates,
+                        we check DAMS for an already existing image before we choose to create a new one.
+        RFeldman 3/2015
+    */
     private void checkDAMSForImage (CDIS cdis_new) {
          // See if we can find if this uan already exists in TMS
         ResultSet rs = null;
@@ -103,6 +110,12 @@ public class DAMSIngest {
         
     }
     
+    /*  Method :        populateRenditionsFromTMS
+        Arguments:      
+        Returns:      
+        Description:    Adds to the list of TMS RenditionIDs that need to be integrated into DAMS
+        RFeldman 3/2015
+    */
     private void populateRenditionsFromTMS (CDIS cdis_new) {
         
         ResultSet rs = null;
@@ -150,7 +163,7 @@ public class DAMSIngest {
         Description:    Moves media files from the workforder to the hotfolder location specified in the config file
         RFeldman 3/2015
     */
-    private void moveFilesToHotFolder () {
+    private void moveFilesToHotFolder (StatisticsReport statRpt) {
                 
         //establish vars to hold the dropoff locations for the media files
         File damsMediaDropOffDir =  new File(this.damsHotFolder);
@@ -167,6 +180,7 @@ public class DAMSIngest {
                 
                 FileUtils.moveFileToDirectory(fileForDams, damsMediaDropOffDir, false);
                 this.numberMediaFilesToIngest ++;
+                statRpt.writeUpdateStats("", fileForDams.getName(), "ingestToDAMS", true);
       
             } catch (Exception e) {
                     e.printStackTrace();
@@ -202,6 +216,12 @@ public class DAMSIngest {
         }
     }
     
+    /*  Method :        ingest
+        Arguments:      
+        Returns:      
+        Description:    The main entrypoint or 'driver' for the ingestToDams operation Type
+        RFeldman 3/2015
+    */
      public void ingest (CDIS cdis_new, StatisticsReport statReport) {
          
         this.damsConn = cdis_new.damsConn;
@@ -209,7 +229,7 @@ public class DAMSIngest {
         this.workFolderDir = cdis_new.properties.getProperty("workFolder");
         this.damsHotFolder = cdis_new.properties.getProperty("hotFolderMaster");
         
-        logger.log(Level.FINER, "In redesigned Ingest to Collections area");
+        logger.log(Level.FINER, "In redesigned Ingest to CIS area");
         
         this.renditionsForDAMS = new LinkedHashMap<String, String>();
         
@@ -226,7 +246,7 @@ public class DAMSIngest {
         checkDAMSForImage(cdis_new);
         
         // move the media file and XML file from the work folder to the DAMS hotfolder location
-        moveFilesToHotFolder();
+        moveFilesToHotFolder(statReport);
         
         // Create ready.txt file to indicate to the DAMS ingest process that there is a batch of files awaiting for ingest
         createReadyFile();

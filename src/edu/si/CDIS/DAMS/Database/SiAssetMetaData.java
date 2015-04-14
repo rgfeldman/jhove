@@ -16,6 +16,7 @@ public class SiAssetMetaData {
     String isRestricted;
     String keywords;
     String maxIdsSize;
+    String namedPerson;
     String otherConstraints;
     String owningUnitUniqueName;
     String primaryCreator;
@@ -61,6 +62,10 @@ public class SiAssetMetaData {
     public String getMaxIdsSize () {
         return this.maxIdsSize;
     } 
+    
+    public String getNamedPerson () {
+        return this.namedPerson;
+    }
     
     public String getOtherConstraints () {
         return this.otherConstraints;
@@ -141,6 +146,23 @@ public class SiAssetMetaData {
         }
         else {
                 this.keywords = keywords;   
+        }
+    }
+    
+    public void appendNamedPerson (String namedPerson, String delimiter) {
+        namedPerson = scrubString(namedPerson);
+        
+        if ( this.namedPerson != null ) {
+            
+            if (this.namedPerson.length() + namedPerson.length() > 2000 ) {
+                this.namedPerson = this.namedPerson += delimiter + namedPerson.substring(0,1999);
+            }
+            else {
+                this.namedPerson = this.namedPerson += delimiter + namedPerson;
+            }
+        }
+        else {
+                this.namedPerson = namedPerson;   
         }
     }
     
@@ -235,6 +257,17 @@ public class SiAssetMetaData {
             //dont set maxIds size to anything
         }
         
+    }
+    
+    public void setNamedPerson(String namedPerson) {
+        namedPerson = scrubString(namedPerson);
+        
+	if (namedPerson.length() > 2000) {
+                this.namedPerson = namedPerson.substring(0,1999);
+        }
+        else {
+            this.namedPerson = namedPerson;
+        }
     }
     
     public void setOtherConstraints(String otherConstraints) {
