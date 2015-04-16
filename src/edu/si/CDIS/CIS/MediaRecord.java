@@ -112,7 +112,7 @@ public class MediaRecord {
             }
             else {
                 // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
-                if (cdis_new.properties.getProperty("appendTimeToRenditionName").equals("true"))  {
+                if (cdis_new.properties.getProperty("appendTimeToNumber").equals("true"))  {
                     DateFormat df = new SimpleDateFormat("kkmmss");
                     //String rankString = 
                     
@@ -132,7 +132,7 @@ public class MediaRecord {
             
             formatNewRenditionName (cdis_new, damsImageFileName, tmsRendition);
             
-            boolean objectPopulated = tmsObject.populateObjectFromImageName(damsImageFileName, cdis_new, tmsConn);
+            boolean objectPopulated = tmsObject.populateObjectFromImageName(damsImageFileName, cdis_new);
             if (! objectPopulated) {
                 // we were unable to populate the object, return with a failure indicator
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");
