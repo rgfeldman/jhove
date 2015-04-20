@@ -13,6 +13,7 @@ public class SiAssetMetaData {
     String description;
     String digitalItemNotes;
     String groupTitle;
+    String intellectualContentCreator;
     String isRestricted;
     String keywords;
     String maxIdsSize;
@@ -53,6 +54,10 @@ public class SiAssetMetaData {
     
     public String getIsRestricted () {
         return this.isRestricted;
+    } 
+     
+    public String getIntellectualContentCreator () {
+        return this.intellectualContentCreator;
     } 
     
     public String getKeywords () {
@@ -218,6 +223,17 @@ public class SiAssetMetaData {
         }
         else {
             this.groupTitle = groupTitle;
+        }
+    }
+    
+    public void setIntellectualContentCreator(String intellectualContentCreator) {
+        intellectualContentCreator = scrubString(intellectualContentCreator);
+                
+        if (intellectualContentCreator.length() > 999 ) {
+            this.intellectualContentCreator = intellectualContentCreator.substring(0,1999);
+        }
+        else {
+            this.intellectualContentCreator = intellectualContentCreator;
         }
     }
     

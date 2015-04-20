@@ -102,6 +102,11 @@ public class LinkCollections  {
         
     }
     
+    /*  Method :        setForDamsFlag
+        Arguments:      
+        Description:    updates the isColor flag...which indicates the rendition is forDAMS
+        RFeldman 2/2015
+    */
     private void setForDamsFlag(int RenditionId) {
         
         int recordsUpdated = 0;

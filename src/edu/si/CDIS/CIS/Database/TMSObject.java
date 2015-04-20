@@ -20,7 +20,7 @@ public class TMSObject {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Integer objectID;
+    int objectID;
     String objectNumber;
     
     
@@ -46,7 +46,8 @@ public class TMSObject {
         Arguments:      
         Returns:      
         Description:    Finds the objectID when the normal method fails,
-                        ObjectID will be looked up by dropping letter and finding object in range
+                        ObjectID will be looked up by dropping final letter from the expected ObjectNumber 
+                        and finding the object based on a letter range
                         (ex 2013_201_3c_001 -> 2013_201_3a-c OR 2013_201_3ac )
         RFeldman 2/2015
     */
@@ -54,11 +55,23 @@ public class TMSObject {
 
         PreparedStatement stmt = null;
         ResultSet rs = null;
+        char lastChar;
+        
+        logger.log(Level.FINEST,"Attempting to locate object by letter component");
+        
+        // only continue if the ObjectNumber we were expecting ends in a letter.
+        if (! getObjectNumber().isEmpty() ) {          
+            lastChar = getObjectNumber().charAt(getObjectNumber().length() -1);
+            
+            if (! Character.isLetter(lastChar)) {
+                // The last character is not a letter....
+                logger.log(Level.FINEST,"Last character not a letter, returning");
+                return;
+            }
+        }      
         
         //Remove the last character from the objectNumber...and add an 'a'
-        if (getObjectNumber().length() > 1 ) {
-            setObjectNumber(getObjectNumber().substring(0, getObjectNumber().length()-1) + "a");
-        }      
+        setObjectNumber(getObjectNumber().substring(0, getObjectNumber().length()-1) + "a");
     
         //look for the object number with like 
         String sql =    "select ObjectID " +
@@ -95,12 +108,22 @@ public class TMSObject {
     */
     public boolean populateObjectFromImageName (String damsImageFileName, CDIS cdis_new){
 
-        // populate ObjectNumber using various formats specified in the config file
-        String damsDelimiter = cdis_new.properties.getProperty("damsDelimiter");
-        String tmsDelimiter = cdis_new.properties.getProperty("tmsDelimiter");
-        String locateByLetterRange = cdis_new.properties.getProperty("locateByLetterRange");
-        int imageObjectTrunc = Integer.parseInt(cdis_new.properties.getProperty("imageObjectTrunc"));
+        String damsDelimiter;
+        String tmsDelimiter;
+        String locateByLetterRange;
+        int imageObjectTrunc;
         
+        try {
+            // populate ObjectNumber using various formats specified in the config file
+            damsDelimiter = cdis_new.properties.getProperty("damsDelimiter");
+            tmsDelimiter = cdis_new.properties.getProperty("tmsDelimiter");
+            locateByLetterRange = cdis_new.properties.getProperty("locateByLetterRange");
+            imageObjectTrunc = Integer.parseInt(cdis_new.properties.getProperty("imageObjectTrunc"));
+        } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+        }
+            
         String tmpObjectNumber = null;
         
         Transform transform = new Transform();
@@ -143,6 +166,7 @@ public class TMSObject {
         
         String sql =    "select ObjectID " +
                         "from Objects " +
+                        //"where ObjectID = 6544";
                         "where ObjectNumber = '" + getObjectNumber() + "'";
                     
                 logger.log(Level.FINEST,"SQL! " + sql);

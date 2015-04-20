@@ -40,7 +40,11 @@ public class CDIS {
     public Properties properties;
     public HashMap <String,String[]> xmlSelectHash;
             
-    // handles database connections
+    /*  Method :        connectToDatabases
+        Arguments:      
+        Description:    establishes connections to both DAMS and CIS database s
+        RFeldman 2/2015
+    */
     public boolean connectToDatabases () {
         
         //establish and verify database connections.
@@ -51,8 +55,7 @@ public class CDIS {
                         this.properties.getProperty("tmsUrl"), 
 			this.properties.getProperty("tmsUser"), 
 			tmsPass);
-                
-                
+                 
 	} catch(Exception ex) {
 		ex.printStackTrace();
 		return false;
@@ -80,7 +83,11 @@ public class CDIS {
         
     }
     
-    // set the logger parameters
+    /*  Method :        setLogger
+        Arguments:      
+        Description:    establishes logger settings
+        RFeldman 2/2015
+    */
     private boolean setLogger () {
 
         //log All events
@@ -108,7 +115,11 @@ public class CDIS {
         
     }
     
-    //asign the properties from the ini file to the properties object
+    /*  Method :        setLogger
+        Arguments:      
+        Description:    assigns values from the .ini file into the properties object
+        RFeldman 2/2015
+    */
     private boolean readIni () {
        
         this.properties = new Properties();
@@ -133,6 +144,11 @@ public class CDIS {
         
     }
     
+    /*  Method :        deleteLogs
+        Arguments:      
+        Description:    deletes old logfiles...or any other file types based on the date
+        RFeldman 2/2015
+    */
     public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
             
         File folderDir = new File(folder);
@@ -153,8 +169,11 @@ public class CDIS {
         
     }
     
-    // the main execute function...this later will be changed to the main routine 
-    //public static void main(String[] args) {
+    /*  Method :        main
+        Arguments:      
+        Description:    starting point of the CDIS application
+        RFeldman 2/2015
+    */
     public static void main(String[] args) {
        
         CDIS cdis_new = new CDIS();

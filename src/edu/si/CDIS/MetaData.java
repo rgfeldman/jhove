@@ -47,7 +47,11 @@ public class MetaData {
         return this.sqlUpdate;
     }
 
-    // This is the primary method for metadata sync that handles the sync process
+    /*  Method :        sync
+        Arguments:      
+        Description:    The main driver for the sync operation Type 
+        RFeldman 2/2015
+    */
     public void sync(CDIS cdis_new, StatisticsReport statReport) {
 
          //assign the database connections for later use
@@ -89,6 +93,11 @@ public class MetaData {
         statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, "meta");
     }
 
+    /*  Method :        updateDamsData
+        Arguments:      
+        Description:    Updates the DAMS with the metadata changes 
+        RFeldman 2/2015
+    */
     private int updateDamsData() {
         int updateCount = DataProvider.executeUpdate(this.damsConn, getSqlUpdate());
 
@@ -96,8 +105,11 @@ public class MetaData {
 
     }
 
-
-    // get Renditions by CDIS_ID that have never been synced
+    /*  Method :       getNeverSyncedRendition
+        Arguments:      
+        Description:    get Renditions by CDIS_ID that have never been synced 
+        RFeldman 2/2015
+    */
     private ArrayList<Integer> getNeverSyncedRendition() {
 
         ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
@@ -135,7 +147,12 @@ public class MetaData {
         return CDISIdList;
     }
 
-    // get Renditions by CDIS_ID that have been previously synced, but have been updated in the Collection System (CIS), and we requre those updates
+    /*  Method :       getCISUpdatedRendition
+        Arguments:      
+        Description:    get Renditions by CDIS_ID that have been previously synced, 
+                        but have been updated in the Collection System (CIS), and DAMS requres those updates 
+        RFeldman 2/2015
+    */
     private ArrayList<Integer> getCISUpdatedRendition() {
 
         ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
@@ -199,6 +216,12 @@ public class MetaData {
         return CDISIdList;
     }
 
+    /*  Method :       processRenditionList
+        Arguments:      
+        Description:    Goes through the list of rendition Records one at a time 
+                        and determines how to update the metadata on each one
+        RFeldman 2/2015
+    */
     private void processRenditionList(ArrayList<Integer> CDISIdList, HashMap <String,String[]> SelectHash, StatisticsReport statRpt) {
 
         // For each Rendition Number in list, obtain information from CDIS table
@@ -348,6 +371,9 @@ public class MetaData {
                         }
                         else if (column.equals("group_title")) {
                             updateStatement = updateStatement + " group_title = '" + siAsst.getGroupTitle() + "',";
+                        }
+                        else if (column.equals("intellectual_content_creator")) {
+                            updateStatement = updateStatement + " intellectual_content_creator = '" + siAsst.getIntellectualContentCreator() + "',";
                         }
                         else if (column.equals("keywords")) {
                             updateStatement = updateStatement + " keywords = '" + siAsst.getKeywords() + "',";
@@ -505,6 +531,11 @@ public class MetaData {
                     if (sql.contains("AS group_title")) {
                         if (rs.getString("group_title") != null) {
                             siAsst.setGroupTitle(rs.getString("group_title"));
+                        }
+                    }
+                    if (sql.contains("AS intellectual_content_creator")) {
+                        if (rs.getString("intellectual_content_creator") != null) {
+                            siAsst.setIntellectualContentCreator(rs.getString("intellectual_content_creator"));
                         }
                     }
                     if (sql.contains("AS is_restricted")) {
