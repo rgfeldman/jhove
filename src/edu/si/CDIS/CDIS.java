@@ -26,7 +26,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import java.io.File;
-import org.apache.commons.logging.LogFactory;
+//import org.apache.commons.logging.LogFactory;
 
 
 public class CDIS {
