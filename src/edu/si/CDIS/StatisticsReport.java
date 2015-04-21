@@ -97,7 +97,7 @@ public class StatisticsReport {
         this.headerFileWrt.append ("Batch Number: " + this.timestamp + "\n\n\n");
     }
     
-    public void populateStats (int neverSyncedSize, int sourceUpdatedSize, int successCount, String operationType) {
+    public void populateStats (int neverSyncedSize, int sourceUpdatedSize, int successCount, int failCount, String operationType) {
                 
         if (operationType.equals("meta")) {
             // Get count of number of Renditions to Sync, and send to Report File
@@ -115,6 +115,7 @@ public class StatisticsReport {
         }
         else if (operationType.startsWith("ingest")) {
             this.headerFileWrt.append("Total Number of Successful Ingest Records: " + successCount + "\n\n\n");
+            this.headerFileWrt.append("Total Number of Failed Ingest Records: " + failCount + "\n\n\n");
         }
         else if (operationType.equals("link")) {
              this.headerFileWrt.append("Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");

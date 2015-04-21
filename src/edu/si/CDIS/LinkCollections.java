@@ -61,7 +61,7 @@ public class LinkCollections  {
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedDamsRenditions (cdis_new);
         
-        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, 0, "link");
+        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, 0, 0, "link");
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
         linkUANtoFilename (cdis_new, statReport);    

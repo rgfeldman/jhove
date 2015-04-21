@@ -29,13 +29,18 @@ public class TMSIngest {
     Connection tmsConn;
     LinkedHashMap <String,String> neverLinkedDamsRendtion;  
     int successCount;
+    int failCount;
     
     private void addNeverLinkedDamsRendtion (String UOIID, String uan) {
         this.neverLinkedDamsRendtion.put(UOIID, uan); 
     }
     
-    
-    private void populateNeverLinkedRenditions (CDIS cdis_new) {
+    /*  Method :        populateNeverLinkedImages
+        Arguments:      
+        Description:    populates the list of never linked dams Images  
+        RFeldman 2/2015
+    */
+    private void populateNeverLinkedImages (CDIS cdis_new) {
         ResultSet rs = null;
         PreparedStatement stmt = null;
         String uan = null;
@@ -77,7 +82,12 @@ public class TMSIngest {
             
     }
     
-    private void linkUANtoFilename (CDIS cdis_new, StatisticsReport statRpt) {
+    /*  Method :        processUAN
+        Arguments:      
+        Description:    prcoesses the DAMS uans one at a time from the list  
+        RFeldman 2/2015
+    */
+    private void processUAN (CDIS cdis_new, StatisticsReport statRpt) {
     
         // See if we can find if this uan already exists in TMS
         ResultSet rs = null;
@@ -125,6 +135,7 @@ public class TMSIngest {
                         if ( ! mediaCreated ) {
                             logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
                             statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
                         
@@ -139,6 +150,7 @@ public class TMSIngest {
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");
                             statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
                         
@@ -160,6 +172,7 @@ public class TMSIngest {
                         if (! recordCreated) {
                             logger.log(Level.FINER, "Insert to CDIS table failed");
                             statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            failCount ++;
                             continue;
                         }
                         
@@ -168,6 +181,7 @@ public class TMSIngest {
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
                             statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            failCount ++;
                             continue;
                         }
                         else if (rowsUpdated > 1) {
@@ -200,6 +214,11 @@ public class TMSIngest {
         }
     }
     
+    /*  Method :        ingest
+        Arguments:      
+        Description:    The main driver for the ingest to CIS process 
+        RFeldman 2/2015
+    */
     public void ingest (CDIS cdis_new, StatisticsReport statReport) { 
         
         this.damsConn = cdis_new.damsConn;
@@ -213,12 +232,12 @@ public class TMSIngest {
         statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToCIS");
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
-        populateNeverLinkedRenditions (cdis_new);
+        populateNeverLinkedImages (cdis_new);
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
-        linkUANtoFilename (cdis_new, statReport);  
+        processUAN (cdis_new, statReport);  
         
-        statReport.populateStats (0, 0, this.successCount, "ingestToCIS");
+        statReport.populateStats (0, 0, this.successCount, this.failCount, "ingestToCIS");
         
     }
 }

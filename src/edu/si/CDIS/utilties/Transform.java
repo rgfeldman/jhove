@@ -18,8 +18,6 @@ public class Transform {
 		String newDelimiter, 
 		int start, 
 		int stop) {
-		
-        logger.log(Level.FINER,"newDelimiter " + newDelimiter);
         
         String[] splitted = original.split(delimiter);
 	StringBuilder transformed = new StringBuilder();
@@ -31,6 +29,9 @@ public class Transform {
 	else {
             if (stop != 0) {
                 max = stop;
+            }
+            else {
+                max = 0;
             }
         }
 		

@@ -90,7 +90,7 @@ public class MetaData {
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
             processRenditionList(sourceUpdatedCDISIdLst, cdis_new.xmlSelectHash, statReport);
         }
-        statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, "meta");
+        statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, 0, "meta");
     }
 
     /*  Method :        updateDamsData

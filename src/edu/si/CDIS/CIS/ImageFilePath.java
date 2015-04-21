@@ -45,7 +45,7 @@ public class ImageFilePath {
         processRenditionList (neverSyncedCDISIdLst, StatReport);
         
         // handle the statistics report, report on the statistics
-        StatReport.populateStats (neverSyncedCDISIdLst.size(), 0, this.successfulUpdateCount, "ids");
+        StatReport.populateStats (neverSyncedCDISIdLst.size(), 0, this.successfulUpdateCount, 0,  "ids");
         
     }
     

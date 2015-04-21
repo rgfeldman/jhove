@@ -158,6 +158,10 @@ public class TMSObject {
             setObjectNumber(transform.transform(damsImageFileName,damsDelimiter,tmsDelimiter,0,imageObjectTrunc));
         }
         
+        if (Integer.parseInt(cdis_new.properties.getProperty("assignToObjectID")) > 0) {
+            setObjectID (Integer.parseInt(cdis_new.properties.getProperty("assignToObjectID")));
+        }
+        
         logger.log(Level.FINER,"NEW TMS ObjectNumber: " + getObjectNumber());
     
         // Obtain the ObjectID based on the ObjectName that was determined above. 
@@ -166,7 +170,6 @@ public class TMSObject {
         
         String sql =    "select ObjectID " +
                         "from Objects " +
-                        //"where ObjectID = 6544";
                         "where ObjectNumber = '" + getObjectNumber() + "'";
                     
                 logger.log(Level.FINEST,"SQL! " + sql);
