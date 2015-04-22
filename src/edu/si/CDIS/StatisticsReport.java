@@ -108,7 +108,7 @@ public class StatisticsReport {
         
             this.headerFileWrt.append("Total Number of Images to Metadata sync: " + TotalRend + "\n");
             this.headerFileWrt.append("Total Number of Successful Metadata Updates: " + successCount + "\n");
-            this.headerFileWrt.append("Total Number of Failed Metadata Updates: " + successCount + "\n\n\n");
+            this.headerFileWrt.append("Total Number of Failed Metadata Updates: " + failCount + "\n\n\n");
         }
         else if (operationType.equals("ids")) {
             this.headerFileWrt.append("Renditions to IDS path sync in CIS: " + neverSyncedSize + "\n");
