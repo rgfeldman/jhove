@@ -37,6 +37,7 @@ public class MetaData {
     Connection tmsConn;
     Connection damsConn;
     int successfulUpdateCount;
+    int failedUpdateCount;
     ArrayList<String> columnsToUpdate;
 
     private void setSqlUpdate(String sqlUpdate) {
@@ -90,7 +91,7 @@ public class MetaData {
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
             processRenditionList(sourceUpdatedCDISIdLst, cdis_new.xmlSelectHash, statReport);
         }
-        statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, 0, "meta");
+        statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, failedUpdateCount, "meta");
     }
 
     /*  Method :        updateDamsData
@@ -303,7 +304,7 @@ public class MetaData {
                         else {
                             logger.log(Level.ALL, "Error, CDIS Table not updated, metadata not synced");
                             statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "metaData", false);
-                            
+                            failedUpdateCount ++;
                         }
                     }
 

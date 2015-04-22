@@ -107,14 +107,15 @@ public class StatisticsReport {
             int TotalRend = neverSyncedSize + sourceUpdatedSize;
         
             this.headerFileWrt.append("Total Number of Images to Metadata sync: " + TotalRend + "\n");
-            this.headerFileWrt.append("Total Number of Successful Metadata Updates: " + successCount + "\n\n\n");
+            this.headerFileWrt.append("Total Number of Successful Metadata Updates: " + successCount + "\n");
+            this.headerFileWrt.append("Total Number of Failed Metadata Updates: " + successCount + "\n\n\n");
         }
         else if (operationType.equals("ids")) {
             this.headerFileWrt.append("Renditions to IDS path sync in CIS: " + neverSyncedSize + "\n");
             this.headerFileWrt.append("Total Number of Successful updates to point to IDS: " + successCount + "\n\n\n");
         }
         else if (operationType.startsWith("ingest")) {
-            this.headerFileWrt.append("Total Number of Successful Ingest Records: " + successCount + "\n\n\n");
+            this.headerFileWrt.append("Total Number of Successful Ingest Records: " + successCount + "\n");
             this.headerFileWrt.append("Total Number of Failed Ingest Records: " + failCount + "\n\n\n");
         }
         else if (operationType.equals("link")) {
