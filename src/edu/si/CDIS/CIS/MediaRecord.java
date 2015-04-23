@@ -42,7 +42,7 @@ public class MediaRecord {
     Connection tmsConn;
     
     
-    private boolean formatNewRenditionName (CDIS cdis_new, String damsImageFileName, TMSRendition tmsRendition) {
+    private boolean formatNewRenditionNumber (CDIS cdis_new, String damsImageFileName, TMSRendition tmsRendition) {
         
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
         String tmpRenditionNumber = null;
@@ -89,13 +89,10 @@ public class MediaRecord {
  
         this.tmsConn = cdis_new.tmsConn;    
         this.damsConn = cdis_new.damsConn;
-
+        
+        boolean objectPopulated = false;
         boolean MediaCreated;
-        
-        Calendar cal = Calendar.getInstance();
-        SimpleDateFormat df1 = new SimpleDateFormat("yyyy-MM-dd");
-        String renditionDate = df1.format(cal.getTime());
-        
+       
         //Get the rendition name, and the dimensions
         // if the barcode is set, use the name to get the barcode info,
         //else use the name to get rendition name with the rendition   
@@ -103,42 +100,54 @@ public class MediaRecord {
         
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
-        Integer objectId = 0;
-        if (cdis_new.properties.getProperty("locateByBarcode").equals("true")) {
-            objectId = tmsRendition.getObjectIDFromBarcode(damsImageFileName, tmsConn);
-
-            if (objectId == 0) {
-                logger.log(Level.FINER, "Unable to Find obtain object Data for barcode.  Will check to see if we find the object with alternate method");
-            }
-            else {
+        if (cdis_new.properties.getProperty("mapFileNameToBarcode").equals("true")) {
+            objectPopulated = tmsObject.mapFileNameToBarcode(damsImageFileName, tmsConn);
+                
+            if (objectPopulated) {
+                
                 // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
                 if (cdis_new.properties.getProperty("appendTimeToNumber").equals("true"))  {
                     DateFormat df = new SimpleDateFormat("kkmmss");
-                    //String rankString = 
-                    
-                    tmsRendition.setRenditionNumber( objectId.toString() + "_" + String.format("%03d", tmsRendition.getRank()) + "_" + df.format(new Date()));
+                    tmsRendition.setRenditionNumber(tmsObject.getObjectID() + "_" + String.format("%03d", tmsRendition.getRank()) + "_" + df.format(new Date()));
                 }
                 else {
                     // For barcode objects, the renditionNumber is the objectID plus the rank
-                    tmsRendition.setRenditionNumber( objectId.toString() + "_" + tmsRendition.getRank() );
+                    tmsRendition.setRenditionNumber(tmsObject.getObjectID() + "_" + tmsRendition.getRank() );
                 }
-                tmsObject.setObjectID(objectId);
             }
         }
         
-        // If we were unable to find object from barcode logic, or if we never stepped into the barcode logic,
-        // then we still need to find the objectID and the new renditionNumber
-        if (objectId == 0) {
+        if (! objectPopulated) {
+            if (cdis_new.properties.getProperty("mapFileNameToObjectNumber").equals("true")) {
             
-            formatNewRenditionName (cdis_new, damsImageFileName, tmsRendition);
-            
-            boolean objectPopulated = tmsObject.populateObjectFromImageName(damsImageFileName, cdis_new);
-            if (! objectPopulated) {
+                objectPopulated = tmsObject.mapFileNameToObjectNumber(damsImageFileName, cdis_new);
+                if (objectPopulated) {
+                    formatNewRenditionNumber (cdis_new, damsImageFileName, tmsRendition);
+                }
+ 
+            }
+        }
+        
+        if (! objectPopulated) {
+            if (cdis_new.properties.getProperty("mapFileNameToObjectID").equals("true")) {
+               
+                objectPopulated = tmsObject.mapFileNameToObjectID(damsImageFileName, tmsConn);
+                if (objectPopulated) {
+                    tmsRendition.setRenditionNumber(damsImageFileName); 
+                }
+                
+            }
+        }
+        
+        if (! objectPopulated) {
                 // we were unable to populate the object, return with a failure indicator
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");
                 return false;
-            }
         }
+        
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat df1 = new SimpleDateFormat("yyyy-MM-dd");
+        String renditionDate = df1.format(cal.getTime());
         
         // Set the primaryRenditionFlag
         tmsRendition.populateIsPrimary(tmsObject.getObjectID(), tmsConn);

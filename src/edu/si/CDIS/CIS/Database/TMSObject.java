@@ -41,72 +41,123 @@ public class TMSObject {
         this.objectNumber = objectNumber;
     }
         
-    
-    /*  Method :        locateObjectIDLetterComponent
+
+    /*  Method :        mapFileNameToBarcode
         Arguments:      
         Returns:      
-        Description:    Finds the objectID when the normal method fails,
-                        ObjectID will be looked up by dropping final letter from the expected ObjectNumber 
-                        and finding the object based on a letter range
-                        (ex 2013_201_3c_001 -> 2013_201_3a-c OR 2013_201_3ac )
+        Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS Barcode
         RFeldman 2/2015
     */
-    private void locateObjectIDLetterComponent(CDIS cdis_new) {
-
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        char lastChar;
-        
-        logger.log(Level.FINEST,"Attempting to locate object by letter component");
-        
-        // only continue if the ObjectNumber we were expecting ends in a letter.
-        if (! getObjectNumber().isEmpty() ) {          
-            lastChar = getObjectNumber().charAt(getObjectNumber().length() -1);
-            
-            if (! Character.isLetter(lastChar)) {
-                // The last character is not a letter....
-                logger.log(Level.FINEST,"Last character not a letter, returning");
-                return;
-            }
-        }      
-        
-        //Remove the last character from the objectNumber...and add an 'a'
-        setObjectNumber(getObjectNumber().substring(0, getObjectNumber().length()-1) + "a");
+    public boolean mapFileNameToBarcode (String barcode, Connection tmsConn) {
     
-        //look for the object number with like 
-        String sql =    "select ObjectID " +
-                        "from Objects " +
-                        "where ObjectNumber like '" + getObjectNumber() + "[b-z]' " +
-                        "union " +
-                        "select ObjectID " +
-                        "from Objects " +
-                        "where ObjectNumber like '" + getObjectNumber() + "-[b-z]' ";
-                    
-        logger.log(Level.FINEST,"SQL! " + sql);
+        
+        //Strip all characters in the barcode after the underscore to look up the label
+        if (barcode.contains("_")) {
+           barcode = barcode.substring(0,barcode.indexOf("_")); 
+        }
+        
+        String sql = "Select ObjectID " +
+              "from BCLabels bcl, " +
+              "ObjComponents obc " +
+              "where bcl.id = obc.Componentid " +
+              "and bcl.TableID = 94 " +
+              "and bcl.LabelUUID = '" + barcode + "'";
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
+        ResultSet rs = null;
+        PreparedStatement stmt = null;
         
         try {
-            stmt = cdis_new.tmsConn.prepareStatement(sql);                                
+		stmt = tmsConn.prepareStatement(sql);
+		rs = stmt.executeQuery();
+              
+                if (rs.next()) {
+                    setObjectID (rs.getInt(1));
+                }        
+                else {
+                    logger.log(Level.FINEST, "Unable to find Object from Barcode:{0}", barcode);
+                    return false;
+                }
+	}
+            
+	catch(SQLException sqlex) {
+		sqlex.printStackTrace();
+                return false;
+	}
+        finally {
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+	}
+        
+        return true;
+         
+    }
+    
+    /*  Method :        mapFileNameToObjectID
+        Arguments:      
+        Returns:      
+        Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS ObjectID
+        RFeldman 2/2015
+    */
+    public boolean mapFileNameToObjectID(String damsImageFileName, Connection tmsConn) {
+        
+        Transform transform = new Transform();
+        
+        ResultSet rs = null;
+        PreparedStatement stmt = null;
+        String objectIDRank;
+        Integer objID;
+        
+        try {
+            
+            objID = Integer.parseInt(damsImageFileName.substring(0, damsImageFileName.indexOf("_")));
+            
+        } catch(Exception e) {
+                logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", damsImageFileName);
+                return false;
+	}
+
+        //Confirm that the objectID exists before we set it in the object
+        String sql = "select 'X' " +
+                    "from Objects " +
+                    "where ObjectID = " +  objID;
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
+        try {
+            stmt = tmsConn.prepareStatement(sql);
             rs = stmt.executeQuery();
             
             if (rs.next()) {
-                setObjectID(rs.getInt(1));
-            }            
-        } catch (Exception e) {
-                e.printStackTrace();
-        }finally {
+                    setObjectID (objID);
+                }        
+            else {
+                logger.log(Level.FINEST, "Unable to find Object from ObjectID:{0}", objID);
+                return false;
+            }
+        }
+            
+	catch(SQLException sqlex) {
+		sqlex.printStackTrace();
+                return false;
+	}
+        finally {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
+	}
         
+        return true;
     }
+
     
-    /*  Method :        populateObjectFromImageName
+    /*  Method :        mapFileNameToObjectNumber
         Arguments:      
         Returns:      
-        Description:    Finds the objectID and populates object member variables based on the DAMS image filename 
+        Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS ObjectNumber
         RFeldman 2/2015
     */
-    public boolean populateObjectFromImageName (String damsImageFileName, CDIS cdis_new){
+    public boolean mapFileNameToObjectNumber (String damsImageFileName, CDIS cdis_new){
 
         String damsDelimiter;
         String tmsDelimiter;
@@ -200,6 +251,7 @@ public class TMSObject {
         return true;
     }
     
+    
     /*  Method :        populateObjectIDByRenditionId
         Arguments:      
         Returns:      
@@ -241,6 +293,65 @@ public class TMSObject {
         }
         
     }
+    
+     /*  Method :        locateObjectIDLetterComponent
+        Arguments:      
+        Returns:      
+        Description:    Finds the objectID when the normal method fails,
+                        ObjectID will be looked up by dropping final letter from the expected ObjectNumber 
+                        and finding the object based on a letter range
+                        (ex 2013_201_3c_001 -> 2013_201_3a-c OR 2013_201_3ac )
+        RFeldman 2/2015
+    */
+    private void locateObjectIDLetterComponent(CDIS cdis_new) {
+
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        char lastChar;
+        
+        logger.log(Level.FINEST,"Attempting to locate object by letter component");
+        
+        // only continue if the ObjectNumber we were expecting ends in a letter.
+        if (! getObjectNumber().isEmpty() ) {          
+            lastChar = getObjectNumber().charAt(getObjectNumber().length() -1);
+            
+            if (! Character.isLetter(lastChar)) {
+                // The last character is not a letter....
+                logger.log(Level.FINEST,"Last character not a letter, returning");
+                return;
+            }
+        }      
+        
+        //Remove the last character from the objectNumber...and add an 'a'
+        setObjectNumber(getObjectNumber().substring(0, getObjectNumber().length()-1) + "a");
+    
+        //look for the object number with like 
+        String sql =    "select ObjectID " +
+                        "from Objects " +
+                        "where ObjectNumber like '" + getObjectNumber() + "[b-z]' " +
+                        "union " +
+                        "select ObjectID " +
+                        "from Objects " +
+                        "where ObjectNumber like '" + getObjectNumber() + "-[b-z]' ";
+                    
+        logger.log(Level.FINEST,"SQL! " + sql);
+        
+        try {
+            stmt = cdis_new.tmsConn.prepareStatement(sql);                                
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                setObjectID(rs.getInt(1));
+            }            
+        } catch (Exception e) {
+                e.printStackTrace();
+        }finally {
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+    }
+    
     
 }
 

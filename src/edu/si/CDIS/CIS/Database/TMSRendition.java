@@ -124,56 +124,6 @@ public class TMSRendition {
         
     }
     
-     /*  Method :       getObjectIDFromBarcode
-        Arguments:      
-        Description:    obtains the objectID from a barcoded DAMS image
-        RFeldman 3/2015
-    */
-    public int getObjectIDFromBarcode (String barcode, Connection tmsConn) {
-    
-        int objectID = 0;
-        
-        //Strip all characters in the barcode after the underscore to look up the label
-        if (barcode.contains("_")) {
-           barcode = barcode.substring(0,barcode.indexOf("_")); 
-        }
-        
-        String sql = "Select ObjectID " +
-              "from BCLabels bcl, " +
-              "ObjComponents obc " +
-              "where bcl.id = obc.Componentid " +
-              "and bcl.TableID = 94 " +
-              "and bcl.LabelUUID = '" + barcode + "'";
-        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
-		stmt = tmsConn.prepareStatement(sql);
-		rs = stmt.executeQuery();
-              
-                if (rs.next()) {
-                    objectID = rs.getInt(1);
-                }        
-                else {
-                    logger.log(Level.FINEST, "Unable to find Object from Barcode:{0}", barcode);
-                }
-	}
-            
-	catch(SQLException sqlex) {
-		sqlex.printStackTrace();
-	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
-        
-        return objectID;
-         
-    }
-    
     /*  Method :        populateIsPrimary
         Arguments:      
         Description:    calculates and populates the isPrimary member variable
