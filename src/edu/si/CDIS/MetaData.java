@@ -407,7 +407,10 @@ public class MetaData {
                             updateStatement = updateStatement + " work_creation_date = '" + siAsst.getWorkCreationDate() + "',";
                         }
                         else {
-                            logger.log(Level.ALL, "Error attempting to map unhandled column: " + column);
+                            if (!column.equals("source_system_id")  && !column.equals("max_ids_size") && !column.equals("is_restricted")) {
+                                    
+                                logger.log(Level.ALL, "Error attempting to map unhandled column: " + column);
+                            }
                         }
                     }
                 }

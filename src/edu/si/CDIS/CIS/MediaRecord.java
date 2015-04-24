@@ -141,6 +141,9 @@ public class MediaRecord {
         
         if (! objectPopulated) {
                 // we were unable to populate the object, return with a failure indicator
+
+                //Set the RenditionNumber as the filename for reporting purposes
+                tmsRendition.setRenditionNumber(damsImageFileName);
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");
                 return false;
         }
