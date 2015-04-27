@@ -243,7 +243,7 @@ public class CDIS {
             else if (cdis_new.operationType.equals("link")) {
             
                 LinkCollections linkcollections = new LinkCollections();
-                linkcollections.link(cdis_new, statReport);
+                linkcollections.linkToCIS(cdis_new, statReport);
             }
             else if (cdis_new.operationType.equals("sync")) {
                  MetaData metaData = new MetaData();

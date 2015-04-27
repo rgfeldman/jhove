@@ -41,12 +41,12 @@ public class LinkCollections  {
         this.neverLinkedDamsRendtion.put(UOIID, owning_unit_unique_name); 
     }
     
-    /*  Method :       link
+    /*  Method :       linkToCIS
         Arguments:      The CDIS object, and the StatisticsReport object
-        Description:    link operation specific code starts here
+        Description:    link to CIS operation specific code starts here
         RFeldman 2/2015
     */
-    public void link (CDIS cdis_new, StatisticsReport statReport) {
+    public void linkToCIS (CDIS cdis_new, StatisticsReport statReport) {
         
         // establish connectivity, and other most important variables
         this.damsConn = cdis_new.damsConn;
