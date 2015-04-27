@@ -240,10 +240,10 @@ public class CDIS {
                 DAMSIngest damsIngest = new DAMSIngest();
                 damsIngest.ingest(cdis_new, statReport);
             }
-            else if (cdis_new.operationType.equals("link")) {
-            
+            else if (cdis_new.operationType.equals("linkToCIS")) {
+
                 LinkCollections linkcollections = new LinkCollections();
-                linkcollections.link(cdis_new, statReport);
+                linkcollections.linkToCIS(cdis_new, statReport);
             }
             else if (cdis_new.operationType.equals("sync")) {
                  MetaData metaData = new MetaData();

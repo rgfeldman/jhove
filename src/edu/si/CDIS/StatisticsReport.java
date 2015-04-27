@@ -84,7 +84,7 @@ public class StatisticsReport {
         else if (operationType.equals("ingestToDams") ) {
             this.headerFileWrt.append ("CDIS 2.0: Collections to DAMS: Image Creation Report and Statistics\n");
         }
-        else if (operationType.equals("link") ) {
+        else if (operationType.equals("linkToCIS") ) {
             this.headerFileWrt.append ("CDIS 2.0: DAMS/Collections Link Report and Statistics\n");
         }
         else if (operationType.equals("sync") ) {
@@ -118,7 +118,7 @@ public class StatisticsReport {
             this.headerFileWrt.append("Total Number of Successful Ingest Records: " + successCount + "\n");
             this.headerFileWrt.append("Total Number of Failed Ingest Records: " + failCount + "\n\n\n");
         }
-        else if (operationType.equals("link")) {
+        else if (operationType.equals("linkToCIS")) {
              this.headerFileWrt.append("Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");
         }
         
@@ -213,7 +213,7 @@ public class StatisticsReport {
                 message.setSubject("CDIS 2.0: " + siUnit + " Metadata Sync Report for batch number " + timestamp);         
                 emailContent = "<br>"+"Please see the attached CDIS Metadata Sync report for "+ timestamp + "<br>";
             }
-            else if (operationType.equals("link")) {
+            else if (operationType.equals("linkToCIS")) {
                 message.setSubject("CDIS 2.0: " + siUnit + " DAMS/CIS Link Report for batch number " + timestamp);         
                 emailContent = "<br>"+"Please see the attached CDIS Link report for "+ timestamp + "<br>";
             }
