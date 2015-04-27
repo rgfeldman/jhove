@@ -134,7 +134,8 @@ public class TMSIngest {
                             
                         if ( ! mediaCreated ) {
                             logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
-                            statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+//                           statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
                             failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
@@ -149,7 +150,8 @@ public class TMSIngest {
                             
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");
-                            statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+//                            statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
                             failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }

@@ -156,7 +156,8 @@ public class StatisticsReport {
                     FileUtils.writeStringToFile(reportFile, "Files Sent to DAMS:\n", true);
                 }
                 else {
-                    FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
+//                    FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
+                    FileUtils.writeStringToFile(reportFile, "UAN / Rendition Number Pairs:\n", true);
                 }
             
                 if (this.successFile.length() > 0 ) {
