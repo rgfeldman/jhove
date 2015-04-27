@@ -177,7 +177,8 @@ public class StatisticsReport {
                     FileUtils.writeStringToFile(reportFile, "Failed FileNames\n", true);
                 }
                 else {
-                    FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
+//                    FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
+                    FileUtils.writeStringToFile(reportFile, "Failed UAN / Rendition Number Pairs:\n", true);
                 }
                 if (this.failFile.length() > 0 ) { 
                     failStr = FileUtils.readFileToString(this.failFile);
