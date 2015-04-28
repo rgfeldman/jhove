@@ -35,6 +35,8 @@ public class DAMSIngest {
     Integer numberMediaFilesToIngest;
     String workFolderDir;
     String damsHotFolder;
+    Integer numberSuccessFiles;
+    Integer numberFailFiles;
     
     LinkedHashMap <String,String> renditionsForDAMS; 
     
@@ -171,19 +173,25 @@ public class DAMSIngest {
         File workFolderDir = new File(this.workFolderDir);
         File[] filesForDams = workFolderDir.listFiles();
         
+ 
+        
         // For each file in work folder, move to the xml dropoff location, or the media dropoff location
         for(int i = 0; i < filesForDams.length; i++) {
             File fileForDams = filesForDams[i];
             try {
+                this.numberMediaFilesToIngest ++;
                 //move the image to the image directory
                 logger.log(Level.FINER, "Moving image file to : " + this.damsHotFolder);
                 
                 FileUtils.moveFileToDirectory(fileForDams, damsMediaDropOffDir, false);
-                this.numberMediaFilesToIngest ++;
+                this.numberSuccessFiles ++;
+                
                 statRpt.writeUpdateStats("", fileForDams.getName(), "ingestToDAMS", true);
       
             } catch (Exception e) {
                     e.printStackTrace();
+                    statRpt.writeUpdateStats("", fileForDams.getName(), "ingestToDAMS", false);
+                    numberFailFiles ++;
             } 
         }
         
@@ -235,6 +243,8 @@ public class DAMSIngest {
         
         // Count of records to ingest
         this.numberMediaFilesToIngest = 0;
+        this.numberSuccessFiles = 0;
+        this.numberFailFiles = 0;
         
         // Populate the header for the report file
         statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToDAMS");
@@ -247,6 +257,8 @@ public class DAMSIngest {
         
         // move the media file and XML file from the work folder to the DAMS hotfolder location
         moveFilesToHotFolder(statReport);
+        
+        statReport.populateStats (0, 0, this.numberSuccessFiles, this.numberFailFiles, "ingestToDAMS");
         
         // Create ready.txt file to indicate to the DAMS ingest process that there is a batch of files awaiting for ingest
         createReadyFile();

@@ -152,12 +152,15 @@ public class StatisticsReport {
                 
                 sucessStr = FileUtils.readFileToString(this.successFile);
                 FileUtils.writeStringToFile(reportFile, "================================================================\n", true);
-                if (operationType.equals("ingestToDams")) {
+                if (operationType.equals("ingestToDAMS")) {
                     FileUtils.writeStringToFile(reportFile, "Files Sent to DAMS:\n", true);
+                }
+                else if (operationType.equals("ingestToCIS")) {
+                     FileUtils.writeStringToFile(reportFile, "UAN / Rendition Number Pairs:\n", true);
                 }
                 else {
 //                    FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
-                    FileUtils.writeStringToFile(reportFile, "UAN / Rendition Number Pairs:\n", true);
+                    FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
                 }
             
                 if (this.successFile.length() > 0 ) {
@@ -173,12 +176,15 @@ public class StatisticsReport {
             if(this.failFile.exists()) {
                 failStr = FileUtils.readFileToString(this.failFile);
                 FileUtils.writeStringToFile(reportFile, "================================================================\n", true);
-                if (operationType.equals("ingestToDams")) {
+                if (operationType.equals("ingestToDAMS")) {
                     FileUtils.writeStringToFile(reportFile, "Failed FileNames\n", true);
+                }
+                else if (operationType.equals("ingestToCIS")) {
+                    FileUtils.writeStringToFile(reportFile, "Failed UAN / Rendition Number Pairs:\n", true);
                 }
                 else {
 //                    FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
-                    FileUtils.writeStringToFile(reportFile, "Failed UAN / Rendition Number Pairs:\n", true);
+                    FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
                 }
                 if (this.failFile.length() > 0 ) { 
                     failStr = FileUtils.readFileToString(this.failFile);
