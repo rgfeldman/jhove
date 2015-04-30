@@ -114,7 +114,7 @@ public class TMSIngest {
                 SiAssetMetaData siAsst = new SiAssetMetaData();
                 siAsst.setOwningUnitUniqueName(neverLinkedDamsRendtion.get(UOI_ID));
                 siAsst.setUoiid(UOI_ID);
-                    
+                
                 logger.log(Level.FINEST, "UOI_ID {0}", UOI_ID);
                 
                 String currentIterationSql = sql.replaceAll("\\?owning_unit_unique_name\\?", siAsst.getOwningUnitUniqueName());
@@ -171,7 +171,7 @@ public class TMSIngest {
 
                         if (! recordCreated) {
                             logger.log(Level.FINER, "Insert to CDIS table failed");
-                            statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
                             failCount ++;
                             continue;
                         }
@@ -180,7 +180,7 @@ public class TMSIngest {
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
-                            statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
                             failCount ++;
                             continue;
                         }
@@ -188,7 +188,7 @@ public class TMSIngest {
                             logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
                         }
                          
-                        statRpt.writeUpdateStats(siAsst.getUoiid(), tmsRendition.getRenditionNumber() , "ingestToTMS", true);
+                        statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", true);
                         this.successCount++;
                         
                     }
