@@ -96,7 +96,17 @@ public class MediaRecord {
         //Get the rendition name, and the dimensions
         // if the barcode is set, use the name to get the barcode info,
         //else use the name to get rendition name with the rendition   
-        String damsImageFileName = tmsRendition.populateRenditionFromDamsInfo(siAsst.getUoiid(), tmsRendition, damsConn);
+//        String damsImageFileName = tmsRendition.populateRenditionFromDamsInfo(siAsst.getUoiid(), tmsRendition, damsConn);
+        String imageFileName = tmsRendition.populateRenditionFromDamsInfo(siAsst.getUoiid(), tmsRendition, damsConn);
+        String damsImageFileName = imageFileName;
+        String fileType = "";
+        int len = imageFileName.lastIndexOf(".");
+        // Check if file name have file extension?
+        if (len > 0) {
+        	damsImageFileName = imageFileName.substring(0, imageFileName.lastIndexOf("."));
+        	fileType = imageFileName.substring(imageFileName.lastIndexOf(".")+1, imageFileName.length());
+        }
+
         
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
@@ -163,6 +173,9 @@ public class MediaRecord {
         logger.log(Level.FINER, "PixelW: " + tmsRendition.getPixelW());
         logger.log(Level.FINER, "IsPrimary: " + tmsRendition.getIsPrimary()); 
         logger.log(Level.FINER, "IDSPath: " + cdis_new.properties.getProperty("IDSPathId")); 
+        logger.log(Level.FINER, "PDFPath: " + cdis_new.properties.getProperty("PDFPathId")); 
+      
+        
         
         // Insert into Media Master
         // Insert into MediaRendition
@@ -177,8 +190,17 @@ public class MediaRecord {
             stmt = tmsConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?,?,?,?,?)}");
                         
             stmt.setString(1, siAsst.getUoiid());
-            stmt.setString(2, siAsst.getOwningUnitUniqueName());
-            stmt.setString(3, cdis_new.properties.getProperty("IDSPathId"));
+//            stmt.setString(2, siAsst.getOwningUnitUniqueName());           
+//            stmt.setString(3, cdis_new.properties.getProperty("IDSPathId"));
+            if (fileType.equalsIgnoreCase("PDF")) {
+            	stmt.setString(2, siAsst.getOwningUnitUniqueName() + ".pdf");
+            	stmt.setString(3, cdis_new.properties.getProperty("PDFPathId"));
+            }
+            else {
+            	stmt.setString(2, siAsst.getOwningUnitUniqueName());
+            	stmt.setString(3, cdis_new.properties.getProperty("IDSPathId"));
+            }
+                 
             stmt.setString(4, tmsRendition.getRenditionNumber());
             stmt.setInt(5, tmsObject.getObjectID());
             stmt.setInt(6, tmsRendition.getRank());
