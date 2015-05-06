@@ -22,6 +22,7 @@ import java.sql.Connection;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Thumbnail;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 
         
@@ -65,40 +66,6 @@ public class LinkCollections  {
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
         linkUANtoFilename (cdis_new, statReport);    
-        
-    }
-    
-    
-    /*  Method :        createCDISRecord
-        Arguments:      The CDISTbl object, which reflects the CDIS table
-        Description:    Inserts a row into the CDIS table
-        RFeldman 2/2015
-    */
-    
-    private int updateDAMSSourceSystemID (CDISTable cdisTbl) {
-        int recordsUpdated = 0;
-        Statement stmt = null;
-        
-        String sql = "update SI_ASSET_METADATA set source_system_id = '" + cdisTbl.getRenditionNumber() + "' " +
-                    "where UOI_ID = '" + cdisTbl.getUOIID() + "'";
-
-        logger.log(Level.FINEST, "SQL! {0}", sql);
-        
-        try {
-            recordsUpdated = DataProvider.executeUpdate(this.damsConn, sql);
-        
-            stmt = this.damsConn.createStatement();
-            recordsUpdated = stmt.executeUpdate(sql);
-        
-            logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
-            
-        } catch (Exception e) {
-                e.printStackTrace();
-        }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-            
-        return recordsUpdated;
         
     }
     
@@ -169,6 +136,7 @@ public class LinkCollections  {
                 currentIterationSql = sql.replace("?owning_unit_unique_name?", neverLinkedDamsRendtion.get(key));
                 
                 cdisTbl.setUOIID(key);
+                cdisTbl.setUAN(neverLinkedDamsRendtion.get(key));
                 
                 //logger.log(Level.FINER,"checking for UOI_ID " + cdisTbl.getUOIID() + " UAN: " + neverLinkedDamsRendtion.get(key));
                 logger.log(Level.FINEST,"SQL " + currentIterationSql);
@@ -197,7 +165,7 @@ public class LinkCollections  {
         
                         if (! recordCreated) {
                             logger.log(Level.FINER,"ERROR: CDIS record not created for UOIID! " + cdisTbl.getUOIID());
-                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
+                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", false);
                             //get the next id from the list
                             continue;
                         }
@@ -212,21 +180,22 @@ public class LinkCollections  {
                             setForDamsFlag(cdisTbl.getRenditionId());
                         }
                         
+                        SiAssetMetaData siAsst = new SiAssetMetaData();
                         // we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
                         // update the SourceSystemID in DAMS with this value
-                        int updatedRows = updateDAMSSourceSystemID(cdisTbl);
+                        int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisTbl.getUOIID(), cdisTbl.getRenditionNumber() );
                         
                         if (updatedRows == 1) {
-                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", true);
+                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", true);
                         }
                         else {
-                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
+                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", false);
                         }
                         
                     } catch (Exception e) {
                         e.printStackTrace();
                         logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisTbl.getUOIID());
-                        statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "link", false);
+                        statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", false);
                     }
                 }
                 
@@ -241,22 +210,6 @@ public class LinkCollections  {
         
     }
     
-     /*  Method :       updateSourceSystemID
-        Arguments:      The CDISTable object
-        Returns:        int (number of rows updated)
-        Description:    Updates the SI_ASSET_METADATA table, sets source_system_id for a particular UOIID.
-                        Both the source_system_id and the UOIID are what is found in the CDISTbl object
-        RFeldman 2/2015
-    */
-    private int updateSourceSystemID (CDISTable cdisTbl) {
-        int numRows = 0;
-        
-        String sql = "update SI_ASSET_METADATA " +
-                     "set source_system_id = '" + cdisTbl.getRenditionNumber() + "'" +
-                     "where uoi_id = '" + cdisTbl.getUOIID() + "'";
-        
-        return numRows;
-    }
     
     /*  Method :        populateNeverLinkedRenditions
         Arguments:      
@@ -296,7 +249,7 @@ public class LinkCollections  {
             
             int numRecords = this.neverLinkedDamsRendtion.size();
             
-            logger.log(Level.FINER,"Number of records in DAMS that are unsynced: {0}", numRecords);
+            logger.log(Level.FINER,"Number of records in DAMS that are unlinked: {0}", numRecords);
             
 
         } catch (Exception e) {

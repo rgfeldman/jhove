@@ -163,6 +163,7 @@ public class TMSIngest {
                         //Populate cdisTbl Object based on renditionNumber
                         cdisTbl.setRenditionNumber(tmsRendition.getRenditionNumber());
                         cdisTbl.setUOIID(siAsst.getUoiid());
+                        cdisTbl.setUAN(siAsst.getOwningUnitUniqueName());
                         cdisTbl.setRenditionId(tmsRendition.getRenditionId());
                         cdisTbl.setObjectId (tmsObject.getObjectID());
                         
@@ -188,6 +189,19 @@ public class TMSIngest {
                             logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
                         }
                          
+                        // update the SourceSystemID in DAMS with the RenditionNumber
+                        rowsUpdated = siAsst.updateDAMSSourceSystemID(damsConn, siAsst.getUoiid(), tmsRendition.getRenditionNumber() );
+                        
+                        if (rowsUpdated == 0) {    
+                            logger.log(Level.FINER, "Failed in update to SourceSystemID");
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            failCount ++;
+                            continue;
+                        }
+                        else if (rowsUpdated > 1) {
+                            logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
+                        }
+                        
                         statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", true);
                         this.successCount++;
                         

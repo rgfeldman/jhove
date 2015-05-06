@@ -155,12 +155,8 @@ public class StatisticsReport {
                 if (operationType.equals("ingestToDAMS")) {
                     FileUtils.writeStringToFile(reportFile, "Files Sent to DAMS:\n", true);
                 }
-                else if (operationType.equals("ingestToCIS")) {
-                     FileUtils.writeStringToFile(reportFile, "UAN / Rendition Number Pairs:\n", true);
-                }
                 else {
-//                    FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
-                    FileUtils.writeStringToFile(reportFile, "UOI_ID / Rendition Number Pairs:\n", true);
+                     FileUtils.writeStringToFile(reportFile, "UAN / Rendition Number Pairs:\n", true);
                 }
             
                 if (this.successFile.length() > 0 ) {
@@ -179,13 +175,10 @@ public class StatisticsReport {
                 if (operationType.equals("ingestToDAMS")) {
                     FileUtils.writeStringToFile(reportFile, "Failed FileNames\n", true);
                 }
-                else if (operationType.equals("ingestToCIS")) {
+                else {
                     FileUtils.writeStringToFile(reportFile, "Failed UAN / Rendition Number Pairs:\n", true);
                 }
-                else {
-//                    FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
-                    FileUtils.writeStringToFile(reportFile, "Failed UOI_ID / Rendition Number Pairs:\n", true);
-                }
+                
                 if (this.failFile.length() > 0 ) { 
                     failStr = FileUtils.readFileToString(this.failFile);
                     FileUtils.writeStringToFile(reportFile, failStr, true);

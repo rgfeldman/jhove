@@ -230,7 +230,7 @@ public class MetaData {
 
         try {
             // prepare the sql for obtaining info from CDIS
-            stmt = this.tmsConn.prepareStatement("select RenditionID, RenditionNumber, UOIID, MetaDataSyncDate, IDSRestrict, ObjectID "
+            stmt = this.tmsConn.prepareStatement("select RenditionID, RenditionNumber, UOIID, UAN, MetaDataSyncDate, IDSRestrict, ObjectID "
                     + "from CDIS "
                     + "where CDIS_ID = ? "
                     + "order by CDIS_ID");
@@ -266,6 +266,7 @@ public class MetaData {
                         cdisTbl.setRenditionId(rs.getInt("RenditionID"));
                         cdisTbl.setRenditionNumber(rs.getString("RenditionNumber"));
                         cdisTbl.setUOIID(rs.getString("UOIID"));
+                        cdisTbl.setUAN(rs.getString("UAN"));
                         cdisTbl.setMetaDataSyncDate(rs.getString("MetaDataSyncDate"));
                         cdisTbl.setIDSRestrict(rs.getString("IDSRestrict"));
                         cdisTbl.setObjectId(rs.getInt("objectID"));
@@ -283,7 +284,7 @@ public class MetaData {
                         // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
                         if (updateDamsCount == 1) {
 
-                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "metaData", true);
+                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", true);
                             successfulUpdateCount ++;
                            
                             //calcute the new IDSRestriction value
@@ -303,7 +304,7 @@ public class MetaData {
                         }
                         else {
                             logger.log(Level.ALL, "Error, CDIS Table not updated, metadata not synced");
-                            statRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "metaData", false);
+                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", false);
                             failedUpdateCount ++;
                         }
                     }

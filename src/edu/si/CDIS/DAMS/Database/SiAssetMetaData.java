@@ -5,6 +5,15 @@
  */
 package edu.si.CDIS.DAMS.Database;
 
+import edu.si.CDIS.CDIS;
+import edu.si.CDIS.CIS.Database.CDISTable;
+import edu.si.CDIS.utilties.DataProvider;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.sql.Connection;
+import java.util.logging.Logger;
+
 
 public class SiAssetMetaData {
     //class attributes
@@ -29,6 +38,9 @@ public class SiAssetMetaData {
     String useRestrictions;
     String sourceSystemId;
     String workCreationDate;
+    Connection damsConn;
+    
+    private final static Logger logger = Logger.getLogger(CDIS.class.getName());
       
     
     // get functions
@@ -407,5 +419,37 @@ public class SiAssetMetaData {
         return newString;
         
     }
+    
+    /*  Method :        updateDAMSSourceSystemID
+        Arguments:      
+        Description:    
+        RFeldman 2/2015
+    */
+    
+    public int updateDAMSSourceSystemID (Connection damsConn, String uoiid, String sourceSystemId) {
+        int recordsUpdated = 0;
+        Statement stmt = null;
         
+        String sql = "update SI_ASSET_METADATA set source_system_id = '" + sourceSystemId + "' " +
+                    "where UOI_ID = '" + uoiid + "'";
+
+        logger.log(Level.FINEST, "SQL! {0}", sql);
+        
+        try {
+            recordsUpdated = DataProvider.executeUpdate(this.damsConn, sql);
+        
+            stmt = this.damsConn.createStatement();
+            recordsUpdated = stmt.executeUpdate(sql);
+        
+            logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+                e.printStackTrace();
+        }finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+            
+        return recordsUpdated;
+        
+    }
 }

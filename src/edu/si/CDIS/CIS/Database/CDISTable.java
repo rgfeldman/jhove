@@ -27,6 +27,7 @@ public class CDISTable {
     Integer renditionId;
     String renditionNumber;
     String UOIID;
+    String UAN;
     
        
     // get methods
@@ -52,6 +53,10 @@ public class CDISTable {
     
     public String getMetaDataSyncDate () {
         return this.metaDataSyncDate;
+    }
+    
+    public String getUAN () {
+        return this.UAN;
     }
     
     public String getUOIID () {
@@ -84,6 +89,10 @@ public class CDISTable {
         this.renditionNumber = renditionNumber;
     }
     
+    public void setUAN (String UAN) {
+        this.UAN = UAN;
+    }
+    
     public void setUOIID (String UOIID) {
         this.UOIID = UOIID;
     }
@@ -111,10 +120,11 @@ public class CDISTable {
         
         // Get the ObjectID if it exists 
 
-        String sql = "Insert into CDIS (RenditionID, RenditionNumber, ObjectID, UOIID, LinkDate) " +
+        String sql = "Insert into CDIS (RenditionID, RenditionNumber, ObjectID, UOIID, UAN, LinkDate) " +
                     "values ( " + cdisTbl.getRenditionId() + ", '" +
                     cdisTbl.getRenditionNumber() + "', " +
                     cdisTbl.getObjectId() + ", '" +
+                    cdisTbl.getUAN() + ", '" +
                     cdisTbl.getUOIID() + "', " +
                     "GETDATE() )";
         
