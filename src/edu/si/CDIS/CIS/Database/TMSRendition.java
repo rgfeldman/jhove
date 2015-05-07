@@ -184,6 +184,7 @@ public class TMSRendition {
         
         String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + uoiid + "'";
         String extensionlessImageName = null;
+        String imageName = null;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -196,7 +197,9 @@ public class TMSRendition {
               
                 if (rs.next()) {
                     //Drop the extension off of the image name
-                    extensionlessImageName = rs.getString(1).substring(0, rs.getString(1).lastIndexOf("."));
+//                    extensionlessImageName = rs.getString(1).substring(0, rs.getString(1).lastIndexOf("."));
+                    imageName = rs.getString(1);
+                    extensionlessImageName = imageName.substring(0, rs.getString(1).lastIndexOf("."));
                    
                     this.setPixelH(rs.getInt("bitmap_height"));
                     this.setPixelW(rs.getInt("bitmap_width"));
@@ -249,7 +252,8 @@ public class TMSRendition {
         logger.log(Level.FINER, "DAMS imageFileName: {0}", extensionlessImageName);
         logger.log(Level.FINER, "Rank: {0}", this.getRank());
        
-        return extensionlessImageName;
+//        return extensionlessImageName;
+        return imageName;
     }   
   
 }

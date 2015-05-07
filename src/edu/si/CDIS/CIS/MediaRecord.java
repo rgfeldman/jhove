@@ -98,9 +98,14 @@ public class MediaRecord {
         //else use the name to get rendition name with the rendition   
 //        String damsImageFileName = tmsRendition.populateRenditionFromDamsInfo(siAsst.getUoiid(), tmsRendition, damsConn);
         String imageFileName = tmsRendition.populateRenditionFromDamsInfo(siAsst.getUoiid(), tmsRendition, damsConn);
-        String damsImageFileName = imageFileName.substring(0, imageFileName.lastIndexOf("."));
-//       String[] splitted = imageFileName.split(".");
-        String fileType = imageFileName.substring(imageFileName.lastIndexOf(".")+1, imageFileName.length());
+        String damsImageFileName = imageFileName;
+        String fileType = "";
+        int len = imageFileName.lastIndexOf(".");
+        // Check if file name have file extension?
+        if (len > 0) {
+        	damsImageFileName = imageFileName.substring(0, imageFileName.lastIndexOf("."));
+        	fileType = imageFileName.substring(imageFileName.lastIndexOf(".")+1, imageFileName.length());
+        }
         
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
@@ -184,13 +189,13 @@ public class MediaRecord {
             stmt = tmsConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?,?,?,?,?)}");
                         
             stmt.setString(1, siAsst.getUoiid());
-            stmt.setString(2, siAsst.getOwningUnitUniqueName());
             
-//            stmt.setString(3, cdis_new.properties.getProperty("IDSPathId"));
             if (fileType.equalsIgnoreCase("PDF")) {
+            	stmt.setString(2, siAsst.getOwningUnitUniqueName() + ".pdf");
             	stmt.setString(3, cdis_new.properties.getProperty("PDFPathId"));
             }
             else {
+            	stmt.setString(2, siAsst.getOwningUnitUniqueName());
             	stmt.setString(3, cdis_new.properties.getProperty("IDSPathId"));
             }
                  
