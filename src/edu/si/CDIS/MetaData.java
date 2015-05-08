@@ -407,6 +407,9 @@ public class MetaData {
                         else if (column.equals("work_creation_date")) {
                             updateStatement = updateStatement + " work_creation_date = '" + siAsst.getWorkCreationDate() + "',";
                         }
+                        else if (column.equals("notes")) {
+                            updateStatement = updateStatement + " notes = '" + siAsst.getNotes() + "',";
+                        }
                         else {
                             if (!column.equals("source_system_id")  && !column.equals("max_ids_size") && !column.equals("is_restricted")) {
                                     
@@ -616,6 +619,11 @@ public class MetaData {
                     if (sql.contains("AS work_creation_date")) {
                         if (rs.getString("work_creation_date") != null) {
                             siAsst.setWorkCreationDate(rs.getString("work_creation_date"));
+                        }
+                    }
+                    if (sql.contains("AS notes")) {
+                        if (rs.getString("notes") != null) {
+                            siAsst.setWorkCreationDate(rs.getString("notes"));
                         }
                     }
                 }
