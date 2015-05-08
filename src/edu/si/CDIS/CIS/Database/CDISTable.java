@@ -124,7 +124,7 @@ public class CDISTable {
                     "values ( " + cdisTbl.getRenditionId() + ", '" +
                     cdisTbl.getRenditionNumber() + "', " +
                     cdisTbl.getObjectId() + ", '" +
-                    cdisTbl.getUAN() + ", '" +
+                    cdisTbl.getUAN() + "', '" +
                     cdisTbl.getUOIID() + "', " +
                     "GETDATE() )";
         
