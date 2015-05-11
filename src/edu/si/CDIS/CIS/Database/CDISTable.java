@@ -120,7 +120,7 @@ public class CDISTable {
         
         // Get the ObjectID if it exists 
 
-        String sql = "Insert into CDIS (RenditionID, RenditionNumber, ObjectID, UOIID, UAN, LinkDate) " +
+        String sql = "Insert into CDIS (RenditionID, RenditionNumber, ObjectID, UAN, UOIID, LinkDate) " +
                     "values ( " + cdisTbl.getRenditionId() + ", '" +
                     cdisTbl.getRenditionNumber() + "', " +
                     cdisTbl.getObjectId() + ", '" +
