@@ -448,10 +448,7 @@ public class SiAssetMetaData {
         logger.log(Level.FINEST, "SQL! {0}", sql);
         
         try {
-            recordsUpdated = DataProvider.executeUpdate(this.damsConn, sql);
-        
-            stmt = this.damsConn.createStatement();
-            recordsUpdated = stmt.executeUpdate(sql);
+            recordsUpdated = DataProvider.executeUpdate(damsConn, sql);
         
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
