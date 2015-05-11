@@ -49,11 +49,11 @@ public class CDIS {
         
         //establish and verify database connections.
 	try {
-                String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("tmsPass"));
+                String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("cisPass"));
                 
-		this.tmsConn = DataProvider.getConnection(this.properties.getProperty("tmsDriver"), 
-                        this.properties.getProperty("tmsUrl"), 
-			this.properties.getProperty("tmsUser"), 
+		this.tmsConn = DataProvider.getConnection(this.properties.getProperty("cisDriver"), 
+                        this.properties.getProperty("cisUrl"), 
+			this.properties.getProperty("cisUser"), 
 			tmsPass);
                  
 	} catch(Exception ex) {

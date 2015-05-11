@@ -38,12 +38,19 @@ public class SiAssetMetaData {
     String useRestrictions;
     String sourceSystemId;
     String workCreationDate;
-    Connection damsConn;
+    String notes;
+
+	Connection damsConn;
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
       
     
     // get functions
+    
+    public String getNotes() {
+		return notes;
+	}
+
     public String getCaption () {
         return this.caption;
     }
@@ -132,6 +139,11 @@ public class SiAssetMetaData {
     
     // set functions
     
+
+	public void setNotes(String notes) {
+		this.notes = notes;
+	}
+
     public void appendCaption(String caption, String delimiter) {
         caption = scrubString(caption);
         
