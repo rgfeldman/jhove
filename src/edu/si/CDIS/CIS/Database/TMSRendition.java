@@ -139,9 +139,10 @@ public class TMSRendition {
         if (this.getRank() == 1) {
             //Check to make sure if we dont have a rank 1 for this object already
             
-            String sql = "SELECT count(*) from MediaXrefs " + 
-                         "WHERE ID = " + ObjectID + 
-                         " and PrimaryDisplay = 1";
+            String sql = "SELECT count(*) from MediaXrefs" + 
+                         " WHERE ID = " + ObjectID + 
+                         " and PrimaryDisplay = 1" +
+                         " and TableID = '108'";
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
