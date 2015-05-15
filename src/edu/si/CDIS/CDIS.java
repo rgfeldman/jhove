@@ -183,8 +183,8 @@ public class CDIS {
         cdis_new.deleteLogs("tmp","success",3);
         cdis_new.deleteLogs("tmp","fail",3);
         cdis_new.deleteLogs("tmp","header",3);
-        cdis_new.deleteLogs("rpt","Rpt_",12);
-        cdis_new.deleteLogs("log","CDISLog-",12);
+        cdis_new.deleteLogs("rpt","Rpt_",14);
+        cdis_new.deleteLogs("log","CDISLog-",14);
         
         // Check if the required number of arguments are inputted
         if(args.length < 1) {
