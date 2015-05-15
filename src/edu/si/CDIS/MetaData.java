@@ -576,6 +576,11 @@ public class MetaData {
                             }
                         }
                     }
+                    if (sql.contains("AS notes")) {
+                        if (rs.getString("notes") != null) {
+                            siAsst.setNotes(rs.getString("notes"));
+                        }
+                    }
                     if (sql.contains("AS other_constraints")) {
                         if (rs.getString("other_constraints") != null) {
                             siAsst.setOtherConstraints(rs.getString("other_constraints"));
@@ -621,11 +626,7 @@ public class MetaData {
                             siAsst.setWorkCreationDate(rs.getString("work_creation_date"));
                         }
                     }
-                    if (sql.contains("AS notes")) {
-                        if (rs.getString("notes") != null) {
-                            siAsst.setWorkCreationDate(rs.getString("notes"));
-                        }
-                    }
+
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
