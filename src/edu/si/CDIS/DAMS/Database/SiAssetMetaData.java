@@ -46,10 +46,6 @@ public class SiAssetMetaData {
       
     
     // get functions
-    
-    public String getNotes() {
-		return notes;
-	}
 
     public String getCaption () {
         return this.caption;
@@ -89,6 +85,10 @@ public class SiAssetMetaData {
     
     public String getNamedPerson () {
         return this.namedPerson;
+    }
+    
+    public String getNotes() {
+		return notes;
     }
     
     public String getOtherConstraints () {
@@ -138,11 +138,6 @@ public class SiAssetMetaData {
     
     
     // set functions
-    
-
-	public void setNotes(String notes) {
-		this.notes = notes;
-	}
 
     public void appendCaption(String caption, String delimiter) {
         caption = scrubString(caption);
@@ -309,6 +304,10 @@ public class SiAssetMetaData {
             this.namedPerson = namedPerson;
         }
     }
+    
+    public void setNotes(String notes) {
+		this.notes = notes;
+    }            
     
     public void setOtherConstraints(String otherConstraints) {
         otherConstraints = scrubString(otherConstraints);
