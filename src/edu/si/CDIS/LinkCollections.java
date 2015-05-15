@@ -88,7 +88,7 @@ public class LinkCollections  {
          try {
             recordsUpdated = DataProvider.executeUpdate(this.tmsConn, sql);
         
-            stmt = this.damsConn.createStatement();
+            stmt = this.tmsConn.createStatement();
             recordsUpdated = stmt.executeUpdate(sql);
         
             logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
