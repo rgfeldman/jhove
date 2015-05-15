@@ -121,7 +121,7 @@ public class LinkCollections  {
               
             sqlTypeArr = cdis_new.xmlSelectHash.get(key);
             
-            if (sqlTypeArr[0].equals("checkAgainstCollections")) {   
+            if (sqlTypeArr[0].equals("checkAgainstCIS")) {   
                 sql = key;    
             }
         }
