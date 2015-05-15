@@ -55,7 +55,7 @@ public class DAMSIngest {
                         we check DAMS for an already existing image before we choose to create a new one.
         RFeldman 3/2015
     */
-    private void checkDAMSForImage (CDIS cdis_new) {
+    private void checkDAMSForImage (CDIS cdis_new, StatisticsReport statRpt) {
          // See if we can find if this uan already exists in TMS
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -91,7 +91,6 @@ public class DAMSIngest {
                             //Find the image on the media drive
                             MediaFile mediaFile = new MediaFile();
                             mediaFile.create(cdis_new, tmsFileName, Integer.parseInt(renditionID), this.tmsConn);
-                        
                     }
                     else {
                         logger.log(Level.FINER, "Media Already exists: Media does not need to be created");
@@ -99,6 +98,9 @@ public class DAMSIngest {
 
                 } catch (Exception e) {
                     e.printStackTrace();
+                    statRpt.writeUpdateStats("", tmsFileName, "ingestToDAMS", false);
+                    numberFailFiles ++;
+                    
                 } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
                     try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
@@ -109,7 +111,7 @@ public class DAMSIngest {
         else {
             logger.log(Level.FINER, "ERROR: unable to check if TMS Media exists, supporting SQL not provided");
         }
-        
+    
     }
     
     /*  Method :        populateRenditionsFromTMS
@@ -253,7 +255,7 @@ public class DAMSIngest {
         populateRenditionsFromTMS (cdis_new);
         
         // check if the renditions are in dams
-        checkDAMSForImage(cdis_new);
+        checkDAMSForImage(cdis_new, statReport);
         
         // move the media file and XML file from the work folder to the DAMS hotfolder location
         moveFilesToHotFolder(statReport);
