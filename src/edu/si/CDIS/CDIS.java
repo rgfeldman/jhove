@@ -49,10 +49,11 @@ public class CDIS {
         
         //establish and verify database connections.
 	try {
+                //decrypt the password, it is stored in ini in encypted fashion
                 String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("cisPass"));
                 
 		this.tmsConn = DataProvider.getConnection(this.properties.getProperty("cisDriver"), 
-                        this.properties.getProperty("cisUrl"), 
+                        this.properties.getProperty("cisConnString"), 
 			this.properties.getProperty("cisUser"), 
 			tmsPass);
                  
@@ -64,11 +65,11 @@ public class CDIS {
         logger.log(Level.FINER, "Connection to TMS database established.");
         
         try {
-            
+            //decrypt the password, it is stored in ini in encypted fashion
             String damsPass = EncryptDecrypt.decryptString(this.properties.getProperty("damsPass"));
             
             this.damsConn = DataProvider.getConnection(this.properties.getProperty("damsDriver"), 
-					this.properties.getProperty("damsUrl"), 
+					this.properties.getProperty("damsConnString"), 
 					this.properties.getProperty("damsUser"), 
 					damsPass);
                 
