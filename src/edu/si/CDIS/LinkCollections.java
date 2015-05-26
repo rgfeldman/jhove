@@ -87,11 +87,8 @@ public class LinkCollections  {
          
          try {
             recordsUpdated = DataProvider.executeUpdate(this.tmsConn, sql);
-        
-            stmt = this.tmsConn.createStatement();
-            recordsUpdated = stmt.executeUpdate(sql);
-        
-            logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
+                   
+            logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
             
         } catch (Exception e) {
                 e.printStackTrace();

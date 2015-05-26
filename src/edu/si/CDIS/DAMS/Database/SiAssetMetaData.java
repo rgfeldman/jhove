@@ -306,7 +306,14 @@ public class SiAssetMetaData {
     }
     
     public void setNotes(String notes) {
-		this.notes = notes;
+        notes = scrubString(notes);
+
+        if (notes.length() > 4000) {
+                this.notes = notes.substring(0,3999);
+        }
+        else {
+            this.notes = notes;
+        }
     }            
     
     public void setOtherConstraints(String otherConstraints) {
