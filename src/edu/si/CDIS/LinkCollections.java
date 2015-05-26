@@ -54,7 +54,7 @@ public class LinkCollections  {
         this.cisConn = cdis_new.cisConn;
         
         //Populate the header information in the report file
-        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "link"); 
+        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "linkToCIS"); 
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsRendtion = new LinkedHashMap <String, String>();
@@ -62,7 +62,7 @@ public class LinkCollections  {
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedDamsRenditions (cdis_new);
         
-        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, 0, 0, "link");
+        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, 0, 0, "linkToCIS");
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
         linkUANtoFilename (cdis_new, statReport);    
