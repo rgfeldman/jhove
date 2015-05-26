@@ -120,6 +120,7 @@ public class StatisticsReport {
         }
         else if (operationType.equals("linkToCIS")) {
              this.headerFileWrt.append("Unlinked DAMS Renditions: " + neverSyncedSize + "\n\n\n");
+             this.headerFileWrt.append("Total Number of Successful Links: " + successCount + "\n");
         }
         
     }

@@ -33,6 +33,8 @@ public class LinkCollections  {
     Connection cisConn;
     Connection damsConn;
     LinkedHashMap <String,String> neverLinkedDamsRendtion;    
+    int successCount;
+    int failCount;
 
     public LinkedHashMap <String,String> getNeverLinkedDamsRendtion() {
         return this.neverLinkedDamsRendtion;
@@ -62,7 +64,7 @@ public class LinkCollections  {
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedDamsRenditions (cdis_new);
         
-        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, 0, 0, "linkToCIS");
+        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, successCount, failCount, "linkToCIS");
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
         linkUANtoFilename (cdis_new, statReport);    
@@ -184,9 +186,11 @@ public class LinkCollections  {
                         
                         if (updatedRows == 1) {
                             statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", true);
+                            successCount ++;
                         }
                         else {
                             statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", false);
+                            failCount ++;
                         }
                         
                     } catch (Exception e) {
