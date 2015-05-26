@@ -82,6 +82,8 @@ public class DAMSIngest {
                 
                 logger.log(Level.FINEST, "SQL: {0}", sql);
                 
+                boolean fileCreated = false;
+                
                 try {
                     stmt = damsConn.prepareStatement(sql);                                
                     rs = stmt.executeQuery();
@@ -90,10 +92,15 @@ public class DAMSIngest {
                                                                      
                             //Find the image on the media drive
                             MediaFile mediaFile = new MediaFile();
-                            mediaFile.create(cdis_new, tmsFileName, Integer.parseInt(renditionID), this.cisConn);
+                            fileCreated = mediaFile.create(cdis_new, tmsFileName, Integer.parseInt(renditionID), this.cisConn);
                     }
                     else {
                         logger.log(Level.FINER, "Media Already exists: Media does not need to be created");
+                    }
+                    
+                    if (! fileCreated) {
+                        statRpt.writeUpdateStats("", tmsFileName, "ingestToDAMS", false);
+                        numberFailFiles ++;
                     }
 
                 } catch (Exception e) {

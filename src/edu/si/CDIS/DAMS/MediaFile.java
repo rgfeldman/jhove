@@ -47,13 +47,10 @@ public class MediaFile {
                 if (rs.next()) {
                     String mediaPath = rs.getString(1);
  
-                    this.mediaPathLocation = mediaPath;
-                    
+                    this.mediaPathLocation = mediaPath;            
                 }        
-                
-                
-                
-	}
+               
+        }
             
 	catch(Exception e) {
 		e.printStackTrace();
@@ -65,7 +62,7 @@ public class MediaFile {
         
     }
     
-    public void create(CDIS cdis_new, String tmsFileName, int renditionID, Connection cisConn){
+    public boolean create(CDIS cdis_new, String tmsFileName, int renditionID, Connection cisConn){
         
         this.cisConn = cisConn;
         
@@ -90,9 +87,12 @@ public class MediaFile {
            
             
         } catch (Exception e) {
-            logger.log(Level.FINEST, "Unable to move file to WorkFolder");
-                    e.printStackTrace();
+            logger.log(Level.FINEST, "Error: Unable to move file to WorkFolder");
+            e.printStackTrace();
+            return false;
         }
+        
+        return true;
         
     }
 }
