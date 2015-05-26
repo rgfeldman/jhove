@@ -31,7 +31,7 @@ public class DAMSIngest {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     Connection damsConn;
-    Connection tmsConn;
+    Connection cisConn;
     Integer numberMediaFilesToIngest;
     String workFolderDir;
     String damsHotFolder;
@@ -90,7 +90,7 @@ public class DAMSIngest {
                                                                      
                             //Find the image on the media drive
                             MediaFile mediaFile = new MediaFile();
-                            mediaFile.create(cdis_new, tmsFileName, Integer.parseInt(renditionID), this.tmsConn);
+                            mediaFile.create(cdis_new, tmsFileName, Integer.parseInt(renditionID), this.cisConn);
                     }
                     else {
                         logger.log(Level.FINER, "Media Already exists: Media does not need to be created");
@@ -142,7 +142,7 @@ public class DAMSIngest {
             logger.log(Level.FINER, "SQL: {0}", sql);
             
             try {
-                    stmt = tmsConn.prepareStatement(sql);                                
+                    stmt = cisConn.prepareStatement(sql);                                
                     rs = stmt.executeQuery();
         
                     while (rs.next()) {           
@@ -235,7 +235,7 @@ public class DAMSIngest {
      public void ingest (CDIS cdis_new, StatisticsReport statReport) {
          
         this.damsConn = cdis_new.damsConn;
-        this.tmsConn = cdis_new.tmsConn;
+        this.cisConn = cdis_new.cisConn;
         this.workFolderDir = cdis_new.properties.getProperty("workFolder");
         this.damsHotFolder = cdis_new.properties.getProperty("hotFolderMaster");
         

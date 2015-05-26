@@ -22,7 +22,7 @@ public class MediaFile {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     String mediaPathLocation;
     String mediaDrive;
-    Connection tmsConn;
+    Connection cisConn;
 
     public void populateMediaPathLocation(int renditionID) {
         
@@ -41,7 +41,7 @@ public class MediaFile {
         
         try {
                 
-		stmt = tmsConn.prepareStatement(sql);
+		stmt = cisConn.prepareStatement(sql);
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
@@ -65,9 +65,9 @@ public class MediaFile {
         
     }
     
-    public void create(CDIS cdis_new, String tmsFileName, int renditionID, Connection tmsConn){
+    public void create(CDIS cdis_new, String tmsFileName, int renditionID, Connection cisConn){
         
-        this.tmsConn = tmsConn;
+        this.cisConn = cisConn;
         
         logger.log(Level.FINEST, "mediaFile Name : " + tmsFileName);
         

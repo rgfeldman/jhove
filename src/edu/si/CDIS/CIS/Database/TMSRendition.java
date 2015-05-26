@@ -94,7 +94,7 @@ public class TMSRendition {
     
     
     
-    public void populateRenditionIdByRenditionNumber (TMSRendition tmsRendition, Connection tmsConn) {
+    public void populateRenditionIdByRenditionNumber (TMSRendition tmsRendition, Connection cisConn) {
         String sql = "Select max (RenditionID) " +
                      "From MediaRenditions " +
                      "Where RenditionNumber = '" + tmsRendition.getRenditionNumber() + "'";
@@ -105,7 +105,7 @@ public class TMSRendition {
         PreparedStatement stmt = null;
         
         try {
-		stmt = tmsConn.prepareStatement(sql);
+		stmt = cisConn.prepareStatement(sql);
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
@@ -129,7 +129,7 @@ public class TMSRendition {
         Description:    calculates and populates the isPrimary member variable
         RFeldman 3/2015
     */
-    public void populateIsPrimary(Integer ObjectID, Connection tmsConn) {
+    public void populateIsPrimary(Integer ObjectID, Connection cisConn) {
         //Now that we have the rank, need to set the primary flag
         
         ResultSet rs = null;
@@ -147,7 +147,7 @@ public class TMSRendition {
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
              try {
-		stmt = tmsConn.prepareStatement(sql);
+		stmt = cisConn.prepareStatement(sql);
 		rs = stmt.executeQuery();
                 
                 if (rs.next()) {

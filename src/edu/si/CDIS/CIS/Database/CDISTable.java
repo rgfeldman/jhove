@@ -98,7 +98,7 @@ public class CDISTable {
     }
     
     // Update CDIS table to log this transaction
-    public int updateIDSSyncDate(CDISTable cdisTbl, Connection tmsConn) {
+    public int updateIDSSyncDate(CDISTable cdisTbl, Connection cisConn) {
         
         int updateCount = 0;
         
@@ -108,13 +108,13 @@ public class CDISTable {
 
         logger.log(Level.FINEST,"SQL! " + sql);
 
-        updateCount = DataProvider.executeUpdate(tmsConn, sql);
+        updateCount = DataProvider.executeUpdate(cisConn, sql);
 
         return (updateCount);
 
     }
     
-    public boolean createRecord(CDISTable cdisTbl, Connection tmsConn) {
+    public boolean createRecord(CDISTable cdisTbl, Connection cisConn) {
         
         boolean inserted = false;
         
@@ -130,7 +130,7 @@ public class CDISTable {
         
         logger.log(Level.FINEST,"SQL! " + sql);
    
-        inserted = DataProvider.executeInsert(tmsConn, sql);     
+        inserted = DataProvider.executeInsert(cisConn, sql);     
                 
         return inserted;
     }

@@ -34,7 +34,7 @@ public class MetaData {
     String flagForIDS;
     String metaDataXmlFile;
     int NumberOfSyncedRenditions;
-    Connection tmsConn;
+    Connection cisConn;
     Connection damsConn;
     int successfulUpdateCount;
     int failedUpdateCount;
@@ -57,7 +57,7 @@ public class MetaData {
 
          //assign the database connections for later use
         this.damsConn = cdis_new.damsConn;
-        this.tmsConn = cdis_new.tmsConn;
+        this.cisConn = cdis_new.cisConn;
         
         //obtain properties values from the config file
         this.siUnit = cdis_new.properties.getProperty("siUnit");
@@ -125,7 +125,7 @@ public class MetaData {
 
         ResultSet rs;
 
-        rs = DataProvider.executeSelect(this.tmsConn, sql);
+        rs = DataProvider.executeSelect(this.cisConn, sql);
 
         try {
             while (rs.next()) {
@@ -194,7 +194,7 @@ public class MetaData {
         
         ResultSet rs;
 
-        rs = DataProvider.executeSelect(this.tmsConn, sql);
+        rs = DataProvider.executeSelect(this.cisConn, sql);
         logger.log(Level.ALL, "sql select: " + sql);
 
         try {
@@ -230,7 +230,7 @@ public class MetaData {
 
         try {
             // prepare the sql for obtaining info from CDIS
-            stmt = this.tmsConn.prepareStatement("select RenditionID, RenditionNumber, UOIID, UAN, MetaDataSyncDate, IDSRestrict, ObjectID "
+            stmt = this.cisConn.prepareStatement("select RenditionID, RenditionNumber, UOIID, UAN, MetaDataSyncDate, IDSRestrict, ObjectID "
                     + "from CDIS "
                     + "where CDIS_ID = ? "
                     + "order by CDIS_ID");
@@ -257,7 +257,7 @@ public class MetaData {
                     cdisTbl.setCDIS_ID(iter.next());
                     stmt.setInt(1, cdisTbl.getCDIS_ID());
 
-                    rs = DataProvider.executeSelect(this.tmsConn, stmt);
+                    rs = DataProvider.executeSelect(this.cisConn, stmt);
 
                     logger.log(Level.ALL, "Getting information for CDIS_ID: " + cdisTbl.getCDIS_ID());
 
@@ -498,7 +498,7 @@ public class MetaData {
 
             logger.log(Level.ALL, "select Statement: " + sql);
 
-            rs = DataProvider.executeSelect(this.tmsConn, sql);
+            rs = DataProvider.executeSelect(this.cisConn, sql);
             
             // populate the metadata object with the values found from the database query
             try {
@@ -657,7 +657,7 @@ public class MetaData {
 
         logger.log(Level.ALL, "updateStatment: " + sql);
 
-        int updateCount = DataProvider.executeUpdate(this.tmsConn, sql);
+        int updateCount = DataProvider.executeUpdate(this.cisConn, sql);
 
         return (updateCount);
 

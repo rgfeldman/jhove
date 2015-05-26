@@ -30,7 +30,7 @@ public class LinkCollections  {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Connection tmsConn;
+    Connection cisConn;
     Connection damsConn;
     LinkedHashMap <String,String> neverLinkedDamsRendtion;    
 
@@ -51,7 +51,7 @@ public class LinkCollections  {
         
         // establish connectivity, and other most important variables
         this.damsConn = cdis_new.damsConn;
-        this.tmsConn = cdis_new.tmsConn;
+        this.cisConn = cdis_new.cisConn;
         
         //Populate the header information in the report file
         statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "link"); 
@@ -86,7 +86,7 @@ public class LinkCollections  {
          logger.log(Level.FINEST, "SQL! {0}", sql);
          
          try {
-            recordsUpdated = DataProvider.executeUpdate(this.tmsConn, sql);
+            recordsUpdated = DataProvider.executeUpdate(this.cisConn, sql);
                    
             logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
             
@@ -138,7 +138,7 @@ public class LinkCollections  {
                 //logger.log(Level.FINER,"checking for UOI_ID " + cdisTbl.getUOIID() + " UAN: " + neverLinkedDamsRendtion.get(key));
                 logger.log(Level.FINEST,"SQL " + currentIterationSql);
                               
-                stmt = tmsConn.prepareStatement(currentIterationSql);
+                stmt = cisConn.prepareStatement(currentIterationSql);
                 rs = stmt.executeQuery();              
                         
                 if (rs.next()) {
@@ -152,13 +152,13 @@ public class LinkCollections  {
                     
                         // Get the objectID for the CDIS table by the renditionID if is is ontainable
                         TMSObject tmsObject = new TMSObject();
-                        tmsObject.populateObjectIDByRenditionId (cdisTbl.getRenditionId(), tmsConn);                            
+                        tmsObject.populateObjectIDByRenditionId (cdisTbl.getRenditionId(), cisConn);                            
                     
                         // Set the objectID in the CDIS table object equal to the ObjectID in the Object object
                         cdisTbl.setObjectId( tmsObject.getObjectID() );
                     
                         // add linking record to CDIS table
-                        boolean recordCreated = cdisTbl.createRecord (cdisTbl, tmsConn);
+                        boolean recordCreated = cdisTbl.createRecord (cdisTbl, cisConn);
         
                         if (! recordCreated) {
                             logger.log(Level.FINER,"ERROR: CDIS record not created for UOIID! " + cdisTbl.getUOIID());
@@ -170,7 +170,7 @@ public class LinkCollections  {
                         //Update the TMS blob
                         if (cdis_new.properties.getProperty("updateTMSThumbnail").equals("true") ) {
                             Thumbnail thumbnail = new Thumbnail();
-                            thumbnail.update (damsConn, tmsConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
+                            thumbnail.update (damsConn, cisConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
                         }
                         
                         if (cdis_new.properties.getProperty("setForDamsFlag").equals("true") ) {

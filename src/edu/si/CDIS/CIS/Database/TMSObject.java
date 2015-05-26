@@ -48,7 +48,7 @@ public class TMSObject {
         Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS Barcode
         RFeldman 2/2015
     */
-    public boolean mapFileNameToBarcode (String barcode, Connection tmsConn) {
+    public boolean mapFileNameToBarcode (String barcode, Connection cisConn) {
     
         
         //Strip all characters in the barcode after the underscore to look up the label
@@ -69,7 +69,7 @@ public class TMSObject {
         PreparedStatement stmt = null;
         
         try {
-		stmt = tmsConn.prepareStatement(sql);
+		stmt = cisConn.prepareStatement(sql);
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
@@ -100,7 +100,7 @@ public class TMSObject {
         Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS ObjectID
         RFeldman 2/2015
     */
-    public boolean mapFileNameToObjectID(String damsImageFileName, Connection tmsConn) {
+    public boolean mapFileNameToObjectID(String damsImageFileName, Connection cisConn) {
         
         Transform transform = new Transform();
         
@@ -126,7 +126,7 @@ public class TMSObject {
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
         try {
-            stmt = tmsConn.prepareStatement(sql);
+            stmt = cisConn.prepareStatement(sql);
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -226,7 +226,7 @@ public class TMSObject {
                 logger.log(Level.FINEST,"SQL! " + sql);
         
         try {
-            stmt = cdis_new.tmsConn.prepareStatement(sql);                                
+            stmt = cdis_new.cisConn.prepareStatement(sql);                                
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -258,7 +258,7 @@ public class TMSObject {
         Description:    Finds, and sets the objectID based on the RenditionID 
         RFeldman 2/2015
     */
-    public void populateObjectIDByRenditionId (Integer renditionId, Connection tmsConn) {
+    public void populateObjectIDByRenditionId (Integer renditionId, Connection cisConn) {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -277,7 +277,7 @@ public class TMSObject {
         logger.log(Level.FINEST,"SQL! " + sql);
         
         try {
-            stmt = tmsConn.prepareStatement(sql);                                
+            stmt = cisConn.prepareStatement(sql);                                
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -337,7 +337,7 @@ public class TMSObject {
         logger.log(Level.FINEST,"SQL! " + sql);
         
         try {
-            stmt = cdis_new.tmsConn.prepareStatement(sql);                                
+            stmt = cdis_new.cisConn.prepareStatement(sql);                                
             rs = stmt.executeQuery();
             
             if (rs.next()) {

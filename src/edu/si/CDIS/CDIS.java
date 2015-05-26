@@ -34,7 +34,7 @@ public class CDIS {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     private static FileHandler fh = null;
    
-    public Connection tmsConn;
+    public Connection cisConn;
     public Connection damsConn;
     public String operationType;
     public Properties properties;
@@ -52,7 +52,7 @@ public class CDIS {
                 //decrypt the password, it is stored in ini in encypted fashion
                 String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("cisPass"));
                 
-		this.tmsConn = DataProvider.getConnection(this.properties.getProperty("cisDriver"), 
+		this.cisConn = DataProvider.getConnection(this.properties.getProperty("cisDriver"), 
                         this.properties.getProperty("cisConnString"), 
 			this.properties.getProperty("cisUser"), 
 			tmsPass);
@@ -277,7 +277,7 @@ public class CDIS {
         } finally {
             try { if ( cdis_new.damsConn != null)  cdis_new.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
-            try { if ( cdis_new.tmsConn != null)  cdis_new.tmsConn.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( cdis_new.cisConn != null)  cdis_new.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( cdis_new.damsConn != null)  cdis_new.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
     

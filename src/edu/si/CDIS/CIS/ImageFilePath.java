@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class ImageFilePath {
 	private final static Logger logger = Logger.getLogger(CDIS.class.getName());
 	
-    Connection tmsConn;
+    Connection cisConn;
     Connection damsConn;
     int successfulUpdateCount;
   
@@ -40,7 +40,7 @@ public class ImageFilePath {
     	
     	logger.log(Level.FINER, "ImageFilePath.sync()");
         //assign the database connections for later use
-        this.tmsConn = cdis_new.tmsConn;
+        this.cisConn = cdis_new.cisConn;
         this.damsConn = cdis_new.damsConn;
         this.IDSPathId = Integer.parseInt(cdis_new.properties.getProperty("IDSPathId"));
         this.PDFPathId = Integer.parseInt(cdis_new.properties.getProperty("PDFPathId"));
@@ -81,7 +81,7 @@ public class ImageFilePath {
         
         ResultSet rs;
         
-        rs = DataProvider.executeSelect(this.tmsConn, sql);
+        rs = DataProvider.executeSelect(this.cisConn, sql);
 
         try {
             while (rs.next()) {
@@ -113,7 +113,7 @@ public class ImageFilePath {
 
         try {
             // prepare the sql for obtaining info from CDIS
-            stmt = this.tmsConn.prepareStatement("select RenditionID, RenditionNumber, UOIID "
+            stmt = this.cisConn.prepareStatement("select RenditionID, RenditionNumber, UOIID "
                     + "from CDIS "
                     + "where CDIS_ID = ? "
                     + "order by CDIS_ID");
@@ -137,7 +137,7 @@ public class ImageFilePath {
                     cdisTbl.setCDIS_ID(iter.next());
                     stmt.setInt(1, cdisTbl.getCDIS_ID());
 
-                    rs = DataProvider.executeSelect(this.tmsConn, stmt);
+                    rs = DataProvider.executeSelect(this.cisConn, stmt);
 
                     System.out.println("Getting information for CDIS_ID: " + cdisTbl.getCDIS_ID());
 
@@ -165,7 +165,7 @@ public class ImageFilePath {
                     // If se updated the filepath successfully, then log the transaction in the CDIS table
                     if (updateCount > 0) { 
                         //update CDIS with the current IDSSyncDate
-                        cdisTbl.updateIDSSyncDate(cdisTbl, tmsConn);
+                        cdisTbl.updateIDSSyncDate(cdisTbl, cisConn);
                         
                         //Create the IDS report
                         StatRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "idsPath", true);
@@ -287,26 +287,7 @@ public class ImageFilePath {
         return false;      
         
     }
-    
-    
-
-    
-    //This function updates the filePath and filename in TMS to point to the IDS derivative
-//    private int updateFilePath (CDISTable cdisTbl, String uan){
-//        
-//        String sql = "update MediaFiles " +
-//                    "set PathID = " + this.IDSPathId + ", " +
-//                    "FileName = '" + uan + "' " +
-//                    "where RenditionID = " + cdisTbl.getRenditionId();
-//        
-//        System.out.println("IDS update: " + sql);
-//        
-//        int updateCount = DataProvider.executeUpdate(this.tmsConn, sql);
-//        
-//        return updateCount;
-//        
-//    }
-    
+        
     private int updateFilePath (CDISTable cdisTbl, String uan, String fileType){
     	
     	int pathId = this.IDSPathId;
@@ -322,7 +303,7 @@ public class ImageFilePath {
  //       System.out.println("IDS/PDF update: " + sql);
         logger.log(Level.FINER, "ImageFilePath.updateFilePath() " + "sql = " + sql);
         
-        int updateCount = DataProvider.executeUpdate(this.tmsConn, sql);
+        int updateCount = DataProvider.executeUpdate(this.cisConn, sql);
         
         return updateCount;
         

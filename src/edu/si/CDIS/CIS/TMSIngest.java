@@ -26,7 +26,7 @@ public class TMSIngest {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     Connection damsConn;
-    Connection tmsConn;
+    Connection cisConn;
     LinkedHashMap <String,String> neverLinkedDamsRendtion;  
     int successCount;
     int failCount;
@@ -122,7 +122,7 @@ public class TMSIngest {
                 logger.log(Level.FINEST, "SQL: {0}", currentIterationSql);
                 
                 try {
-                    stmt = tmsConn.prepareStatement(currentIterationSql);                                
+                    stmt = cisConn.prepareStatement(currentIterationSql);                                
                     rs = stmt.executeQuery();
                        
                     if ( rs.next()) {   
@@ -140,12 +140,12 @@ public class TMSIngest {
                         }
                         
                         // Set the renditionID for the rendition just created
-                        tmsRendition.populateRenditionIdByRenditionNumber(tmsRendition, tmsConn);
+                        tmsRendition.populateRenditionIdByRenditionNumber(tmsRendition, cisConn);
                         logger.log(Level.FINER, "RenditionID for newly created media: " );
                         
                         //Create the thumbnail image
                         Thumbnail thumbnail = new Thumbnail();
-                        boolean thumbCreated = thumbnail.update(damsConn, tmsConn, siAsst.getUoiid(), tmsRendition.getRenditionId());
+                        boolean thumbCreated = thumbnail.update(damsConn, cisConn, siAsst.getUoiid(), tmsRendition.getRenditionId());
                             
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");
@@ -168,7 +168,7 @@ public class TMSIngest {
                         cdisTbl.setObjectId (tmsObject.getObjectID());
                         
                         //Insert into cdisTbl
-                        boolean recordCreated = cdisTbl.createRecord (cdisTbl, tmsConn);
+                        boolean recordCreated = cdisTbl.createRecord (cdisTbl, cisConn);
 
                         if (! recordCreated) {
                             logger.log(Level.FINER, "Insert to CDIS table failed");
@@ -177,7 +177,7 @@ public class TMSIngest {
                             continue;
                         }
                         
-                        int rowsUpdated = cdisTbl.updateIDSSyncDate(cdisTbl, tmsConn);
+                        int rowsUpdated = cdisTbl.updateIDSSyncDate(cdisTbl, cisConn);
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
@@ -236,7 +236,7 @@ public class TMSIngest {
     public void ingest (CDIS cdis_new, StatisticsReport statReport) { 
         
         this.damsConn = cdis_new.damsConn;
-        this.tmsConn = cdis_new.tmsConn;
+        this.cisConn = cdis_new.cisConn;
        
         logger.log(Level.FINER, "In redesigned Ingest to Collections area");
         

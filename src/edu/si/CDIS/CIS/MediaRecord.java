@@ -39,7 +39,7 @@ public class MediaRecord {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     Connection damsConn;
-    Connection tmsConn;
+    Connection cisConn;
     
     
     private boolean formatNewRenditionNumber (CDIS cdis_new, String damsImageFileName, TMSRendition tmsRendition) {
@@ -87,7 +87,7 @@ public class MediaRecord {
     
     public boolean create (CDIS cdis_new, SiAssetMetaData siAsst, TMSRendition tmsRendition, TMSObject tmsObject) {
  
-        this.tmsConn = cdis_new.tmsConn;    
+        this.cisConn = cdis_new.cisConn;    
         this.damsConn = cdis_new.damsConn;
         
         boolean objectPopulated = false;
@@ -110,7 +110,7 @@ public class MediaRecord {
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
         if (cdis_new.properties.getProperty("mapFileNameToBarcode").equals("true")) {
-            objectPopulated = tmsObject.mapFileNameToBarcode(damsImageFileName, tmsConn);
+            objectPopulated = tmsObject.mapFileNameToBarcode(damsImageFileName, cisConn);
                 
             if (objectPopulated) {
                 
@@ -140,7 +140,7 @@ public class MediaRecord {
         if (! objectPopulated) {
             if (cdis_new.properties.getProperty("mapFileNameToObjectID").equals("true")) {
                
-                objectPopulated = tmsObject.mapFileNameToObjectID(damsImageFileName, tmsConn);
+                objectPopulated = tmsObject.mapFileNameToObjectID(damsImageFileName, cisConn);
                 if (objectPopulated) {
                     tmsRendition.setRenditionNumber(damsImageFileName); 
                 }
@@ -162,7 +162,7 @@ public class MediaRecord {
         String renditionDate = df1.format(cal.getTime());
         
         // Set the primaryRenditionFlag
-        tmsRendition.populateIsPrimary(tmsObject.getObjectID(), tmsConn);
+        tmsRendition.populateIsPrimary(tmsObject.getObjectID(), cisConn);
         
         logger.log(Level.FINER, "about to create TMS media Record:");
         logger.log(Level.FINER, "ObjectID: " + tmsObject.getObjectID());
@@ -186,7 +186,7 @@ public class MediaRecord {
         try {
 
             // Call stored procedure to create media record in TMS
-            stmt = tmsConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?,?,?,?,?)}");
+            stmt = cisConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?,?,?,?,?)}");
                         
             stmt.setString(1, siAsst.getUoiid());
             

@@ -35,7 +35,7 @@ public class Thumbnail {
     
     String damsImageLocation;
     Connection damsConn;
-    Connection tmsConn;
+    Connection cisConn;
     String uoiid;
     String renditionNumber;
     
@@ -89,7 +89,7 @@ public class Thumbnail {
         Description:    Finds the physical image and Updates the thumbnail image in TMS with the image 
         RFeldman 3/2015
     */
-    public boolean update(Connection damsConn, Connection tmsConn, String uoiid, Integer renditionID) {
+    public boolean update(Connection damsConn, Connection cisConn, String uoiid, Integer renditionID) {
         
         this.uoiid = uoiid;
         this.damsConn = damsConn;
@@ -130,7 +130,7 @@ public class Thumbnail {
         //Input the binary stream into the update statement for the table...and execute
         try {
 											
-            stmt = tmsConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
+            stmt = cisConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
                     " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionID =  ? ) ");
 			
             stmt.setBytes(1, bytes);
@@ -179,7 +179,7 @@ public class Thumbnail {
                 
         try {
             
-            stmt = tmsConn.prepareStatement(sql);                                
+            stmt = cisConn.prepareStatement(sql);                                
             rs = stmt.executeQuery();
         
             // For each record in the sql query, add it to the unlinked rendition List
@@ -210,7 +210,7 @@ public class Thumbnail {
     */
     public void sync (CDIS cdis_new, StatisticsReport statReport) {
         
-        this.tmsConn = cdis_new.tmsConn;
+        this.cisConn = cdis_new.cisConn;
         this.damsConn = cdis_new.damsConn;
         
         //Populate the header information in the report file
@@ -221,9 +221,9 @@ public class Thumbnail {
         //Get a list of RenditionIDs that require syncing from the sql XML file
         populateRenditionsToUpdate (cdis_new);
         
-        //create the thumbnail in TMS from those DAMS images (cdis_new.damsConn, cdis_new.tmsConn, "", tmsRendition)
+        //create the thumbnail in TMS from those DAMS images (cdis_new.damsConn, cdis_new.cisConn, "", tmsRendition)
         for (Integer key : thumbnailsToSync.keySet()) {
-             boolean blobUpdated = update (damsConn, tmsConn, thumbnailsToSync.get(key), key);
+             boolean blobUpdated = update (damsConn, cisConn, thumbnailsToSync.get(key), key);
         }
         
         // Get the renditionNumber for the report
