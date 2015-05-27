@@ -101,6 +101,39 @@ public class LinkCollections  {
         
     }
     
+    private String getFileNameForUoiid (String uoiid) {
+
+        String name = null;
+        ResultSet rs = null;
+        
+        String sql = "select Name "
+                + "from UOIS "
+                + "where UOI_ID = '" + uoiid + "'";
+        
+        logger.log(Level.ALL, "Select String: " + sql);
+
+        rs = DataProvider.executeSelect(this.damsConn, sql);
+        
+        try {
+            if (rs.next()) {
+                name = rs.getString(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+         
+        return name;
+    }
+    
     /*  Method :        linkUANtoFilename
         Arguments:     
         Description:    Connects the filename in TMS with the DAMS UAN
@@ -132,10 +165,18 @@ public class LinkCollections  {
                 CDISTable cdisTbl = new CDISTable();
                 
                 // set the temporary newSql variable to contain the sql with the UAN from the never linked Rendition hash
-                currentIterationSql = sql.replace("?owning_unit_unique_name?", neverLinkedDamsRendtion.get(key));
+                if (sql.contains("?owning_unit_unique_name?")) {
+                    currentIterationSql = sql.replace("?owning_unit_unique_name?", neverLinkedDamsRendtion.get(key));
+                }
                 
                 cdisTbl.setUOIID(key);
                 cdisTbl.setUAN(neverLinkedDamsRendtion.get(key));
+                
+                if (sql.contains("?DAMSfileName?")) {
+                    //get the filename based on the uoiid
+                    String fileName = getFileNameForUoiid(cdisTbl.getUOIID());
+                    currentIterationSql = sql.replace("?DAMSfileName?", fileName);
+                }
                 
                 //logger.log(Level.FINER,"checking for UOI_ID " + cdisTbl.getUOIID() + " UAN: " + neverLinkedDamsRendtion.get(key));
                 logger.log(Level.FINEST,"SQL " + currentIterationSql);
