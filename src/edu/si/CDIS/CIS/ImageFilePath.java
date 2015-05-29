@@ -149,11 +149,10 @@ public class ImageFilePath {
                     }
                     
                     //get UAN and file type from DAMS
-//                    String uan = getUAN(cdisTbl);
-                    boolean goodFileType = getUANFileType(cdisTbl);
-                    if (!goodFileType) {
-                    	logger.log(Level.SEVERE, "Fatal Error, ImageFilePath.processRenditionList: CDIS only support TIF, JPG, and PDF file type");
-                    	throw new Exception("CDIS only support TIF, JPG, and PDF file type");
+                    boolean gotUanFileType = getUANFileType(cdisTbl);
+                    if (!gotUanFileType) {
+                    	logger.log(Level.SEVERE, "Unable to obtain uan and FileType");
+                        continue;
                     }
                                        
                     int updateCount = 0;
@@ -203,46 +202,11 @@ public class ImageFilePath {
         }
     }
     
-    // This function returns the current UAN from DAMS for the current UOIID
-//    private String getUAN (CDISTable cdisTbl) {
-//        
-//        String uan = null;
-//        
-//        String sql = "select OWNING_UNIT_UNIQUE_NAME " +
-//                    "from SI_ASSET_METADATA " +
-//                    "where uoi_id = '" + cdisTbl.getUOIID() + "'";
-//        
-//        System.out.println("get UAN: " + sql);
-//        
-//        ResultSet rs = null;
-//        PreparedStatement stmt = null;
-//
-//        try {
-//            stmt = damsConn.prepareStatement(sql);                                
-//            rs = stmt.executeQuery();
-//        
-//            if (rs.next()) {
-//                uan = rs.getString(1);
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        } finally {
-//            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-//            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-//        }
-//        
-//        return uan;
-//        
-//    }
-   
-    
     private boolean getUANFileType (CDISTable cdisTbl) {
-        
-        String uan = null;
-        String fileType = null;
  
-        String sql = "select a.OWNING_UNIT_UNIQUE_NAME, substr(b.NAME,INSTR(NAME, '.',-1)) " +
+        String fileName = null;
+        
+        String sql = "select a.OWNING_UNIT_UNIQUE_NAME, b.NAME " +
         			"from SI_ASSET_METADATA a, UOIS b " +
         			"where a.uoi_id = b.uoi_id " +
         			"and b.uoi_id = '" + cdisTbl.getUOIID() + "'";
@@ -258,33 +222,21 @@ public class ImageFilePath {
             rs = stmt.executeQuery();
         
             if (rs.next()) {
-                uan = rs.getString(1);
-                fileType = rs.getString(2);
+                this.uan = rs.getString(1);
+                fileName = rs.getString(2);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
-        this.uan = uan;
-        this.fileType = fileType;
-        
-        if (fileType.equalsIgnoreCase("TIF")) {
-        	return true;
-        }
-        
-        if (fileType.equalsIgnoreCase("JPG")) {
-        	return true;
-        }
-        
-        if (fileType.equalsIgnoreCase("PDF")) {
-        	return true;
-        }
-        
-        return false;      
+        this.fileType = fileName.substring(fileName.lastIndexOf("."));
+              
+        return true;
         
     }
         

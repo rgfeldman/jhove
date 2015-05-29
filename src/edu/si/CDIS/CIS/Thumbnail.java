@@ -54,7 +54,7 @@ public class Thumbnail {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
-        
+      
         String sql = "select o.object_name_location from uois u, object_stacks o" +
         " where u.uoi_id = '" + this.uoiid + "'" +
         " and u.thumb_nail_obj_id = o.object_id ";
@@ -106,7 +106,7 @@ public class Thumbnail {
             logger.log(Level.FINER, "Not updating thumbnail, image could not be located from database");
             return false;
         }
-
+        
         imageFile = "\\\\smb.si-osmisilon1.si.edu\\prodartesiarepo\\" + this.damsImageLocation; 
         
         // Capture the image as a binary stream
