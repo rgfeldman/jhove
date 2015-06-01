@@ -233,36 +233,40 @@ public class CDIS {
             
             cdis_new.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
             
-            if (cdis_new.operationType.equals("ingestToCIS")) {          
-                TMSIngest tmsIngest = new TMSIngest();
-                tmsIngest.ingest(cdis_new, statReport);
+            switch (cdis_new.operationType) {
+                case "ingestToCIS" :
+                    TMSIngest tmsIngest = new TMSIngest();
+                    tmsIngest.ingest(cdis_new, statReport);
+                    break;
+                    
+                case "ingestToDAMS" :     
+                    DAMSIngest damsIngest = new DAMSIngest();
+                    damsIngest.ingest(cdis_new, statReport);
+                    break;
+                
+                case "linkToCIS" :
+                    LinkCollections linkcollections = new LinkCollections();
+                    linkcollections.linkToCIS(cdis_new, statReport);
+                    break;
+                    
+                case "sync" :    
+                    MetaData metaData = new MetaData();
+                    metaData.sync(cdis_new, statReport);
+                    //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
+                    ImageFilePath imgPath = new ImageFilePath();
+                    imgPath.sync(cdis_new, statReport);
+                    break;
+                    
+                case "thumbnailSync" :    
+                    Thumbnail thumbnail = new Thumbnail();
+                    thumbnail.sync(cdis_new, statReport);
+                    break;
+                    
+                default:     
+                    logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");
+                    return;               
             }
-            else if (cdis_new.operationType.equals("ingestToDAMS")) {
-                DAMSIngest damsIngest = new DAMSIngest();
-                damsIngest.ingest(cdis_new, statReport);
-            }
-            else if (cdis_new.operationType.equals("linkToCIS")) {
-
-                LinkCollections linkcollections = new LinkCollections();
-                linkcollections.linkToCIS(cdis_new, statReport);
-            }
-            else if (cdis_new.operationType.equals("sync")) {
-                 MetaData metaData = new MetaData();
-                 metaData.sync(cdis_new, statReport);
-        
-                 //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
-                ImageFilePath imgPath = new ImageFilePath();
-                imgPath.sync(cdis_new, statReport);
-            }
-            else if (cdis_new.operationType.equals("thumbnailSync")) {
-                 Thumbnail thumbnail = new Thumbnail();
-                 thumbnail.sync(cdis_new, statReport);
-            }
-            else {
-                logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");
-                return;
-            }
-            
+               
             statReport.compile(cdis_new.operationType);
             
             // Send the report by email if there is an email list
