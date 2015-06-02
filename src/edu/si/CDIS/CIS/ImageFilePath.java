@@ -158,7 +158,6 @@ public class ImageFilePath {
                     int updateCount = 0;
                     
                     // update the FilePath and FileName with the path and UAN
-//                    updateCount = updateFilePath(cdisTbl, uan); 
                     updateCount = updateFilePath(cdisTbl, this.uan, this.fileType); 
                     
                     // If se updated the filepath successfully, then log the transaction in the CDIS table
@@ -167,12 +166,12 @@ public class ImageFilePath {
                         cdisTbl.updateIDSSyncDate(cdisTbl, cisConn);
                         
                         //Create the IDS report
-                        StatRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "idsPath", true);
+                        StatRpt.writeUpdateStats(this.uan, cdisTbl.getRenditionNumber(), "idsPath", true);
                         successfulUpdateCount ++;
                         
                     }
                     else {
-                        StatRpt.writeUpdateStats(cdisTbl.getUOIID(), cdisTbl.getRenditionNumber(), "idsPath", false);
+                        StatRpt.writeUpdateStats(this.uan, cdisTbl.getRenditionNumber(), "idsPath", false);
                     }
 
                 } catch (Exception e) {
