@@ -186,6 +186,13 @@ public class DAMSIngest {
         
         // For each file in work folder, move to the xml dropoff location, or the media dropoff location
         for(int i = 0; i < filesForDams.length; i++) {
+            
+            //skip the file if named thumbs.db
+            if (filesForDams[i].getName().equals("thumbs.db")) {
+                // skip the file if it is called thumbs.db
+                continue;
+            }
+                    
             File fileForDams = filesForDams[i];
             try {
                 this.numberMediaFilesToIngest ++;
