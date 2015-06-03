@@ -177,14 +177,14 @@ public class CDIS {
     */
     public static void main(String[] args) {
        
-        CDIS cdis_new = new CDIS();
+        CDIS cdis = new CDIS();
         
         // Delete old tmp, log and report files
-        cdis_new.deleteLogs("tmp","success",3);
-        cdis_new.deleteLogs("tmp","fail",3);
-        cdis_new.deleteLogs("tmp","header",3);
-        cdis_new.deleteLogs("rpt","Rpt_",14);
-        cdis_new.deleteLogs("log","CDISLog-",14);
+        cdis.deleteLogs("tmp","success",3);
+        cdis.deleteLogs("tmp","fail",3);
+        cdis.deleteLogs("tmp","header",3);
+        cdis.deleteLogs("rpt","Rpt_",14);
+        cdis.deleteLogs("log","CDISLog-",14);
         
         // Check if the required number of arguments are inputted
         if(args.length < 1) {
@@ -192,29 +192,29 @@ public class CDIS {
             return;
 	}
 	else {
-            cdis_new.operationType = args[0];
+            cdis.operationType = args[0];
 	}
 
         try {
         
-            cdis_new.properties = new Properties();
+            cdis.properties = new Properties();
         
             //set the logger
-            boolean loggingSet = cdis_new.setLogger();
+            boolean loggingSet = cdis.setLogger();
             if (! loggingSet) {
                 System.out.println("Fatal Error: Failure to set Logger, exiting");
                 return;
             }
         
             //handle the ini file
-            boolean iniRead = cdis_new.readIni ();
+            boolean iniRead = cdis.readIni ();
             if (! iniRead) {
                 logger.log(Level.SEVERE, "Fatal Error: Failure to Load ini file, exiting");
                 return;
             }
         
        
-            boolean databaseConnected = cdis_new.connectToDatabases();
+            boolean databaseConnected = cdis.connectToDatabases();
             if (! databaseConnected) {
                 logger.log(Level.SEVERE, "Fatal Error: Failure to Connect to database");
                 return;
@@ -225,41 +225,41 @@ public class CDIS {
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             
-            boolean xmlReturn = xml.read(cdis_new.operationType, cdis_new.properties.getProperty("xmlSQLFile"));
+            boolean xmlReturn = xml.read(cdis.operationType, cdis.properties.getProperty("xmlSQLFile"));
             if (! xmlReturn) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
                 return;
             }
             
-            cdis_new.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
+            cdis.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
             
-            switch (cdis_new.operationType) {
+            switch (cdis.operationType) {
                 case "ingestToCIS" :
                     TMSIngest tmsIngest = new TMSIngest();
-                    tmsIngest.ingest(cdis_new, statReport);
+                    tmsIngest.ingest(cdis, statReport);
                     break;
                     
                 case "ingestToDAMS" :     
                     DAMSIngest damsIngest = new DAMSIngest();
-                    damsIngest.ingest(cdis_new, statReport);
+                    damsIngest.ingest(cdis, statReport);
                     break;
                 
                 case "linkToCIS" :
                     LinkCollections linkcollections = new LinkCollections();
-                    linkcollections.linkToCIS(cdis_new, statReport);
+                    linkcollections.linkToCIS(cdis, statReport);
                     break;
                     
                 case "sync" :    
                     MetaData metaData = new MetaData();
-                    metaData.sync(cdis_new, statReport);
+                    metaData.sync(cdis, statReport);
                     //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
                     ImageFilePath imgPath = new ImageFilePath();
-                    imgPath.sync(cdis_new, statReport);
+                    imgPath.sync(cdis, statReport);
                     break;
                     
                 case "thumbnailSync" :    
                     Thumbnail thumbnail = new Thumbnail();
-                    thumbnail.sync(cdis_new, statReport);
+                    thumbnail.sync(cdis, statReport);
                     break;
                     
                 default:     
@@ -267,22 +267,22 @@ public class CDIS {
                     return;               
             }
                
-            statReport.compile(cdis_new.operationType);
+            statReport.compile(cdis.operationType);
             
             // Send the report by email if there is an email list
-            if (cdis_new.properties.getProperty("emailReportTo") != null) {
+            if (cdis.properties.getProperty("emailReportTo") != null) {
                 logger.log(Level.FINER, "Need to email the report");
-                statReport.send(cdis_new.properties.getProperty("siUnit"), cdis_new.properties.getProperty("emailReportTo"), cdis_new.operationType);
+                statReport.send(cdis.properties.getProperty("siUnit"), cdis.properties.getProperty("emailReportTo"), cdis.operationType);
             }
         
  
         } catch (Exception e) {
                 e.printStackTrace();
         } finally {
-            try { if ( cdis_new.damsConn != null)  cdis_new.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
-            try { if ( cdis_new.cisConn != null)  cdis_new.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
-            try { if ( cdis_new.damsConn != null)  cdis_new.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( cdis.cisConn != null)  cdis.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( cdis.damsConn != null)  cdis.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
     
     }
