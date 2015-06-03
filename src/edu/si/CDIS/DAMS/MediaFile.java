@@ -62,7 +62,7 @@ public class MediaFile {
         
     }
     
-    public boolean create(CDIS cdis_new, String tmsFileName, int renditionID, Connection cisConn){
+    public boolean create(CDIS cdis, String tmsFileName, int renditionID, Connection cisConn){
         
         this.cisConn = cisConn;
         
@@ -76,10 +76,10 @@ public class MediaFile {
         // configure from and to filenames
         File sourceFile = new File(mediaPathLocation + tmsFileName);
          
-        File destFile = new File (cdis_new.properties.getProperty("workFolder") + "//" + sourceFile.getName());
+        File destFile = new File (cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
                         
         logger.log(Level.FINEST, "Copying mediaFile from : " + mediaPathLocation + tmsFileName);
-        logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis_new.properties.getProperty("workFolder") + "//" + sourceFile.getName());
+        logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
         
         try {
             // Copy from tms source location to workfile location
