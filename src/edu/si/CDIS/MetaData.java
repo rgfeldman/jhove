@@ -53,21 +53,21 @@ public class MetaData {
         Description:    The main driver for the sync operation Type 
         RFeldman 2/2015
     */
-    public void sync(CDIS cdis_new, StatisticsReport statReport) {
+    public void sync(CDIS cdis, StatisticsReport statReport) {
 
          //assign the database connections for later use
-        this.damsConn = cdis_new.damsConn;
-        this.cisConn = cdis_new.cisConn;
+        this.damsConn = cdis.damsConn;
+        this.cisConn = cdis.cisConn;
         
         //obtain properties values from the config file
-        this.siUnit = cdis_new.properties.getProperty("siUnit");
-        if (cdis_new.properties.getProperty("emailTo") != null) {
-            this.emailTo = cdis_new.properties.getProperty("emailTo");
+        this.siUnit = cdis.properties.getProperty("siUnit");
+        if (cdis.properties.getProperty("emailTo") != null) {
+            this.emailTo = cdis.properties.getProperty("emailTo");
         }
-        this.flagForIDS = cdis_new.properties.getProperty("flagForIDS");
+        this.flagForIDS = cdis.properties.getProperty("flagForIDS");
                
         // Get required column names
-        getRequiredColumnNames(cdis_new.xmlSelectHash);
+        getRequiredColumnNames(cdis.xmlSelectHash);
 
         // initialize renditionID lists for sync
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
@@ -86,10 +86,10 @@ public class MetaData {
         // I have broken this up to make this more trackable and in case we want to exclude certain types of
         // sync for certain units
         if (!neverSyncedCDISIdLst.isEmpty()) {
-            processRenditionList(neverSyncedCDISIdLst, cdis_new.xmlSelectHash, statReport);
+            processRenditionList(neverSyncedCDISIdLst, cdis.xmlSelectHash, statReport);
         }
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
-            processRenditionList(sourceUpdatedCDISIdLst, cdis_new.xmlSelectHash, statReport);
+            processRenditionList(sourceUpdatedCDISIdLst, cdis.xmlSelectHash, statReport);
         }
         statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, failedUpdateCount, "meta");
     }
