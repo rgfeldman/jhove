@@ -36,14 +36,14 @@ public class ImageFilePath {
     String fileType;
     String uan;
         
-    public void sync(CDIS cdis_new, StatisticsReport StatReport) {
+    public void sync(CDIS cdis, StatisticsReport StatReport) {
     	
     	logger.log(Level.FINER, "ImageFilePath.sync()");
         //assign the database connections for later use
-        this.cisConn = cdis_new.cisConn;
-        this.damsConn = cdis_new.damsConn;
-        this.IDSPathId = Integer.parseInt(cdis_new.properties.getProperty("IDSPathId"));
-        this.PDFPathId = Integer.parseInt(cdis_new.properties.getProperty("PDFPathId"));
+        this.cisConn = cdis.cisConn;
+        this.damsConn = cdis.damsConn;
+        this.IDSPathId = Integer.parseInt(cdis.properties.getProperty("IDSPathId"));
+        this.PDFPathId = Integer.parseInt(cdis.properties.getProperty("PDFPathId"));
         
         ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
 
