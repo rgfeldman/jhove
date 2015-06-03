@@ -49,23 +49,23 @@ public class LinkCollections  {
         Description:    link to CIS operation specific code starts here
         RFeldman 2/2015
     */
-    public void linkToCIS (CDIS cdis_new, StatisticsReport statReport) {
+    public void linkToCIS (CDIS cdis, StatisticsReport statReport) {
         
         // establish connectivity, and other most important variables
-        this.damsConn = cdis_new.damsConn;
-        this.cisConn = cdis_new.cisConn;
+        this.damsConn = cdis.damsConn;
+        this.cisConn = cdis.cisConn;
           
         //Populate the header information in the report file
-        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "linkToCIS"); 
+        statReport.populateHeader(cdis.properties.getProperty("siUnit"), "linkToCIS"); 
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsRendtion = new LinkedHashMap <String, String>();
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
-        populateNeverLinkedDamsRenditions (cdis_new);
+        populateNeverLinkedDamsRenditions (cdis);
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
-        linkUANtoFilename (cdis_new, statReport);    
+        linkUANtoFilename (cdis, statReport);    
         
         statReport.populateStats(neverLinkedDamsRendtion.size(), 0, successCount, failCount, "linkToCIS");
         
@@ -139,7 +139,7 @@ public class LinkCollections  {
         Description:    Connects the filename in TMS with the DAMS UAN
         RFeldman 4/2015
     */
-    private void linkUANtoFilename(CDIS cdis_new, StatisticsReport statRpt) {
+    private void linkUANtoFilename(CDIS cdis, StatisticsReport statRpt) {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -149,9 +149,9 @@ public class LinkCollections  {
         String sqlTypeArr[] = null;
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : cdis_new.xmlSelectHash.keySet()) {     
+        for (String key : cdis.xmlSelectHash.keySet()) {     
               
-            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            sqlTypeArr = cdis.xmlSelectHash.get(key);
             
             if (sqlTypeArr[0].equals("checkAgainstCIS")) {   
                 sql = key;    
@@ -211,12 +211,12 @@ public class LinkCollections  {
                         }
                         
                         //Update the TMS blob
-                        if (cdis_new.properties.getProperty("updateTMSThumbnail").equals("true") ) {
+                        if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
                             Thumbnail thumbnail = new Thumbnail();
                             thumbnail.update (damsConn, cisConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
                         }
                         
-                        if (cdis_new.properties.getProperty("setForDamsFlag").equals("true") ) {
+                        if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
                             setForDamsFlag(cdisTbl.getRenditionId());
                         }
                         
@@ -259,7 +259,7 @@ public class LinkCollections  {
                         with the Collection system (TMS)
         RFeldman 2/2015
     */
-    private void populateNeverLinkedDamsRenditions (CDIS cdis_new) {
+    private void populateNeverLinkedDamsRenditions (CDIS cdis) {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -268,9 +268,9 @@ public class LinkCollections  {
         String sql = null;
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : cdis_new.xmlSelectHash.keySet()) {     
+        for (String key : cdis.xmlSelectHash.keySet()) {     
             
-            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            sqlTypeArr = cdis.xmlSelectHash.get(key);
             
             if (sqlTypeArr[0].equals("retrieveDamsImages")) {   
                 sql = key;    
