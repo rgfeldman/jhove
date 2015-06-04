@@ -6,7 +6,6 @@
 package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.TMSRendition;
 import edu.si.CDIS.CIS.MediaRecord;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
@@ -44,10 +43,6 @@ public class DAMSIngest {
         this.renditionsForDAMS.put(renditionID, filename); 
     }
     
-    private String getMediaLocation (Integer RenditionId) {
-        return "";
-    }
-    
     /*  Method :        checkDAMSForImage
         Arguments:      
         Returns:      
@@ -55,7 +50,7 @@ public class DAMSIngest {
                         we check DAMS for an already existing image before we choose to create a new one.
         RFeldman 3/2015
     */
-    private void checkDAMSForImage (CDIS cdis_new, StatisticsReport statRpt) {
+    private void checkDAMSForImage (CDIS cdis, StatisticsReport statRpt) {
          // See if we can find if this uan already exists in TMS
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -63,9 +58,9 @@ public class DAMSIngest {
         String sql = null;
         String sqlTypeArr[];
         
-        for (String key : cdis_new.xmlSelectHash.keySet()) {
+        for (String key : cdis.xmlSelectHash.keySet()) {
             
-            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            sqlTypeArr = cdis.xmlSelectHash.get(key);
             if (sqlTypeArr[0].equals("checkForExistingDAMSImage")) {   
                 sql = key;     
             }      
@@ -92,7 +87,7 @@ public class DAMSIngest {
                                                                      
                             //Find the image on the media drive
                             MediaFile mediaFile = new MediaFile();
-                            fileCreated = mediaFile.create(cdis_new, tmsFileName, Integer.parseInt(renditionID), this.cisConn);
+                            fileCreated = mediaFile.create(cdis, tmsFileName, Integer.parseInt(renditionID), this.cisConn);
                     }
                     else {
                         logger.log(Level.FINER, "Media Already exists: Media does not need to be created");
@@ -127,7 +122,7 @@ public class DAMSIngest {
         Description:    Adds to the list of TMS RenditionIDs that need to be integrated into DAMS
         RFeldman 3/2015
     */
-    private void populateRenditionsFromTMS (CDIS cdis_new) {
+    private void populateRenditionsFromTMS (CDIS cdis) {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -135,9 +130,9 @@ public class DAMSIngest {
         String sql = null;
         String sqlTypeArr[];
         
-        for (String key : cdis_new.xmlSelectHash.keySet()) {
+        for (String key : cdis.xmlSelectHash.keySet()) {
             
-            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            sqlTypeArr = cdis.xmlSelectHash.get(key);
               
             if (sqlTypeArr[0].equals("TMSSelectList")) {   
                 sql = key;      
@@ -246,12 +241,12 @@ public class DAMSIngest {
         Description:    The main entrypoint or 'driver' for the ingestToDams operation Type
         RFeldman 3/2015
     */
-     public void ingest (CDIS cdis_new, StatisticsReport statReport) {
+     public void ingest (CDIS cdis, StatisticsReport statReport) {
          
-        this.damsConn = cdis_new.damsConn;
-        this.cisConn = cdis_new.cisConn;
-        this.workFolderDir = cdis_new.properties.getProperty("workFolder");
-        this.damsHotFolder = cdis_new.properties.getProperty("hotFolderMaster");
+        this.damsConn = cdis.damsConn;
+        this.cisConn = cdis.cisConn;
+        this.workFolderDir = cdis.properties.getProperty("workFolder");
+        this.damsHotFolder = cdis.properties.getProperty("hotFolderMaster");
         
         logger.log(Level.FINER, "In redesigned Ingest to CIS area");
         
@@ -263,13 +258,13 @@ public class DAMSIngest {
         this.numberFailFiles = 0;
         
         // Populate the header for the report file
-        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToDAMS");
+        statReport.populateHeader(cdis.properties.getProperty("siUnit"), "ingestToDAMS");
         
         //Get the records from TMS that may need to go to DAMS
-        populateRenditionsFromTMS (cdis_new);
+        populateRenditionsFromTMS (cdis);
         
         // check if the renditions are in dams
-        checkDAMSForImage(cdis_new, statReport);
+        checkDAMSForImage(cdis, statReport);
         
         // move the media file and XML file from the work folder to the DAMS hotfolder location
         moveFilesToHotFolder(statReport);
