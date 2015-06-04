@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.CIS.Database.TMSObject;
-import edu.si.CDIS.CIS.Database.TMSRendition;
+import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.StatisticsReport;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
@@ -40,16 +40,16 @@ public class TMSIngest {
         Description:    populates the list of never linked dams Images  
         RFeldman 2/2015
     */
-    private void populateNeverLinkedImages (CDIS cdis_new) {
+    private void populateNeverLinkedImages (CDIS cdis) {
         ResultSet rs = null;
         PreparedStatement stmt = null;
         String uan = null;
         String sql = null;
         String sqlTypeArr[];
         
-        for (String key : cdis_new.xmlSelectHash.keySet()) {
+        for (String key : cdis.xmlSelectHash.keySet()) {
             
-            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            sqlTypeArr = cdis.xmlSelectHash.get(key);
               
             if (sqlTypeArr[0].equals("DAMSSelectList")) {   
                 sql = key;      
@@ -87,7 +87,7 @@ public class TMSIngest {
         Description:    prcoesses the DAMS uans one at a time from the list  
         RFeldman 2/2015
     */
-    private void processUAN (CDIS cdis_new, StatisticsReport statRpt) {
+    private void processUAN (CDIS cdis, StatisticsReport statRpt) {
     
         // See if we can find if this uan already exists in TMS
         ResultSet rs = null;
@@ -96,9 +96,9 @@ public class TMSIngest {
         String sql = null;
         String sqlTypeArr[];
         
-        for (String key : cdis_new.xmlSelectHash.keySet()) {
+        for (String key : cdis.xmlSelectHash.keySet()) {
             
-            sqlTypeArr = cdis_new.xmlSelectHash.get(key);
+            sqlTypeArr = cdis.xmlSelectHash.get(key);
             if (sqlTypeArr[0].equals("checkForExistingTMSRendition")) {   
                 sql = key;    
               
@@ -126,30 +126,30 @@ public class TMSIngest {
                     rs = stmt.executeQuery();
                        
                     if ( rs.next()) {   
-                        TMSRendition tmsRendition = new TMSRendition();
+                        MediaRenditions mediaRendition = new MediaRenditions();
                         TMSObject tmsObject = new TMSObject();
                         
                         MediaRecord mediaRecord = new MediaRecord();
-                        boolean mediaCreated = mediaRecord.create(cdis_new, siAsst, tmsRendition, tmsObject);
+                        boolean mediaCreated = mediaRecord.create(cdis, siAsst, mediaRendition, tmsObject);
                             
                         if ( ! mediaCreated ) {
                             logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToCIS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
                         
                         // Set the renditionID for the rendition just created
-                        tmsRendition.populateRenditionIdByRenditionNumber(tmsRendition, cisConn);
+                        mediaRendition.populateIdByRenditionNumber(cisConn);
                         logger.log(Level.FINER, "RenditionID for newly created media: " );
                         
                         //Create the thumbnail image
                         Thumbnail thumbnail = new Thumbnail();
-                        boolean thumbCreated = thumbnail.update(damsConn, cisConn, siAsst.getUoiid(), tmsRendition.getRenditionId());
+                        boolean thumbCreated = thumbnail.update(damsConn, cisConn, siAsst.getUoiid(), mediaRendition.getRenditionId());
                             
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToCIS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
@@ -161,10 +161,10 @@ public class TMSIngest {
                         CDISTable cdisTbl = new CDISTable();
                         
                         //Populate cdisTbl Object based on renditionNumber
-                        cdisTbl.setRenditionNumber(tmsRendition.getRenditionNumber());
+                        cdisTbl.setRenditionNumber(mediaRendition.getRenditionNumber());
                         cdisTbl.setUOIID(siAsst.getUoiid());
                         cdisTbl.setUAN(siAsst.getOwningUnitUniqueName());
-                        cdisTbl.setRenditionId(tmsRendition.getRenditionId());
+                        cdisTbl.setRenditionId(mediaRendition.getRenditionId());
                         cdisTbl.setObjectId (tmsObject.getObjectID());
                         
                         //Insert into cdisTbl
@@ -172,7 +172,7 @@ public class TMSIngest {
 
                         if (! recordCreated) {
                             logger.log(Level.FINER, "Insert to CDIS table failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", false);
                             failCount ++;
                             continue;
                         }
@@ -181,7 +181,7 @@ public class TMSIngest {
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", false);
                             failCount ++;
                             continue;
                         }
@@ -190,11 +190,11 @@ public class TMSIngest {
                         }
                          
                         // update the SourceSystemID in DAMS with the RenditionNumber
-                        rowsUpdated = siAsst.updateDAMSSourceSystemID(damsConn, siAsst.getUoiid(), tmsRendition.getRenditionNumber() );
+                        rowsUpdated = siAsst.updateDAMSSourceSystemID(damsConn, siAsst.getUoiid(), mediaRendition.getRenditionNumber() );
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "Failed in update to SourceSystemID");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", false);
                             failCount ++;
                             continue;
                         }
@@ -202,7 +202,7 @@ public class TMSIngest {
                             logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
                         }
                         
-                        statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), tmsRendition.getRenditionNumber() , "ingestToTMS", true);
+                        statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", true);
                         this.successCount++;
                         
                     }
@@ -233,23 +233,23 @@ public class TMSIngest {
         Description:    The main driver for the ingest to CIS process 
         RFeldman 2/2015
     */
-    public void ingest (CDIS cdis_new, StatisticsReport statReport) { 
+    public void ingest (CDIS cdis, StatisticsReport statReport) { 
         
-        this.damsConn = cdis_new.damsConn;
-        this.cisConn = cdis_new.cisConn;
+        this.damsConn = cdis.damsConn;
+        this.cisConn = cdis.cisConn;
        
         logger.log(Level.FINER, "In redesigned Ingest to Collections area");
         
         this.neverLinkedDamsRendtion = new LinkedHashMap<String, String>();
         
         // Populate the header for the report file
-        statReport.populateHeader(cdis_new.properties.getProperty("siUnit"), "ingestToCIS");
+        statReport.populateHeader(cdis.properties.getProperty("siUnit"), "ingestToCIS");
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
-        populateNeverLinkedImages (cdis_new);
+        populateNeverLinkedImages (cdis);
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
-        processUAN (cdis_new, statReport);  
+        processUAN (cdis, statReport);  
         
         statReport.populateStats (0, 0, this.successCount, this.failCount, "ingestToCIS");
         
