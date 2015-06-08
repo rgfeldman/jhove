@@ -6,9 +6,6 @@
 package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.MediaRecord;
-import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.StatisticsReport;
 import java.util.logging.Logger;
 import java.sql.Connection;
@@ -18,8 +15,6 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.io.File;
-import java.io.FileWriter;
-import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 
 /**

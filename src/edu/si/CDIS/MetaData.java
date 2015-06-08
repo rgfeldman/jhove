@@ -5,14 +5,12 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.CIS.ImageFilePath;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,7 +20,6 @@ import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.StatisticsReport;
 import edu.si.CDIS.XmlSqlConfig;
-import java.util.regex.*;
 
 public class MetaData {
 

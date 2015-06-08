@@ -5,7 +5,6 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.CIS.Database.CDISTable;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.PrintWriter;

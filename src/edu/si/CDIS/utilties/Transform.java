@@ -2,7 +2,6 @@
 package edu.si.CDIS.utilties;
 
 import edu.si.CDIS.CDIS;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 

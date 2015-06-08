@@ -6,7 +6,6 @@
 package edu.si.CDIS.DAMS.Database;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.utilties.DataProvider;
 import java.sql.SQLException;
 import java.sql.Statement;

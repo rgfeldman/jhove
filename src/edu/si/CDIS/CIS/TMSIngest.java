@@ -7,7 +7,6 @@ package edu.si.CDIS.CIS;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.Properties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
@@ -145,7 +144,7 @@ public class TMSIngest {
                         
                         //Create the thumbnail image
                         Thumbnail thumbnail = new Thumbnail();
-                        boolean thumbCreated = thumbnail.update(damsConn, cisConn, siAsst.getUoiid(), mediaRendition.getRenditionId());
+                        boolean thumbCreated = thumbnail.generate(damsConn, cisConn, siAsst.getUoiid(), mediaRendition.getRenditionId());
                             
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");

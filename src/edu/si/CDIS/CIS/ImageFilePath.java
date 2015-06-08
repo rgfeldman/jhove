@@ -13,10 +13,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Properties;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.StatisticsReport;
 

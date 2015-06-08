@@ -5,22 +5,12 @@
  */
 package edu.si.CDIS.CIS;
 
-import edu.si.CDIS.utilties.DataProvider;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
-import org.apache.commons.io.IOUtils;
 import java.sql.CallableStatement;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Properties;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Database.MediaMaster;

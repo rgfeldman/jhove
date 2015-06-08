@@ -6,16 +6,9 @@ import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.LinkedHashMap;
-import java.util.Iterator;
-import edu.si.CDIS.utilties.DataProvider;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
+import edu.si.CDIS.utilties.DataProvider;;
 import java.util.logging.Level;
 import java.sql.Connection;
 
@@ -213,7 +206,7 @@ public class LinkCollections  {
                         //Update the TMS blob
                         if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
                             Thumbnail thumbnail = new Thumbnail();
-                            thumbnail.update (damsConn, cisConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
+                            thumbnail.generate (damsConn, cisConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
                         }
                         
                         if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {

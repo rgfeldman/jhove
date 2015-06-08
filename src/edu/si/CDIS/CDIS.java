@@ -15,24 +15,20 @@ import java.util.logging.FileHandler;
 import java.text.SimpleDateFormat;
 import java.util.logging.SimpleFormatter;
 import edu.si.CDIS.utilties.DataProvider;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.logging.Handler;
 import edu.si.CDIS.CIS.TMSIngest;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.DAMSIngest;
-import java.sql.SQLException;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import java.io.File;
-//import org.apache.commons.logging.LogFactory;
 
 
 public class CDIS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    private static FileHandler fh = null;
    
     public Connection cisConn;
     public Connection damsConn;
