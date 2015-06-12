@@ -98,25 +98,24 @@ public class MediaXrefs {
     }
     
     
-    public void calculateRank(String imageName) {
+    public void calculateRank(String extensionlessFileName) {
         
-        String extensionlessImageName = imageName.substring(0, imageName.lastIndexOf("."));
         
         // Get the rank from the last number after the '_' 
         String charRank = null;
-        if (extensionlessImageName.contains("-r")) {
-            int startPos = extensionlessImageName.lastIndexOf("-r") + 2;
+        if (extensionlessFileName.contains("-r")) {
+            int startPos = extensionlessFileName.lastIndexOf("-r") + 2;
             
-            if (extensionlessImageName.substring(startPos).contains("-") ) {
-                charRank = extensionlessImageName.substring(startPos,extensionlessImageName.lastIndexOf("-"));
+            if (extensionlessFileName.substring(startPos).contains("-") ) {
+                charRank = extensionlessFileName.substring(startPos,extensionlessFileName.lastIndexOf("-"));
             }
             else {
-                charRank = extensionlessImageName.substring(startPos);
+                charRank = extensionlessFileName.substring(startPos);
             }
         }
-        else if (extensionlessImageName.contains("_")) {
-            int pos = extensionlessImageName.lastIndexOf("_");
-            charRank = extensionlessImageName.substring(pos+1);
+        else if (extensionlessFileName.contains("_")) {
+            int pos = extensionlessFileName.lastIndexOf("_");
+            charRank = extensionlessFileName.substring(pos+1);
         }
         
         logger.log(Level.FINER, "Char Rank: {0}", charRank);
@@ -136,12 +135,31 @@ public class MediaXrefs {
             this.setRank(1);     
         }
         
-        logger.log(Level.FINER, "DAMS imageFileName: {0}", extensionlessImageName);
+        logger.log(Level.FINER, "DAMS imageFileName: {0}", extensionlessFileName);
         logger.log(Level.FINER, "Rank: {0}", this.getRank());
     
     }
     
     public void insertNewRecord() {
+     
+        String sql = "insert into MediaXrefs" +
+                        "(MediaMasterID, " +
+                        "ID, " +
+                        "TableID, " + 
+                        "LoginID, " +
+                        "EnteredDate, " +
+                        "Rank, " +
+                        "PrimaryDisplay)" +
+                    "values(" +
+                        "(@masterIDs, " +
+                        "@ObjectID, "+  
+                        "108, " +
+                        "'CDIS', " +
+                        "CURRENT_TIMESTAMP, " +
+                        "@Rank, " +
+                        "@IsPrimary)";
+        
+        logger.log(Level.FINER, "SQL: {0}", sql);
         
     }
 }

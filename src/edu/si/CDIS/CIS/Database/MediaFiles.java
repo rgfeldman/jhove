@@ -79,13 +79,44 @@ public class MediaFiles {
             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
        
-//        return extensionlessImageName;
         return imageName;
     }   
   
     
-    public void insertNewRecord() {
+    public void insertNewRecord(CDIS cdis, String uan, String fileType) {
         
+        Integer mediaFormatID = null;
+        
+         // Get variables from the properties list
+        try {
+            mediaFormatID = Integer.parseInt (cdis.properties.getProperty("mediaFormatID"));
+        } catch (Exception e) {
+                e.printStackTrace();
+        }
+        
+        
+        // From Anacostia
+       String sql = "insert into MediaFiles " +
+                        "(RenditionID, " +
+                        "PathID, " +
+                        "FileName, " +
+                        "LoginID, " +
+                        "EnteredDate, " +
+                        "FormatID, " +
+                        "PixelH, " +
+                        "PixelW) " +
+                    " values ( " +
+                        "select top 1 id " + 
+                        "@IDSPathID, " +
+                        uan + ", " +
+                        "'CDIS', " +
+                        "CURRENT_TIMESTAMP, " +
+                        mediaFormatID + ", " +
+                        "@Height, " +
+                        "@Width)";
+       
+       logger.log(Level.FINER, "SQL: {0}", sql);
+
     }
     
 }

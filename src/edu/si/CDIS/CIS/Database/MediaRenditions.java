@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,8 +73,70 @@ public class MediaRenditions {
         
         
     }
-    public void insertNewRecord() {
+    public void insertNewRecord(CDIS cdis, Integer mediaMasterID) {
         
+        Integer mediaTypeID = null;
+        Integer mediaStatusID = null;
+        Statement stmt = null;
+        
+        // Get variables from the properties list
+        try {
+            mediaTypeID = Integer.parseInt (cdis.properties.getProperty("mediaTypeID"));
+            mediaStatusID = Integer.parseInt (cdis.properties.getProperty("mediaStatusID"));
+        } catch (Exception e) {
+                e.printStackTrace();
+        }
+        
+        
+         // These are the values from ANACOSTIA database:
+        //typeid = 
+        //statusid = 
+        String sql = "insert into MediaRenditions " +
+                        "(MediaMasterID, " +
+                        "RenditionNumber, " +
+                        "PrimaryFileID, " +
+                        "ParentRendID, " +
+                        "MediaTypeID, " +
+                        "IsColor, " +
+                        "LoginID, " +
+                        "EnteredDate, " +
+                        "Remarks, " +
+                        "MediaStatusID, " +
+                        "RenditionDate) " +
+                    "values (" + mediaMasterID + ", " + 
+                        "RenditionNumber, " +
+                        "-1, " +
+                        "-1, " +
+                        mediaTypeID + ", " +
+                        "1, " +
+                        "'CDIS', " +
+                        "CURRENT_TIMESTAMP, " +
+                        "'[MAX IDS SIZE = 0]', " +
+                        mediaStatusID + ", " +
+                        "CONVERT (date,SYSDATETIME()))";
+        
+        logger.log(Level.FINER, "SQL: {0}", sql);
+        
+        try {
+            stmt = cdis.cisConn.createStatement();
+            stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
+
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs != null && rs.next()) {
+                this.renditionId = rs.getInt(1);
+            }    
+        } catch (Exception e) {
+                e.printStackTrace();
+        }finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+                              
     }
+    
+    /*
+    	--update MediaRendition.PrimaryFileID
+	update MediaRenditions set PrimaryFileID = (select top 1 id from @fileIDs)
+	where RenditionID = (select top 1 id from @renditionIDs);
+    */
     
 }
