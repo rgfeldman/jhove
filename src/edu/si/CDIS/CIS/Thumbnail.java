@@ -94,6 +94,7 @@ public class Thumbnail {
         
         this.uoiid = uoiid;
         this.damsConn = damsConn;
+        this.cisConn = cisConn;
         
         InputStream is = null;
         String imageFile = null;
@@ -117,12 +118,17 @@ public class Thumbnail {
         opGenThumbnail.addImage(imageFile);
         
         //Set the resolution and resizing parameters
+        //We have to do an extra resize up because these steps are done sequentially
+        //and when we resample it reduces the size too much and we ended up with some blurred images....
+        //opGenThumbnail.resize(1920,1920);
+        opGenThumbnail.resize(1920,1920);
         opGenThumbnail.resample(72);
         opGenThumbnail.resize(192,192);
         opGenThumbnail.units("PixelsPerInch");
         opGenThumbnail.autoOrient();
+        opGenThumbnail.unsharp(0.0,1.0);
         opGenThumbnail.colorspace("RGB");
-        
+ 
         //save the thumbnail with the new parameters
         String thumbImageName = uoiid + ".jpg";
         opGenThumbnail.addImage(thumbImageName);
@@ -197,13 +203,16 @@ public class Thumbnail {
             
             if ((recordsUpdated) != 1 ) {
                 logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + renditionID);
+                return false;
             }
             else {
                 logger.log(Level.FINER, "Thumbnail successfully updated for renditionID: " + renditionID);
             }
                     
         }catch(Exception e) {
+                logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + renditionID);
 		e.printStackTrace();
+                return false;
         }
         
         return true;

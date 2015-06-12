@@ -104,15 +104,15 @@ public class MediaRecord {
             return false;
         }
         
-        damsImageFileName = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("."));
-        String fileType = damsImageFileName.substring(damsImageFileName.lastIndexOf(".")+1, damsImageFileName.length());
+        String extensionlessFileName = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("."));
+        String fileType = damsImageFileName.substring(damsImageFileName.lastIndexOf(".")+1, damsImageFileName.length()).toLowerCase();
         
-        mediaXrefs.calculateRank(damsImageFileName);
+        mediaXrefs.calculateRank(extensionlessFileName);
         
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
         if (cdis.properties.getProperty("mapFileNameToBarcode").equals("true")) {
-            objectPopulated = tmsObject.mapFileNameToBarcode(damsImageFileName, cisConn);
+            objectPopulated = tmsObject.mapFileNameToBarcode(extensionlessFileName, cisConn);
                 
             if (objectPopulated) {
                 
@@ -131,7 +131,7 @@ public class MediaRecord {
         if (! objectPopulated) {
             if (cdis.properties.getProperty("mapFileNameToObjectNumber").equals("true")) {
             
-                objectPopulated = tmsObject.mapFileNameToObjectNumber(damsImageFileName, cdis);
+                objectPopulated = tmsObject.mapFileNameToObjectNumber(extensionlessFileName, cdis);
                 if (objectPopulated) {
                     formatNewRenditionNumber (cdis, damsImageFileName, mediaRendition);
                 }
@@ -144,7 +144,7 @@ public class MediaRecord {
                
                 objectPopulated = tmsObject.mapFileNameToObjectID(damsImageFileName, cisConn);
                 if (objectPopulated) {
-                    mediaRendition.setRenditionNumber(damsImageFileName); 
+                    mediaRendition.setRenditionNumber(extensionlessFileName); 
                 }
                 
             }
@@ -154,7 +154,7 @@ public class MediaRecord {
                 // we were unable to populate the object, return with a failure indicator
 
                 //Set the RenditionNumber as the filename for reporting purposes
-                mediaRendition.setRenditionNumber(damsImageFileName);
+                mediaRendition.setRenditionNumber(extensionlessFileName);
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");
                 return false;
         }
@@ -178,13 +178,15 @@ public class MediaRecord {
       
         // Insert into the MediaMaster table
         MediaMaster mediaMaster = new MediaMaster();
-        mediaMaster.insertNewRecord();
+        //mediaMaster.insertNewRecord(cisConn);
+        
+        // Need to obtain mediaMasterID
         
         // Insert into MediaRenditions
-        mediaRendition.insertNewRecord();
+        //mediaRendition.insertNewRecord(cdis);
         
         // Insert into MediaFiles
-        mediaFiles.insertNewRecord();
+        //mediaFiles.insertNewRecord(cdis, siAsst.getOwningUnitUniqueName(), filetype);
         
         // Insert into MediaXrefs
         mediaXrefs.insertNewRecord();
