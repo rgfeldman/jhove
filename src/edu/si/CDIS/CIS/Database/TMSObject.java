@@ -100,7 +100,7 @@ public class TMSObject {
         Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS ObjectID
         RFeldman 2/2015
     */
-    public boolean mapFileNameToObjectID(String damsImageFileName, Connection cisConn) {
+    public boolean mapFileNameToObjectID(String extensionlessFileName, Connection cisConn) {
         
         Transform transform = new Transform();
         
@@ -111,10 +111,10 @@ public class TMSObject {
         
         try {
             
-            objID = Integer.parseInt(damsImageFileName.substring(0, damsImageFileName.indexOf("_")));
+            objID = Integer.parseInt(extensionlessFileName.substring(0, extensionlessFileName.indexOf("_")));
             
         } catch(Exception e) {
-                logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", damsImageFileName);
+                logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", extensionlessFileName);
                 return false;
 	}
 
