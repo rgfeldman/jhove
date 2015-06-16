@@ -120,8 +120,7 @@ public class Thumbnail {
         //Set the resolution and resizing parameters
         //We have to do an extra resize up because these steps are done sequentially
         //and when we resample it reduces the size too much and we ended up with some blurred images....
-        //opGenThumbnail.resize(1920,1920);
-        opGenThumbnail.resize(1920,1920);
+        opGenThumbnail.resize(4800,4800);
         opGenThumbnail.resample(72);
         opGenThumbnail.resize(192,192);
         opGenThumbnail.units("PixelsPerInch");
