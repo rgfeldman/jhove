@@ -176,7 +176,7 @@ public class TMSIngest {
                             continue;
                         }
                         
-                        int rowsUpdated = cdisTbl.updateIDSSyncDate(cdisTbl, cisConn);
+                        int rowsUpdated = cdisTbl.updateIDSSyncDate(cisConn);
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
