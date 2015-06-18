@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,12 +21,17 @@ import java.util.logging.Logger;
 public class MediaFiles {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    
+ 
+    int fileId;
     boolean isPrimary;
     int rank;
     
     int pixelH;
     int pixelW;
+    
+    public int getFileId () {
+        return this.fileId;
+    }
     
     public int getPixelH () {
         return this.pixelH;
@@ -83,17 +89,30 @@ public class MediaFiles {
     }   
   
     
-    public void insertNewRecord(CDIS cdis, String uan, String fileType) {
+    public boolean insertNewRecord(CDIS cdis, String uan, Integer renditionId, String fileType, Integer height, Integer width) {
         
-        Integer mediaFormatID = null;
+        Integer mediaFormatId = null;
+        Integer pathId = null;
+        Statement stmt = null;
         
          // Get variables from the properties list
         try {
-            mediaFormatID = Integer.parseInt (cdis.properties.getProperty("mediaFormatID"));
+            mediaFormatId = Integer.parseInt (cdis.properties.getProperty("mediaFormatID"));
+            
+            if (fileType.equalsIgnoreCase("PDF")) {
+                pathId = Integer.parseInt (cdis.properties.getProperty("PDFPathId"));
+            }
+            else {
+                pathId = Integer.parseInt (cdis.properties.getProperty("IDSPathId"));
+            }
+             
         } catch (Exception e) {
                 e.printStackTrace();
+                logger.log(Level.FINER, "Error: unexpected property values required for insert into MediaFiles table");
+                return false;
         }
         
+       
         
         // From Anacostia
        String sql = "insert into MediaFiles " +
@@ -106,16 +125,33 @@ public class MediaFiles {
                         "PixelH, " +
                         "PixelW) " +
                     " values ( " +
-                        "select top 1 id " + 
-                        "@IDSPathID, " +
-                        uan + ", " +
+                        renditionId + ", " + 
+                        pathId + "," +
+                        "'" + uan + "', " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
-                        mediaFormatID + ", " +
-                        "@Height, " +
-                        "@Width)";
+                        mediaFormatId + ", " +
+                        height + ", " +
+                        width + ")";
        
        logger.log(Level.FINER, "SQL: {0}", sql);
+        
+        try {
+            stmt = cdis.cisConn.createStatement();
+            stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
+
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs != null && rs.next()) {
+                this.fileId = rs.getInt(1);
+            }    
+        } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+        }finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+        return true;
 
     }
     

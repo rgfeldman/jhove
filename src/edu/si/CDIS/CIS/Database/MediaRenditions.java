@@ -6,6 +6,7 @@
 package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
+import edu.si.CDIS.utilties.DataProvider;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -73,7 +74,7 @@ public class MediaRenditions {
         
         
     }
-    public void insertNewRecord(CDIS cdis, Integer mediaMasterID) {
+    public boolean insertNewRecord(CDIS cdis, Integer mediaMasterID, String renditionNumber) {
         
         Integer mediaTypeID = null;
         Integer mediaStatusID = null;
@@ -85,12 +86,9 @@ public class MediaRenditions {
             mediaStatusID = Integer.parseInt (cdis.properties.getProperty("mediaStatusID"));
         } catch (Exception e) {
                 e.printStackTrace();
+                return false;
         }
         
-        
-         // These are the values from ANACOSTIA database:
-        //typeid = 
-        //statusid = 
         String sql = "insert into MediaRenditions " +
                         "(MediaMasterID, " +
                         "RenditionNumber, " +
@@ -104,7 +102,7 @@ public class MediaRenditions {
                         "MediaStatusID, " +
                         "RenditionDate) " +
                     "values (" + mediaMasterID + ", " + 
-                        "RenditionNumber, " +
+                        "'" + renditionNumber + "', " +
                         "-1, " +
                         "-1, " +
                         mediaTypeID + ", " +
@@ -127,16 +125,26 @@ public class MediaRenditions {
             }    
         } catch (Exception e) {
                 e.printStackTrace();
+                return false;
         }finally {
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
+        
+        return true;
                               
     }
     
-    /*
-    	--update MediaRendition.PrimaryFileID
-	update MediaRenditions set PrimaryFileID = (select top 1 id from @fileIDs)
-	where RenditionID = (select top 1 id from @renditionIDs);
-    */
     
+    public int setFileId(Connection cisConn, Integer renditionId, Integer fileId) {
+        int updateCount;
+        
+        String sql = "update MediaRenditions " +
+                    "set PrimaryFileID = " + fileId + " " +
+                    "where renditionID = " + renditionId;
+                               
+        updateCount = DataProvider.executeUpdate(cisConn, sql);
+        
+        return updateCount;
+    }
+   
 }

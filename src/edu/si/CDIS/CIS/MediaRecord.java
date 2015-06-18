@@ -8,9 +8,7 @@ package edu.si.CDIS.CIS;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Level;
-import java.sql.CallableStatement;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Database.MediaMaster;
@@ -85,6 +83,8 @@ public class MediaRecord {
         
         boolean objectPopulated = false;
         boolean MediaCreated;
+        boolean returnVal;
+        int updateCount = 0;
         
         MediaXrefs mediaXrefs = new MediaXrefs();
         MediaFiles mediaFiles = new MediaFiles();
@@ -106,6 +106,9 @@ public class MediaRecord {
         
         String extensionlessFileName = damsImageFileName.substring(0, damsImageFileName.lastIndexOf("."));
         String fileType = damsImageFileName.substring(damsImageFileName.lastIndexOf(".")+1, damsImageFileName.length()).toLowerCase();
+        
+        logger.log(Level.FINER, "extensionlessFileName: " + extensionlessFileName );
+        logger.log(Level.FINER, "FileType: " + fileType );
         
         mediaXrefs.calculateRank(extensionlessFileName);
         
@@ -133,7 +136,7 @@ public class MediaRecord {
             
                 objectPopulated = tmsObject.mapFileNameToObjectNumber(extensionlessFileName, cdis);
                 if (objectPopulated) {
-                    formatNewRenditionNumber (cdis, damsImageFileName, mediaRendition);
+                    formatNewRenditionNumber (cdis, extensionlessFileName, mediaRendition);
                 }
  
             }
@@ -159,10 +162,6 @@ public class MediaRecord {
                 return false;
         }
         
-        Calendar cal = Calendar.getInstance();
-        SimpleDateFormat df1 = new SimpleDateFormat("yyyy-MM-dd");
-        String renditionDate = df1.format(cal.getTime());
-        
         // Set the primaryRenditionFlag
         mediaXrefs.populateIsPrimary(tmsObject.getObjectID(), cisConn);
         
@@ -170,69 +169,58 @@ public class MediaRecord {
         logger.log(Level.FINER, "ObjectID: " + tmsObject.getObjectID());
         logger.log(Level.FINER, "RenditionNumber: {0}", mediaRendition.getRenditionNumber());
         logger.log(Level.FINER, "Rank: " + mediaXrefs.getRank());
-        logger.log(Level.FINER, "PixelH: " + mediaFiles.getPixelH());
-        logger.log(Level.FINER, "PixelW: " + mediaFiles.getPixelW());
+        //logger.log(Level.FINER, "PixelH: " + mediaFiles.getPixelH());
+        //logger.log(Level.FINER, "PixelW: " + mediaFiles.getPixelW());
         logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getIsPrimary()); 
-        logger.log(Level.FINER, "IDSPath: " + cdis.properties.getProperty("IDSPathId")); 
-        logger.log(Level.FINER, "PDFPath: " + cdis.properties.getProperty("PDFPathId")); 
+        //logger.log(Level.FINER, "IDSPath: " + cdis.properties.getProperty("IDSPathId")); 
+        //logger.log(Level.FINER, "PDFPath: " + cdis.properties.getProperty("PDFPathId")); 
       
         // Insert into the MediaMaster table
         MediaMaster mediaMaster = new MediaMaster();
-        //mediaMaster.insertNewRecord(cisConn);
+        returnVal = mediaMaster.insertNewRecord(cisConn);
         
-        // Need to obtain mediaMasterID
+        if (! returnVal) {
+           logger.log(Level.FINER, "ERROR: MediaMaster table creation failed, returning");
+           return false;
+        }
         
         // Insert into MediaRenditions
-        //mediaRendition.insertNewRecord(cdis);
+        returnVal = mediaRendition.insertNewRecord(cdis, mediaMaster.getMediaMasterId(),  mediaRendition.getRenditionNumber());
+        if (! returnVal) {
+           logger.log(Level.FINER, "ERROR: MediaRendition table creation failed, returning");
+           return false;
+        }
+        
+        // Update mediaMaster with the renditionIds
+        updateCount = mediaMaster.setRenditionIds(cisConn, mediaRendition.getRenditionId(), mediaMaster.getMediaMasterId() );
+        if (updateCount != 1) {
+            logger.log(Level.FINER, "ERROR: MediaMaster table not updated correctly, returning");
+            return false;
+        }
         
         // Insert into MediaFiles
-        //mediaFiles.insertNewRecord(cdis, siAsst.getOwningUnitUniqueName(), filetype);
+        returnVal = mediaFiles.insertNewRecord(cdis, siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionId(), fileType,  mediaFiles.getPixelH(),  mediaFiles.getPixelW() );
+        if (! returnVal) {
+           logger.log(Level.FINER, "ERROR: MediaFiles table creation failed, returning");
+           return false;
+        }
         
+        //Update mediaRendition with the fileId
+        updateCount = mediaRendition.setFileId(cisConn, mediaRendition.getRenditionId(), mediaFiles.getFileId());
+        if (updateCount != 1) {
+            logger.log(Level.FINER, "ERROR: MediaRendition table not updated correctly, returning");
+            return false;
+        }
+                
         // Insert into MediaXrefs
-        mediaXrefs.insertNewRecord();
+        returnVal = mediaXrefs.insertNewRecord(cisConn, mediaMaster.getMediaMasterId(), tmsObject.getObjectID() );
+        if (! returnVal) {
+           logger.log(Level.FINER, "ERROR: MediaXref table creation failed, returning");
+           return false;
+        }
         
-        CallableStatement stmt = null;
-            
-        try {
-
-            // Call stored procedure to create media record in TMS
-            stmt = cisConn.prepareCall("{ call CreateMediaRecords(?,?,?,?,?,?,?,?,?,?)}");
-                        
-            stmt.setString(1, siAsst.getUoiid());
-            
-            if (fileType.equalsIgnoreCase("PDF")) {
-            	stmt.setString(2, siAsst.getOwningUnitUniqueName() + ".pdf");
-            	stmt.setString(3, cdis.properties.getProperty("PDFPathId"));
-            }
-            else {
-            	stmt.setString(2, siAsst.getOwningUnitUniqueName());
-            	stmt.setString(3, cdis.properties.getProperty("IDSPathId"));
-            }
-                 
-            stmt.setString(4, mediaRendition.getRenditionNumber());
-            stmt.setInt(5, tmsObject.getObjectID());
-            stmt.setInt(6, mediaXrefs.getRank());
-            stmt.setInt(7, mediaFiles.getPixelH());
-            stmt.setInt(8, mediaFiles.getPixelW());
-            
-            if (mediaXrefs.getIsPrimary() ) {
-                stmt.setInt(9, 1);
-            }
-            else {
-                stmt.setInt(9, 0);
-            }
-            
-            stmt.setString(10, renditionDate);
-            
-            stmt.executeUpdate();
-            
-        }catch(SQLException sqlex) {
-		sqlex.printStackTrace();
-                return false;
-	}
-        finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
+        logger.log(Level.FINER, "New Media Created Successfully!!");
+        
                    
         return true;
         

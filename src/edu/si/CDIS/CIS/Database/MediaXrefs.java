@@ -6,6 +6,7 @@
 package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
+import edu.si.CDIS.utilties.DataProvider;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -140,10 +141,20 @@ public class MediaXrefs {
     
     }
     
-    public void insertNewRecord() {
+    public boolean insertNewRecord(Connection cisConn, Integer mediaMasterId, Integer objectId) {
      
+        Boolean inserted;
+        int primary;
+        
+        if (getIsPrimary()) {
+            primary = 1;
+        }
+        else { 
+            primary = 0;
+        }
+        
         String sql = "insert into MediaXrefs" +
-                        "(MediaMasterID, " +
+                        " (MediaMasterID, " +
                         "ID, " +
                         "TableID, " + 
                         "LoginID, " +
@@ -151,15 +162,19 @@ public class MediaXrefs {
                         "Rank, " +
                         "PrimaryDisplay)" +
                     "values(" +
-                        "(@masterIDs, " +
-                        "@ObjectID, "+  
+                        mediaMasterId + ", " +
+                        objectId + ", " +  
                         "108, " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
-                        "@Rank, " +
-                        "@IsPrimary)";
+                        this.rank + ", " + 
+                        primary + ")" ;
         
         logger.log(Level.FINER, "SQL: {0}", sql);
-        
+   
+        inserted = DataProvider.executeInsert(cisConn, sql);     
+                
+        return inserted;
+                
     }
 }
