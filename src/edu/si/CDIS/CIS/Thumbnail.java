@@ -25,6 +25,7 @@ import org.im4java.core.ConvertCmd;
 import org.im4java.core.IMOperation;
 
 import edu.si.CDIS.CDIS;
+import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.StatisticsReport;
 
 
@@ -90,7 +91,7 @@ public class Thumbnail {
         Description:    Finds the physical image and generates the thumbnail sized image 
         RFeldman 3/2015
     */
-    public boolean generate(Connection damsConn, Connection cisConn, String uoiid, Integer renditionID) {
+    public boolean generate(Connection damsConn, Connection cisConn, String uoiid, Integer renditionId) {
         
         this.uoiid = uoiid;
         this.damsConn = damsConn;
@@ -168,11 +169,19 @@ public class Thumbnail {
         }
         
         if (fileSize > 1 && bytes != null) {
-            logger.log(Level.FINER, "Updating Thumbnail for RenditionID: " + renditionID);
-            update(renditionID);
+            logger.log(Level.FINER, "Updating Thumbnail for RenditionID: " + renditionId);
+            boolean thumbUpdated = update(renditionId);
+            
+            if ( thumbUpdated ) {
+                //update the thumbnail sync date in the CDIS table
+                CDISTable cdisTbl = new CDISTable();
+                cdisTbl.setRenditionId(renditionId);
+                cdisTbl.updateThumbnailSyncDate(cisConn);
+            }
+            
         }
         else {
-            logger.log(Level.FINER, "Error: Unable to detect thumbnail image, not updating: " + renditionID);
+            logger.log(Level.FINER, "Error: Unable to detect thumbnail image, not updating: " + renditionId);
             return false;
         }
         
