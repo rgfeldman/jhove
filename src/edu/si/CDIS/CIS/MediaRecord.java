@@ -36,38 +36,16 @@ public class MediaRecord {
     private boolean formatNewRenditionNumber (CDIS cdis, String damsImageFileName, MediaRenditions mediaRendition) {
         
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
-        String tmpRenditionNumber = null;
         
         String tmsDelimiter = cdis.properties.getProperty("tmsDelimiter");
         String damsDelimiter = cdis.properties.getProperty("damsDelimiter");
         
         // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
-        if (tmsDelimiter.equals("ACM")) {
-            if (damsImageFileName.startsWith("ACM-")) {
-                tmpRenditionNumber = damsImageFileName.replaceAll("ACM-", "");
-            }
-            else {
-                tmpRenditionNumber = damsImageFileName;
-            }
-            if (tmpRenditionNumber.substring(7).contains("-")) {
-                
-                // Chop off everything in the body (after acmboj-) following the last dash....except in the cases where it has the rank number 
-                if (! tmpRenditionNumber.substring(tmpRenditionNumber.lastIndexOf("-")).startsWith("r")) { 
-                    // Safe to chop off the end, the last dash does not contain a -r 
-                    tmpRenditionNumber = tmpRenditionNumber.substring(0, tmpRenditionNumber.lastIndexOf("-"));
-                }
-            }
-            mediaRendition.setRenditionNumber(tmpRenditionNumber);
-        }
-        else if (! tmsDelimiter.equals (damsDelimiter) ) {
-            mediaRendition.setRenditionNumber (damsImageFileName.replaceAll(damsDelimiter, tmsDelimiter));      
-        }
-        else if (tmsDelimiter.equals (damsDelimiter)) {
+        if (tmsDelimiter.equals (damsDelimiter) ) {
             mediaRendition.setRenditionNumber(damsImageFileName);
         }
         else {
-            logger.log(Level.FINER, "unable to create Rendition number, Invalid name formatting option: {0}", cdis.properties.getProperty("newRenditionNameFormat"));
-            return false;
+            mediaRendition.setRenditionNumber (damsImageFileName.replaceAll(damsDelimiter, tmsDelimiter));
         }
         
         logger.log(Level.FINER, "Formatted name: {0}", mediaRendition.getRenditionNumber());
@@ -149,7 +127,6 @@ public class MediaRecord {
                 if (objectPopulated) {
                     mediaRendition.setRenditionNumber(extensionlessFileName); 
                 }
-                
             }
         }
         
