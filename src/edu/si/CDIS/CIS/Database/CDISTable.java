@@ -99,31 +99,12 @@ public class CDISTable {
     public void setUOIID (String UOIID) {
         this.UOIID = UOIID;
     }
-    
-    // Update CDIS table to log this transaction
-    public int updateIDSSyncDate(CDISTable cdisTbl, Connection cisConn) {
-        
-        int updateCount = 0;
-        
-        String sql = "update CDIS " +
-                    "set SyncIDSPathDate = SYSDATETIME() " +
-                    "where RenditionID = " + cdisTbl.getCDIS_ID();
-
-        logger.log(Level.FINEST,"SQL! " + sql);
-
-        updateCount = DataProvider.executeUpdate(cisConn, sql);
-
-        return (updateCount);
-
-    }
-    
+ 
     public boolean createRecord(CDISTable cdisTbl, Connection cisConn) {
         
         boolean inserted = false;
         Statement stmt = null;
         
-        // Get the ObjectID if it exists 
-
         String sql = "Insert into CDIS (RenditionID, RenditionNumber, ObjectID, UAN, UOIID, LinkDate) " +
                     "values ( " + cdisTbl.getRenditionId() + ", '" +
                     cdisTbl.getRenditionNumber() + "', " +
@@ -152,13 +133,30 @@ public class CDISTable {
         return inserted;
     }
     
-    public int updateThumbnailSyncDate(CDISTable cdisTbl, Connection cisConn) {
+    // Update CDIS table to log this transaction
+    public int updateIDSSyncDate(Connection cisConn) {
+        
+        int updateCount = 0;
+        
+        String sql = "update CDIS " +
+                    "set SyncIDSPathDate = SYSDATETIME() " +
+                    "where CDIS_ID = " + getCDIS_ID();
+
+        logger.log(Level.FINEST,"SQL! " + sql);
+
+        updateCount = DataProvider.executeUpdate(cisConn, sql);
+
+        return (updateCount);
+
+    }
+    
+    public int updateThumbnailSyncDate(Connection cisConn) {
         
         int updateCount = 0;
         
         String sql = "update CDIS " +
                     "set ThumbnailSyncDate = SYSDATETIME() " +
-                    "where RenditionID = " + cdisTbl.getRenditionId();
+                    "where RenditionID = " + getRenditionId();
 
         logger.log(Level.FINEST,"SQL! " + sql);
 
