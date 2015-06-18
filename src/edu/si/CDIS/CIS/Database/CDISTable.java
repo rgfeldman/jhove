@@ -8,6 +8,9 @@ package edu.si.CDIS.CIS.Database;
 import edu.si.CDIS.CDIS;
 import java.sql.Connection;
 import edu.si.CDIS.utilties.DataProvider;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,7 +107,7 @@ public class CDISTable {
         
         String sql = "update CDIS " +
                     "set SyncIDSPathDate = SYSDATETIME() " +
-                    "where RenditionID = " + cdisTbl.getRenditionId();
+                    "where RenditionID = " + cdisTbl.getCDIS_ID();
 
         logger.log(Level.FINEST,"SQL! " + sql);
 
@@ -117,6 +120,7 @@ public class CDISTable {
     public boolean createRecord(CDISTable cdisTbl, Connection cisConn) {
         
         boolean inserted = false;
+        Statement stmt = null;
         
         // Get the ObjectID if it exists 
 
@@ -128,11 +132,40 @@ public class CDISTable {
                     cdisTbl.getUOIID() + "', " +
                     "GETDATE() )";
         
-        logger.log(Level.FINEST,"SQL! " + sql);
-   
-        inserted = DataProvider.executeInsert(cisConn, sql);     
+        logger.log(Level.FINEST,"SQL! " + sql);  
+        
+        try {
+            stmt = cisConn.createStatement();
+            stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
+
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs != null && rs.next()) {
+                this.CDIS_ID = rs.getInt(1);
+            }    
+        } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+        }finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
                 
         return inserted;
+    }
+    
+    public int updateThumbnailSyncDate(CDISTable cdisTbl, Connection cisConn) {
+        
+        int updateCount = 0;
+        
+        String sql = "update CDIS " +
+                    "set ThumbnailSyncDate = SYSDATETIME() " +
+                    "where RenditionID = " + cdisTbl.getRenditionId();
+
+        logger.log(Level.FINEST,"SQL! " + sql);
+
+        updateCount = DataProvider.executeUpdate(cisConn, sql);
+
+        return (updateCount);
+
     }
         
 }
