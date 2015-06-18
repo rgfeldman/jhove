@@ -161,7 +161,7 @@ public class ImageFilePath {
                     // If se updated the filepath successfully, then log the transaction in the CDIS table
                     if (updateCount > 0) { 
                         //update CDIS with the current IDSSyncDate
-                        cdisTbl.updateIDSSyncDate(cdisTbl, cisConn);
+                        cdisTbl.updateIDSSyncDate(cisConn);
                         
                         //Create the IDS report
                         StatRpt.writeUpdateStats(this.uan, cdisTbl.getRenditionNumber(), "idsPath", true);
