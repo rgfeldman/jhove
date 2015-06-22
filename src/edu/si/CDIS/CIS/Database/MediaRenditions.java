@@ -74,7 +74,7 @@ public class MediaRenditions {
         
         
     }
-    public boolean insertNewRecord(CDIS cdis, Integer mediaMasterID, String renditionNumber) {
+    public boolean insertNewRecord(CDIS cdis, Integer mediaMasterID ) {
         
         Integer mediaTypeID = null;
         Integer mediaStatusID = null;
@@ -102,7 +102,7 @@ public class MediaRenditions {
                         "MediaStatusID, " +
                         "RenditionDate) " +
                     "values (" + mediaMasterID + ", " + 
-                        "'" + renditionNumber + "', " +
+                        "'" + getRenditionNumber() + "', " +
                         "-1, " +
                         "-1, " +
                         mediaTypeID + ", " +
@@ -135,12 +135,12 @@ public class MediaRenditions {
     }
     
     
-    public int setFileId(Connection cisConn, Integer renditionId, Integer fileId) {
+    public int setFileId(Connection cisConn, Integer fileId) {
         int updateCount;
         
         String sql = "update MediaRenditions " +
                     "set PrimaryFileID = " + fileId + " " +
-                    "where renditionID = " + renditionId;
+                    "where renditionID = " + getRenditionId() ;
                                
         updateCount = DataProvider.executeUpdate(cisConn, sql);
         
