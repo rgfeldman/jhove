@@ -67,14 +67,14 @@ public class MediaMaster {
         return true;
     }
     
-    public int setRenditionIds(Connection cisConn, Integer renditionId, Integer mediaMasterId) {
+    public int setRenditionIds(Connection cisConn, Integer renditionId) {
         
         int updateCount;
         
         String sql = "update MediaMaster " +
                 "set PrimaryRendID = " + renditionId + ", " +
                 "DisplayRendID = " + renditionId + " " +
-                "where mediaMasterId = " + mediaMasterId;
+                "where mediaMasterId = " + getMediaMasterId() ;
         
          logger.log(Level.FINER, "SQL: {0}", sql);
         
