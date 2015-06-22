@@ -22,12 +22,12 @@ public class MediaXrefs {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    boolean isPrimary;
+    int primary;
     int rank;
     String charRank;
         
-    public boolean getIsPrimary() {
-        return this.isPrimary;
+    public int getPrimary() {
+        return this.primary;
     }
     
     public int getRank() {
@@ -38,8 +38,8 @@ public class MediaXrefs {
         return this.charRank;
     }
     
-    private void setIsPrimary(boolean isPrimary) {
-        this.isPrimary = isPrimary;
+    private void setPrimary(int primary) {
+        this.primary = primary;
     }
       
     private void setRank (int rank) {
@@ -56,6 +56,9 @@ public class MediaXrefs {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
+        
+        // set primary to 0 for default
+        this.primary = 0; 
         int numRows = 0;
         
         if (this.getRank() == 1) {
@@ -85,16 +88,12 @@ public class MediaXrefs {
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
             }
             
+            // Set the primary to 1 if there were no prior existing primaries found
             if (numRows == 0) {
-                this.setIsPrimary(true);
+                logger.log(Level.FINEST, "Primary set to 1");
+                this.setPrimary(1);
             }
-            else {
-                this.setIsPrimary(false);
-            }
-        }
-        else { 
-            this.setIsPrimary(false);
-        }
+        }    
         
     }
     
@@ -144,14 +143,6 @@ public class MediaXrefs {
     public boolean insertNewRecord(Connection cisConn, Integer mediaMasterId, Integer objectId) {
      
         Boolean inserted;
-        int primary;
-        
-        if (getIsPrimary()) {
-            primary = 1;
-        }
-        else { 
-            primary = 0;
-        }
         
         String sql = "insert into MediaXrefs" +
                         " (MediaMasterID, " +
@@ -168,7 +159,7 @@ public class MediaXrefs {
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
                         this.rank + ", " + 
-                        primary + ")" ;
+                        this.primary + ")" ;
         
         logger.log(Level.FINER, "SQL: {0}", sql);
    
