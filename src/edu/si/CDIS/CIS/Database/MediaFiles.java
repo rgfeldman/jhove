@@ -89,7 +89,7 @@ public class MediaFiles {
     }   
   
     
-    public boolean insertNewRecord(CDIS cdis, String uan, Integer renditionId, String fileType, Integer height, Integer width) {
+    public boolean insertNewRecord(CDIS cdis, String uan, Integer renditionId, String fileType) {
         
         Integer mediaFormatId = null;
         Integer pathId = null;
@@ -131,8 +131,8 @@ public class MediaFiles {
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
                         mediaFormatId + ", " +
-                        height + ", " +
-                        width + ")";
+                        getPixelH() + ", " +
+                        getPixelW() + ")";
        
        logger.log(Level.FINER, "SQL: {0}", sql);
         
