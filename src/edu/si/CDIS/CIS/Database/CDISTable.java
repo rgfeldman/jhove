@@ -102,7 +102,6 @@ public class CDISTable {
  
     public boolean createRecord(CDISTable cdisTbl, Connection cisConn) {
         
-        boolean inserted = false;
         Statement stmt = null;
         
         String sql = "Insert into CDIS (RenditionID, RenditionNumber, ObjectID, UAN, UOIID, LinkDate) " +
@@ -130,7 +129,7 @@ public class CDISTable {
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
                 
-        return inserted;
+        return true;
     }
     
     // Update CDIS table to log this transaction
