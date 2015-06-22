@@ -95,25 +95,28 @@ public class MediaRecord {
         if (Integer.parseInt(cdis.properties.getProperty("assignToObjectID")) > 0) {
             tmsObject.setObjectID (Integer.parseInt(cdis.properties.getProperty("assignToObjectID")));
             objectIdPopulated = true;
+            mediaRendition.setRenditionNumber(extensionlessFileName); 
+            logger.log(Level.FINER, "Set object to ObjectID");
         }
                 
-        if (cdis.properties.getProperty("mapFileNameToBarcode").equals("true")) {
-            objectIdPopulated = tmsObject.mapFileNameToBarcode(extensionlessFileName, cisConn);
+        if (! objectIdPopulated) {
+            if (cdis.properties.getProperty("mapFileNameToBarcode").equals("true")) {
+                objectIdPopulated = tmsObject.mapFileNameToBarcode(extensionlessFileName, cisConn);
                 
-            if (objectIdPopulated) {
+                if (objectIdPopulated) {
                 
-                // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
-                if (cdis.properties.getProperty("appendTimeToNumber").equals("true"))  {
-                    DateFormat df = new SimpleDateFormat("kkmmss");
-                    mediaRendition.setRenditionNumber(tmsObject.getObjectID() + "_" + String.format("%03d", mediaXrefs.getRank()) + "_" + df.format(new Date()));
-                }
-                else {
-                    // For barcode objects, the renditionNumber is the objectID plus the rank
-                    mediaRendition.setRenditionNumber(tmsObject.getObjectID() + "_" + mediaXrefs.getRank() );
+                    // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
+                    if (cdis.properties.getProperty("appendTimeToNumber").equals("true"))  {
+                        DateFormat df = new SimpleDateFormat("kkmmss");
+                        mediaRendition.setRenditionNumber(tmsObject.getObjectID() + "_" + String.format("%03d", mediaXrefs.getRank()) + "_" + df.format(new Date()));
+                    }
+                    else {
+                        // For barcode objects, the renditionNumber is the objectID plus the rank
+                        mediaRendition.setRenditionNumber(tmsObject.getObjectID() + "_" + mediaXrefs.getRank() );
+                    }
                 }
             }
         }
-        
         if (! objectIdPopulated) {
             if (cdis.properties.getProperty("mapFileNameToObjectNumber").equals("true")) {
             
@@ -153,7 +156,7 @@ public class MediaRecord {
         logger.log(Level.FINER, "Rank: " + mediaXrefs.getRank());
         //logger.log(Level.FINER, "PixelH: " + mediaFiles.getPixelH());
         //logger.log(Level.FINER, "PixelW: " + mediaFiles.getPixelW());
-        logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getIsPrimary()); 
+        logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getPrimary()); 
         //logger.log(Level.FINER, "IDSPath: " + cdis.properties.getProperty("IDSPathId")); 
         //logger.log(Level.FINER, "PDFPath: " + cdis.properties.getProperty("PDFPathId")); 
       
