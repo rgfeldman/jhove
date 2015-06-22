@@ -140,22 +140,8 @@ public class TMSIngest {
                         
                         // Set the renditionID for the rendition just created
                         mediaRendition.populateIdByRenditionNumber(cisConn);
-                        logger.log(Level.FINER, "RenditionID for newly created media: " );
-                        
-                        //Create the thumbnail image
-                        Thumbnail thumbnail = new Thumbnail();
-                        boolean thumbCreated = thumbnail.generate(damsConn, cisConn, siAsst.getUoiid(), mediaRendition.getRenditionId());
-                            
-                        if (! thumbCreated) {
-                            logger.log(Level.FINER, "Thumbnail creation failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
-                            failCount ++;
-                            continue; //Go to the next record in the for-sloop
-                        }
-                        
-                        logger.log(Level.FINER, "Media Creation and thumbnail creation complete");
-                        
-                        
+                        logger.log(Level.FINER, "Media Creation complete, RenditionID for newly created media: " + mediaRendition.getRenditionNumber() );
+                                
                         // Create CDIS Object
                         CDISTable cdisTbl = new CDISTable();
                         
@@ -175,6 +161,18 @@ public class TMSIngest {
                             failCount ++;
                             continue;
                         }
+                        
+                        //Create the thumbnail image
+                        Thumbnail thumbnail = new Thumbnail();
+                        boolean thumbCreated = thumbnail.generate(damsConn, cisConn, siAsst.getUoiid(), mediaRendition.getRenditionId());
+                            
+                        if (! thumbCreated) {
+                            logger.log(Level.FINER, "Thumbnail creation failed");
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
+                            failCount ++;
+                            continue; //Go to the next record in the for-sloop
+                        }
+                        
                         
                         int rowsUpdated = cdisTbl.updateIDSSyncDate(cisConn);
                         
