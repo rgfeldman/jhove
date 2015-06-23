@@ -157,7 +157,7 @@ public class TMSIngest {
 
                         if (! recordCreated) {
                             logger.log(Level.FINER, "Insert to CDIS table failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue;
                         }
@@ -178,7 +178,7 @@ public class TMSIngest {
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue;
                         }
@@ -191,7 +191,7 @@ public class TMSIngest {
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "Failed in update to SourceSystemID");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", false);
+                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue;
                         }
@@ -199,7 +199,7 @@ public class TMSIngest {
                             logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
                         }
                         
-                        statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToTMS", true);
+                        statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", true);
                         this.successCount++;
                         
                     }
