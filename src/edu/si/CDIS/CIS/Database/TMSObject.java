@@ -183,14 +183,9 @@ public class TMSObject {
         
         //Find the objectNumber based on the Rendition number
         if (damsDelimiter.equals("ACM")) {
-            //Drop ACM-acmobj- from the front
-            if (damsImageFileName.startsWith("ACM-acmobj-")) {
-                tmpObjectNumber = damsImageFileName.replaceAll("ACM-acmobj-", "");
-            }
-            else {
-                //Drop acmobj- from the front
-                tmpObjectNumber = damsImageFileName.replaceAll("acmobj-", "");  
-            }
+            //Drop acmobj- from the front
+            tmpObjectNumber = damsImageFileName.replaceAll("acmobj-", "");  
+          
             //To get the object we also truncate everything after a dash
             if (tmpObjectNumber.contains("-")) {
                 tmpObjectNumber = tmpObjectNumber.substring(0, tmpObjectNumber.indexOf("-"));
