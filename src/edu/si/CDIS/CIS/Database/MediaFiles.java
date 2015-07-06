@@ -94,6 +94,7 @@ public class MediaFiles {
         Integer mediaFormatId = null;
         Integer pathId = null;
         Statement stmt = null;
+        String fileName = null;
         
          // Get variables from the properties list
         try {
@@ -101,9 +102,11 @@ public class MediaFiles {
             
             if (fileType.equalsIgnoreCase("PDF")) {
                 pathId = Integer.parseInt (cdis.properties.getProperty("PDFPathId"));
+                fileName = uan + ".pdf";
             }
             else {
                 pathId = Integer.parseInt (cdis.properties.getProperty("IDSPathId"));
+                fileName = uan;
             }
              
         } catch (Exception e) {
@@ -127,7 +130,7 @@ public class MediaFiles {
                     " values ( " +
                         renditionId + ", " + 
                         pathId + "," +
-                        "'" + uan + "', " +
+                        "'" + fileName + "', " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
                         mediaFormatId + ", " +
