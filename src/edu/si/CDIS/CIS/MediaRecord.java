@@ -95,7 +95,7 @@ public class MediaRecord {
         if (Integer.parseInt(cdis.properties.getProperty("assignToObjectID")) > 0) {
             tmsObject.setObjectID (Integer.parseInt(cdis.properties.getProperty("assignToObjectID")));
             objectIdPopulated = true;
-            mediaRendition.setRenditionNumber(extensionlessFileName); 
+            formatNewRenditionNumber (cdis, extensionlessFileName, mediaRendition);
             logger.log(Level.FINER, "Set object to ObjectID");
         }
                 
