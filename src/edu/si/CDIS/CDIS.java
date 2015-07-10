@@ -35,7 +35,16 @@ public class CDIS {
     public String operationType;
     public Properties properties;
     public HashMap <String,String[]> xmlSelectHash;
+    Long batchNumber;
             
+    public Long getBatchNumber () {
+        return this.batchNumber;
+    }
+    
+    private void setBatchNumber (Long batchNumber) {
+        this.batchNumber = batchNumber;
+    }
+    
     /*  Method :        connectToDatabases
         Arguments:      
         Description:    establishes connections to both DAMS and CIS database s
@@ -133,13 +142,52 @@ public class CDIS {
             
             
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.FINER, "Error: obtaining config information", e );
             return false;
         }
         
         return true;
         
     }
+    
+    private boolean calculateBatchNumber () {    
+        try {
+        
+            DateFormat df = new SimpleDateFormat("yyyyMMddkkmmss");
+            setBatchNumber (Long.parseLong(df.format(new Date())));
+            
+        } catch (Exception e) {
+             logger.log(Level.FINER, "Error: obtaining Batch number", e );
+             return false;
+        }
+        
+        return true;
+    }
+    
+    
+    private boolean verifyProps (Properties properties) {
+        
+        //verify global properties exist in config file
+            String[] requiredProps = {"siUnit",
+                                    "damsDriver",
+                                    "damsConnString",
+                                    "damsUser",
+                                    "damsPass",
+                                    "cisDriver",
+                                    "cisConnString",
+                                    "cisUser",
+                                    "cisPass",
+                                    "xmlSQLFile"};
+        
+        for(int i = 0; i < requiredProps.length; i++) {
+            String reqProp = requiredProps[i];
+            if(!properties.containsKey(reqProp)) {
+                logger.log(Level.SEVERE, "Missing required property: {0}", reqProp);
+                return false;
+            }
+        }
+        return true;
+    }    
     
     /*  Method :        deleteLogs
         Arguments:      
@@ -194,7 +242,7 @@ public class CDIS {
         try {
         
             cdis.properties = new Properties();
-        
+              
             //set the logger
             boolean loggingSet = cdis.setLogger();
             if (! loggingSet) {
@@ -208,14 +256,25 @@ public class CDIS {
                 logger.log(Level.SEVERE, "Fatal Error: Failure to Load ini file, exiting");
                 return;
             }
+            
+            boolean propsVerified = cdis.verifyProps (cdis.properties);
+            if (! propsVerified) {
+                logger.log(Level.SEVERE, "Fatal Error: Required Property missing.  Exiting");
+                return;
+            }
         
-       
             boolean databaseConnected = cdis.connectToDatabases();
             if (! databaseConnected) {
                 logger.log(Level.SEVERE, "Fatal Error: Failure to Connect to database");
                 return;
             }
-        
+            
+            boolean batchNumberSet = cdis.calculateBatchNumber();
+            if (! batchNumberSet) {
+                logger.log(Level.SEVERE, "Fatal Error: Batch number could not be generated");
+                return;
+            }
+                    
             // Initialize the statistics Report
             StatisticsReport statReport = new StatisticsReport();
             
@@ -230,14 +289,14 @@ public class CDIS {
             cdis.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
             
             switch (cdis.operationType) {
-                case "ingestToCIS" :
+                case "createCISmedia" :
                     TMSIngest tmsIngest = new TMSIngest();
                     tmsIngest.ingest(cdis, statReport);
                     break;
                     
-                case "ingestToDAMS" :     
+                case "sendToIngest" :   
                     DAMSIngest damsIngest = new DAMSIngest();
-                    damsIngest.ingest(cdis, statReport);
+                    damsIngest.ingest(cdis);
                     break;
                 
                 case "linkToCIS" :
@@ -282,8 +341,5 @@ public class CDIS {
         }         
     
     }
-    
-   
-   
   
 }

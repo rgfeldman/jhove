@@ -22,16 +22,54 @@ public class MediaFile {
     String mediaPathLocation;
     String mediaDrive;
     Connection cisConn;
+    Connection damsConn;
+    String errorCode;
 
-    public void populateMediaPathLocation(int renditionID) {
+    public boolean populateMediaPathLocationCDIS (String cisID, String siUnit) {
         
+        String sql = "SELECT file_path " +
+                    "FROM   cdis_for_ingest " +
+                    "WHERE  cis_id = " + cisID + " " +
+                    "AND    si_unit = '" + siUnit + "'";
         
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
+        ResultSet rs = null;
+        PreparedStatement stmt = null;
+        
+        try {
+                
+		stmt = damsConn.prepareStatement(sql);
+		rs = stmt.executeQuery();
+              
+                if (rs.next()) {
+                    this.mediaPathLocation = rs.getString(1);           
+                }     
+                else {
+                    throw new Exception();
+                }
+        }
+            
+	catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Find FilePath in CDIS, returning", e);
+                return false;
+	}
+        finally {
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+	}
+        
+        return true;
+    }
+    
+    
+    public boolean populateMediaPathLocationTMS (String cisID) {
         
         String sql = "Select Path " +
                     "From MediaPaths  mp, " +
                     "MediaFiles mf " +
                     "Where mp.PathID = mf.PathID " +
-                    "AND RenditionID = " + renditionID;
+                    "AND RenditionID = " + cisID;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -42,52 +80,74 @@ public class MediaFile {
                 
 		stmt = cisConn.prepareStatement(sql);
 		rs = stmt.executeQuery();
-              
+                    
                 if (rs.next()) {
-                    String mediaPath = rs.getString(1);
- 
-                    this.mediaPathLocation = mediaPath;            
+                    this.mediaPathLocation = rs.getString(1);           
                 }        
-               
+                else {
+                    throw new Exception();
+                }
         }
             
 	catch(Exception e) {
-		e.printStackTrace();
+		logger.log(Level.SEVERE, "Error: Unable to Find FilePath in TMS, returning", e);
+                return false;
 	}
         finally {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
 	}
         
+        return true;
+        
     }
     
-    public boolean create(CDIS cdis, String tmsFileName, int renditionID, Connection cisConn){
+    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisID, String ingestListSource){
         
-        this.cisConn = cisConn;
+        this.cisConn = cdis.cisConn;
+        this.damsConn = cdis.damsConn;
+        boolean pathFound = false;
         
-        logger.log(Level.FINEST, "mediaFile Name : " + tmsFileName);
+        logger.log(Level.FINEST, "mediaFile Name : " + cisFileName);
         
         //Get the full tms pathname from the RenditionID
-        populateMediaPathLocation (renditionID);
+        switch (ingestListSource) {
+            case "TMSDB" :
+                pathFound = populateMediaPathLocationTMS (cisID);
+            break;
+                
+            case "CDISDB" :
+                pathFound = populateMediaPathLocationCDIS (cisID, cdis.properties.getProperty("siUnit"));
+            break;
+            
+            default:     
+                logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", ingestListSource );
+                return false;
+        }
         
+        if (! pathFound) {
+            logger.log(Level.FINEST, "returning...path not found");
+            this.errorCode = "FPE";
+            return false;
+        }
+         
         logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
         
-        // configure from and to filenames
-        File sourceFile = new File(mediaPathLocation + tmsFileName);
-         
-        File destFile = new File (cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
-                        
-        logger.log(Level.FINEST, "Copying mediaFile from : " + mediaPathLocation + tmsFileName);
-        logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
-        
         try {
+            // configure from and to filenames
+            File sourceFile = new File(mediaPathLocation + "//" + cisFileName);
+         
+            File destFile = new File (cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
+                        
+            logger.log(Level.FINEST, "Copying mediaFile from : " + mediaPathLocation + cisFileName);
+            logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
+        
             // Copy from tms source location to workfile location
             FileUtils.copyFile(sourceFile, destFile);
            
-            
         } catch (Exception e) {
-            logger.log(Level.FINEST, "Error: Unable to move file to WorkFolder");
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error: Unable to physically copy file to Work Folder. returning", e);
+            this.errorCode = "FCW";
             return false;
         }
         
