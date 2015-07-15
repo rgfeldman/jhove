@@ -137,13 +137,14 @@ public class MediaFile {
             // configure from and to filenames
             File sourceFile = new File(mediaPathLocation + "//" + cisFileName);
          
-            File destFile = new File (cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
+            File destDir = new File (cdis.properties.getProperty("workFolder") + "//" + cdis.getBatchNumber());
+            
                         
             logger.log(Level.FINEST, "Copying mediaFile from : " + mediaPathLocation + cisFileName);
             logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
         
-            // Copy from tms source location to workfile location
-            FileUtils.copyFile(sourceFile, destFile);
+            // Copy from tms source location to workfile location (and put in subdirectory with batch name).
+            FileUtils.copyFileToDirectory(sourceFile, destDir, true);
            
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error: Unable to physically copy file to Work Folder. returning", e);

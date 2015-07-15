@@ -21,16 +21,59 @@ public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     Integer CDISid;
+    Long batchNumber;
+    String fileName;
     
+    public Long getBatchNumber () {
+        return this.batchNumber;
+    }
+       
     public Integer getCdisMapId () {
         return this.CDISid;
     }
     
+    public String getFileName () {
+        return this.fileName;
+    }
+    
+    public void setBatchNumber (Long batchNumber) {
+        this.batchNumber = batchNumber;
+    }
+        
     public void setCdisMapId (Integer CDISid) {
         this.CDISid = CDISid;
     }
     
-    public boolean getMapIDFileBatch () {
+    public void setFileName (String fileName) {
+        this.fileName = fileName;
+    }
+    
+    public boolean populateIDForFileBatch (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE file_name = '" + getFileName() + "'" +
+                    "AND batch_number = " + getBatchNumber();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update CDIS_MAP status in table", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
         
         return true;
     }
@@ -44,7 +87,8 @@ public class CDISMap {
                     "SET cdis_status_cd = '" + newStatus + "' " +
                     "WHERE cdis_map_id = " + getCdisMapId();
         try {
-            
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
             pStmt = damsConn.prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql); 
             
@@ -63,13 +107,13 @@ public class CDISMap {
         
     }
     
-    public boolean createRecord(CDIS cdis, String cisId) {
+    public boolean createRecord(CDIS cdis, String cisId, String cisFileName) {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         int rowsUpdated = 0;
   
-        String sql = "SELECT cdis_id_seq.NextVal from dual";
+        String sql = "SELECT cdis_map_id_seq.NextVal from dual";
         
          try {
             
@@ -85,6 +129,7 @@ public class CDISMap {
                             "cdis_map_id, " +
                             "si_unit, " +
                             "cis_id, " +
+                            "file_name, " +
                             "batch_number, " +
                             "map_entry_dt, " +
                             "cdis_status_cd) " +
@@ -92,6 +137,7 @@ public class CDISMap {
                             getCdisMapId() + ", " +
                             "'" + cdis.properties.getProperty("siUnit") + "', " +
                             "'" + cisId + "', " +
+                            "'" + cisFileName + "', " +
                             cdis.getBatchNumber() + ", " +
                             "SYSDATE, " +
                             "'R')";

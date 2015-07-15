@@ -28,7 +28,7 @@ public class CDISError {
         int rowsUpdated = 0;
         
         String sql = "INSERT INTO cdis_error ( " +
-                    "cdis_id," +
+                    "cdis_map_id," +
                     "operation_type, " +
                     "error_cd ) " +
                     "values ( " + cdisMapId + ", " +
@@ -44,7 +44,7 @@ public class CDISError {
             }
             
          } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_MAP status in table", e );
+                logger.log(Level.FINER, "Error: unable to update CDIS_ERROR in table", e );
                 return false;
         }finally {
             try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
