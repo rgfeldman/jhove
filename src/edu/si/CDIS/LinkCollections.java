@@ -42,14 +42,11 @@ public class LinkCollections  {
         Description:    link to CIS operation specific code starts here
         RFeldman 2/2015
     */
-    public void linkToCIS (CDIS cdis, StatisticsReport statReport) {
+    public void linkToCIS (CDIS cdis) {
         
         // establish connectivity, and other most important variables
         this.damsConn = cdis.damsConn;
         this.cisConn = cdis.cisConn;
-          
-        //Populate the header information in the report file
-        statReport.populateHeader(cdis.properties.getProperty("siUnit"), "linkToCIS"); 
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsRendtion = new LinkedHashMap <String, String>();
@@ -58,9 +55,7 @@ public class LinkCollections  {
         populateNeverLinkedDamsRenditions (cdis);
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
-        linkUANtoFilename (cdis, statReport);    
-        
-        statReport.populateStats(neverLinkedDamsRendtion.size(), 0, successCount, failCount, "linkToCIS");
+        linkUANtoFilename (cdis);    
         
     }
     
@@ -132,12 +127,11 @@ public class LinkCollections  {
         Description:    Connects the filename in TMS with the DAMS UAN
         RFeldman 4/2015
     */
-    private void linkUANtoFilename(CDIS cdis, StatisticsReport statRpt) {
+    private void linkUANtoFilename(CDIS cdis) {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
-        String sql = null;
-        String owning_unit_unique_name = null;     
+        String sql = null;    
         String currentIterationSql = null;
         String sqlTypeArr[] = null;
         
@@ -198,7 +192,6 @@ public class LinkCollections  {
         
                         if (! recordCreated) {
                             logger.log(Level.FINER,"ERROR: CDIS record not created for UOIID! " + cdisTbl.getUOIID());
-                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", false);
                             //get the next id from the list
                             continue;
                         }
@@ -219,18 +212,15 @@ public class LinkCollections  {
                         int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisTbl.getUOIID(), cdisTbl.getRenditionNumber() );
                         
                         if (updatedRows == 1) {
-                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", true);
                             successCount ++;
                         }
                         else {
-                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", false);
                             failCount ++;
                         }
                         
                     } catch (Exception e) {
                         e.printStackTrace();
                         logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisTbl.getUOIID());
-                        statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "link", false);
                     }
                 }
                 
@@ -256,7 +246,6 @@ public class LinkCollections  {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
-        String owning_unit_unique_name = null;
         String sqlTypeArr[] = null;
         String sql = null;
         

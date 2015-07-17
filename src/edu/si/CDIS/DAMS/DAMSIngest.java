@@ -29,7 +29,7 @@ public class DAMSIngest {
     Connection cisConn;
     String batchWorkFolder;
     String damsHotFolder;
-    String ingestListSource;
+    String cisSourceDB;
     
     LinkedHashMap <String,String> renditionsForDAMS; 
     
@@ -95,7 +95,7 @@ public class DAMSIngest {
                     
                     if (rs.next()) {
                         //Find the image on the media drive
-                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisID, this.ingestListSource);
+                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisID);
                     }
                     else {
                         handleErrorMsg(cdisMap, "DUP", "Media Already exists: Media does not need to be created");
@@ -131,7 +131,6 @@ public class DAMSIngest {
         logger.log(Level.FINER, logMessage);
         
         CDISError cdisError = new CDISError();
-        cdisMap.updateStatus(damsConn, 'E');
         cdisError.insertError(damsConn, "STDI", cdisMap.getCdisMapId(), errorCode);
     }
     
@@ -163,17 +162,19 @@ public class DAMSIngest {
             logger.log(Level.FINER, "SQL: {0}", sql);
             
             try {
-                    switch (this.ingestListSource) {
-                        case "TMSDB" :
-                            stmt = cisConn.prepareStatement(sql); 
-                            break;
+                    switch (cisSourceDB) {
                         case "CDISDB" :
-                            stmt = damsConn.prepareStatement(sql);
+                             stmt = damsConn.prepareStatement(sql);
+                             break;
+                        case "TMSDB" :
+                            stmt = cisConn.prepareStatement(sql);
                             break;
-                         default:     
-                            logger.log(Level.SEVERE, "Fatal Error: Invalid ingest source {0}, exiting", this.ingestListSource );
+                            
+                        default:     
+                            logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cisSourceDB );
                             return;
                     }
+                   
                                                    
                     rs = stmt.executeQuery();
         
@@ -232,7 +233,6 @@ public class DAMSIngest {
                logger.log(Level.FINER, "Moving image file to : " + this.damsHotFolder);
                 
                FileUtils.moveFileToDirectory(fileForDams, damsMediaDropOffDir, false);
-               cdisMap.updateStatus(this.damsConn, 'C');
                
             } catch (Exception e) {
                     logger.log(Level.FINER, "Error: Moving file to HotFolder ", e );
@@ -276,10 +276,13 @@ public class DAMSIngest {
      public void ingest (CDIS cdis) {
                                                                                        
         this.damsConn = cdis.damsConn;
-        this.cisConn = cdis.cisConn;
         this.batchWorkFolder = cdis.properties.getProperty("workFolder") + "//" + cdis.getBatchNumber();
         this.damsHotFolder = cdis.properties.getProperty("hotFolderMaster");
-        this.ingestListSource = cdis.properties.getProperty("ingestListSource");
+        this.cisSourceDB = cdis.properties.getProperty("cisSourceDB"); 
+         
+        if (! this.cisSourceDB.equals("CDISDB")) { 
+            this.cisConn = cdis.cisConn;
+        }
   
         this.renditionsForDAMS = new LinkedHashMap<String, String>();
         

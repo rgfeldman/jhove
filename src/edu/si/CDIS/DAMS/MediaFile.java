@@ -102,17 +102,17 @@ public class MediaFile {
         
     }
     
-    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisID, String ingestListSource){
+    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisID){
         
-        this.cisConn = cdis.cisConn;
         this.damsConn = cdis.damsConn;
         boolean pathFound = false;
         
         logger.log(Level.FINEST, "mediaFile Name : " + cisFileName);
         
         //Get the full tms pathname from the RenditionID
-        switch (ingestListSource) {
+        switch (cdis.properties.getProperty("cdisSourceDB")) {
             case "TMSDB" :
+                this.cisConn = cdis.cisConn;
                 pathFound = populateMediaPathLocationTMS (cisID);
             break;
                 
@@ -121,7 +121,7 @@ public class MediaFile {
             break;
             
             default:     
-                logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", ingestListSource );
+                logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cdis.properties.getProperty("cdisSourceDB") );
                 return false;
         }
         

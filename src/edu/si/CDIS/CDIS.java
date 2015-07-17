@@ -53,22 +53,7 @@ public class CDIS {
     public boolean connectToDatabases () {
         
         //establish and verify database connections.
-	try {
-                //decrypt the password, it is stored in ini in encypted fashion
-                String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("cisPass"));
-                
-		this.cisConn = DataProvider.getConnection(this.properties.getProperty("cisDriver"), 
-                        this.properties.getProperty("cisConnString"), 
-			this.properties.getProperty("cisUser"), 
-			tmsPass);
-                 
-	} catch(Exception ex) {
-		ex.printStackTrace();
-		return false;
-	}
-        
-        logger.log(Level.FINER, "Connection to TMS database established.");
-        
+	
         try {
             //decrypt the password, it is stored in ini in encypted fashion
             String damsPass = EncryptDecrypt.decryptString(this.properties.getProperty("damsPass"));
@@ -79,11 +64,34 @@ public class CDIS {
 					damsPass);
                 
         } catch(Exception ex) {
-		ex.printStackTrace();
+		logger.log(Level.SEVERE, "Failure Connecting to DAMS database.", ex);
 		return false;
 	}
         
         logger.log(Level.FINER, "Connection to DAMS database established.");
+        
+        
+        try {
+                if (this.properties.getProperty("cisSourceDB").equals("CDISDB")) {
+                    
+                    logger.log(Level.FINER, "CIS source is CDISDB. No connection to CIS database needed.");
+                    
+                } else {
+                    //decrypt the password, it is stored in ini in encypted fashion
+                    String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("cisPass"));
+                
+                    this.cisConn = DataProvider.getConnection(this.properties.getProperty("cisDriver"), 
+                    this.properties.getProperty("cisConnString"), 
+                    this.properties.getProperty("cisUser"), 
+                    tmsPass);
+                    
+                    logger.log(Level.FINER, "Connection to CIS database established.");
+                }
+                
+	} catch(Exception ex) {
+		logger.log(Level.SEVERE, "Failure Connecting to CIS database.", ex);
+		return false;
+        } 
         
         return true;
         
@@ -173,10 +181,7 @@ public class CDIS {
                                     "damsConnString",
                                     "damsUser",
                                     "damsPass",
-                                    "cisDriver",
-                                    "cisConnString",
-                                    "cisUser",
-                                    "cisPass",
+                                    "cisSourceDB",
                                     "xmlSQLFile"};
         
         for(int i = 0; i < requiredProps.length; i++) {
@@ -301,7 +306,7 @@ public class CDIS {
                 
                 case "linkToCIS" :
                     LinkCollections linkcollections = new LinkCollections();
-                    linkcollections.linkToCIS(cdis, statReport);
+                    linkcollections.linkToCIS(cdis);
                     break;
                     
                 case "sync" :    
@@ -317,19 +322,16 @@ public class CDIS {
                     thumbnail.sync(cdis, statReport);
                     break;
                     
+                case "genReport" :
+                    Report report = new Report();
+                    report.generate(cdis);
+                    break;
+                    
                 default:     
                     logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");
                     return;               
             }
-               
-            statReport.compile(cdis.operationType);
             
-            // Send the report by email if there is an email list
-            if (cdis.properties.getProperty("emailReportTo") != null) {
-                logger.log(Level.FINER, "Need to email the report");
-                statReport.send(cdis.properties.getProperty("siUnit"), cdis.properties.getProperty("emailReportTo"), cdis.operationType);
-            }
-        
  
         } catch (Exception e) {
                 e.printStackTrace();

@@ -78,35 +78,6 @@ public class CDISMap {
         return true;
     }
     
-    public boolean updateStatus (Connection damsConn, char newStatus) {
-        
-        PreparedStatement pStmt = null;
-        int rowsUpdated = 0;
-        
-        String sql = "UPDATE cdis_map " +
-                    "SET cdis_status_cd = '" + newStatus + "' " +
-                    "WHERE cdis_map_id = " + getCdisMapId();
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = damsConn.prepareStatement(sql);
-            rowsUpdated = pStmt.executeUpdate(sql); 
-            
-             if (rowsUpdated != 1) {
-                throw new Exception();
-            }
-            
-         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_MAP status in table", e );
-                return false;
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        
-        return true;
-        
-    }
-    
     public boolean createRecord(CDIS cdis, String cisId, String cisFileName) {
         
         PreparedStatement pStmt = null;
@@ -131,16 +102,14 @@ public class CDISMap {
                             "cis_id, " +
                             "file_name, " +
                             "batch_number, " +
-                            "map_entry_dt, " +
-                            "cdis_status_cd) " +
+                            "map_entry_dt) " +
                         "VALUES (" +
                             getCdisMapId() + ", " +
                             "'" + cdis.properties.getProperty("siUnit") + "', " +
                             "'" + cisId + "', " +
                             "'" + cisFileName + "', " +
                             cdis.getBatchNumber() + ", " +
-                            "SYSDATE, " +
-                            "'R')";
+                            "SYSDATE)";
                  
             logger.log(Level.FINEST,"SQL! " + sql);  
         
