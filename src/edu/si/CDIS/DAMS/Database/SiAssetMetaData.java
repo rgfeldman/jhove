@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.logging.Logger;
 
 
@@ -465,5 +467,34 @@ public class SiAssetMetaData {
             
         return recordsUpdated;
         
+    }
+    
+    public boolean populateSourceSystemId (Connection damsConn) {
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT source_system_id FROM si_asset_metadata " +
+                    "WHERE uoi_id = " + getUoiid();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setSourceSystemId (rs.getString(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return true;
     }
 }

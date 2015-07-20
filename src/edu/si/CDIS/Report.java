@@ -20,6 +20,10 @@ import com.lowagie.text.*;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
 import java.io.FileOutputStream;
+import java.util.Iterator;
+
+import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 /**
  *
@@ -29,22 +33,27 @@ public class Report {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     Connection damsConn;
-    private Integer rptDays;
+    private Double rptDays;
     private String rptHours;
-    ArrayList<String> CompletedUoiids;
-    ArrayList<String> metaSyncedUoiids;
-    ArrayList<Integer> failedMapIds;
+    ArrayList<Integer> completedIds;
+    ArrayList<Integer> metaSyncedIds;
+    ArrayList<Integer> inProgressIds;
+    ArrayList<Integer> failedIds;
     File linkedFile;
     File metaDataSyncFile;
     File errorFile;
     Document document;
+    String startTime;
      
     
      private boolean genMetaSyncedUoiidList () {
         
-        String sql = "SELECT uoi_id FROM cdis_map " + 
+        String sql = "SELECT cdis_map_id FROM cdis_map a " + 
                      "WHERE metadata_sync_dt > (SYSDATE - " + this.rptDays + ")" +
-                     "AND integration_complete_dt < (SYSDATE - " + this.rptDays + ")"; 
+                     "AND integration_complete_dt < (SYSDATE - " + this.rptDays + ")" +
+                     "AND NOT EXISTS (" +
+                        "SELECT 'X' FROM cdis_error b " +
+                        "WHERE a.cdis_map_id = b.cdis_map_id)";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -57,7 +66,7 @@ public class Report {
 		rs = stmt.executeQuery();
                     
                 while (rs.next()) {
-                   metaSyncedUoiids.add(rs.getString(1));
+                   metaSyncedIds.add(rs.getInt(1));
                 }        
         }
             
@@ -77,8 +86,11 @@ public class Report {
     
     private boolean genCompletedUoiidList () {
         
-        String sql = "SELECT uoi_id FROM cdis_map " + 
-                     "WHERE integration_complete_dt > (SYSDATE - " + this.rptDays + ")"; 
+        String sql = "SELECT cdis_map_id FROM cdis_map a " + 
+                     "WHERE integration_complete_dt > (SYSDATE - " + this.rptDays + ")" +
+                     "AND NOT EXISTS (" +
+                        "SELECT 'X' FROM cdis_error b " +
+                        "WHERE a.cdis_map_id = b.cdis_map_id)";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -91,7 +103,7 @@ public class Report {
 		rs = stmt.executeQuery();
                     
                 while (rs.next()) {
-                   CompletedUoiids.add(rs.getString(1));
+                   completedIds.add(rs.getInt(1));
                 }        
         }
             
@@ -110,11 +122,11 @@ public class Report {
     
     private boolean genUoiidListError () {
         
-        String sql = "SELECT uoi_id FROM cdis_map a " + 
+        String sql = "SELECT cdis_map_id FROM cdis_map a " + 
                      "WHERE EXISTS ( " + 
                             "SELECT 'X' from cdis_error b " +
-                            "WHERE a.cdis_map_id = b.cdis_map_id ) " +
-                            "AND b.error_dt > (SYSDATE - " + this.rptDays + ")";
+                            "WHERE a.cdis_map_id = b.cdis_map_id " +
+                            "AND b.error_dt > (SYSDATE - " + this.rptDays + "))";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -122,16 +134,12 @@ public class Report {
         PreparedStatement stmt = null;
         
         try {
-                
 		stmt = damsConn.prepareStatement(sql);
 		rs = stmt.executeQuery();
                     
-                if (rs.next()) {
-                   // this.mediaPathLocation = rs.getString(1);           
+                while (rs.next()) {
+                    failedIds.add(rs.getInt(1));            
                 }        
-                else {
-                    throw new Exception();
-                }
         }
             
 	catch(Exception e) {
@@ -164,12 +172,12 @@ public class Report {
        
             document.open();
             
-            RtfFont title=new RtfFont("Arial",14,Font.BOLD);
-            document.add(new Paragraph(siUnit + " CDIS Report and Statistics for Past " + this.rptHours + " Hours", title));
+            RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
+            document.add(new Paragraph(siUnit + " CDIS Activity Report - Past " + this.rptHours + " Hours", title));
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
-            this.rptDays = 1;
+            this.rptDays = 1.0;
         }  
         
         
@@ -180,33 +188,62 @@ public class Report {
     private void statisticsWrite () {
         
         try {
-            RtfFont stats=new RtfFont("Arial",12);
+            RtfFont stats=new RtfFont("Times New Roman",12);
             
-            document.add(new Paragraph("\nNumber of Successful CDIS Linkages between DAMS and the CIS: " + this.CompletedUoiids.size(), stats));
-            document.add(new Paragraph("Number of Successful MetaData Re-Synced Records: " + this.metaSyncedUoiids.size(), stats));
+            document.add(new Paragraph("\nNumber of Succesful DAMS/CIS Linkages - Completed : " + this.completedIds.size(), stats));
+            document.add(new Paragraph("Number of Succesful DAMS/CIS Linkages - In Progress : " + this.inProgressIds.size(), stats));
+            document.add(new Paragraph("Number of Successful MetaData Re-Synced Records: " + this.metaSyncedIds.size(), stats));
+            document.add(new Paragraph("Number of Failed Records: " + this.failedIds.size(), stats));
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
-            this.rptDays = 1;
+            this.rptDays = 1.0;
         }  
     }
     
-    private void CompletedWrite() {
-        String fileName = null;
-        String sourceSystemId = null;
-        Integer cisID = null;
-        
-        String listing = "FileName: " + fileName + "Linked to CisID: " + cisID + " Source System ID: " + sourceSystemId; 
+    private void completedWrite() {
         
         try {
-            RtfFont stats=new RtfFont("Arial",10);
-            
-            document.add(new Paragraph("\n " + listing,stats));
-            
+            document.add(new Paragraph("\nIntegration Successfully Completed List"));
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
-            this.rptDays = 1;
+            this.rptDays = 1.0;
         }  
+            
+        for (Iterator<Integer> iter = completedIds.iterator(); iter.hasNext();) {
+            
+            try {
+                RtfFont stats=new RtfFont("Arial",10);
+            
+
+                CDISMap cdisMap = new CDISMap();
+                cdisMap.setCdisMapId(iter.next());
+                       
+                boolean returnVal = cdisMap.populateFileName(damsConn);
+                
+                if ( returnVal ) { 
+                    //getCisID
+                
+                    SiAssetMetaData siAsst = new SiAssetMetaData();
+                    //siAsst.setUoiid(cdisMap.getUoiid();
+                    //siAsst.populateSourceSystemID(damsConn)(
+                
+                    //String listing = "FileName: " + cdisMap.getFileName() + "Linked to CisID: " + cdisMap.getCisId() + " Source System ID: " + sourceSystemId; 
+                    String listing = "FileName: " + cdisMap.getFileName();
+                                
+                    document.add(new Paragraph("\n" + listing,stats));
+            
+                }
+                else {
+                    logger.log(Level.FINEST, "ERROR in obtaining map data for Report");
+                }
+            } catch(Exception e) {
+                logger.log(Level.FINEST, "ERROR",e);
+                this.rptDays = 1.0;
+            }
+        }
+        
+        
     }
     
         private void syncedWrite() {
@@ -223,10 +260,10 @@ public class Report {
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
-            this.rptDays = 1;
+            this.rptDays = 1.0;
         }  
     }
-    
+
     
     public void generate (CDIS cdis) {
         
@@ -234,33 +271,41 @@ public class Report {
         
         try {
             this.rptHours = cdis.properties.getProperty("rptHours");
-            this.rptDays = Integer.parseInt(rptHours) / 24;
+            this.rptDays = Double.parseDouble(rptHours) / 24;
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "Unable to calculate timeframe of report, defaulting to last 24 hours");
-            this.rptDays = 1;
+            this.rptDays = 1.0;
             this.rptHours = "24";
         }        
-        
+                
         create(cdis.properties.getProperty("siUnit"));
          
         //Get list of completed records (UOI_IDs) from the past increment
-        this.CompletedUoiids = new ArrayList<>();
+        // In progress should be collected first in case there are some currently in progress while the report is running
+        // ...we dont want to miss the ones that may be in progress now but completed by the time we get to the next step.
+        this.inProgressIds = new ArrayList<>();
+        
+        //Get list of completed records (UOI_IDs) from the past increment
+        this.completedIds = new ArrayList<>();
         genCompletedUoiidList ();
 
         //Get the metadata synced records from the past increment
-        this.metaSyncedUoiids = new ArrayList<>();
+        this.metaSyncedIds = new ArrayList<>();
         genMetaSyncedUoiidList ();
         
         //Get the failed records from the past increment
-        this.failedMapIds = new ArrayList<>();
+        this.failedIds = new ArrayList<>();
         genUoiidListError ();
         
         //Loop through the processed list and generate report
         
         statisticsWrite();
         
-        CompletedWrite();
+        if (completedIds.size() > 0 ) {
+            completedWrite();
+        }
+       
         
         //Loop through the metadata sync list and generate report
         

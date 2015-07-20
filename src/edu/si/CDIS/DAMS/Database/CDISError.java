@@ -22,18 +22,21 @@ import edu.si.CDIS.DAMS.Database.CDISMap;
 public class CDISError {
      private final static Logger logger = Logger.getLogger(CDIS.class.getName());
      
-     public boolean insertError (Connection damsConn, String operationType, Integer cdisMapId, String errorCode) {
+     public boolean insertError (Connection damsConn, String operationCd, Integer cdisMapId, String errorCd) {
         
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
         String sql = "INSERT INTO cdis_error ( " +
-                    "cdis_map_id," +
-                    "operation_type, " +
-                    "error_cd ) " +
-                    "values ( " + cdisMapId + ", " +
-                    "'" + operationType + "', " +
-                    "'" + errorCode + "')";
+                        "cdis_map_id," +
+                        "operation_cd, " +
+                        "error_cd, " +
+                        "error_dt) " +
+                    "values ( " + 
+                        cdisMapId + ", " +
+                        "'" + operationCd + "', " +
+                        "'" + errorCd + "'," +
+                        "SYSDATE)";
         try {
             
             pStmt = damsConn.prepareStatement(sql);

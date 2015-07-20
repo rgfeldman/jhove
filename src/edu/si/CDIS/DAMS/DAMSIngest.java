@@ -313,7 +313,8 @@ public class DAMSIngest {
         if(hotFolderDir.isDirectory()){ 
             while (hotFolderDir.list().length>0) {
  
-		System.out.println("Directory is not empty.  Check back in 5 minutes");
+                logger.log(Level.FINER, "Directory is not empty.  Check back in 5 minutes");
+                
                 try {
                     Thread.sleep(300000);
                  } catch (Exception e) {

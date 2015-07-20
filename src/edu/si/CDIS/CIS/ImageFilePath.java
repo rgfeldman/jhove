@@ -74,8 +74,7 @@ public class ImageFilePath {
                      "and b.PathID != " + this.IDSPathId + " " + 
                      "and b.PathID != " + this.PDFPathId;       
         
-
-        System.out.println("IDS syncPath Select: " + sql);
+        logger.log(Level.FINEST, "IDS syncPath Select: " + sql);
         
         ResultSet rs;
         
@@ -137,7 +136,7 @@ public class ImageFilePath {
 
                     rs = DataProvider.executeSelect(this.cisConn, stmt);
 
-                    System.out.println("Getting information for CDIS_ID: " + cdisTbl.getCDIS_ID());
+                    logger.log(Level.FINEST, "Getting information for CDIS_ID: " + cdisTbl.getCDIS_ID());
 
                     // Get the supplemental information for the current RenditionID that we are looping through
                     if (rs.next()) {
@@ -208,8 +207,7 @@ public class ImageFilePath {
         			"where a.uoi_id = b.uoi_id " +
         			"and b.uoi_id = '" + cdisTbl.getUOIID() + "'";
 
-        
-        System.out.println("get UAN: " + sql);
+        logger.log(Level.FINER, "get UAN: " + sql);
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -249,7 +247,6 @@ public class ImageFilePath {
     				"FileName = '" + uan + "' " +
     				"where RenditionID = " + cdisTbl.getRenditionId();
         
- //       System.out.println("IDS/PDF update: " + sql);
         logger.log(Level.FINER, "ImageFilePath.updateFilePath() " + "sql = " + sql);
         
         int updateCount = DataProvider.executeUpdate(this.cisConn, sql);

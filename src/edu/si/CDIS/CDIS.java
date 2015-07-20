@@ -147,7 +147,11 @@ public class CDIS {
             
             logger.log(Level.FINER, "Ini File loaded");
             
-            
+            //send all properties to the logfile
+            for (String key : properties.stringPropertyNames()) {
+                String value = properties.getProperty(key);
+                logger.log(Level.FINER, "Property: " + key + " value: " + value);
+            }
             
         } catch (Exception e) {
             logger.log(Level.FINER, "Error: obtaining config information", e );
@@ -158,7 +162,12 @@ public class CDIS {
         
     }
     
-    private boolean calculateBatchNumber () {    
+    /*  Method :        calcBatchNumber
+        Arguments:      
+        Description:    calculates and assigns a batch number based on date/time to uniquely define this execution batch
+        RFeldman 7/2015
+    */
+    private boolean calcBatchNumber () {    
         try {
         
             DateFormat df = new SimpleDateFormat("yyyyMMddkkmmss");
@@ -172,7 +181,11 @@ public class CDIS {
         return true;
     }
     
-    
+    /*  Method :        verifyProps
+        Arguments:      
+        Description:    verifies the required properties have been loaded
+        RFeldman 7/2015
+    */
     private boolean verifyProps (Properties properties) {
         
         //verify global properties exist in config file
@@ -274,7 +287,7 @@ public class CDIS {
                 return;
             }
             
-            boolean batchNumberSet = cdis.calculateBatchNumber();
+            boolean batchNumberSet = cdis.calcBatchNumber();
             if (! batchNumberSet) {
                 logger.log(Level.SEVERE, "Fatal Error: Batch number could not be generated");
                 return;

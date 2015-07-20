@@ -38,8 +38,6 @@ public class XmlSqlConfig {
         this.SelectStmtHash = new HashMap <String, String[]>();
     
         try {
-            //Class cls = Class.forName("CDIS_redesigned.MetaDataTarget");
-            //Object obj = cls.newInstance();
             
             //Locate the metaData xml file
             File file = new File(metaDataXmlFile);
@@ -49,8 +47,6 @@ public class XmlSqlConfig {
             DocumentBuilder db = dbf.newDocumentBuilder();
             this.doc = db.parse(file);
             doc.getDocumentElement().normalize();
-
-            //System.out.println("Root element " + doc.getDocumentElement().getNodeName());
             
             getElementByTag (operationType, "query");
        
@@ -93,10 +89,10 @@ public class XmlSqlConfig {
 
                         if (parentNode.getNodeName().equals(operationType)) {
                             
-                            System.out.println("Retaining SQL for current operationType: " + selectSql);
-                            System.out.println("SQL Query Type: " + selectType[0]);
-                            System.out.println("SQL Query delimiter: " + selectType[1]);
-                    
+                            logger.log(Level.FINE, "Retaining SQL for current operationType: " + selectSql);
+                            logger.log(Level.FINE, "SQL Query Type: " + selectType[0]);
+                            logger.log(Level.FINE, "SQL Query delimiter: " + selectType[1]);
+                            
                             addSelectStmtHash(selectSql, selectType);
                         }
                     }

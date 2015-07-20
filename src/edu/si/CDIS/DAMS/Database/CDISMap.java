@@ -20,32 +20,78 @@ import java.sql.Connection;
 public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Integer CDISid;
+    Integer CDISMapId;
     Long batchNumber;
     String fileName;
+    String uoiid;
+    String cisId;
     
     public Long getBatchNumber () {
         return this.batchNumber;
     }
        
     public Integer getCdisMapId () {
-        return this.CDISid;
+        return this.CDISMapId;
+    }
+    
+    public String getCisId () {
+        return this.cisId;
     }
     
     public String getFileName () {
         return this.fileName;
     }
     
+    public String getUoiid () {
+        return this.uoiid;
+    }
+    
     public void setBatchNumber (Long batchNumber) {
         this.batchNumber = batchNumber;
     }
         
-    public void setCdisMapId (Integer CDISid) {
-        this.CDISid = CDISid;
+    public void setCdisMapId (Integer CDISMapId) {
+        this.CDISMapId = CDISMapId;
     }
     
     public void setFileName (String fileName) {
         this.fileName = fileName;
+    }
+    
+    public void setCisId (String cisId) {
+        this.cisId = cisId;
+    }
+    
+    public void setUoiid (String uoiid) {
+        this.uoiid = uoiid;
+    }
+    
+    public boolean populateFileName (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT file_name FROM cdis_map " +
+                    "WHERE cdis_map_id = " + getCdisMapId();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setFileName (rs.getString(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return true;
     }
     
     public boolean populateIDForFileBatch (Connection damsConn) {
@@ -67,7 +113,7 @@ public class CDISMap {
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_MAP status in table", e );
+                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
                 return false;
         
         }finally {
