@@ -85,7 +85,7 @@ public class DAMSIngest {
                     sql = sql.replaceAll("\\?fileName\\?", cisFileName);
                 
                     logger.log(Level.FINEST, "SQL: {0}", sql);
-                
+                    
                     boolean sentForIngest = false;
                      
                     stmt = damsConn.prepareStatement(sql);                                
@@ -93,9 +93,9 @@ public class DAMSIngest {
                     
                     MediaFile mediaFile = new MediaFile();
                     
-                    if (rs.next()) {
+                    if (rs != null && rs.next()) {
                         //Find the image on the media drive
-                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisID);
+                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisID);   
                     }
                     else {
                         handleErrorMsg(cdisMap, "DUP", "Media Already exists: Media does not need to be created");

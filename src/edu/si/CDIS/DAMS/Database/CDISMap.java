@@ -66,11 +66,14 @@ public class CDISMap {
         this.uoiid = uoiid;
     }
     
-    public boolean populateFileName (Connection damsConn) {
+    public boolean populateMapInfo (Connection damsConn) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
-        String sql = "SELECT file_name FROM cdis_map " +
+        String sql = "SELECT cis_id, " + 
+                            "uoi_id, " +
+                            "file_name " +
+                    "FROM cdis_map " +
                     "WHERE cdis_map_id = " + getCdisMapId();
         
         try {
@@ -80,7 +83,9 @@ public class CDISMap {
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
-                setFileName (rs.getString(1));
+                setCisId (rs.getString(1));
+                setUoiid (rs.getString(2));
+                setFileName (rs.getString(3));
             }   
             
         } catch (Exception e) {
@@ -176,6 +181,36 @@ public class CDISMap {
                 
         return true;
        
+    }
+    
+    public boolean updateUoiid(Connection damsConn) {
+        PreparedStatement pStmt = null;
+        int rowsUpdated = 0;
+        
+        String sql =  "UPDATE cdis_map " +
+                      "SET uoi_id = '" + getUoiid() + "' " +
+                      "cdis_link_dt = SYSDATE " +
+                      "WHERE cdis_map_id = " + getCdisMapId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try {
+            
+            pStmt = damsConn.prepareStatement(sql);
+            rowsUpdated = pStmt.executeUpdate(sql);
+            
+            if (rowsUpdated != 1) {
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to insert into CDIS_MAP table", e );
+                return false;
+        }finally {
+                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }   
+        
+        return true;
     }
     
 }

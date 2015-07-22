@@ -475,7 +475,7 @@ public class SiAssetMetaData {
         ResultSet rs = null;
   
         String sql = "SELECT source_system_id FROM si_asset_metadata " +
-                    "WHERE uoi_id = " + getUoiid();
+                    "WHERE uoi_id = '" + getUoiid() + "'";
         
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 

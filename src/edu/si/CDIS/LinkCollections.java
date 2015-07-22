@@ -12,22 +12,20 @@ import edu.si.CDIS.utilties.DataProvider;;
 import java.util.logging.Level;
 import java.sql.Connection;
 
-import edu.si.CDIS.CIS.Database.CDISTable;
-import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
+import edu.si.CDIS.DAMS.Database.CDISMap;
 
-        
+  
 public class LinkCollections  {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     Connection cisConn;
     Connection damsConn;
-    LinkedHashMap <String,String> neverLinkedDamsRendtion;    
-    int successCount;
-    int failCount;
+    LinkedHashMap <String,String> neverLinkedDamsRendtion;   
+    String cisSourceDB;
 
     public LinkedHashMap <String,String> getNeverLinkedDamsRendtion() {
         return this.neverLinkedDamsRendtion;
@@ -47,6 +45,7 @@ public class LinkCollections  {
         // establish connectivity, and other most important variables
         this.damsConn = cdis.damsConn;
         this.cisConn = cdis.cisConn;
+        this.cisSourceDB = cdis.properties.getProperty("cisSourceDB"); 
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsRendtion = new LinkedHashMap <String, String>();
@@ -54,7 +53,7 @@ public class LinkCollections  {
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedDamsRenditions (cdis);
         
-        // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS
+        // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in the CIS
         linkUANtoFilename (cdis);    
         
     }
@@ -85,42 +84,9 @@ public class LinkCollections  {
         }finally {
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-         
-        
+          
     }
     
-    private String getFileNameForUoiid (String uoiid) {
-
-        String name = null;
-        ResultSet rs = null;
-        
-        String sql = "select Name "
-                + "from UOIS "
-                + "where UOI_ID = '" + uoiid + "'";
-        
-        logger.log(Level.ALL, "Select String: " + sql);
-
-        rs = DataProvider.executeSelect(this.damsConn, sql);
-        
-        try {
-            if (rs.next()) {
-                name = rs.getString(1);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-         
-        return name;
-    }
     
     /*  Method :        linkUANtoFilename
         Arguments:     
@@ -149,78 +115,73 @@ public class LinkCollections  {
         for (String key : neverLinkedDamsRendtion.keySet()) {
 
             try {
-                CDISTable cdisTbl = new CDISTable();
+                CDISMap cdisMap = new CDISMap();
                 
-                // set the temporary newSql variable to contain the sql with the UAN from the never linked Rendition hash
-                if (sql.contains("?owning_unit_unique_name?")) {
-                    currentIterationSql = sql.replace("?owning_unit_unique_name?", neverLinkedDamsRendtion.get(key));
-                }
-                
-                cdisTbl.setUOIID(key);
-                cdisTbl.setUAN(neverLinkedDamsRendtion.get(key));
+                cdisMap.setUoiid(key);
                 
                 if (sql.contains("?DAMSfileName?")) {
-                    //get the filename based on the uoiid
-                    String fileName = getFileNameForUoiid(cdisTbl.getUOIID());
-                    currentIterationSql = sql.replace("?DAMSfileName?", fileName);
+                    currentIterationSql = sql.replace("?DAMSfileName?",  neverLinkedDamsRendtion.get(key));
                 }
                 
                 //logger.log(Level.FINER,"checking for UOI_ID " + cdisTbl.getUOIID() + " UAN: " + neverLinkedDamsRendtion.get(key));
                 logger.log(Level.FINEST,"SQL " + currentIterationSql);
                               
-                stmt = cisConn.prepareStatement(currentIterationSql);
+                switch (cisSourceDB) {
+                        case "CDISDB" :
+                             stmt = damsConn.prepareStatement(currentIterationSql);
+                             break;
+                        case "TMSDB" :
+                            stmt = cisConn.prepareStatement(currentIterationSql);
+                            break;
+                            
+                        default:     
+                            logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cisSourceDB );
+                            return;
+                }
+                 
                 rs = stmt.executeQuery();              
                         
                 if (rs.next()) {
                     
                     try {
                         
-                        cdisTbl.setRenditionId(rs.getInt(1));
-                        cdisTbl.setRenditionNumber(rs.getString(2));           
+                        cdisMap.setCdisMapId(rs.getInt(1));           
                     
-                        logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisTbl.getUOIID() + " RenditionID: " + cdisTbl.getRenditionId());
-                    
-                        // Get the objectID for the CDIS table by the renditionID if is is ontainable
-                        TMSObject tmsObject = new TMSObject();
-                        tmsObject.populateObjectIDByRenditionId (cdisTbl.getRenditionId(), cisConn);                            
-                    
-                        // Set the objectID in the CDIS table object equal to the ObjectID in the Object object
-                        cdisTbl.setObjectId( tmsObject.getObjectID() );
-                    
-                        // add linking record to CDIS table
-                        boolean recordCreated = cdisTbl.createRecord (cdisTbl, cisConn);
+                        logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisMap.getUoiid() + " CDIS_MAP_ID: " + cdisMap.getCdisMapId());
+                                                        
+                        // update CDISMap table with uoiid
+                        boolean uoiidUpdated = cdisMap.updateUoiid(damsConn);
         
-                        if (! recordCreated) {
-                            logger.log(Level.FINER,"ERROR: CDIS record not created for UOIID! " + cdisTbl.getUOIID());
+                        if (! uoiidUpdated) {
+                            logger.log(Level.FINER,"ERROR: CDIS Map record not linked successfully! " + cdisMap.getUoiid());
                             //get the next id from the list
                             continue;
                         }
                         
-                        //Update the TMS blob
-                        if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
-                            Thumbnail thumbnail = new Thumbnail();
-                            thumbnail.generate (damsConn, cisConn, cdisTbl.getUOIID(), cdisTbl.getRenditionId());
-                        }
+                        //Update the TMS blob.  
+                        //Commented out for now. This is TMS specific code
+                        //if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
+                        //    Thumbnail thumbnail = new Thumbnail();
+                        //    thumbnail.generate (damsConn, cisConn, cdisMap.getUoiid(), cdisTbl.getRenditionId());
+                        //}
                         
-                        if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
-                            setForDamsFlag(cdisTbl.getRenditionId());
-                        }
+                        //Commented out for now. This is TMS specific code
+                       // if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
+                       //    setForDamsFlag(cdisTbl.getRenditionId());
+                       // }
                         
                         SiAssetMetaData siAsst = new SiAssetMetaData();
                         // we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
                         // update the SourceSystemID in DAMS with this value
-                        int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisTbl.getUOIID(), cdisTbl.getRenditionNumber() );
+                        int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisMap.getUoiid(), cdisMap.getCisId() );
                         
-                        if (updatedRows == 1) {
-                            successCount ++;
-                        }
-                        else {
-                            failCount ++;
+                        if (updatedRows != 1) {
+                            logger.log(Level.FINER,"ERROR: Unable to update siAssetMetadata SourceSystemID successfully! " + cdisMap.getUoiid());
                         }
                         
                     } catch (Exception e) {
                         e.printStackTrace();
-                        logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisTbl.getUOIID());
+                        logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getUoiid());
                     }
                 }
                 
@@ -267,8 +228,8 @@ public class LinkCollections  {
         
             // For each record in the sql query, add it to the unlinked rendition List
             while (rs.next()) {   
-                addNeverLinkedDamsRendtion(rs.getString("UOI_ID"), rs.getString("OWNING_UNIT_UNIQUE_NAME"));
-                logger.log(Level.FINER,"Adding DAMS asset to lookup in TMS: {0}", rs.getString("UOI_ID") );
+                addNeverLinkedDamsRendtion(rs.getString("UOI_ID"), rs.getString("NAME"));
+                logger.log(Level.FINER,"Adding DAMS asset to lookup in the CIS: {0}", rs.getString("UOI_ID") );
             }
             
             int numRecords = this.neverLinkedDamsRendtion.size();
@@ -284,7 +245,6 @@ public class LinkCollections  {
         }
         
         return;
-        
     }
     
 }

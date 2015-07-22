@@ -45,6 +45,10 @@ public class CDIS {
         this.batchNumber = batchNumber;
     }
     
+    private void setOperationType (String operationType) {
+        this.operationType = operationType;
+    }
+    
     /*  Method :        connectToDatabases
         Arguments:      
         Description:    establishes connections to both DAMS and CIS database s
@@ -245,7 +249,7 @@ public class CDIS {
         cdis.deleteLogs("tmp","success",3);
         cdis.deleteLogs("tmp","fail",3);
         cdis.deleteLogs("tmp","header",3);
-        cdis.deleteLogs("rpt","Rpt_",14);
+        cdis.deleteLogs("rpt","CDISRPT-",14);
         cdis.deleteLogs("log","CDISLog-",14);
         
         // Check if the required number of arguments are inputted
@@ -315,8 +319,38 @@ public class CDIS {
                 case "sendToIngest" :   
                     DAMSIngest damsIngest = new DAMSIngest();
                     damsIngest.ingest(cdis);
-                    break;
+                    
+                    // pause for a while...Then run the link operation type after the ingest is complete                   
+                    
+                    File hotFolder = new File (cdis.properties.getProperty("hotFolderMaster"));
+                    while (hotFolder.list().length>0) {
+                        logger.log(Level.FINER, "HotFolder Directory is not empty.  Check back in 5 minutes");
                 
+                        try {
+                            Thread.sleep(300000);
+                        } catch (Exception e) {
+                            logger.log(Level.FINER, "Exception in sleep ", e);
+                        }
+                    }
+                    
+                    File stagingFolder = new File (cdis.properties.getProperty("stagingFolder"));                    
+                    while (stagingFolder.list().length>0) {
+ 
+                        logger.log(Level.FINER, "Staging Directory is not empty.  Check back in 5 minutes");
+                
+                        try {
+                            Thread.sleep(300000);
+                        } catch (Exception e) {
+                            logger.log(Level.FINER, "Exception in sleep ", e);
+                        }
+                    }
+                    //Runtime.getRuntime().exec("ExecLinkToCIS.bat");
+                    
+                    String[] Arguments = new String[]{"linkToCIS"};
+                    CDIS.main(Arguments);
+                    
+                    break;
+                    
                 case "linkToCIS" :
                     LinkCollections linkcollections = new LinkCollections();
                     linkcollections.linkToCIS(cdis);

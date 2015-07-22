@@ -109,31 +109,31 @@ public class MediaFile {
         
         logger.log(Level.FINEST, "mediaFile Name : " + cisFileName);
         
-        //Get the full tms pathname from the RenditionID
-        switch (cdis.properties.getProperty("cdisSourceDB")) {
-            case "TMSDB" :
-                this.cisConn = cdis.cisConn;
-                pathFound = populateMediaPathLocationTMS (cisID);
-            break;
-                
-            case "CDISDB" :
-                pathFound = populateMediaPathLocationCDIS (cisID, cdis.properties.getProperty("siUnit"));
-            break;
-            
-            default:     
-                logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cdis.properties.getProperty("cdisSourceDB") );
-                return false;
-        }
-        
-        if (! pathFound) {
-            logger.log(Level.FINEST, "returning...path not found");
-            this.errorCode = "FPE";
-            return false;
-        }
-         
-        logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
-        
         try {
+            //Get the full tms pathname from the RenditionID
+            switch (cdis.properties.getProperty("cisSourceDB")) {
+                case "TMSDB" :
+                    this.cisConn = cdis.cisConn;
+                    pathFound = populateMediaPathLocationTMS (cisID);
+                break;
+                
+                case "CDISDB" :
+                    pathFound = populateMediaPathLocationCDIS (cisID, cdis.properties.getProperty("siUnit"));
+                break;
+            
+                default:     
+                    logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cdis.properties.getProperty("cisSourceDB") );
+                    return false;
+            }
+        
+            if (! pathFound) {
+                logger.log(Level.FINEST, "returning...path not found");
+                this.errorCode = "FPE";
+                return false;
+            }
+         
+            logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
+
             // configure from and to filenames
             File sourceFile = new File(mediaPathLocation + "//" + cisFileName);
          
