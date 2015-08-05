@@ -245,10 +245,7 @@ public class CDIS {
        
         CDIS cdis = new CDIS();
         
-        // Delete old tmp, log and report files
-        cdis.deleteLogs("tmp","success",3);
-        cdis.deleteLogs("tmp","fail",3);
-        cdis.deleteLogs("tmp","header",3);
+        // Delete old log and report files
         cdis.deleteLogs("rpt","CDISRPT-",14);
         cdis.deleteLogs("log","CDISLog-",14);
         
@@ -324,10 +321,10 @@ public class CDIS {
                     
                     File hotFolder = new File (cdis.properties.getProperty("hotFolderMaster"));
                     while (hotFolder.list().length>0) {
-                        logger.log(Level.FINER, "HotFolder Directory is not empty.  Check back in 5 minutes");
+                        logger.log(Level.FINER, "HotFolder Directory is not empty.  Check back in few minutes");
                 
                         try {
-                            Thread.sleep(300000);
+                            Thread.sleep(150000);
                         } catch (Exception e) {
                             logger.log(Level.FINER, "Exception in sleep ", e);
                         }
@@ -336,16 +333,16 @@ public class CDIS {
                     File stagingFolder = new File (cdis.properties.getProperty("stagingFolder"));                    
                     while (stagingFolder.list().length>0) {
  
-                        logger.log(Level.FINER, "Staging Directory is not empty.  Check back in 5 minutes");
+                        logger.log(Level.FINER, "Staging Directory is not empty.  Check back in few minutes");
                 
                         try {
-                            Thread.sleep(300000);
+                            Thread.sleep(150000);
                         } catch (Exception e) {
                             logger.log(Level.FINER, "Exception in sleep ", e);
                         }
                     }
-                    //Runtime.getRuntime().exec("ExecLinkToCIS.bat");
                     
+                    //Execute the Link Process now that the files have been ingested
                     String[] Arguments = new String[]{"linkToCIS"};
                     CDIS.main(Arguments);
                     

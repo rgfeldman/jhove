@@ -36,6 +36,7 @@ import com.lowagie.text.rtf.style.RtfFont;
 
 import edu.si.CDIS.DAMS.Database.CDISMap;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.CDISErrorCodeR;
 
 
 public class Report {
@@ -387,15 +388,17 @@ public class Report {
 
                 CDISMap cdisMap = new CDISMap();
                 cdisMap.setCdisMapId(iter.next());
-                       
                 boolean returnVal = cdisMap.populateMapInfo(damsConn);
+                
+                CDISErrorCodeR cdisErrorCode = new CDISErrorCodeR();            
+                returnVal = cdisErrorCode.populateDescription(damsConn, cdisMap.getCdisMapId() );
                 
                 if ( returnVal ) { 
                 
                     SiAssetMetaData siAsst = new SiAssetMetaData();
                     siAsst.setUoiid(cdisMap.getUoiid());
                 
-                    String listing = "FileName: " + cdisMap.getFileName() + "CIS ID: " + cdisMap.getCisId(); 
+                    String listing = "FileName: " + cdisMap.getFileName() + "CIS ID: " + cdisMap.getCisId() + " Error: " + cdisErrorCode.getDescription() ; 
                                 
                     document.add(new Paragraph("\n" + listing,stats));
             

@@ -80,7 +80,7 @@ public class LinkCollections  {
             logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
             
         } catch (Exception e) {
-                e.printStackTrace();
+            logger.log(Level.FINER,"ERROR: Could not update the forDams flag in TMS",e);
         }finally {
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
@@ -158,35 +158,35 @@ public class LinkCollections  {
                             continue;
                         }
                         
-                        //Update the TMS blob.  
-                        //Commented out for now. This is TMS specific code
-                        //if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
-                        //    Thumbnail thumbnail = new Thumbnail();
-                        //    thumbnail.generate (damsConn, cisConn, cdisMap.getUoiid(), cdisTbl.getRenditionId());
-                        //}
+                        if (cisSourceDB.equals("TMSDB")) {
+                            //Update the TMS blob. For TMS only 
+                            if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
+                                Thumbnail thumbnail = new Thumbnail();
+                                thumbnail.generate (damsConn, cisConn, cdisMap.getUoiid(), Integer.parseInt(cdisMap.getCisId()));
+                            }
                         
-                        //Commented out for now. This is TMS specific code
-                       // if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
-                       //    setForDamsFlag(cdisTbl.getRenditionId());
-                       // }
+                            //This is TMS specific code. For TMS only
+                            if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
+                                setForDamsFlag(Integer.parseInt(cdisMap.getCisId()));
+                            }
+                        }
                         
                         SiAssetMetaData siAsst = new SiAssetMetaData();
                         // we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
                         // update the SourceSystemID in DAMS with this value
-                        int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisMap.getUoiid(), cdisMap.getCisId() );
+                        int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisMap.getUoiid(), "TO BE SYNCED BY CDIS" );
                         
                         if (updatedRows != 1) {
                             logger.log(Level.FINER,"ERROR: Unable to update siAssetMetadata SourceSystemID successfully! " + cdisMap.getUoiid());
                         }
                         
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getUoiid());
+                        logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getUoiid(),e);
                     }
                 }
                 
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.FINER,"ERROR: Catched error in setup/Executing of linkUANtoFilename query",e);
             }finally {
                 try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }

@@ -188,7 +188,7 @@ public class CDISMap {
         int rowsUpdated = 0;
         
         String sql =  "UPDATE cdis_map " +
-                      "SET uoi_id = '" + getUoiid() + "' " +
+                      "SET uoi_id = '" + getUoiid() + "', " +
                       "cdis_link_dt = SYSDATE " +
                       "WHERE cdis_map_id = " + getCdisMapId();
         
@@ -204,7 +204,7 @@ public class CDISMap {
             }
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to insert into CDIS_MAP table", e );
+                logger.log(Level.FINER, "Error: unable to update CDIS_MAP table with uoi_id", e );
                 return false;
         }finally {
                 try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }

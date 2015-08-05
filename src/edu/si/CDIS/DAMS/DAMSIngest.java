@@ -240,6 +240,13 @@ public class DAMSIngest {
             } 
         }
         
+        //delete the workfolder subdirectory if it is empty 
+        //   If the processing was successful, files have been moved out and the directory will be empty
+        filesForDams = batchWorkFileDir.listFiles();
+        if (filesForDams == null) { 
+            batchWorkFileDir.delete();
+        }       
+        
     }
     
    /*  Method :        createReadyFile
@@ -263,7 +270,7 @@ public class DAMSIngest {
                 readyFile.createNewFile();
   
         } catch (Exception e) {
-                    e.printStackTrace();
+            logger.log(Level.FINER,"ERROR encountered when trying to create ready.txt file",e);;
         }
     }
     
