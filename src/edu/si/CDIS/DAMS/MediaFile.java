@@ -25,12 +25,12 @@ public class MediaFile {
     Connection damsConn;
     String errorCode;
 
-    public boolean populateMediaPathLocationCDIS (String cisID, String siUnit) {
+    public boolean populateMediaPathLocationCDIS (String cisID, String siHoldingUnit) {
         
         String sql = "SELECT file_path " +
                     "FROM   cdis_for_ingest " +
                     "WHERE  cis_id = " + cisID + " " +
-                    "AND    si_unit = '" + siUnit + "'";
+                    "AND    si_holding_unit = '" + siHoldingUnit + "'";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -118,7 +118,7 @@ public class MediaFile {
                 break;
                 
                 case "CDISDB" :
-                    pathFound = populateMediaPathLocationCDIS (cisID, cdis.properties.getProperty("siUnit"));
+                    pathFound = populateMediaPathLocationCDIS (cisID, cdis.properties.getProperty("siHoldingUnit"));
                 break;
             
                 default:     

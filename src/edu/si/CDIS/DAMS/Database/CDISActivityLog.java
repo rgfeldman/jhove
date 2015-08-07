@@ -6,36 +6,31 @@
 package edu.si.CDIS.DAMS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
-import edu.si.CDIS.DAMS.Database.CDISMap;
-
 
 /**
  *
  * @author rfeldman
  */
-public class CDISError {
+public class CDISActivityLog {
      private final static Logger logger = Logger.getLogger(CDIS.class.getName());
      
-     public boolean insertError (Connection damsConn, String operationCd, Integer cdisMapId, String errorCd) {
+     public boolean insertActivity (Connection damsConn, Integer cdisMapId, String cdisStatusCd) {
         
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
-        String sql = "INSERT INTO cdis_error ( " +
+        String sql = "INSERT INTO cdis_activity_log ( " +
                         "cdis_map_id, " +
-                        "operation_cd, " +
-                        "error_cd, " +
-                        "error_dt) " +
+                        "cdis_status_cd, " +
+                        "activity_dt) " +
                     "values ( " + 
                         cdisMapId + ", " +
-                        "'" + operationCd + "', " +
-                        "'" + errorCd + "'," +
+                        "'" + cdisStatusCd + "', " +
                         "SYSDATE)";
         try {
             
@@ -47,7 +42,7 @@ public class CDISError {
             }
             
          } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_ERROR in table", e );
+                logger.log(Level.FINER, "Error: unable to update CDIS_activity_log in table", e );
                 return false;
         }finally {
             try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
@@ -56,5 +51,6 @@ public class CDISError {
         return true;
         
     }
-    
+     
+     
 }

@@ -36,6 +36,7 @@ public class CDIS {
     public Properties properties;
     public HashMap <String,String[]> xmlSelectHash;
     Long batchNumber;
+    Handler fh;
             
     public Long getBatchNumber () {
         return this.batchNumber;
@@ -111,7 +112,7 @@ public class CDIS {
         //log All events
         logger.setLevel(Level.ALL);
 	
-        Handler fh = null;
+        
 	DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmm");
 	
         try {
@@ -193,7 +194,7 @@ public class CDIS {
     private boolean verifyProps (Properties properties) {
         
         //verify global properties exist in config file
-            String[] requiredProps = {"siUnit",
+            String[] requiredProps = {"siHoldingUnit",
                                     "damsDriver",
                                     "damsConnString",
                                     "damsUser",
@@ -317,34 +318,42 @@ public class CDIS {
                     DAMSIngest damsIngest = new DAMSIngest();
                     damsIngest.ingest(cdis);
                     
-                    // pause for a while...Then run the link operation type after the ingest is complete                   
+                    //If we want to link right after the ingest, make sure the file has made it to DAMS...then ingest
+                    if (cdis.properties.getProperty("linkAfterIngest").equals("true") ){   
                     
-                    File hotFolder = new File (cdis.properties.getProperty("hotFolderMaster"));
-                    while (hotFolder.list().length>0) {
-                        logger.log(Level.FINER, "HotFolder Directory is not empty.  Check back in few minutes");
+                        // pause for a while...Then run the link operation type after the ingest is complete                   
+                    
+                        File hotFolder = new File (cdis.properties.getProperty("hotFolderMaster"));
+                        while (hotFolder.list().length>0) {
+                            logger.log(Level.FINER, "HotFolder Directory is not empty.  Check back in few minutes");
                 
-                        try {
-                            Thread.sleep(150000);
-                        } catch (Exception e) {
-                            logger.log(Level.FINER, "Exception in sleep ", e);
+                            try {
+                                Thread.sleep(150000);
+                            } catch (Exception e) {
+                                logger.log(Level.FINER, "Exception in sleep ", e);
+                            }
                         }
-                    }
                     
-                    File stagingFolder = new File (cdis.properties.getProperty("stagingFolder"));                    
-                    while (stagingFolder.list().length>0) {
+                        File stagingFolder = new File (cdis.properties.getProperty("stagingFolder"));                    
+                        while (stagingFolder.list().length>0) {
  
-                        logger.log(Level.FINER, "Staging Directory is not empty.  Check back in few minutes");
+                            logger.log(Level.FINER, "Staging Directory is not empty.  Check back in few minutes");
                 
-                        try {
-                            Thread.sleep(150000);
-                        } catch (Exception e) {
-                            logger.log(Level.FINER, "Exception in sleep ", e);
+                            try {
+                                Thread.sleep(150000);
+                            } catch (Exception e) {
+                                logger.log(Level.FINER, "Exception in sleep ", e);
+                            }
                         }
-                    }
                     
-                    //Execute the Link Process now that the files have been ingested
-                    String[] Arguments = new String[]{"linkToCIS"};
-                    CDIS.main(Arguments);
+                        //discontinue the ingestLog handler before we switch to the link process
+                        logger.removeHandler(cdis.fh);
+                    
+                        //Execute the Link Process now that the files have been ingested
+                        String[] Arguments = new String[]{"linkToCIS"};
+                        CDIS.main(Arguments);
+                    
+                    }
                     
                     break;
                     

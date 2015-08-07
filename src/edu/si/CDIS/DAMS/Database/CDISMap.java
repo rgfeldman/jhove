@@ -149,18 +149,16 @@ public class CDISMap {
         
             sql =  "INSERT INTO cdis_map (" +
                             "cdis_map_id, " +
-                            "si_unit, " +
+                            "si_holding_unit, " +
                             "cis_id, " +
                             "file_name, " +
-                            "batch_number, " +
-                            "map_entry_dt) " +
+                            "batch_number ) " +
                         "VALUES (" +
                             getCdisMapId() + ", " +
-                            "'" + cdis.properties.getProperty("siUnit") + "', " +
+                            "'" + cdis.properties.getProperty("siHoldingUnit") + "', " +
                             "'" + cisId + "', " +
                             "'" + cisFileName + "', " +
-                            cdis.getBatchNumber() + ", " +
-                            "SYSDATE)";
+                            cdis.getBatchNumber() + ")";
                  
             logger.log(Level.FINEST,"SQL! " + sql);  
         

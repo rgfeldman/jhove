@@ -7,6 +7,7 @@ package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.DAMS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.Database.CDISError;
 import java.util.logging.Logger;
 import java.sql.Connection;
@@ -37,10 +38,10 @@ public class DAMSIngest {
         this.renditionsForDAMS.put(cisID, filename); 
     }
     
-    /*  Method :        checkDAMSForMedia
+    /*  Method :        processList
         Arguments:      
         Returns:      
-        Description:    Goes through the list of RenditionIDs from TMS.  To avoid duplicates,
+        Description:    Goes through the list of images that were determined to go to DAMS.  To avoid duplicates,
                         we check DAMS for an already existing image before we choose to create a new one.
         RFeldman 3/2015
     */
@@ -65,7 +66,11 @@ public class DAMSIngest {
             //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
             for (String cisID : renditionsForDAMS.keySet()) {
                 
+                logger.log(Level.FINEST, "Processing for cisID: " + cisID);
+                
                 CDISMap cdisMap = new CDISMap();
+                CDISActivityLog cdisActivity = new CDISActivityLog();
+                
                 String cisFileName = renditionsForDAMS.get(cisID);
                                 
                 // Now that we have the cisID, Add the media to the CDIS_MAP table
@@ -73,6 +78,13 @@ public class DAMSIngest {
                     
                 if (!mapEntryCreated) {
                     logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
+                    continue;
+                }
+                
+                //Log into the activity table
+                boolean ActivityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "MI");
+                if (!ActivityLogged) {
+                    logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
                 }
                 
@@ -102,10 +114,17 @@ public class DAMSIngest {
                         continue;
                     }
                     
-                    // If we have no error condition, mark status in CDIS table, else flag as error
+                    // If we have no error condition, mark status in activity table, else flag as error
                     if (! sentForIngest) {
                         errorCode = mediaFile.errorCode;
                         throw new Exception();
+                    } else {
+                        //Log into the activity table
+                        ActivityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SD");
+                        if (!ActivityLogged) {
+                            logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                            continue;
+                        }
                     }
 
                 } catch (Exception e) {
@@ -122,7 +141,7 @@ public class DAMSIngest {
                         
         } 
         else {
-            logger.log(Level.FINER, "ERROR: unable to check if TMS Media exists, supporting SQL not provided");
+            logger.log(Level.FINER, "ERROR: unable to check if CIS Media exists, supporting SQL not provided");
         }
     
     }
@@ -137,7 +156,7 @@ public class DAMSIngest {
     /*  Method :        populateNewMediaList
         Arguments:      
         Returns:      
-        Description:    Adds to the list of TMS RenditionIDs that need to be integrated into DAMS
+        Description:    Adds to the list of CIS IDs that need to be integrated into DAMS
         RFeldman 3/2015
     */
     private void populateNewMediaList (CDIS cdis) {
@@ -183,7 +202,7 @@ public class DAMSIngest {
                     }   
 
             } catch (Exception e) {
-                    logger.log(Level.FINER, "Error: obtaining RendtionList ", e );
+                    logger.log(Level.FINER, "Error: obtaining CIS ID list ", e );
                     return;
                     
             } finally {
@@ -297,6 +316,7 @@ public class DAMSIngest {
         populateNewMediaList (cdis);
         
         // check if the renditions are in dams...and process each one in list (move to workfolder
+        logger.log(Level.FINER, "Processing media List");
         processList(cdis);
         
         // Check to see if anything in the workfolder directory.
