@@ -17,6 +17,8 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -28,9 +30,9 @@ public class DAMSIngest {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     Connection damsConn;
     Connection cisConn;
-    String batchWorkFolder;
-    String damsHotFolder;
     String cisSourceDB;
+    String hotFolderBaseDir;
+    public ArrayList<String> distinctHotFolders;
     
     LinkedHashMap <String,String> renditionsForDAMS; 
     
@@ -82,8 +84,8 @@ public class DAMSIngest {
                 }
                 
                 //Log into the activity table
-                boolean ActivityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "MI");
-                if (!ActivityLogged) {
+                boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "MI");
+                if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
                 }
@@ -120,8 +122,8 @@ public class DAMSIngest {
                         throw new Exception();
                     } else {
                         //Log into the activity table
-                        ActivityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SD");
-                        if (!ActivityLogged) {
+                        activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
+                        if (!activityLogged) {
                             logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                             continue;
                         }
@@ -221,51 +223,80 @@ public class DAMSIngest {
         Description:    Moves media files from the workforder to the hotfolder location specified in the config file
         RFeldman 3/2015
     */
+    
+    
     private void moveFilesToHotFolder (Long batchNumber) {
-               
-        //establish vars to hold the dropoff locations for the media files
-        File damsMediaDropOffDir =  new File(this.damsHotFolder);
+          
+        Integer numFilesinCurrentFolder;
         
-        File batchWorkFileDir = new File(batchWorkFolder);
-        File[] filesForDams = batchWorkFileDir.listFiles();
-        
-        // For each file in work folder, move to the xml dropoff location, or the media dropoff location
-        for(int i = 0; i < filesForDams.length; i++) {
+        // We need to look in all workFolders for this batch 
+        for(Iterator<String> iter = distinctHotFolders.iterator(); iter.hasNext();) {
             
-            //Get MapID for logging and error capturing
-            CDISMap cdisMap = new CDISMap();
-            cdisMap.setBatchNumber(batchNumber);
-            cdisMap.setFileName(filesForDams[i].getName()); 
-            cdisMap.populateIDForFileBatch(this.damsConn);
+            numFilesinCurrentFolder = 0;
             
-            try { 
-                               
-                //skip the file if named Thumbs.db
-                if (cdisMap.getFileName().equals("Thumbs.db")) {
-                    continue;
-                }
-                    
+            String currentMainDirName = iter.next();
             
-                File fileForDams = filesForDams[i];
-                        
-               //move the image to the image directory if it was part of the batch
-               logger.log(Level.FINER, "Moving image file to : " + this.damsHotFolder);
+            //Set the Master vatiable information
+            String currentHotFolderMasterName = hotFolderBaseDir + "\\" + currentMainDirName + "\\MASTER";
+            File hotFolderMasterDir = new File(currentHotFolderMasterName);
+            logger.log(Level.FINER, "Current hotfolder set to : " + currentHotFolderMasterName);
+            
+            //Set the Workfile vatiable information
+            String batchWorkFileDirName = hotFolderBaseDir + "\\" + currentMainDirName + "\\TEMP-XFER\\" + batchNumber;
+            File batchWorkFileDir = new File(batchWorkFileDirName);
+            logger.log(Level.FINER, "Current workfolder set to : " + batchWorkFileDirName);
+            
+            // For each file in current work folder, move to the hot folder MASTER directory
+            File[] filesForDams = batchWorkFileDir.listFiles();
+            
+            for(int i = 0; i < filesForDams.length; i++) {
+            
+                //Get MapID for logging and error capturing
+                CDISMap cdisMap =  new CDISMap();
+                cdisMap.setBatchNumber(batchNumber);
+                cdisMap.setFileName(filesForDams[i].getName()); 
+                cdisMap.populateIDForFileBatch(this.damsConn);
                 
-               FileUtils.moveFileToDirectory(fileForDams, damsMediaDropOffDir, false);
-               
-            } catch (Exception e) {
-                    logger.log(Level.FINER, "Error: Moving file to HotFolder ", e );
-                    handleErrorMsg(cdisMap, "MFH", "Move to Hotfolder Failure for FileName:" + cdisMap.getFileName()  + " " + e );
-            } 
+                try {
+                    
+                    //skip the file if named Thumbs.db
+                    if (cdisMap.getFileName().equals("Thumbs.db")) {
+                        continue;
+                    }
+                    
+                    File fileForDams = filesForDams[i];
+                     
+                    FileUtils.moveFileToDirectory(fileForDams, hotFolderMasterDir, false);
+                     
+                    CDISActivityLog cdisActivity = new CDISActivityLog();
+                    
+                    boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SH");
+                    if (!activityLogged) {
+                            logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                            continue;
+                    } 
+                    
+                    //if we got this far we have succeeeded, increment count of files in hotfolder...
+                    numFilesinCurrentFolder ++;
+                    
+                } catch (Exception e) {
+                    logger.log(Level.FINER, "Error: Moving file to HotFolder Master", e );
+                    handleErrorMsg(cdisMap, "MFH", "Move to Hotfolder MASTER Failure for FileName:" + cdisMap.getFileName()  + " " + e );
+                } 
+            }
+                         
+            // If the processing was successful, files have been moved out and the directory will be empty
+            // delete the workfolder subdirectory if it is empty 
+            filesForDams = batchWorkFileDir.listFiles();
+            if (! (filesForDams.length > 0)) { 
+                logger.log(Level.FINER, "Deleting empty work file");
+                batchWorkFileDir.delete();
+            }  
+            
+        if (numFilesinCurrentFolder > 0) {
+            //create ready file in current hotfolder    
+            createReadyFile(currentHotFolderMasterName);        }
         }
-        
-        //delete the workfolder subdirectory if it is empty 
-        //   If the processing was successful, files have been moved out and the directory will be empty
-        filesForDams = batchWorkFileDir.listFiles();
-        if (filesForDams == null) { 
-            batchWorkFileDir.delete();
-        }       
-        
     }
     
    /*  Method :        createReadyFile
@@ -275,12 +306,14 @@ public class DAMSIngest {
                         This file indicates for the DAMS to create images based on the files in the hotfolder location
         RFeldman 3/2015
     */
-    private void createReadyFile () {
+    
+    private void createReadyFile (String hotDirectoryName) {
+    
         String readyFilewithPath = null;
         
         try {
                 //Create the ready.txt file and put in the media location
-                readyFilewithPath = this.damsHotFolder + "\\ready.txt";
+                readyFilewithPath = hotDirectoryName + "\\ready.txt";
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 
@@ -293,6 +326,63 @@ public class DAMSIngest {
         }
     }
     
+    
+    private boolean populateDistinctHotFolderList(Long batchNumber) {
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+        this.distinctHotFolders = new ArrayList<String>();
+        
+        String sql = "SELECT    distinct a.hot_folder " + 
+                    "FROM       cdis_for_ingest a, " +
+                    "           cdis_map b " +
+                    "WHERE  a.cis_id = b.cis_id " +
+                    "AND    a.si_holding_unit = b.si_holding_unit " +
+                    "AND    batch_number = " + batchNumber;
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            while (rs != null && rs.next()) {
+                distinctHotFolders.add(rs.getString(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return true;
+        
+    }
+    
+    private Integer countHotFolderSubFiles(String subDir) {
+    
+        // Check to see if anything is in hotfolder.  If there is, we need to wait for hotfolder to clear or we can run the risk of 
+        // having files being ingested that are partially there.
+            
+        Integer numFiles = 0;
+        
+        for(Iterator<String> iter = distinctHotFolders.iterator(); iter.hasNext();) {
+            String hotFolderSubLocation = hotFolderBaseDir + "\\" + iter.next() + "\\" + subDir;
+            
+            File hotFolderSubDir = new File(hotFolderSubLocation);
+        
+            if(hotFolderSubDir.isDirectory()){ 
+                numFiles += hotFolderSubDir.list().length;
+            }
+        }
+        
+        return numFiles;
+        
+    }
+    
     /*  Method :        ingest
         Arguments:      
         Returns:      
@@ -302,8 +392,7 @@ public class DAMSIngest {
      public void ingest (CDIS cdis) {
                                                                                        
         this.damsConn = cdis.damsConn;
-        this.batchWorkFolder = cdis.properties.getProperty("workFolder") + "//" + cdis.getBatchNumber();
-        this.damsHotFolder = cdis.properties.getProperty("hotFolderMaster");
+        this.hotFolderBaseDir = cdis.properties.getProperty("hotFolderBaseDir");
         this.cisSourceDB = cdis.properties.getProperty("cisSourceDB"); 
          
         if (! this.cisSourceDB.equals("CDISDB")) { 
@@ -319,46 +408,38 @@ public class DAMSIngest {
         logger.log(Level.FINER, "Processing media List");
         processList(cdis);
         
-        // Check to see if anything in the workfolder directory.
+        populateDistinctHotFolderList(cdis.getBatchNumber());
+        
+        if(distinctHotFolders.isEmpty()) {
+            logger.log(Level.FINER, "Error: Unable to get HotFolder from database, returning ");
+            return;
+        }
+        
+        // Check to see if anything in any of the workfolder directories.
         // We only need to continue if there is a file there.
-        File batchWorkFolderDir = new File(this.batchWorkFolder);
-        if(batchWorkFolderDir.isDirectory()){ 
-            if (! (batchWorkFolderDir.list().length>0)) {
-                logger.log(Level.FINER, "No files found in workfolder. Exiting ingest Code");
-                return;
-            }
-        } else {
-            logger.log(Level.FINER, "No workfolder found. Exiting ingest Code");
+        Integer numWorkFiles = countHotFolderSubFiles("TEMP-XFER\\" + cdis.getBatchNumber());
+
+        if (! (numWorkFiles > 0)) {
+            logger.log(Level.FINER, "No work Files detected to process, returning");
             return;
         }
         
-        // Check to see if anything is in hotfolder.  If there is, we need to wait for hotfolder to clear or we can run the risk of 
-        // having files being ingested that are partially there.
-        
-        File hotFolderDir = new File(this.damsHotFolder);
-        
-        if(hotFolderDir.isDirectory()){ 
-            while (hotFolderDir.list().length>0) {
+        // Check to see if anything in any of the hotfolder directories.
+        // We pause if there is a file in the hotfolder and wait for the hotfolder file to be ingested.
+        logger.log(Level.FINER, "{0} Workfiles detected.  Need to check if ANY hotfiles exist from another process before continuing", numWorkFiles);
+        while (countHotFolderSubFiles("MASTER") > 0) {
  
-                logger.log(Level.FINER, "Directory is not empty.  Check back in 5 minutes");
+            logger.log(Level.FINER, "hotFolder Master Directory is not empty.  Check back in 5 minutes");
                 
-                try {
-                    Thread.sleep(300000);
-                 } catch (Exception e) {
-                    logger.log(Level.FINER, "Exception in sleep ", e);
-                }
+            try {
+                Thread.sleep(300000);
+            } catch (Exception e) {
+                logger.log(Level.FINER, "Exception in sleep ", e);
             }
-        }
-        else {
-            logger.log(Level.FINER, "Error: Unable to find HotFolder, returning ");
-            return;
         }
         
         //Move from workfolder to hotfolder
         moveFilesToHotFolder(cdis.getBatchNumber());
-        
-        // create the ready file
-        createReadyFile();
          
      }
 }

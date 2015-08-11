@@ -24,6 +24,7 @@ import edu.si.CDIS.DAMS.DAMSIngest;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import java.io.File;
+import java.util.Iterator;
 
 
 public class CDIS {
@@ -323,26 +324,39 @@ public class CDIS {
                     
                         // pause for a while...Then run the link operation type after the ingest is complete                   
                     
-                        File hotFolder = new File (cdis.properties.getProperty("hotFolderMaster"));
-                        while (hotFolder.list().length>0) {
-                            logger.log(Level.FINER, "HotFolder Directory is not empty.  Check back in few minutes");
+                        for(Iterator<String> iter = damsIngest.distinctHotFolders.iterator(); iter.hasNext();) {
+                            
+                            String currentHotFolderName = iter.next();
+                            String hotFolderdirName =  cdis.properties.getProperty("hotFolderBaseDir") + "\\" + currentHotFolderName + "\\MASTER";
+                            
+                            File hotFolderMasterDir = new File (hotFolderdirName);
+                            while (hotFolderMasterDir.list().length>0) {
+                                logger.log(Level.FINER, "HotFolder Master Directory is not empty.  Check back in few minutes");
                 
-                            try {
-                                Thread.sleep(150000);
-                            } catch (Exception e) {
-                                logger.log(Level.FINER, "Exception in sleep ", e);
+                                try {
+                                    Thread.sleep(150000);
+                                } catch (Exception e) {
+                                    logger.log(Level.FINER, "Exception in sleep ", e);
+                                }
                             }
                         }
-                    
-                        File stagingFolder = new File (cdis.properties.getProperty("stagingFolder"));                    
-                        while (stagingFolder.list().length>0) {
+                        
+                        //Loop through the hotfolder for the current batch
+                        for(Iterator<String> iter = damsIngest.distinctHotFolders.iterator(); iter.hasNext();) {   
+                        
+                            String currentHotFolderName = iter.next();
+                            String stagingFolderdirName =  cdis.properties.getProperty("stagingFolderBaseDir") + "\\" + currentHotFolderName + "\\MASTER";
+                                
+                            File stagingFolder = new File (stagingFolderdirName);                    
+                            while (stagingFolder.list().length>0) {
  
-                            logger.log(Level.FINER, "Staging Directory is not empty.  Check back in few minutes");
+                                logger.log(Level.FINER, "Staging Directory is not empty.  Check back in few minutes");
                 
-                            try {
-                                Thread.sleep(150000);
-                            } catch (Exception e) {
-                                logger.log(Level.FINER, "Exception in sleep ", e);
+                                try {
+                                    Thread.sleep(150000);
+                                } catch (Exception e) {
+                                    logger.log(Level.FINER, "Exception in sleep ", e);
+                                }
                             }
                         }
                     

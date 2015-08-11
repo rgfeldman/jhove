@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
+import edu.si.CDIS.DAMS.Database.CDISForIngest;
 
 
 public class MediaFile {
@@ -106,6 +107,8 @@ public class MediaFile {
         
         this.damsConn = cdis.damsConn;
         boolean pathFound = false;
+        String baseDir = (cdis.properties.getProperty("hotFolderBaseDir"));
+        
         
         logger.log(Level.FINEST, "mediaFile Name : " + cisFileName);
         
@@ -137,11 +140,18 @@ public class MediaFile {
             // configure from and to filenames
             File sourceFile = new File(mediaPathLocation + "//" + cisFileName);
          
-            File destDir = new File (cdis.properties.getProperty("workFolder") + "//" + cdis.getBatchNumber());
+            //get the hotfolder Location for this record
+            CDISForIngest forIngest = new CDISForIngest();
+            forIngest.setCisId(cisID);
+            forIngest.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));
             
-                        
-            logger.log(Level.FINEST, "Copying mediaFile from : " + mediaPathLocation + cisFileName);
-            logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
+            forIngest.populateHotFolder(damsConn);
+            
+            String workFileBatchLocation = baseDir + "\\" + forIngest.getHotFolder() + "\\TEMP-XFER\\" + cdis.getBatchNumber();
+            File destDir = new File (workFileBatchLocation);
+            
+            logger.log(Level.FINEST, "Copying mediaFile from Original location : " + mediaPathLocation + "\\" + cisFileName);
+            logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + workFileBatchLocation + "\\" + sourceFile.getName());
         
             // Copy from tms source location to workfile location (and put in subdirectory with batch name).
             FileUtils.copyFileToDirectory(sourceFile, destDir, true);
