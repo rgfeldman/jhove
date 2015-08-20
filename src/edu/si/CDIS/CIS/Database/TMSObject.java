@@ -107,11 +107,18 @@ public class TMSObject {
         ResultSet rs = null;
         PreparedStatement stmt = null;
         String objectIDRank;
-        Integer objID;
+        Integer objID = null;
         
         try {
             
-            objID = Integer.parseInt(extensionlessFileName.substring(0, extensionlessFileName.indexOf("_")));
+            if (extensionlessFileName.contains("_")) {
+                //The Filename is in the format ObjectID followed by the rank
+                objID = Integer.parseInt(extensionlessFileName.substring(0, extensionlessFileName.indexOf("_")));
+            }
+            else {
+                //The Filename is the ObjectID with no rank indicator at the end
+                objID = Integer.parseInt(extensionlessFileName);
+            }
             
         } catch(Exception e) {
                 logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", extensionlessFileName);
