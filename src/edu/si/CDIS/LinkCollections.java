@@ -14,6 +14,7 @@ import java.sql.Connection;
 
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.CDISActivityLog;
 
 import edu.si.CDIS.DAMS.Database.CDISMap;
 
@@ -171,14 +172,21 @@ public class LinkCollections  {
                             }
                         }
                         
-                        SiAssetMetaData siAsst = new SiAssetMetaData();
+                        //Set the activitylog table for statuscode LC for 'Link Complete'
+                        CDISActivityLog activityLog = new CDISActivityLog();
+                        boolean activityAdded = activityLog.insertActivity(damsConn, cdisMap.getCdisMapId(), "LC");
+                        if (! activityAdded) {
+                            logger.log(Level.FINER,"ERROR: Activity not added successfully! " + cdisMap.getUoiid());
+                        }
+                        
+                        //SiAssetMetaData siAsst = new SiAssetMetaData();
                         // we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
                         // update the SourceSystemID in DAMS with this value
-                        int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisMap.getUoiid(), "TO BE SYNCED BY CDIS" );
+                        //int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisMap.getUoiid(), "TO BE SYNCED BY CDIS" );
                         
-                        if (updatedRows != 1) {
-                            logger.log(Level.FINER,"ERROR: Unable to update siAssetMetadata SourceSystemID successfully! " + cdisMap.getUoiid());
-                        }
+                        //if (updatedRows != 1) {
+                        //    logger.log(Level.FINER,"ERROR: Unable to update siAssetMetadata SourceSystemID successfully! " + cdisMap.getUoiid());
+                        //}
                         
                     } catch (Exception e) {
                         logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getUoiid(),e);

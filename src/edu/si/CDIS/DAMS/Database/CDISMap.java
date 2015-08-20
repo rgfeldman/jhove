@@ -187,8 +187,7 @@ public class CDISMap {
         int rowsUpdated = 0;
         
         String sql =  "UPDATE cdis_map " +
-                      "SET uoi_id = '" + getUoiid() + "', " +
-                      "cdis_link_dt = SYSDATE " +
+                      "SET dams_uoi_id = '" + getUoiid() + "' " +
                       "WHERE cdis_map_id = " + getCdisMapId();
         
         logger.log(Level.FINEST,"SQL! " + sql); 

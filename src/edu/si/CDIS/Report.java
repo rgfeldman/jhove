@@ -59,11 +59,11 @@ public class Report {
      private boolean genMetaSyncedIdList () {
         
         String sql = "SELECT cdis_map_id FROM cdis_map a " + 
-                     "WHERE metadata_sync_dt > (SYSDATE - " + this.rptDays + ")" +
-                     "AND integration_complete_dt < (SYSDATE - " + this.rptDays + ")" +
-                     "AND NOT EXISTS (" +
-                        "SELECT 'X' FROM cdis_error b " +
-                        "WHERE a.cdis_map_id = b.cdis_map_id)";
+                     "WHERE exists (" +
+                        "SELECT 'X' from cdis_activity_log b " +
+                        "WHERE a.cdis_map_id = b.cdis_map_id " +
+                        "AND b.cdis_status_cd = 'MS' + " +
+                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -96,10 +96,14 @@ public class Report {
     private boolean genInProgressIdList () {
         
         String sql = "SELECT cdis_map_id FROM cdis_map a " + 
-                     "WHERE integration_complete_dt is NULL " +
-                     "AND NOT EXISTS (" +
-                        "SELECT 'X' FROM cdis_error b " +
-                        "WHERE a.cdis_map_id = b.cdis_map_id)";
+                     "WHERE exists (" +
+                     "SELECT 'X' from cdis_activity_log b " +
+                        "WHERE a.cdis_map_id = b.cdis_map_id " +
+                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))" +
+                     "AND NOT exists (" +
+                        "SELECT 'X' from cdis_activity_log c " +
+                        "WHERE a.cdis_map_id = c.cdis_map_id " +
+                        "AND c.cdis_status_cd = 'LC')";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -132,10 +136,11 @@ public class Report {
     private boolean genCompletedIdList () {
         
         String sql = "SELECT cdis_map_id FROM cdis_map a " + 
-                     "WHERE integration_complete_dt > (SYSDATE - " + this.rptDays + ")" +
-                     "AND NOT EXISTS (" +
-                        "SELECT 'X' FROM cdis_error b " +
-                        "WHERE a.cdis_map_id = b.cdis_map_id)";
+                     "WHERE exists (" +
+                        "SELECT 'X' from cdis_activity_log b " +
+                        "WHERE a.cdis_map_id = b.cdis_map_id " +
+                        "AND b.cdis_status_cd = 'LC') " +
+                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -492,10 +497,12 @@ public class Report {
         this.completedIds = new ArrayList<>();
         genCompletedIdList ();
 
-        //Get the metadata synced records from the past increment
+        /*
+        //Get the metadata synced records in the last increment
         this.metaSyncedIds = new ArrayList<>();
         genMetaSyncedIdList ();
-        
+        */
+                
         //Get the failed records from the past increment
         this.failedIds = new ArrayList<>();
         genErrorIdList ();

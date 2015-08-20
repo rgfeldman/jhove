@@ -23,6 +23,8 @@ import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.DAMSIngest;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
+import edu.si.CDIS.DAMS.Database.CDISError;
+import edu.si.CDIS.DAMS.Database.CDISMap;
 import java.io.File;
 import java.util.Iterator;
 
@@ -257,7 +259,7 @@ public class CDIS {
             return;
 	}
 	else {
-            cdis.operationType = args[0];
+            cdis.setOperationType(args[0]);
 	}
 
         try {
@@ -331,7 +333,7 @@ public class CDIS {
                             
                             File hotFolderMasterDir = new File (hotFolderdirName);
                             while (hotFolderMasterDir.list().length>0) {
-                                logger.log(Level.FINER, "HotFolder Master Directory is not empty.  Check back in few minutes");
+                                logger.log(Level.FINER, "HotFolder Master Directory is not empty.  Wait a few minutes to see if files from this batch are ingested");
                 
                                 try {
                                     Thread.sleep(150000);
@@ -341,7 +343,7 @@ public class CDIS {
                             }
                         }
                         
-                        //Loop through the hotfolder for the current batch
+                        //Loop through the staging for the current batch
                         for(Iterator<String> iter = damsIngest.distinctHotFolders.iterator(); iter.hasNext();) {   
                         
                             String currentHotFolderName = iter.next();
@@ -350,7 +352,7 @@ public class CDIS {
                             File stagingFolder = new File (stagingFolderdirName);                    
                             while (stagingFolder.list().length>0) {
  
-                                logger.log(Level.FINER, "Staging Directory is not empty.  Check back in few minutes");
+                                logger.log(Level.FINER, "Staging Directory is not empty.  Wait a few minutes to see if files from this batch are ingested");
                 
                                 try {
                                     Thread.sleep(150000);
@@ -358,6 +360,30 @@ public class CDIS {
                                     logger.log(Level.FINER, "Exception in sleep ", e);
                                 }
                             }
+                        }
+                        
+                        //Look for failures in the staging folder area
+                        for(Iterator<String> iter = damsIngest.distinctHotFolders.iterator(); iter.hasNext();) {
+                            String currentHotFolderName = iter.next();
+                            String failedFolderdirName =  cdis.properties.getProperty("stagingFolderBaseDir") + "\\" + currentHotFolderName + "\\FAILED";
+                            
+                            File failedFolder = new File (failedFolderdirName);                    
+                            File[] failedFiles = failedFolder.listFiles();
+                            
+                            for (int i = 0; i < failedFiles.length; i++) {
+ 
+                                String failedFileName = failedFiles[i].getName();
+                
+                                CDISMap cdisMap = new CDISMap();
+                                cdisMap.setFileName(failedFileName);
+                                cdisMap.setBatchNumber(cdis.batchNumber);
+                                
+                                cdisMap.populateIDForFileBatch(cdis.damsConn);
+                                
+                                damsIngest.handleErrorMsg(cdisMap, "IPE", "Ingest process error for filename: " + failedFileName );          
+                                 
+                            }
+                            
                         }
                     
                         //discontinue the ingestLog handler before we switch to the link process

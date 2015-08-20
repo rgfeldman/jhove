@@ -148,7 +148,7 @@ public class DAMSIngest {
     
     }
     
-    private void handleErrorMsg (CDISMap cdisMap, String errorCode, String logMessage) {
+    public void handleErrorMsg (CDISMap cdisMap, String errorCode, String logMessage) {
         logger.log(Level.FINER, logMessage);
         
         CDISError cdisError = new CDISError();
@@ -376,6 +376,7 @@ public class DAMSIngest {
         
             if(hotFolderSubDir.isDirectory()){ 
                 numFiles += hotFolderSubDir.list().length;
+                logger.log(Level.FINER, "Directory: " + hotFolderSubLocation + " Files: " + numFiles);
             }
         }
         
@@ -418,7 +419,6 @@ public class DAMSIngest {
         // Check to see if anything in any of the workfolder directories.
         // We only need to continue if there is a file there.
         Integer numWorkFiles = countHotFolderSubFiles("TEMP-XFER\\" + cdis.getBatchNumber());
-
         if (! (numWorkFiles > 0)) {
             logger.log(Level.FINER, "No work Files detected to process, returning");
             return;
@@ -426,6 +426,7 @@ public class DAMSIngest {
         
         // Check to see if anything in any of the hotfolder directories.
         // We pause if there is a file in the hotfolder and wait for the hotfolder file to be ingested.
+        
         logger.log(Level.FINER, "{0} Workfiles detected.  Need to check if ANY hotfiles exist from another process before continuing", numWorkFiles);
         while (countHotFolderSubFiles("MASTER") > 0) {
  

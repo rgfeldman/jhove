@@ -30,7 +30,7 @@ public class MediaFile {
         
         String sql = "SELECT file_path " +
                     "FROM   cdis_for_ingest " +
-                    "WHERE  cis_id = " + cisID + " " +
+                    "WHERE  cis_id = '" + cisID + "' " +
                     "AND    si_holding_unit = '" + siHoldingUnit + "'";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
