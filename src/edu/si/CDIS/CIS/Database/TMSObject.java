@@ -121,7 +121,8 @@ public class TMSObject {
             }
             
         } catch(Exception e) {
-                logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", extensionlessFileName);
+                logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName: " + extensionlessFileName);
+                logger.log(Level.FINEST, "ErrorCode:" + e );
                 return false;
 	}
 

@@ -131,7 +131,7 @@ public class MediaRecord {
         if (! objectIdPopulated) {
             if (cdis.properties.getProperty("mapFileNameToObjectID").equals("true")) {
                
-                objectIdPopulated = tmsObject.mapFileNameToObjectID(damsImageFileName, cisConn);
+                objectIdPopulated = tmsObject.mapFileNameToObjectID(extensionlessFileName, cisConn);
                 if (objectIdPopulated) {
                     mediaRendition.setRenditionNumber(extensionlessFileName); 
                 }
