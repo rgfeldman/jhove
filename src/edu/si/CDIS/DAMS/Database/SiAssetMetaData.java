@@ -401,6 +401,7 @@ public class SiAssetMetaData {
     }
 
     public void setSourceSystemId(String sourceSystemId) {
+        sourceSystemId = scrubString(sourceSystemId);
 	this.sourceSystemId = sourceSystemId;
     }
     
