@@ -73,7 +73,7 @@ public class MediaFile {
         logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
         
         // configure from and to filenames
-        File sourceFile = new File(mediaPathLocation + tmsFileName);
+        File sourceFile = new File(mediaPathLocation + "\\" + tmsFileName);
          
         File destFile = new File (cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
                         
