@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import edu.si.CDIS.utilties.DataProvider;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SiAdminContentTypeDtls;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.StatisticsReport;
 import edu.si.CDIS.XmlSqlConfig;
@@ -278,32 +279,40 @@ public class MetaData {
                      
                          logger.log(Level.FINER, "DAMS Rows updated: " + updateDamsCount );
                         
-                        // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
-                        if (updateDamsCount == 1) {
-
-                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", true);
-                            successfulUpdateCount ++;
-                           
-                            //calcute the new IDSRestriction value
-                            String newIDSRestrict = calcNewIDSRestrict(siAsst);
-                            
-                            // if the flag from the config file says we never update for IDS, skip this step.
-                            if (! this.flagForIDS.equals("never")) {
-                                updateMetaDataStateDate(cdisTbl, newIDSRestrict);
-                            }
-                            
-                            logger.log(Level.ALL, "About to update CDIS table");
-                            
-                            int cdisRecordsUpdated = updateCDISTbl(cdisTbl, newIDSRestrict);
-                            if (cdisRecordsUpdated != 1) {
-                                logger.log(Level.ALL, "Error, CDIS Table not updated");
-                            }
-                        }
-                        else {
-                            logger.log(Level.ALL, "Error, CDIS Table not updated, metadata not synced");
+                        // Confirm that the update was made or go to error
+                        if (! (updateDamsCount == 1)) {
+                             logger.log(Level.ALL, "Error, CDIS Table not updated, metadata not synced");
                             statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", false);
                             failedUpdateCount ++;
+                            continue;
                         }
+                           
+                        // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
+                            
+                        SiAdminContentTypeDtls adminContentType = new SiAdminContentTypeDtls();
+                            
+                        adminContentType.setUoiid(cdisTbl.getUOIID());
+                        adminContentType.populateAdminType(damsConn, cdisTbl.getRenditionId());
+                        adminContentType.updateAdminContentType(damsConn);
+
+                        statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", true);
+                        successfulUpdateCount ++;
+                           
+                        //calcute the new IDSRestriction value
+                        String newIDSRestrict = calcNewIDSRestrict(siAsst);
+                            
+                        // if the flag from the config file says we never update for IDS, skip this step.
+                        if (! this.flagForIDS.equals("never")) {
+                             updateMetaDataStateDate(cdisTbl, newIDSRestrict);
+                        }
+                            
+                        logger.log(Level.ALL, "About to update CDIS table");
+                            
+                        int cdisRecordsUpdated = updateCDISTbl(cdisTbl, newIDSRestrict);
+                        if (cdisRecordsUpdated != 1) {
+                            logger.log(Level.ALL, "Error, CDIS Table not updated");
+                        }
+                                             
                     }
 
                 } catch (Exception e) {
