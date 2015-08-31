@@ -153,13 +153,15 @@ public class CDISMap {
                             "si_holding_unit, " +
                             "cis_id, " +
                             "file_name, " +
-                            "batch_number ) " +
+                            "batch_number, " +
+                            "deleted_ind ) " +
                         "VALUES (" +
                             getCdisMapId() + ", " +
                             "'" + cdis.properties.getProperty("siHoldingUnit") + "', " +
                             "'" + cisId + "', " +
                             "'" + cisFileName + "', " +
-                            cdis.getBatchNumber() + ")";
+                            cdis.getBatchNumber() + ", " +
+                            "'N')";
                  
             logger.log(Level.FINEST,"SQL! " + sql);  
         
