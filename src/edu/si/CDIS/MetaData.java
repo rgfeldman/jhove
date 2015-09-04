@@ -365,7 +365,10 @@ public class MetaData {
                         
                         //logger.log(Level.ALL, "Processing Column: " + column);
                          
-                        if (column.equals("credit")) {
+                        if (column.equals("alternate_identifier_1")) {
+                            updateStatement = updateStatement + " alternate_identifier_1 = '" + siAsst.getAlternateIdentifier1() + "',";
+                        }
+                        else if (column.equals("credit")) {
                             updateStatement = updateStatement + " credit = '" + siAsst.getCredit() + "',";
                         }
                         else if (column.equals("caption")) {
@@ -517,6 +520,11 @@ public class MetaData {
                         }
                     }                   
                     
+                    if (sql.contains("AS alternate_identifier_1")) {
+                        if (rs.getString("alternate_identifier_1") != null) {
+                            siAsst.setAlternateIdentifier1(rs.getString("alternate_identifier_1"));
+                        }
+                    }
                     if (sql.contains("AS caption")) {
                         if (rs.getString("caption") != null) {
                             if (sqlType.equals("cursorAppend")) {

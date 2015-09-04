@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 public class SiAssetMetaData {
     //class attributes
+    String alternateIdentifier1;
     String caption;
     String credit;
     String description;
@@ -46,6 +47,10 @@ public class SiAssetMetaData {
     
     // get functions
 
+    public String getAlternateIdentifier1 () {
+        return this.alternateIdentifier1;
+    }
+        
     public String getCaption () {
         return this.caption;
     }
@@ -186,6 +191,17 @@ public class SiAssetMetaData {
         }
         else {
                 this.namedPerson = namedPerson;   
+        }
+    }
+    
+    public void setAlternateIdentifier1(String alternateIdentifier1) {
+        alternateIdentifier1 = scrubString(alternateIdentifier1);
+        
+        if ( alternateIdentifier1.length() > 40 ) {
+        	this.alternateIdentifier1 = alternateIdentifier1.substring(0,39);
+        }
+        else {
+            this.alternateIdentifier1 = alternateIdentifier1;
         }
     }
     
