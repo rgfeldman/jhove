@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
 import edu.si.CDIS.DAMS.Database.CDISForIngest;
+import edu.si.CDIS.utilties.ReformatPath;
 
 
 public class MediaFile {
@@ -137,17 +138,25 @@ public class MediaFile {
          
             logger.log(Level.FINEST, "mediaFile Path : " + mediaPathLocation);
 
-            // configure from and to filenames
-            File sourceFile = new File(mediaPathLocation + "//" + cisFileName);
-         
+            // Build the string to contain the 'from' path and filename
+            String cisPathwithFile = cdis.properties.getProperty("cisMediaDrive") + "\\" + mediaPathLocation + "\\" + cisFileName;
+            ReformatPath reformatPath = new ReformatPath();
+            cisPathwithFile = reformatPath.reformatPathMS(cisPathwithFile);
+                                
+            // Build the string to contain the 'to' path and filename
             //get the hotfolder Location for this record
             CDISForIngest forIngest = new CDISForIngest();
             forIngest.setCisId(cisID);
-            forIngest.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));
-            
+            forIngest.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));           
             forIngest.populateHotFolder(damsConn);
             
             String workFileBatchLocation = baseDir + "\\" + forIngest.getHotFolder() + "\\TEMP-XFER\\" + cdis.getBatchNumber();
+            //reformat the string to correct
+            
+            workFileBatchLocation = reformatPath.reformatPathMS(workFileBatchLocation);
+            
+            // set 'to' and 'from' files
+            File sourceFile = new File(cisPathwithFile);            
             File destDir = new File (workFileBatchLocation);
             
             logger.log(Level.FINEST, "Copying mediaFile from Original location : " + mediaPathLocation + "\\" + cisFileName);

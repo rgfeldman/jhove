@@ -8,7 +8,6 @@ package edu.si.CDIS.DAMS;
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.DAMS.Database.CDISMap;
 import edu.si.CDIS.DAMS.Database.CDISActivityLog;
-import edu.si.CDIS.DAMS.Database.CDISError;
 import java.util.logging.Logger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,6 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import org.apache.commons.io.FileUtils;
+import edu.si.CDIS.utilties.ErrorLog;
 
 /**
  *
@@ -112,7 +112,8 @@ public class DAMSIngest {
                         sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisID);   
                     }
                     else {
-                        handleErrorMsg(cdisMap, "DUP", "Media Already exists: Media does not need to be created");
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap.getCdisMapId(), "DUP", "Media Already exists: Media does not need to be created", damsConn);
                         continue;
                     }
                     
@@ -133,7 +134,8 @@ public class DAMSIngest {
                     if (errorCode == null) {
                         errorCode = "PLE"; //Set error code to ProcessList error
                     }
-                    handleErrorMsg(cdisMap, errorCode, "File Copy Failure for FileName:" + cisFileName  + " " + e );
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap.getCdisMapId(), errorCode, "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
                     
                 } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
@@ -147,13 +149,7 @@ public class DAMSIngest {
         }
     
     }
-    
-    public void handleErrorMsg (CDISMap cdisMap, String errorCode, String logMessage) {
-        logger.log(Level.FINER, logMessage);
-        
-        CDISError cdisError = new CDISError();
-        cdisError.insertError(damsConn, "STDI", cdisMap.getCdisMapId(), errorCode);
-    }
+
     
     /*  Method :        populateNewMediaList
         Arguments:      
@@ -280,8 +276,8 @@ public class DAMSIngest {
                     numFilesinCurrentFolder ++;
                     
                 } catch (Exception e) {
-                    logger.log(Level.FINER, "Error: Moving file to HotFolder Master", e );
-                    handleErrorMsg(cdisMap, "MFH", "Move to Hotfolder MASTER Failure for FileName:" + cdisMap.getFileName()  + " " + e );
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap.getCdisMapId(), "MFH", "Move to Hotfolder MASTER Failure for FileName:" + cdisMap.getFileName()  + " " + e, damsConn );
                 } 
             }
                          

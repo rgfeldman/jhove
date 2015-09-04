@@ -62,7 +62,7 @@ public class Report {
                      "WHERE exists (" +
                         "SELECT 'X' from cdis_activity_log b " +
                         "WHERE a.cdis_map_id = b.cdis_map_id " +
-                        "AND b.cdis_status_cd = 'MS' + " +
+                        "AND b.cdis_status_cd = 'MS' " +
                         "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -139,7 +139,7 @@ public class Report {
                      "WHERE exists (" +
                         "SELECT 'X' from cdis_activity_log b " +
                         "WHERE a.cdis_map_id = b.cdis_map_id " +
-                        "AND b.cdis_status_cd = 'LC') " +
+                        "AND b.cdis_status_cd = 'LC' " +
                         "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -238,7 +238,7 @@ public class Report {
             RtfFont stats=new RtfFont("Times New Roman",12);
             
             document.add(new Paragraph("\nNumber of Succesful DAMS/CIS Linkages - Completed : " + this.completedIds.size(), stats));
-            document.add(new Paragraph("Number of Succesful DAMS/CIS Linkages - In Progress : " + this.inProgressIds.size(), stats));
+            document.add(new Paragraph("Number of DAMS/CIS Linkages - In Progress : " + this.inProgressIds.size(), stats));
             document.add(new Paragraph("Number of Successful MetaData Re-Synced Records: " + this.metaSyncedIds.size(), stats));
             document.add(new Paragraph("Number of Failed Records: " + this.failedIds.size(), stats));
             
@@ -247,21 +247,40 @@ public class Report {
         }  
     }
     
-    private void completedWrite() {
-        
+    
+    private void write(String recordType, ArrayList<Integer> recordList) {
         try {
-            RtfFont secHeader=new RtfFont("Times New Roman",12,Font.BOLD);
+            RtfFont secHeaderFont=new RtfFont("Times New Roman",12,Font.BOLD);
             
-            document.add(new Paragraph("\n\n----------------------------------------------------",secHeader));
-            document.add(new Paragraph("\nIntegration Successfully Completed for"));
+            String sectionHeader = null;
+            
+            switch (recordType) {
+            
+                case "inProgress"    :
+                    sectionHeader = "\n\nIntegration Currently in Progress For: ";
+                    break;
+                case "completed" :
+                    sectionHeader = "\nIntegration Successfully Completed For: ";
+                    break;    
+                case "metaDataSynced" :
+                    sectionHeader = "\nMetaData Successfully Synchronized with DAMS For: ";
+                    break;
+                case "failed" :     
+                    sectionHeader = "\nThe Following Media experienced Integration Failures: ";
+                    break;     
+            }
+            
+            document.add(new Paragraph(sectionHeader,secHeaderFont));
+            document.add(new Phrase("----------------------------------------------------",secHeaderFont));
+
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
-        }  
-            
-        for (Iterator<Integer> iter = completedIds.iterator(); iter.hasNext();) {
+        } 
+        
+        for (Iterator<Integer> iter = recordList.iterator(); iter.hasNext();) {
             
             try {
-                RtfFont stats=new RtfFont("Arial",10);
+                RtfFont listElementFont=new RtfFont("Arial",10);
             
 
                 CDISMap cdisMap = new CDISMap();
@@ -269,20 +288,37 @@ public class Report {
                        
                 boolean returnVal = cdisMap.populateMapInfo(damsConn);
                 
-                if ( returnVal ) { 
-                
-                    SiAssetMetaData siAsst = new SiAssetMetaData();
-                    siAsst.setUoiid(cdisMap.getUoiid());
-                    siAsst.populateSourceSystemId(damsConn);
-                
-                    String listing = "FileName: " + cdisMap.getFileName() + "Linked to CisID: " + cdisMap.getCisId() + " Source System ID: " + siAsst.getSourceSystemId(); 
-                                
-                    document.add(new Paragraph("\n" + listing,stats));
-            
-                }
-                else {
+                if (! returnVal ) {
                     logger.log(Level.FINEST, "ERROR in obtaining map data for Report");
+                    return;
                 }
+                
+                SiAssetMetaData siAsst = new SiAssetMetaData();
+                siAsst.setUoiid(cdisMap.getUoiid());
+                siAsst.populateSourceSystemId(damsConn);
+                
+                String listing = null;
+                    
+                switch (recordType) {
+                    case "inProgress"    :
+                        listing = "FileName: " + cdisMap.getFileName() + "  - Currently In Progress"; 
+                        break;
+                    case "completed" :
+                        listing = "FileName: " + cdisMap.getFileName() + "Linked to CisID: " + cdisMap.getCisId() + " Source System ID: " + siAsst.getSourceSystemId();
+                        break;
+                    case "metaDataSynced":
+                        listing = "FileName: " + cdisMap.getFileName() + "MetaData Synced in DAMS: " + cdisMap.getCisId() + " Source System ID: " + siAsst.getSourceSystemId(); 
+                        break;
+                    case "failed":
+                        CDISErrorCodeR cdisErrorCode = new CDISErrorCodeR();            
+                        returnVal = cdisErrorCode.populateDescription(damsConn, cdisMap.getCdisMapId() );
+                
+                        listing = "FileName: " + cdisMap.getFileName() + "CIS ID: " + cdisMap.getCisId() + " Error: " + cdisErrorCode.getDescription() ; 
+                        break;    
+                    }
+                             
+                    document.add(new Phrase("\n" + listing,listElementFont));
+            
             } catch(Exception e) {
                 logger.log(Level.FINEST, "ERROR",e);
             }
@@ -290,133 +326,6 @@ public class Report {
         
     }
     
-    private void  inProgressWrite() {
-        try {
-            RtfFont secHeader=new RtfFont("Arial",10);
-            document.add(new Paragraph("\n\n----------------------------------------------------",secHeader));
-            document.add(new Paragraph("\nIntegration Currently in Progress For"));
-            
-        } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR",e);
-        }  
-        
-        for (Iterator<Integer> iter = inProgressIds.iterator(); iter.hasNext();) {
-            
-            try {
-                RtfFont stats=new RtfFont("Arial",10);
-            
-
-                CDISMap cdisMap = new CDISMap();
-                cdisMap.setCdisMapId(iter.next());
-                       
-                boolean returnVal = cdisMap.populateMapInfo(damsConn);
-                
-                if ( returnVal ) { 
-                
-                    SiAssetMetaData siAsst = new SiAssetMetaData();
-                    siAsst.setUoiid(cdisMap.getUoiid());
-                    siAsst.populateSourceSystemId(damsConn);
-                
-                    String listing = "FileName: " + cdisMap.getFileName() + "MetaData Synced in DAMS: " + cdisMap.getCisId() + " Source System ID: " + siAsst.getSourceSystemId(); 
-                                
-                    document.add(new Paragraph("\n" + listing,stats));
-            
-                }
-                else {
-                    logger.log(Level.FINEST, "ERROR in obtaining map data for Report");
-                }
-            } catch(Exception e) {
-                logger.log(Level.FINEST, "ERROR",e);
-            }
-        }
-    }
-    
-    private void syncedWrite() {
-        
-        try {
-            RtfFont secHeader=new RtfFont("Arial",10);
-            document.add(new Paragraph("\n\n----------------------------------------------------",secHeader));
-            document.add(new Paragraph("\nMetaData Successfully Synchronized with DAMS for"));
-            
-        } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR",e);
-        }  
-        
-        for (Iterator<Integer> iter = metaSyncedIds.iterator(); iter.hasNext();) {
-            
-            try {
-                RtfFont stats=new RtfFont("Arial",10);
-            
-
-                CDISMap cdisMap = new CDISMap();
-                cdisMap.setCdisMapId(iter.next());
-                       
-                boolean returnVal = cdisMap.populateMapInfo(damsConn);
-                
-                if ( returnVal ) { 
-                
-                    SiAssetMetaData siAsst = new SiAssetMetaData();
-                    siAsst.setUoiid(cdisMap.getUoiid());
-                    siAsst.populateSourceSystemId(damsConn);
-                
-                    String listing = "FileName: " + cdisMap.getFileName() + "MetaData Synced in DAMS: " + cdisMap.getCisId() + " Source System ID: " + siAsst.getSourceSystemId(); 
-                                
-                    document.add(new Paragraph("\n" + listing,stats));
-            
-                }
-                else {
-                    logger.log(Level.FINEST, "ERROR in obtaining map data for Report");
-                }
-            } catch(Exception e) {
-                logger.log(Level.FINEST, "ERROR",e);
-            }
-        }
-        
-    }
-
-    private void failedWrite() {
-        
-         try {
-            RtfFont secHeader=new RtfFont("Arial",10);
-            document.add(new Paragraph("\n\n\n\n\n----------------------------------------------------",secHeader));
-            document.add(new Paragraph("\nMedia with Integration Failures"));
-            
-        } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR",e);
-        }  
-        
-        for (Iterator<Integer> iter = metaSyncedIds.iterator(); iter.hasNext();) {
-            
-            try {
-                RtfFont stats=new RtfFont("Arial",10);
-            
-
-                CDISMap cdisMap = new CDISMap();
-                cdisMap.setCdisMapId(iter.next());
-                boolean returnVal = cdisMap.populateMapInfo(damsConn);
-                
-                CDISErrorCodeR cdisErrorCode = new CDISErrorCodeR();            
-                returnVal = cdisErrorCode.populateDescription(damsConn, cdisMap.getCdisMapId() );
-                
-                if ( returnVal ) { 
-                
-                    SiAssetMetaData siAsst = new SiAssetMetaData();
-                    siAsst.setUoiid(cdisMap.getUoiid());
-                
-                    String listing = "FileName: " + cdisMap.getFileName() + "CIS ID: " + cdisMap.getCisId() + " Error: " + cdisErrorCode.getDescription() ; 
-                                
-                    document.add(new Paragraph("\n" + listing,stats));
-            
-                }
-                else {
-                    logger.log(Level.FINEST, "ERROR in obtaining map data for Report");
-                }
-            } catch(Exception e) {
-                logger.log(Level.FINEST, "ERROR",e);
-            }
-        }
-        
-    }
     
     public void send (String siUnit, String emailTo) {
         try {
@@ -485,7 +394,7 @@ public class Report {
             this.rptHours = "24";
         }        
         
-        create(cdis.properties.getProperty("siUnit"));
+        create(cdis.properties.getProperty("siHoldingUnit"));
          
         //Get list of completed records (UOI_IDs) from the past increment
         // In progress should be collected first in case there are some currently in progress while the report is running
@@ -497,32 +406,31 @@ public class Report {
         this.completedIds = new ArrayList<>();
         genCompletedIdList ();
 
-        /*
         //Get the metadata synced records in the last increment
         this.metaSyncedIds = new ArrayList<>();
         genMetaSyncedIdList ();
-        */
-                
+          
         //Get the failed records from the past increment
         this.failedIds = new ArrayList<>();
         genErrorIdList ();
         
         statisticsWrite();
         if (completedIds.size() > 0 ) {
-            completedWrite();
+            write("completed", this.completedIds);
         }
        
         if (inProgressIds.size() > 0 ) {
-            inProgressWrite();
+            write("inProgress", this.inProgressIds);
         }
+        
         
         //Loop through the metadata sync list and generate report
         if (metaSyncedIds.size() > 0) {
-            syncedWrite ();
+            write("metaDataSynced", this.metaSyncedIds);
         }
         
         if (failedIds.size() > 0) {
-            failedWrite();
+            write("failed", this.failedIds);
         }
         
         //close the Document
@@ -532,7 +440,7 @@ public class Report {
             //send email to list
             logger.log(Level.FINEST, "Need To send Email Report");
             
-            send(cdis.properties.getProperty("siUnit"), cdis.properties.getProperty("emailReportTo") );
+            send(cdis.properties.getProperty("siHoldingUnit"), cdis.properties.getProperty("emailReportTo") );
         }
         
     }

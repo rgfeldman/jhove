@@ -72,7 +72,7 @@ public class CDISMap {
         ResultSet rs = null;
   
         String sql = "SELECT cis_id, " + 
-                            "uoi_id, " +
+                            "dams_uoi_id, " +
                             "file_name " +
                     "FROM cdis_map " +
                     "WHERE cdis_map_id = " + getCdisMapId();

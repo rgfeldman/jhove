@@ -27,6 +27,7 @@ import edu.si.CDIS.DAMS.Database.CDISError;
 import edu.si.CDIS.DAMS.Database.CDISMap;
 import java.io.File;
 import java.util.Iterator;
+import edu.si.CDIS.utilties.ErrorLog;
 
 
 public class CDIS {
@@ -380,7 +381,8 @@ public class CDIS {
                                 
                                 cdisMap.populateIDForFileBatch(cdis.damsConn);
                                 
-                                damsIngest.handleErrorMsg(cdisMap, "IPE", "Ingest process error for filename: " + failedFileName );          
+                                ErrorLog errorLog = new ErrorLog();                                
+                                errorLog.capture(cdisMap.getCdisMapId(), "IPE", "Ingest process error for filename: " + failedFileName, cdis.damsConn );          
                                  
                             }
                             

@@ -25,10 +25,12 @@ public class CDISActivityLog {
         int rowsUpdated = 0;
         
         String sql = "INSERT INTO cdis_activity_log ( " +
+                        "cdis_activity_log_id, " +
                         "cdis_map_id, " +
                         "cdis_status_cd, " +
                         "activity_dt) " +
                     "values ( " + 
+                        "cdis_activity_log_id_seq.NextVal, " +
                         cdisMapId + ", " +
                         "'" + cdisStatusCd + "', " +
                         "SYSDATE)";
