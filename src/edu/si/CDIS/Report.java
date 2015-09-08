@@ -95,11 +95,11 @@ public class Report {
      
     private boolean genInProgressIdList () {
         
+        //include everything in progress, regardless of date
         String sql = "SELECT cdis_map_id FROM cdis_map a " + 
                      "WHERE exists (" +
                      "SELECT 'X' from cdis_activity_log b " +
-                        "WHERE a.cdis_map_id = b.cdis_map_id " +
-                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))" +
+                        "WHERE a.cdis_map_id = b.cdis_map_id )" +
                      "AND NOT exists (" +
                         "SELECT 'X' from cdis_activity_log c " +
                         "WHERE a.cdis_map_id = c.cdis_map_id " +
@@ -207,10 +207,15 @@ public class Report {
     private boolean create (String siUnit) {
         
         String timeStamp;
+        String timeStampWords;
         
         //get the date timestamp for use in the report file
         DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmmss");
         timeStamp = df.format(new Date());
+        
+        DateFormat dfWords = new SimpleDateFormat();
+        timeStampWords = dfWords.format(new Date());
+        
        
         this.rptFile =  "rpt\\CDISRPT-" + siUnit + "-" + timeStamp + ".rtf";
         
@@ -223,7 +228,8 @@ public class Report {
             document.open();
             
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
-            document.add(new Paragraph(siUnit + " CDIS Activity Report - Past " + this.rptHours + " Hours", title));
+            document.add(new Paragraph(timeStampWords + "\n" + 
+                                        siUnit + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
@@ -301,19 +307,19 @@ public class Report {
                     
                 switch (recordType) {
                     case "inProgress"    :
-                        listing = "FileName: " + cdisMap.getFileName() + "  - Currently In Progress"; 
+                        listing = "FileName: " + cdisMap.getFileName() + ",  CIS Media ID: " + cdisMap.getCisUniqueMediaId() + " - Currently In Progress"; 
                         break;
                     case "completed" :
-                        listing = "FileName: " + cdisMap.getFileName() + "Linked to CisID: " + cdisMap.getCisId() + " Source System ID: " + siAsst.getSourceSystemId();
+                        listing = "FileName: " + cdisMap.getFileName() + "Linked to CIS Media ID: " + cdisMap.getCisUniqueMediaId() + " Source System ID: " + siAsst.getSourceSystemId();
                         break;
                     case "metaDataSynced":
-                        listing = "FileName: " + cdisMap.getFileName() + "MetaData Synced in DAMS: " + cdisMap.getCisId() + " Source System ID: " + siAsst.getSourceSystemId(); 
+                        listing = "FileName: " + cdisMap.getFileName() + "MetaData Synced in DAMS: " + cdisMap.getCisUniqueMediaId() + " Source System ID: " + siAsst.getSourceSystemId(); 
                         break;
                     case "failed":
                         CDISErrorCodeR cdisErrorCode = new CDISErrorCodeR();            
                         returnVal = cdisErrorCode.populateDescription(damsConn, cdisMap.getCdisMapId() );
                 
-                        listing = "FileName: " + cdisMap.getFileName() + "CIS ID: " + cdisMap.getCisId() + " Error: " + cdisErrorCode.getDescription() ; 
+                        listing = "FileName: " + cdisMap.getFileName() + "CIS ID: " + cdisMap.getCisUniqueMediaId() + " Error: " + cdisErrorCode.getDescription() ; 
                         break;    
                     }
                              

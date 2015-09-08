@@ -21,15 +21,15 @@ public class CDISForIngest {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     String hotFolder;
-    String cisId;
+    String cisUniqueMediaId;
     String siHoldingUnit;
     
     public String getHotFolder () {
         return this.hotFolder;
     }
     
-    public String getCisId () {
-        return this.cisId;
+    public String getCisUniqueMediaId () {
+        return this.cisUniqueMediaId;
     }
     
     public String getSiHoldingUnit () {
@@ -40,8 +40,8 @@ public class CDISForIngest {
         this.hotFolder = hotFolder;
     }
     
-    public void setCisId (String cisId) {
-        this.cisId = cisId;
+    public void setCisUniqueMediaId (String cisUniqueMediaId) {
+        this.cisUniqueMediaId = cisUniqueMediaId;
     }
     
     public void setSiHoldingUnit (String siHoldingUnit) {
@@ -56,7 +56,7 @@ public class CDISForIngest {
   
         String sql = "SELECT hot_folder " +
                     "FROM cdis_for_ingest " +
-                    "WHERE cis_id = '" + getCisId() + "' " +
+                    "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
                     "AND si_holding_unit = '" + getSiHoldingUnit() + "'";
         
         try {

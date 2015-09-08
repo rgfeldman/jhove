@@ -24,7 +24,7 @@ public class CDISMap {
     Long batchNumber;
     String fileName;
     String uoiid;
-    String cisId;
+    String cisUniqueMediaId;
     
     public Long getBatchNumber () {
         return this.batchNumber;
@@ -34,8 +34,8 @@ public class CDISMap {
         return this.CDISMapId;
     }
     
-    public String getCisId () {
-        return this.cisId;
+    public String getCisUniqueMediaId () {
+        return this.cisUniqueMediaId;
     }
     
     public String getFileName () {
@@ -58,8 +58,8 @@ public class CDISMap {
         this.fileName = fileName;
     }
     
-    public void setCisId (String cisId) {
-        this.cisId = cisId;
+    public void setCisUniqueMediaId (String cisUniqueMediaId) {
+        this.cisUniqueMediaId = cisUniqueMediaId;
     }
     
     public void setUoiid (String uoiid) {
@@ -71,7 +71,7 @@ public class CDISMap {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
-        String sql = "SELECT cis_id, " + 
+        String sql = "SELECT cis_unique_media_id, " + 
                             "dams_uoi_id, " +
                             "file_name " +
                     "FROM cdis_map " +
@@ -84,7 +84,7 @@ public class CDISMap {
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
-                setCisId (rs.getString(1));
+                setCisUniqueMediaId (rs.getString(1));
                 setUoiid (rs.getString(2));
                 setFileName (rs.getString(3));
             }   
@@ -130,7 +130,7 @@ public class CDISMap {
         return true;
     }
     
-    public boolean createRecord(CDIS cdis, String cisId, String cisFileName) {
+    public boolean createRecord(CDIS cdis, String cisUniqueMediaId, String cisFileName) {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -151,14 +151,14 @@ public class CDISMap {
             sql =  "INSERT INTO cdis_map (" +
                             "cdis_map_id, " +
                             "si_holding_unit, " +
-                            "cis_id, " +
+                            "cis_unique_media_id, " +
                             "file_name, " +
                             "batch_number, " +
                             "deleted_ind ) " +
                         "VALUES (" +
                             getCdisMapId() + ", " +
                             "'" + cdis.properties.getProperty("siHoldingUnit") + "', " +
-                            "'" + cisId + "', " +
+                            "'" + cisUniqueMediaId + "', " +
                             "'" + cisFileName + "', " +
                             cdis.getBatchNumber() + ", " +
                             "'N')";

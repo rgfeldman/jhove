@@ -163,12 +163,12 @@ public class LinkCollections  {
                             //Update the TMS blob. For TMS only 
                             if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
                                 Thumbnail thumbnail = new Thumbnail();
-                                thumbnail.generate (damsConn, cisConn, cdisMap.getUoiid(), Integer.parseInt(cdisMap.getCisId()));
+                                thumbnail.generate (damsConn, cisConn, cdisMap.getUoiid(), Integer.parseInt(cdisMap.getCisUniqueMediaId()));
                             }
                         
                             //This is TMS specific code. For TMS only
                             if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
-                                setForDamsFlag(Integer.parseInt(cdisMap.getCisId()));
+                                setForDamsFlag(Integer.parseInt(cdisMap.getCisUniqueMediaId()));
                             }
                         }
                         

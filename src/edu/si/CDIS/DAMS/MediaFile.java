@@ -27,11 +27,11 @@ public class MediaFile {
     Connection damsConn;
     String errorCode;
 
-    public boolean populateMediaPathLocationCDIS (String cisID, String siHoldingUnit) {
+    public boolean populateMediaPathLocationCDIS (String cisUniqueMediaId, String siHoldingUnit) {
         
         String sql = "SELECT file_path " +
                     "FROM   cdis_for_ingest " +
-                    "WHERE  cis_id = '" + cisID + "' " +
+                    "WHERE  cis_unique_media_id = '" + cisUniqueMediaId + "' " +
                     "AND    si_holding_unit = '" + siHoldingUnit + "'";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -65,13 +65,13 @@ public class MediaFile {
     }
     
     
-    public boolean populateMediaPathLocationTMS (String cisID) {
+    public boolean populateMediaPathLocationTMS (String cisUniqueMediaId) {
         
         String sql = "Select Path " +
                     "From MediaPaths  mp, " +
                     "MediaFiles mf " +
                     "Where mp.PathID = mf.PathID " +
-                    "AND RenditionID = " + cisID;
+                    "AND RenditionID = " + cisUniqueMediaId;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -104,7 +104,7 @@ public class MediaFile {
         
     }
     
-    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisID){
+    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisUniqueMediaId){
         
         this.damsConn = cdis.damsConn;
         boolean pathFound = false;
@@ -118,11 +118,11 @@ public class MediaFile {
             switch (cdis.properties.getProperty("cisSourceDB")) {
                 case "TMSDB" :
                     this.cisConn = cdis.cisConn;
-                    pathFound = populateMediaPathLocationTMS (cisID);
+                    pathFound = populateMediaPathLocationTMS (cisUniqueMediaId);
                 break;
                 
                 case "CDISDB" :
-                    pathFound = populateMediaPathLocationCDIS (cisID, cdis.properties.getProperty("siHoldingUnit"));
+                    pathFound = populateMediaPathLocationCDIS (cisUniqueMediaId, cdis.properties.getProperty("siHoldingUnit"));
                 break;
             
                 default:     
@@ -146,7 +146,7 @@ public class MediaFile {
             // Build the string to contain the 'to' path and filename
             //get the hotfolder Location for this record
             CDISForIngest forIngest = new CDISForIngest();
-            forIngest.setCisId(cisID);
+            forIngest.setCisUniqueMediaId(cisUniqueMediaId);
             forIngest.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));           
             forIngest.populateHotFolder(damsConn);
             

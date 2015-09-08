@@ -36,8 +36,8 @@ public class DAMSIngest {
     
     LinkedHashMap <String,String> renditionsForDAMS; 
     
-    private void addRenditionsForDAMS (String cisID, String filename) {
-        this.renditionsForDAMS.put(cisID, filename); 
+    private void addRenditionsForDAMS (String cisUniqueMediaId, String filename) {
+        this.renditionsForDAMS.put(cisUniqueMediaId, filename); 
     }
     
     /*  Method :        processList
@@ -66,17 +66,17 @@ public class DAMSIngest {
         if ( sql != null) {           
         
             //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
-            for (String cisID : renditionsForDAMS.keySet()) {
+            for (String cisUniqueMediaId : renditionsForDAMS.keySet()) {
                 
-                logger.log(Level.FINEST, "Processing for cisID: " + cisID);
+                logger.log(Level.FINEST, "Processing for cisUniqueMediaId: " + cisUniqueMediaId);
                 
                 CDISMap cdisMap = new CDISMap();
                 CDISActivityLog cdisActivity = new CDISActivityLog();
                 
-                String cisFileName = renditionsForDAMS.get(cisID);
+                String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
                                 
-                // Now that we have the cisID, Add the media to the CDIS_MAP table
-                boolean mapEntryCreated = cdisMap.createRecord(cdis, cisID, cisFileName);
+                // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
+                boolean mapEntryCreated = cdisMap.createRecord(cdis, cisUniqueMediaId, cisFileName);
                     
                 if (!mapEntryCreated) {
                     logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
@@ -109,7 +109,7 @@ public class DAMSIngest {
                     
                     if (rs != null && rs.next()) {
                         //Find the image on the media drive
-                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisID);   
+                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisUniqueMediaId);   
                     }
                     else {
                         ErrorLog errorLog = new ErrorLog ();
@@ -196,7 +196,7 @@ public class DAMSIngest {
                     rs = stmt.executeQuery();
         
                     while (rs.next()) {           
-                        addRenditionsForDAMS(rs.getString("cisID"), rs.getString("fileName"));
+                        addRenditionsForDAMS(rs.getString("cisUniqueMediaId"), rs.getString("fileName"));
                     }   
 
             } catch (Exception e) {
@@ -332,7 +332,7 @@ public class DAMSIngest {
         String sql = "SELECT    distinct a.hot_folder " + 
                     "FROM       cdis_for_ingest a, " +
                     "           cdis_map b " +
-                    "WHERE  a.cis_id = b.cis_id " +
+                    "WHERE  a.cis_unique_media_id = b.cis_unique_media_id " +
                     "AND    a.si_holding_unit = b.si_holding_unit " +
                     "AND    batch_number = " + batchNumber;
         
