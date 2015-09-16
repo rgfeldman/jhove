@@ -301,7 +301,7 @@ public class Report {
                 
                 SiAssetMetaData siAsst = new SiAssetMetaData();
                 siAsst.setUoiid(cdisMap.getUoiid());
-                siAsst.populateSourceSystemId(damsConn);
+                siAsst.populateOwningUnitUniqueName(damsConn);
                 
                 String listing = null;
                     
@@ -310,10 +310,10 @@ public class Report {
                         listing = "FileName: " + cdisMap.getFileName() + ",  CIS Media ID: " + cdisMap.getCisUniqueMediaId() + " - Currently In Progress"; 
                         break;
                     case "completed" :
-                        listing = "FileName: " + cdisMap.getFileName() + "Linked to CIS Media ID: " + cdisMap.getCisUniqueMediaId() + " Source System ID: " + siAsst.getSourceSystemId();
+                        listing = "FileName: " + cdisMap.getFileName() + " Linked to CIS Media ID: " + cdisMap.getCisUniqueMediaId() + " DAMS UAN: " + siAsst.getOwningUnitUniqueName();
                         break;
                     case "metaDataSynced":
-                        listing = "FileName: " + cdisMap.getFileName() + "MetaData Synced in DAMS: " + cdisMap.getCisUniqueMediaId() + " Source System ID: " + siAsst.getSourceSystemId(); 
+                        listing = "FileName: " + cdisMap.getFileName() + "MetaData Synced in DAMS: " + cdisMap.getCisUniqueMediaId() + " DAMS UAN: " + siAsst.getOwningUnitUniqueName(); 
                         break;
                     case "failed":
                         CDISErrorCodeR cdisErrorCode = new CDISErrorCodeR();            

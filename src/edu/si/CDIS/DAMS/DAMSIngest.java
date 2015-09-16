@@ -90,12 +90,8 @@ public class DAMSIngest {
                     continue;
                 }
                 
-                String errorCode = null;
-                
-                
                 try {
                        
-                    errorCode = null;
                     sql = sql.replaceAll("\\?fileName\\?", cisFileName);
                 
                     logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -109,7 +105,7 @@ public class DAMSIngest {
                     
                     if (rs != null && rs.next()) {
                         //Find the image on the media drive
-                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisUniqueMediaId);   
+                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisUniqueMediaId, cdisMap);   
                     }
                     else {
                         ErrorLog errorLog = new ErrorLog ();
@@ -119,23 +115,20 @@ public class DAMSIngest {
                     
                     // If we have no error condition, mark status in activity table, else flag as error
                     if (! sentForIngest) {
-                        errorCode = mediaFile.errorCode;
-                        throw new Exception();
-                    } else {
-                        //Log into the activity table
-                        activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
-                        if (!activityLogged) {
-                            logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
-                            continue;
-                        }
+                        //We should have logged the error.  Pull the next record
+                        continue;
+                    }
+                    
+                    //Log into the activity table
+                    activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
+                    if (!activityLogged) {
+                        logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                        continue;
                     }
 
                 } catch (Exception e) {
-                    if (errorCode == null) {
-                        errorCode = "PLE"; //Set error code to ProcessList error
-                    }
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap.getCdisMapId(), errorCode, "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
+                    errorLog.capture(cdisMap.getCdisMapId(), "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
                     
                 } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }

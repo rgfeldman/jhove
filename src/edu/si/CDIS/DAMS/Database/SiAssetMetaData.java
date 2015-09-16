@@ -469,12 +469,12 @@ public class SiAssetMetaData {
         
     }
     
-    public boolean populateSourceSystemId (Connection damsConn) {
+    public boolean populateOwningUnitUniqueName (Connection damsConn) {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
-        String sql = "SELECT source_system_id FROM si_asset_metadata " +
+        String sql = "SELECT owning_unit_unique_name FROM si_asset_metadata " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
         try {
@@ -484,7 +484,7 @@ public class SiAssetMetaData {
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
-                setSourceSystemId (rs.getString(1));
+                setOwningUnitUniqueName (rs.getString(1));
             }   
             
         } catch (Exception e) {

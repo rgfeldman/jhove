@@ -15,6 +15,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
 import edu.si.CDIS.DAMS.Database.CDISForIngest;
+import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.utilties.ReformatPath;
 
 
@@ -25,7 +27,6 @@ public class MediaFile {
     String mediaDrive;
     Connection cisConn;
     Connection damsConn;
-    String errorCode;
 
     public boolean populateMediaPathLocationCDIS (String cisUniqueMediaId, String siHoldingUnit) {
         
@@ -104,12 +105,12 @@ public class MediaFile {
         
     }
     
-    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisUniqueMediaId){
+    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisUniqueMediaId,  CDISMap cdisMap){
         
         this.damsConn = cdis.damsConn;
         boolean pathFound = false;
         String baseDir = (cdis.properties.getProperty("hotFolderBaseDir"));
-        
+        ErrorLog errorLog = new ErrorLog ();
         
         logger.log(Level.FINEST, "mediaFile Name : " + cisFileName);
         
@@ -131,8 +132,7 @@ public class MediaFile {
             }
         
             if (! pathFound) {
-                logger.log(Level.FINEST, "returning...path not found");
-                this.errorCode = "FPE";
+                errorLog.capture(cdisMap.getCdisMapId(), "FPE", "FilePath Not found ", damsConn);
                 return false;
             }
          
@@ -162,12 +162,16 @@ public class MediaFile {
             logger.log(Level.FINEST, "Copying mediaFile from Original location : " + mediaPathLocation + "\\" + cisFileName);
             logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + workFileBatchLocation + "\\" + sourceFile.getName());
         
+            // Confirm that the from file has a bytesize > 0
+            if (! (FileUtils.sizeOf(sourceFile) > 0 )) {
+                errorLog.capture(cdisMap.getCdisMapId(), "ZBF", "File Determined to be zero bytes", damsConn);
+                return false;
+            }
             // Copy from tms source location to workfile location (and put in subdirectory with batch name).
             FileUtils.copyFileToDirectory(sourceFile, destDir, true);
            
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to physically copy file to Work Folder. returning", e);
-            this.errorCode = "FCW";
+            errorLog.capture(cdisMap.getCdisMapId(), "FCW", "Error: Unable to physically copy file to Work Folder. returning.  Error: " + e, damsConn);
             return false;
         }
         
