@@ -16,7 +16,6 @@ import java.util.Iterator;
 
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.CIS.Database.CDISTable;
-import edu.si.CDIS.StatisticsReport;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +33,7 @@ public class ImageFilePath {
     String fileType;
     String uan;
         
-    public void sync(CDIS cdis, StatisticsReport StatReport) {
+    public void sync(CDIS cdis) {
     	
     	logger.log(Level.FINER, "ImageFilePath.sync()");
         //assign the database connections for later use
@@ -51,10 +50,7 @@ public class ImageFilePath {
         CDISTable cdisTbl = new CDISTable();
         
         //loop through the list, and update the pathname
-        processRenditionList (neverSyncedCDISIdLst, StatReport);
-        
-        // handle the statistics report, report on the statistics
-        StatReport.populateStats (neverSyncedCDISIdLst.size(), 0, this.successfulUpdateCount, 0,  "ids");
+        processRenditionList (neverSyncedCDISIdLst);
         
     }
     
@@ -103,7 +99,7 @@ public class ImageFilePath {
    
     
     // That the list of renditions by CDIS_ID and loop through them one at a time, and perform synchronizations
-    private void processRenditionList(ArrayList<Integer> CDISIdList, StatisticsReport StatRpt) {
+    private void processRenditionList(ArrayList<Integer> CDISIdList) {
 
         // For each Rendition Number in list, obtain information from CDIS table
         PreparedStatement stmt = null;
@@ -162,13 +158,11 @@ public class ImageFilePath {
                         //update CDIS with the current IDSSyncDate
                         cdisTbl.updateIDSSyncDate(cisConn);
                         
-                        //Create the IDS report
-                        StatRpt.writeUpdateStats(this.uan, cdisTbl.getRenditionNumber(), "idsPath", true);
                         successfulUpdateCount ++;
                         
                     }
                     else {
-                        StatRpt.writeUpdateStats(this.uan, cdisTbl.getRenditionNumber(), "idsPath", false);
+                           //ERROR
                     }
 
                 } catch (Exception e) {

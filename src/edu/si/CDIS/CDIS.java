@@ -23,7 +23,6 @@ import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.DAMSIngest;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
-import edu.si.CDIS.DAMS.Database.CDISError;
 import edu.si.CDIS.DAMS.Database.CDISMap;
 import java.io.File;
 import java.util.Iterator;
@@ -298,9 +297,6 @@ public class CDIS {
                 logger.log(Level.SEVERE, "Fatal Error: Batch number could not be generated");
                 return;
             }
-                    
-            // Initialize the statistics Report
-            StatisticsReport statReport = new StatisticsReport();
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             
@@ -315,7 +311,7 @@ public class CDIS {
             switch (cdis.operationType) {
                 case "createCISmedia" :
                     TMSIngest tmsIngest = new TMSIngest();
-                    tmsIngest.ingest(cdis, statReport);
+                    tmsIngest.ingest(cdis);
                     break;
                     
                 case "sendToIngest" :   
@@ -406,15 +402,15 @@ public class CDIS {
                     
                 case "sync" :    
                     MetaData metaData = new MetaData();
-                    metaData.sync(cdis, statReport);
+                    metaData.sync(cdis);
                     //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
                     ImageFilePath imgPath = new ImageFilePath();
-                    imgPath.sync(cdis, statReport);
+                    imgPath.sync(cdis);
                     break;
                     
                 case "thumbnailSync" :    
                     Thumbnail thumbnail = new Thumbnail();
-                    thumbnail.sync(cdis, statReport);
+                    thumbnail.sync(cdis);
                     break;
                     
                 case "genReport" :

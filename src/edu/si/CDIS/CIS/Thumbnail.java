@@ -26,7 +26,6 @@ import org.im4java.core.IMOperation;
 
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.CIS.Database.CDISTable;
-import edu.si.CDIS.StatisticsReport;
 
 
 public class Thumbnail {
@@ -280,13 +279,10 @@ public class Thumbnail {
         Description:    Thumbnail sync driver 
         RFeldman 3/2015
     */
-    public void sync (CDIS cdis, StatisticsReport statReport) {
+    public void sync (CDIS cdis) {
         
         this.cisConn = cdis.cisConn;
         this.damsConn = cdis.damsConn;
-        
-        //Populate the header information in the report file
-        statReport.populateHeader(cdis.properties.getProperty("siUnit"), "thumbnailSync"); 
         
         this.thumbnailsToSync = new LinkedHashMap <Integer, String>();
         
@@ -297,9 +293,6 @@ public class Thumbnail {
         for (Integer key : thumbnailsToSync.keySet()) {
              boolean blobUpdated = generate (damsConn, cisConn, thumbnailsToSync.get(key), key);
         }
-        
-        // Get the renditionNumber for the report
-        //statReport.writeUpdateStats(this.uoiid, this.renditionNumber, "thumbnailSync", true);
         
     }
     

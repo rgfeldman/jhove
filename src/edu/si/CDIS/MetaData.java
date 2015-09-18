@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 import edu.si.CDIS.utilties.DataProvider;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Database.CDISTable;
-import edu.si.CDIS.StatisticsReport;
 import edu.si.CDIS.XmlSqlConfig;
 
 public class MetaData {
@@ -50,7 +49,7 @@ public class MetaData {
         Description:    The main driver for the sync operation Type 
         RFeldman 2/2015
     */
-    public void sync(CDIS cdis, StatisticsReport statReport) {
+    public void sync(CDIS cdis) {
 
          //assign the database connections for later use
         this.damsConn = cdis.damsConn;
@@ -76,19 +75,16 @@ public class MetaData {
         //Grab all the records that have been synced in the past, but have been updated
         sourceUpdatedCDISIdLst = getCISUpdatedRendition();
 
-        statReport.populateHeader(this.siUnit, "sync");
-
         // Loop through all the rendition IDs we determined we needed to sync
         // while i could have chosen to call the processRendition only one time instead of three, for now
         // I have broken this up to make this more trackable and in case we want to exclude certain types of
         // sync for certain units
         if (!neverSyncedCDISIdLst.isEmpty()) {
-            processRenditionList(neverSyncedCDISIdLst, cdis.xmlSelectHash, statReport);
+            processRenditionList(neverSyncedCDISIdLst, cdis.xmlSelectHash);
         }
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
-            processRenditionList(sourceUpdatedCDISIdLst, cdis.xmlSelectHash, statReport);
+            processRenditionList(sourceUpdatedCDISIdLst, cdis.xmlSelectHash);
         }
-        statReport.populateStats(neverSyncedCDISIdLst.size(), sourceUpdatedCDISIdLst.size(), successfulUpdateCount, failedUpdateCount, "meta");
     }
 
     /*  Method :        updateDamsData
@@ -220,7 +216,7 @@ public class MetaData {
                         and determines how to update the metadata on each one
         RFeldman 2/2015
     */
-    private void processRenditionList(ArrayList<Integer> CDISIdList, HashMap <String,String[]> SelectHash, StatisticsReport statRpt) {
+    private void processRenditionList(ArrayList<Integer> CDISIdList, HashMap <String,String[]> SelectHash) {
 
         // For each Rendition Number in list, obtain information from CDIS table
         PreparedStatement stmt = null;
@@ -280,8 +276,6 @@ public class MetaData {
                         
                         // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
                         if (updateDamsCount == 1) {
-
-                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", true);
                             successfulUpdateCount ++;
                            
                             //calcute the new IDSRestriction value
@@ -301,7 +295,6 @@ public class MetaData {
                         }
                         else {
                             logger.log(Level.ALL, "Error, CDIS Table not updated, metadata not synced");
-                            statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", false);
                             failedUpdateCount ++;
                         }
                     }

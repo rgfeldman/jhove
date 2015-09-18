@@ -17,7 +17,6 @@ import edu.si.CDIS.CDIS;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
-import edu.si.CDIS.StatisticsReport;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 public class TMSIngest {
@@ -86,7 +85,7 @@ public class TMSIngest {
         Description:    prcoesses the DAMS uans one at a time from the list  
         RFeldman 2/2015
     */
-    private void processUAN (CDIS cdis, StatisticsReport statRpt) {
+    private void processUAN (CDIS cdis) {
     
         // See if we can find if this uan already exists in TMS
         ResultSet rs = null;
@@ -133,7 +132,6 @@ public class TMSIngest {
                             
                         if ( ! mediaCreated ) {
                             logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
@@ -157,7 +155,6 @@ public class TMSIngest {
 
                         if (! recordCreated) {
                             logger.log(Level.FINER, "Insert to CDIS table failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue;
                         }
@@ -168,7 +165,6 @@ public class TMSIngest {
                             
                         if (! thumbCreated) {
                             logger.log(Level.FINER, "Thumbnail creation failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
@@ -178,7 +174,6 @@ public class TMSIngest {
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "IDS Sync date update failed");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue;
                         }
@@ -191,7 +186,6 @@ public class TMSIngest {
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "Failed in update to SourceSystemID");
-                            statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", false);
                             failCount ++;
                             continue;
                         }
@@ -199,7 +193,6 @@ public class TMSIngest {
                             logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
                         }
                         
-                        statRpt.writeUpdateStats(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionNumber() , "ingestToCIS", true);
                         this.successCount++;
                         
                     }
@@ -230,7 +223,7 @@ public class TMSIngest {
         Description:    The main driver for the ingest to CIS process 
         RFeldman 2/2015
     */
-    public void ingest (CDIS cdis, StatisticsReport statReport) { 
+    public void ingest (CDIS cdis) { 
         
         this.damsConn = cdis.damsConn;
         this.cisConn = cdis.cisConn;
@@ -239,16 +232,12 @@ public class TMSIngest {
         
         this.neverLinkedDamsRendtion = new LinkedHashMap<String, String>();
         
-        // Populate the header for the report file
-        statReport.populateHeader(cdis.properties.getProperty("siUnit"), "ingestToCIS");
-        
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedImages (cdis);
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
-        processUAN (cdis, statReport);  
+        processUAN (cdis);  
         
-        statReport.populateStats (0, 0, this.successCount, this.failCount, "ingestToCIS");
         
     }
 }
