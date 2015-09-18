@@ -36,10 +36,11 @@ public class CDISErrorCodeR {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
-        String sql = "SELECT description, " +
-                    "FROM cdis_error_code_r a, " +
+        String sql = "SELECT a.description " +
+                    "FROM error_code_r a, " +
                     "      cdis_error b " +
-                    "WHERE b.cdis_map_id = " + cdisMapId;
+                    "WHERE a.error_cd = b.error_cd " +
+                    "AND b.cdis_map_id = " + cdisMapId;
         
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 

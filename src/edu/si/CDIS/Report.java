@@ -101,9 +101,15 @@ public class Report {
                      "SELECT 'X' from cdis_activity_log b " +
                         "WHERE a.cdis_map_id = b.cdis_map_id )" +
                      "AND NOT exists (" +
-                        "SELECT 'X' from cdis_activity_log c " +
+                        "SELECT 'X' " +
+                        "FROM cdis_activity_log c " +
                         "WHERE a.cdis_map_id = c.cdis_map_id " +
-                        "AND c.cdis_status_cd = 'LC')";
+                        "AND c.cdis_status_cd = 'LC')" + 
+                     "AND NOT EXISTS (" + 
+                        "SELECT 'X' " + 
+                        "FROM CDIS_ERROR e " +
+                        "WHERE a.cdis_map_id = e.cdis_map_id )";
+  
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -172,11 +178,24 @@ public class Report {
     
     private boolean genErrorIdList () {
         
-        String sql = "SELECT cdis_map_id FROM cdis_map a " + 
-                     "WHERE EXISTS ( " + 
-                            "SELECT 'X' from cdis_error b " +
-                            "WHERE a.cdis_map_id = b.cdis_map_id " +
-                            "AND b.error_dt > (SYSDATE - " + this.rptDays + "))";
+        //Get the list of MAP_IDs where the mapid is the highest mapID for that file,
+        // and it has an error condition, has not been deleted and is in ready state
+        String sql = "SELECT cm.cdis_map_id " +
+                     "FROM cdis_map cm, " +
+                     "     cdis_error ce " +
+                     "WHERE cm.cdis_map_id = ce.cdis_map_id " +
+                     "AND cm.deleted_ind = 'N' " +
+                     "AND cm.error_ind = 'Y' " +
+                     "AND cm.batch_number in ( " +
+                     "   SELECT max (batch_number) " +
+                     "   FROM cdis_map cm2 " +
+                     "    WHERE cm.File_name = cm2.File_Name) " +
+                     "AND EXISTS ( " +
+                     "   SELECT 'X' " +
+                     "   FROM cdis_for_ingest fi " +
+                     "   WHERE fi.CIS_UNIQUE_MEDIA_ID = cm.CIS_UNIQUE_MEDIA_ID " +
+                     "   AND   fi.SI_HOLDING_UNIT = cm.SI_HOLDING_UNIT " +
+                     "   AND   ingest_status_cd = 'RI') ";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -266,18 +285,18 @@ public class Report {
                     sectionHeader = "\n\nIntegration Currently in Progress For: ";
                     break;
                 case "completed" :
-                    sectionHeader = "\nIntegration Successfully Completed For: ";
+                    sectionHeader = "\n\nIntegration Successfully Completed For: ";
                     break;    
                 case "metaDataSynced" :
-                    sectionHeader = "\nMetaData Successfully Synchronized with DAMS For: ";
+                    sectionHeader = "\n\nMetaData Successfully Synchronized with DAMS For: ";
                     break;
                 case "failed" :     
-                    sectionHeader = "\nThe Following Media experienced Integration Failures: ";
+                    sectionHeader = "\n\nThe Following Media Experienced Integration Failures: ";
                     break;     
             }
             
             document.add(new Paragraph(sectionHeader,secHeaderFont));
-            document.add(new Phrase("----------------------------------------------------",secHeaderFont));
+            document.add(new Phrase("-------------------------------------------------------------------------",secHeaderFont));
 
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
@@ -319,7 +338,7 @@ public class Report {
                         CDISErrorCodeR cdisErrorCode = new CDISErrorCodeR();            
                         returnVal = cdisErrorCode.populateDescription(damsConn, cdisMap.getCdisMapId() );
                 
-                        listing = "FileName: " + cdisMap.getFileName() + "CIS ID: " + cdisMap.getCisUniqueMediaId() + " Error: " + cdisErrorCode.getDescription() ; 
+                        listing = "FileName: " + cdisMap.getFileName() + ",  CIS Media ID: " + cdisMap.getCisUniqueMediaId() + ",   Error: " + cdisErrorCode.getDescription() ; 
                         break;    
                     }
                              

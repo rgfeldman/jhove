@@ -25,6 +25,7 @@ public class CDISMap {
     String fileName;
     String uoiid;
     String cisUniqueMediaId;
+    char errorInd;
     
     public Long getBatchNumber () {
         return this.batchNumber;
@@ -36,6 +37,10 @@ public class CDISMap {
     
     public String getCisUniqueMediaId () {
         return this.cisUniqueMediaId;
+    }
+    
+    public char getErrorInd () {
+        return this.errorInd;
     }
     
     public String getFileName () {
@@ -52,6 +57,10 @@ public class CDISMap {
         
     public void setCdisMapId (Integer CDISMapId) {
         this.CDISMapId = CDISMapId;
+    }
+    
+    public void setErrorInd (char errorInd) {
+        this.errorInd = errorInd;
     }
     
     public void setFileName (String fileName) {
@@ -154,13 +163,15 @@ public class CDISMap {
                             "cis_unique_media_id, " +
                             "file_name, " +
                             "batch_number, " +
-                            "deleted_ind ) " +
+                            "deleted_ind, " +
+                            "error_ind ) " +
                         "VALUES (" +
                             getCdisMapId() + ", " +
                             "'" + cdis.properties.getProperty("siHoldingUnit") + "', " +
                             "'" + cisUniqueMediaId + "', " +
                             "'" + cisFileName + "', " +
                             cdis.getBatchNumber() + ", " +
+                            "'N' ," +
                             "'N')";
                  
             logger.log(Level.FINEST,"SQL! " + sql);  
@@ -205,6 +216,36 @@ public class CDISMap {
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update CDIS_MAP table with uoi_id", e );
+                return false;
+        }finally {
+                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }   
+        
+        return true;
+    }
+    
+    public boolean updateErrorInd (Connection damsConn) {
+        
+        PreparedStatement pStmt = null;
+        int rowsUpdated = 0;
+        
+        String sql =  "UPDATE cdis_map " +
+                      "SET error_ind = '" + getErrorInd() + "' " +
+                      "WHERE cdis_map_id = " + getCdisMapId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try {
+            
+            pStmt = damsConn.prepareStatement(sql);
+            rowsUpdated = pStmt.executeUpdate(sql);
+            
+            if (rowsUpdated != 1) {
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update CDIS_MAP table with Error indicator", e );
                 return false;
         }finally {
                 try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }

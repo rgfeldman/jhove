@@ -132,7 +132,7 @@ public class MediaFile {
             }
         
             if (! pathFound) {
-                errorLog.capture(cdisMap.getCdisMapId(), "FPE", "FilePath Not found ", damsConn);
+                errorLog.capture(cdisMap, "FPE", "FilePath Not found ", damsConn);
                 return false;
             }
          
@@ -164,14 +164,14 @@ public class MediaFile {
         
             // Confirm that the from file has a bytesize > 0
             if (! (FileUtils.sizeOf(sourceFile) > 0 )) {
-                errorLog.capture(cdisMap.getCdisMapId(), "ZBF", "File Determined to be zero bytes", damsConn);
+                errorLog.capture(cdisMap, "ZBF", "File Determined to be zero bytes", damsConn);
                 return false;
             }
             // Copy from tms source location to workfile location (and put in subdirectory with batch name).
             FileUtils.copyFileToDirectory(sourceFile, destDir, true);
            
         } catch (Exception e) {
-            errorLog.capture(cdisMap.getCdisMapId(), "FCW", "Error: Unable to physically copy file to Work Folder. returning.  Error: " + e, damsConn);
+            errorLog.capture(cdisMap, "FCW", "Error: Unable to physically copy file to Work Folder. returning.  Error: " + e, damsConn);
             return false;
         }
         

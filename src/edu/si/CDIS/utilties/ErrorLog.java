@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
 import edu.si.CDIS.DAMS.Database.CDISActivityLog;
+import edu.si.CDIS.DAMS.Database.CDISMap;
 
 /**
  *
@@ -20,15 +21,19 @@ public class ErrorLog {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    public void capture (Integer cdisMapId, String errorCode, String logMessage, Connection damsConn) {
+    public void capture (CDISMap cdisMap, String errorCode, String logMessage, Connection damsConn) {
         
         logger.log(Level.FINER, logMessage);
         
         CDISError cdisError = new CDISError();
-        cdisError.insertError(damsConn, "STDI", cdisMapId, errorCode);
+        cdisError.insertError(damsConn, "STDI", cdisMap.getCdisMapId(), errorCode);
         
         CDISActivityLog cdisActivity = new CDISActivityLog();
-        cdisActivity.insertActivity(damsConn, cdisMapId, "ER");
+        cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "ER");
+        
+        cdisMap.setErrorInd('Y');
+        cdisMap.updateErrorInd(damsConn);
+        
     }
     
 }

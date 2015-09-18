@@ -109,7 +109,7 @@ public class DAMSIngest {
                     }
                     else {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap.getCdisMapId(), "DUP", "Media Already exists: Media does not need to be created", damsConn);
+                        errorLog.capture(cdisMap, "DUP", "Media Already exists: Media does not need to be created", damsConn);
                         continue;
                     }
                     
@@ -128,7 +128,7 @@ public class DAMSIngest {
 
                 } catch (Exception e) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap.getCdisMapId(), "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
+                    errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
                     
                 } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
@@ -270,7 +270,7 @@ public class DAMSIngest {
                     
                 } catch (Exception e) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap.getCdisMapId(), "MFH", "Move to Hotfolder MASTER Failure for FileName:" + cdisMap.getFileName()  + " " + e, damsConn );
+                    errorLog.capture(cdisMap, "MFH", "Move to Hotfolder MASTER Failure for FileName:" + cdisMap.getFileName()  + " " + e, damsConn );
                 } 
             }
                          

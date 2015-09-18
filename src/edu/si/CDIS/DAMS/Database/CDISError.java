@@ -45,7 +45,7 @@ public class CDISError {
              if (rowsUpdated != 1) {
                 throw new Exception();
             }
-            
+                
          } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update CDIS_ERROR in table", e );
                 return false;

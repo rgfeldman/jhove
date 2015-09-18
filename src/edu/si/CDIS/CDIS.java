@@ -382,7 +382,7 @@ public class CDIS {
                                 cdisMap.populateIDForFileBatch(cdis.damsConn);
                                 
                                 ErrorLog errorLog = new ErrorLog();                                
-                                errorLog.capture(cdisMap.getCdisMapId(), "IPE", "Ingest process error for filename: " + failedFileName, cdis.damsConn );          
+                                errorLog.capture(cdisMap, "IPE", "Ingest process error for filename: " + failedFileName, cdis.damsConn );          
                                  
                             }
                             
