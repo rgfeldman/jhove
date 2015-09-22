@@ -44,7 +44,7 @@ public class CDISActivityLog {
             }
             
          } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_activity_log in table", e );
+                logger.log(Level.FINER, "Error: unable to insert CDIS_activity_log table", e );
                 return false;
         }finally {
             try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }

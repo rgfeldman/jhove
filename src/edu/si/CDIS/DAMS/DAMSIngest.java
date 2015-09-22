@@ -63,82 +63,80 @@ public class DAMSIngest {
             }      
         }
         
-        if ( sql != null) {           
+        if ( sql == null) {  
+            logger.log(Level.FINER, "ERROR: unable to check if CIS Media exists, supporting SQL not provided");
+            return;
+        }
         
-            //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
-            for (String cisUniqueMediaId : renditionsForDAMS.keySet()) {
+        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
+        for (String cisUniqueMediaId : renditionsForDAMS.keySet()) {
                 
-                logger.log(Level.FINEST, "Processing for cisUniqueMediaId: " + cisUniqueMediaId);
+            logger.log(Level.FINEST, "Processing for cisUniqueMediaId: " + cisUniqueMediaId);
                 
-                CDISMap cdisMap = new CDISMap();
-                CDISActivityLog cdisActivity = new CDISActivityLog();
+            CDISMap cdisMap = new CDISMap();
+            CDISActivityLog cdisActivity = new CDISActivityLog();
                 
-                String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
+            String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
                                 
-                // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
-                boolean mapEntryCreated = cdisMap.createRecord(cdis, cisUniqueMediaId, cisFileName);
+            // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
+            boolean mapEntryCreated = cdisMap.createRecord(cdis, cisUniqueMediaId, cisFileName);
                     
-                if (!mapEntryCreated) {
-                    logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
+            if (!mapEntryCreated) {
+                logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
+                continue;
+            }
+                
+            //Log into the activity table
+            boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "MI");
+            if (!activityLogged) {
+                logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                continue;
+            }
+                
+            try {
+                     
+                sql = sql.replaceAll("\\?fileName\\?", cisFileName);
+               
+                logger.log(Level.FINEST, "SQL: {0}", sql);
+                    
+                boolean sentForIngest = false;
+                     
+                stmt = damsConn.prepareStatement(sql);                                
+                rs = stmt.executeQuery();
+                    
+                MediaFile mediaFile = new MediaFile();
+                    
+                if (rs != null && rs.next()) {
+                    //Find the image on the media drive
+                    sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisUniqueMediaId, cdisMap);   
+                }
+                else {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "DUP", "Media Already exists: Media does not need to be created", damsConn);
                     continue;
                 }
-                
+                    
+                // If we have no error condition, mark status in activity table, else flag as error
+                if (! sentForIngest) {
+                    //We should have logged the error.  Pull the next record
+                    continue;
+                }
+                    
                 //Log into the activity table
-                boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "MI");
+                activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
                 }
-                
-                try {
-                       
-                    sql = sql.replaceAll("\\?fileName\\?", cisFileName);
-                
-                    logger.log(Level.FINEST, "SQL: {0}", sql);
-                    
-                    boolean sentForIngest = false;
-                     
-                    stmt = damsConn.prepareStatement(sql);                                
-                    rs = stmt.executeQuery();
-                    
-                    MediaFile mediaFile = new MediaFile();
-                    
-                    if (rs != null && rs.next()) {
-                        //Find the image on the media drive
-                        sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisUniqueMediaId, cdisMap);   
-                    }
-                    else {
-                        ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "DUP", "Media Already exists: Media does not need to be created", damsConn);
-                        continue;
-                    }
-                    
-                    // If we have no error condition, mark status in activity table, else flag as error
-                    if (! sentForIngest) {
-                        //We should have logged the error.  Pull the next record
-                        continue;
-                    }
-                    
-                    //Log into the activity table
-                    activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
-                    if (!activityLogged) {
-                        logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
-                        continue;
-                    }
 
-                } catch (Exception e) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
+            } catch (Exception e) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
                     
-                } finally {
-                    try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-                }
+            } finally {
+                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
             }
-                        
-        } 
-        else {
-            logger.log(Level.FINER, "ERROR: unable to check if CIS Media exists, supporting SQL not provided");
         }
     
     }

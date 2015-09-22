@@ -156,7 +156,16 @@ public class CDISMap {
                 setCdisMapId (rs.getInt(1));
             }    
             
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to insert into CDIS_MAP table", e );
+                return false;
+        }finally {
+                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+            
         
+        try {
             sql =  "INSERT INTO cdis_map (" +
                             "cdis_map_id, " +
                             "si_holding_unit, " +

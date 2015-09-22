@@ -93,8 +93,11 @@ public class MediaFiles {
         
         Integer mediaFormatId = null;
         Integer pathId = null;
-        Statement stmt = null;
         String fileName = null;
+        
+        Statement stmt = null;
+        ResultSet rs = null;
+        
         
          // Get variables from the properties list
         try {
@@ -143,7 +146,7 @@ public class MediaFiles {
             stmt = cdis.cisConn.createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
-            ResultSet rs = stmt.getGeneratedKeys();
+            rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 this.fileId = rs.getInt(1);
             }    
@@ -152,6 +155,7 @@ public class MediaFiles {
                 return false;
         }finally {
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
         return true;

@@ -6,9 +6,7 @@
 package edu.si.CDIS.DAMS.Database;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.utilties.DataProvider;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.logging.Level;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -447,7 +445,7 @@ public class SiAssetMetaData {
     
     public int updateDAMSSourceSystemID (Connection damsConn, String uoiid, String sourceSystemId) {
         int recordsUpdated = 0;
-        Statement stmt = null;
+        PreparedStatement pStmt = null;
         
         String sql = "update SI_ASSET_METADATA set source_system_id = '" + sourceSystemId + "' " +
                     "where UOI_ID = '" + uoiid + "'";
@@ -455,14 +453,17 @@ public class SiAssetMetaData {
         logger.log(Level.FINEST, "SQL! {0}", sql);
         
         try {
-            recordsUpdated = DataProvider.executeUpdate(damsConn, sql);
+            
+            pStmt = damsConn.prepareStatement(sql);
+            recordsUpdated = pStmt.executeUpdate(sql);
+            
         
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
                 e.printStackTrace();
         }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
             
         return recordsUpdated;

@@ -103,6 +103,7 @@ public class CDISTable {
     public boolean createRecord(CDISTable cdisTbl, Connection cisConn) {
         
         Statement stmt = null;
+        ResultSet rs = null;
         
         String sql = "Insert into CDIS (RenditionID, RenditionNumber, ObjectID, UAN, UOIID, LinkDate) " +
                     "values ( " + cdisTbl.getRenditionId() + ", '" +
@@ -118,7 +119,7 @@ public class CDISTable {
             stmt = cisConn.createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
-            ResultSet rs = stmt.getGeneratedKeys();
+            rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 this.CDIS_ID = rs.getInt(1);
             }    
@@ -127,6 +128,7 @@ public class CDISTable {
                 return false;
         }finally {
                 try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
                 
         return true;

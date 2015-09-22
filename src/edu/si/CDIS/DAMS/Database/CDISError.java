@@ -6,7 +6,6 @@
 package edu.si.CDIS.DAMS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
@@ -46,7 +45,7 @@ public class CDISError {
                 throw new Exception();
             }
                 
-         } catch (Exception e) {
+        } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update CDIS_ERROR in table", e );
                 return false;
         }finally {
