@@ -80,6 +80,12 @@ public class MediaFile {
         logger.log(Level.FINEST, "Copying mediaFile from : " + mediaPathLocation + tmsFileName);
         logger.log(Level.FINEST, "Copying mediaFile to WorkFolder location: " + cdis.properties.getProperty("workFolder") + "//" + sourceFile.getName());
         
+        // Confirm that the from file has a bytesize > 0
+        if (! (FileUtils.sizeOf(sourceFile) > 0 )) {
+            logger.log(Level.FINEST, "Error: FileSize is zero");
+            return false;
+        }
+        
         try {
             // Copy from tms source location to workfile location
             FileUtils.copyFile(sourceFile, destFile);
