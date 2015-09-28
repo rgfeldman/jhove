@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 
 import edu.si.CDIS.utilties.DataProvider;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.DAMS.Database.SiAdminContentTypeDtls;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.StatisticsReport;
 import edu.si.CDIS.XmlSqlConfig;
@@ -288,13 +287,6 @@ public class MetaData {
                         }
                            
                         // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
-                            
-                        SiAdminContentTypeDtls adminContentType = new SiAdminContentTypeDtls();
-                            
-                        adminContentType.setUoiid(cdisTbl.getUOIID());
-                        adminContentType.populateAdminType(damsConn, cdisTbl.getRenditionId());
-                        adminContentType.updateAdminContentType(damsConn);
-
                         statRpt.writeUpdateStats(cdisTbl.getUAN(), cdisTbl.getRenditionNumber(), "metaData", true);
                         successfulUpdateCount ++;
                            
@@ -364,66 +356,72 @@ public class MetaData {
                         String column = iter.next();
                         
                         //logger.log(Level.ALL, "Processing Column: " + column);
-                         
-                        if (column.equals("alternate_identifier_1")) {
-                            updateStatement = updateStatement + " alternate_identifier_1 = '" + siAsst.getAlternateIdentifier1() + "',";
-                        }
-                        else if (column.equals("credit")) {
-                            updateStatement = updateStatement + " credit = '" + siAsst.getCredit() + "',";
-                        }
-                        else if (column.equals("caption")) {
-                            updateStatement = updateStatement + " caption = '" + siAsst.getCaption() + "',";
-                        }
-                        else if (column.equals("digital_item_notes")) {
-                            updateStatement = updateStatement + " digital_item_notes = '" + siAsst.getDigitalItemNotes() + "',";
-                        }
-                        else if (column.equals("description")) {
-                            updateStatement = updateStatement + " description = '" + siAsst.getDescription() + "',";
-                        }
-                        else if (column.equals("group_title")) {
-                            updateStatement = updateStatement + " group_title = '" + siAsst.getGroupTitle() + "',";
-                        }
-                        else if (column.equals("intellectual_content_creator")) {
-                            updateStatement = updateStatement + " intellectual_content_creator = '" + siAsst.getIntellectualContentCreator() + "',";
-                        }
-                        else if (column.equals("keywords")) {
-                            updateStatement = updateStatement + " keywords = '" + siAsst.getKeywords() + "',";
-                        }
-                        else if (column.equals("named_person")) {
-                            updateStatement = updateStatement + " named_person = '" + siAsst.getNamedPerson() + "',";
-                        }
-                        else if (column.equals("other_constraints")) {
-                            updateStatement = updateStatement + " other_constraints = '" + siAsst.getOtherConstraints() + "',";
-                        }
-                        else if (column.equals("primary_creator")) {
-                            updateStatement = updateStatement + " primary_creator = '" + siAsst.getPrimaryCreator() + "',";
-                        }
-                        else if (column.equals("rights_holder")) {
-                            updateStatement = updateStatement + " rights_holder = '" + siAsst.getRightsHolder() + "',";
-                        }
-                        else if (column.equals("series_title")) {
-                             updateStatement = updateStatement + " series_title = '" + siAsst.getSeriesTitle() + "',";
-                        }
-                        else if (column.equals("terms_and_restrictions")) {
-                            updateStatement = updateStatement + " terms_and_restrictions = '" + siAsst.getTermsAndRestrictions() + "',";
-                        }
-                        else if (column.equals("title")) {
-                            updateStatement = updateStatement + " title = '" + siAsst.getTitle() + "',";
-                        }
-                        else if (column.equals("use_restrictions")) {
-                            updateStatement = updateStatement + " use_restrictions = '" + siAsst.getUseRestrictions() + "',";
-                        }
-                        else if (column.equals("work_creation_date")) {
-                            updateStatement = updateStatement + " work_creation_date = '" + siAsst.getWorkCreationDate() + "',";
-                        }
-                        else if (column.equals("notes")) {
-                            updateStatement = updateStatement + " notes = '" + siAsst.getNotes() + "',";
-                        }
-                        else {
-                            if (!column.equals("source_system_id")  && !column.equals("max_ids_size") && !column.equals("is_restricted")) {
-                                    
-                                logger.log(Level.ALL, "Error attempting to map unhandled column: " + column);
-                            }
+                                
+                        switch (column) {
+                            case "source_system_id" :
+                            case "max_ids_size" :
+                            case "is_restricted" :
+                                break;
+                                
+                            case "admin_content_type" :
+                                updateStatement = updateStatement + " admin_content_type = '" + siAsst.getAdminContentType() + "',";
+                                break;
+                            case "alternate_identifier_1": 
+                                updateStatement = updateStatement + " alternate_identifier_1 = '" + siAsst.getAlternateIdentifier1() + "',";
+                                break;
+                            case "credit" :
+                                updateStatement = updateStatement + " credit = '" + siAsst.getCredit() + "',";
+                                break;
+                            case "caption" :
+                                updateStatement = updateStatement + " caption = '" + siAsst.getCaption() + "',";
+                                break;                     
+                            case "digital_item_notes" :
+                                updateStatement = updateStatement + " digital_item_notes = '" + siAsst.getDigitalItemNotes() + "',";
+                                break;
+                            case "description" :
+                                updateStatement = updateStatement + " description = '" + siAsst.getDescription() + "',";
+                                break;
+                            case "group_title" :
+                                updateStatement = updateStatement + " group_title = '" + siAsst.getGroupTitle() + "',";
+                                break;
+                            case "intellectual_content_creator" :
+                                updateStatement = updateStatement + " intellectual_content_creator = '" + siAsst.getIntellectualContentCreator() + "',";
+                                break;
+                            case "keywords" :
+                                updateStatement = updateStatement + " keywords = '" + siAsst.getKeywords() + "',";
+                                break;
+                            case "named_person" :
+                                updateStatement = updateStatement + " named_person = '" + siAsst.getNamedPerson() + "',";
+                                break;
+                            case "notes" :
+                                updateStatement = updateStatement + " notes = '" + siAsst.getNotes() + "',";
+                                break;
+                            case "other_constraints" :
+                                updateStatement = updateStatement + " other_constraints = '" + siAsst.getOtherConstraints() + "',";
+                                break;
+                            case "primary_creator" :
+                                updateStatement = updateStatement + " primary_creator = '" + siAsst.getPrimaryCreator() + "',";
+                                break;
+                            case "rights_holder" :
+                                updateStatement = updateStatement + " rights_holder = '" + siAsst.getRightsHolder() + "',";
+                                break;
+                            case "series_title" :
+                                updateStatement = updateStatement + " series_title = '" + siAsst.getSeriesTitle() + "',";
+                                break;
+                            case "terms_and_restrictions" :
+                                updateStatement = updateStatement + " terms_and_restrictions = '" + siAsst.getTermsAndRestrictions() + "',";
+                                break;
+                            case "title" :
+                                updateStatement = updateStatement + " title = '" + siAsst.getTitle() + "',";
+                                break;
+                            case "use_restrictions" :
+                                updateStatement = updateStatement + " use_restrictions = '" + siAsst.getUseRestrictions() + "',";
+                                break;
+                            case "work_creation_date" :
+                                updateStatement = updateStatement + " work_creation_date = '" + siAsst.getWorkCreationDate() + "',";
+                                break;
+                            default :                                 
+                                logger.log(Level.ALL, "Error attempting to map unhandled column: " + column);           
                         }
                     }
                 }
@@ -519,7 +517,11 @@ public class MetaData {
                             logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows");
                         }
                     }                   
-                    
+                    if (sql.contains("AS admin_content_type")) {
+                        if (rs.getString("admin_content_type") != null) {
+                            siAsst.setAdminContentType(rs.getString("admin_content_type"));
+                        }
+                    }
                     if (sql.contains("AS alternate_identifier_1")) {
                         if (rs.getString("alternate_identifier_1") != null) {
                             siAsst.setAlternateIdentifier1(rs.getString("alternate_identifier_1"));

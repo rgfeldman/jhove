@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 public class SiAssetMetaData {
     //class attributes
+    String adminContentType;
     String alternateIdentifier1;
     String caption;
     String credit;
@@ -47,6 +48,10 @@ public class SiAssetMetaData {
     
     // get functions
 
+    public String getAdminContentType () {
+        return this.adminContentType;
+    }
+        
     public String getAlternateIdentifier1 () {
         return this.alternateIdentifier1;
     }
@@ -192,6 +197,11 @@ public class SiAssetMetaData {
         else {
                 this.namedPerson = namedPerson;   
         }
+    }
+    
+    public void setAdminContentType(String adminContentType) {
+        adminContentType = adminContentType;
+        this.adminContentType = adminContentType;
     }
     
     public void setAlternateIdentifier1(String alternateIdentifier1) {
