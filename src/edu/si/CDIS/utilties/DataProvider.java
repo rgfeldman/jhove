@@ -33,6 +33,7 @@ public class DataProvider {
 	    try
 	    {
 	    	conn = DriverManager.getConnection(url, user, pass);
+                conn.setAutoCommit(false);
 	    }
 	    catch (Exception e)
 	    {

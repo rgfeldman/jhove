@@ -150,7 +150,7 @@ public class MediaFile {
             forIngest.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));           
             forIngest.populateHotFolder(damsConn);
             
-            String workFileBatchLocation = baseDir + "\\" + forIngest.getHotFolder() + "\\TEMP-XFER\\" + cdis.getBatchNumber();
+            String workFileBatchLocation = baseDir + "\\" + forIngest.getHotFolder() + "a\\TEMP-XFER\\" + cdis.getBatchNumber();
             //reformat the string to correct
             
             workFileBatchLocation = reformatPath.reformatPathMS(workFileBatchLocation);

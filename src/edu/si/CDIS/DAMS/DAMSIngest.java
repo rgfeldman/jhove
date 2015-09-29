@@ -33,6 +33,7 @@ public class DAMSIngest {
     String cisSourceDB;
     String hotFolderBaseDir;
     public ArrayList<String> distinctHotFolders;
+    String folderLetterExtension;
     
     LinkedHashMap <String,String> renditionsForDAMS; 
     
@@ -49,28 +50,13 @@ public class DAMSIngest {
     */
     
     private void processList (CDIS cdis) {
-         // See if we can find if this uan already exists in TMS
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        String sql = null;
-        String sqlTypeArr[];
-        
-        for (String key : cdis.xmlSelectHash.keySet()) {
-            
-            sqlTypeArr = cdis.xmlSelectHash.get(key);
-            if (sqlTypeArr[0].equals("checkForExistingDAMSMedia")) {   
-                sql = key;     
-            }      
-        }
-        
-        if ( sql == null) {  
-            logger.log(Level.FINER, "ERROR: unable to check if CIS Media exists, supporting SQL not provided");
-            return;
-        }
-        
-        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
+               
+        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table
         for (String cisUniqueMediaId : renditionsForDAMS.keySet()) {
                 
+            //Make sure the last transaction is committed
+            try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            
             logger.log(Level.FINEST, "Processing for cisUniqueMediaId: " + cisUniqueMediaId);
                 
             CDISMap cdisMap = new CDISMap();
@@ -92,29 +78,29 @@ public class DAMSIngest {
                 logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                 continue;
             }
+        }
+            
+        //loop through the NotLinked RenditionList and copy the files
+        for (String cisUniqueMediaId : renditionsForDAMS.keySet()) {       
                 
+            CDISMap cdisMap = new CDISMap();
+            String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
+            
             try {
-                     
-                sql = sql.replaceAll("\\?fileName\\?", cisFileName);
-               
-                logger.log(Level.FINEST, "SQL: {0}", sql);
+                
+                try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+                
+                cdisMap.setBatchNumber(cdis.getBatchNumber());
+                cdisMap.setFileName(cisFileName);
+                cdisMap.populateIDForFileBatch(damsConn);
                     
                 boolean sentForIngest = false;
-                     
-                stmt = damsConn.prepareStatement(sql);                                
-                rs = stmt.executeQuery();
                     
                 MediaFile mediaFile = new MediaFile();
                     
-                if (rs != null && rs.next()) {
-                    //Find the image on the media drive
-                    sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisUniqueMediaId, cdisMap);   
-                }
-                else {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "DUP", "Media Already exists: Media does not need to be created", damsConn);
-                    continue;
-                }
+                //Find the image on the media drive
+                sentForIngest = mediaFile.sendToIngest(cdis, cisFileName, cisUniqueMediaId, cdisMap);   
+
                     
                 // If we have no error condition, mark status in activity table, else flag as error
                 if (! sentForIngest) {
@@ -122,20 +108,25 @@ public class DAMSIngest {
                     continue;
                 }
                     
+                CDISActivityLog cdisActivity = new CDISActivityLog();
                 //Log into the activity table
-                activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
+                boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
                 }
 
+               
+                
             } catch (Exception e) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);    
-                    
+                errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);   
+                
             } finally {
-                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                
+                //make sure we commit the final time through the loop
+                try { if (damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+                
             }
         }
     
@@ -148,10 +139,11 @@ public class DAMSIngest {
         Description:    Adds to the list of CIS IDs that need to be integrated into DAMS
         RFeldman 3/2015
     */
-    private void populateNewMediaList (CDIS cdis) {
+    private Integer populateNewMediaList (CDIS cdis) {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
+        int numCisRenditionsFound = 0;
 
         String sql = null;
         String sqlTypeArr[];
@@ -167,6 +159,8 @@ public class DAMSIngest {
         
         if (sql != null) {           
         
+            sql = sql + "AND ROWNUM < " + cdis.properties.getProperty("maxNumFiles") + " + 1";
+            
             logger.log(Level.FINER, "SQL: {0}", sql);
             
             try {
@@ -180,19 +174,21 @@ public class DAMSIngest {
                             
                         default:     
                             logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cisSourceDB );
-                            return;
+                            return numCisRenditionsFound;
                     }
                    
                                                    
                     rs = stmt.executeQuery();
-        
+                    
+                    
                     while (rs.next()) {           
                         addRenditionsForDAMS(rs.getString("cisUniqueMediaId"), rs.getString("fileName"));
+                        numCisRenditionsFound ++;
                     }   
 
             } catch (Exception e) {
                     logger.log(Level.FINER, "Error: obtaining CIS ID list ", e );
-                    return;
+                    return numCisRenditionsFound;
                     
             } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
@@ -201,7 +197,7 @@ public class DAMSIngest {
             
         }
         
-        return;
+        return numCisRenditionsFound;
     }
     
     /*  Method :        moveFilesToHotFolder
@@ -223,13 +219,58 @@ public class DAMSIngest {
             
             String currentMainDirName = iter.next();
             
-            //Set the Master vatiable information
-            String currentHotFolderMasterName = hotFolderBaseDir + "\\" + currentMainDirName + "\\MASTER";
-            File hotFolderMasterDir = new File(currentHotFolderMasterName);
+            //Set the hotfolder letter extension for multi-processing.
+            //First we start with the letter 'a' then increment
+            folderLetterExtension = "a";
+
+            // Check to see if hotfolder with letter extension has data in it
+            // If it does, then increment the letter extension
+                               
+            Integer numFiles;
+            boolean firstPass = true;
+            File currentHotFolderMaster;
+            
+            do {
+                
+                currentHotFolderMaster = new File (hotFolderBaseDir + "\\" + currentMainDirName + folderLetterExtension + "\\MASTER"); 
+                numFiles = countFilesInIngestFolder (batchNumber, "master");
+               
+                if (numFiles == -1 ) {
+                    //The direcotry does not exist
+                    if (firstPass) {
+                        //invalid, hot folder does not exist. Return
+                        logger.log(Level.FINER, "Invalid HotFolderName, cannot ingest: " + currentHotFolderMaster.getAbsolutePath());
+                        return;
+                    }
+                    else {
+                        //HotFolder extension does not exist...but previous ones did.
+                        //Set to "a" and start back at beginning
+                        logger.log(Level.FINER, "hotFolder Master Directory is not empty.  Will sleep and check back in 5 minutes");
+                
+                        try {
+                            Thread.sleep(300000);
+                        } catch (Exception e) {
+                                logger.log(Level.FINER, "Exception in sleep ", e);
+                        }
+            
+                        folderLetterExtension = "a"; 
+                        
+                    }
+                }
+                else if ( numFiles > 0 ) {
+                    int charValue = folderLetterExtension.charAt(0);
+                    folderLetterExtension = String.valueOf( (char) (charValue + 1));
+                    firstPass = false;
+                }   
+
+            } while (numFiles != 0);
+               
+
+            String currentHotFolderMasterName = currentHotFolderMaster.getAbsolutePath();
             logger.log(Level.FINER, "Current hotfolder set to : " + currentHotFolderMasterName);
             
             //Set the Workfile vatiable information
-            String batchWorkFileDirName = hotFolderBaseDir + "\\" + currentMainDirName + "\\TEMP-XFER\\" + batchNumber;
+            String batchWorkFileDirName = hotFolderBaseDir + "\\" + currentMainDirName + "a\\TEMP-XFER\\" + batchNumber;
             File batchWorkFileDir = new File(batchWorkFileDirName);
             logger.log(Level.FINER, "Current workfolder set to : " + batchWorkFileDirName);
             
@@ -253,7 +294,11 @@ public class DAMSIngest {
                     
                     File fileForDams = filesForDams[i];
                      
-                    FileUtils.moveFileToDirectory(fileForDams, hotFolderMasterDir, false);
+                    if (! currentHotFolderMaster.exists()) {
+                        logger.log(Level.FINER, "Error, hot folder not found : " + currentHotFolderMasterName);
+                        continue;
+                    }
+                    FileUtils.moveFileToDirectory(fileForDams, currentHotFolderMaster, false);
                      
                     CDISActivityLog cdisActivity = new CDISActivityLog();
                     
@@ -349,7 +394,7 @@ public class DAMSIngest {
         
     }
     
-    private Integer countHotFolderSubFiles(String subDir) {
+    private Integer countFilesInIngestFolder(Long batchNumber, String folderType) {
     
         // Check to see if anything is in hotfolder.  If there is, we need to wait for hotfolder to clear or we can run the risk of 
         // having files being ingested that are partially there.
@@ -357,13 +402,29 @@ public class DAMSIngest {
         Integer numFiles = 0;
         
         for(Iterator<String> iter = distinctHotFolders.iterator(); iter.hasNext();) {
-            String hotFolderSubLocation = hotFolderBaseDir + "\\" + iter.next() + "\\" + subDir;
             
-            File hotFolderSubDir = new File(hotFolderSubLocation);
-        
+            String folderLocation = null;
+            
+            if (folderType.equals("workFolder")) {
+                folderLocation = hotFolderBaseDir + "\\" + iter.next() + "a\\TEMP-XFER\\" + batchNumber;
+            }
+            else if (folderType.equals("master")) {
+                folderLocation = hotFolderBaseDir + "\\" + iter.next() + this.folderLetterExtension + "\\MASTER";
+            }
+            else {
+                logger.log(Level.FINER, "Error, invalid folder type");
+                return -1;
+            }
+            
+            File hotFolderSubDir = new File(folderLocation);
+            
             if(hotFolderSubDir.isDirectory()){ 
                 numFiles += hotFolderSubDir.list().length;
-                logger.log(Level.FINER, "Directory: " + hotFolderSubLocation + " Files: " + numFiles);
+                logger.log(Level.FINER, "Directory: " + folderLocation + " Files: " + numFiles);
+            }
+            else {
+                logger.log(Level.FINER, "Error, directory does not exist: " + folderLocation);
+                return -1;
             }
         }
         
@@ -390,7 +451,10 @@ public class DAMSIngest {
         this.renditionsForDAMS = new LinkedHashMap<String, String>();
         
         // Get the list of new Media to add to DAMS
-        populateNewMediaList (cdis);
+        Integer numCisRenditions = populateNewMediaList (cdis);
+        if  (! (numCisRenditions > 0 )) {
+             logger.log(Level.FINER, "No Renditions Found to process in this batch.  Exiting");
+        }
         
         // check if the renditions are in dams...and process each one in list (move to workfolder
         logger.log(Level.FINER, "Processing media List");
@@ -405,7 +469,7 @@ public class DAMSIngest {
         
         // Check to see if anything in any of the workfolder directories.
         // We only need to continue if there is a file there.
-        Integer numWorkFiles = countHotFolderSubFiles("TEMP-XFER\\" + cdis.getBatchNumber());
+        Integer numWorkFiles = countFilesInIngestFolder(cdis.getBatchNumber(), "workFolder");
         if (! (numWorkFiles > 0)) {
             logger.log(Level.FINER, "No work Files detected to process, returning");
             return;
@@ -415,7 +479,7 @@ public class DAMSIngest {
         // We pause if there is a file in the hotfolder and wait for the hotfolder file to be ingested.
         
         logger.log(Level.FINER, "{0} Workfiles detected.  Need to check if ANY hotfiles exist from another process before continuing", numWorkFiles);
-        while (countHotFolderSubFiles("MASTER") > 0) {
+        while (countFilesInIngestFolder(cdis.getBatchNumber(), "master") > 0) {
  
             logger.log(Level.FINER, "hotFolder Master Directory is not empty.  Check back in 5 minutes");
                 

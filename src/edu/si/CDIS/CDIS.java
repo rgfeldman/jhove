@@ -318,6 +318,7 @@ public class CDIS {
                     DAMSIngest damsIngest = new DAMSIngest();
                     damsIngest.ingest(cdis);
                     
+                    /*
                     //If we want to link right after the ingest, make sure the file has made it to DAMS...then ingest
                     if (cdis.properties.getProperty("linkAfterIngest").equals("true") ){   
                     
@@ -392,6 +393,7 @@ public class CDIS {
                         CDIS.main(Arguments);
                     
                     }
+                            */
                     
                     break;
                     
