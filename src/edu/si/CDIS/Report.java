@@ -63,7 +63,8 @@ public class Report {
                         "SELECT 'X' from cdis_activity_log b " +
                         "WHERE a.cdis_map_id = b.cdis_map_id " +
                         "AND b.cdis_status_cd = 'MS' " +
-                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))";
+                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + ")) " +
+                        "ORDER BY a.file_name";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -108,7 +109,8 @@ public class Report {
                      "AND NOT EXISTS (" + 
                         "SELECT 'X' " + 
                         "FROM CDIS_ERROR e " +
-                        "WHERE a.cdis_map_id = e.cdis_map_id )";
+                        "WHERE a.cdis_map_id = e.cdis_map_id ) " +
+                     "ORDER BY a.file_name";
   
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -146,7 +148,8 @@ public class Report {
                         "SELECT 'X' from cdis_activity_log b " +
                         "WHERE a.cdis_map_id = b.cdis_map_id " +
                         "AND b.cdis_status_cd = 'LC' " +
-                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + "))";
+                        "AND b.activity_dt > (SYSDATE - " + this.rptDays + ")) " +
+                        "ORDER BY a.file_name";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
@@ -195,7 +198,8 @@ public class Report {
                      "   FROM cdis_for_ingest fi " +
                      "   WHERE fi.CIS_UNIQUE_MEDIA_ID = cm.CIS_UNIQUE_MEDIA_ID " +
                      "   AND   fi.SI_HOLDING_UNIT = cm.SI_HOLDING_UNIT " +
-                     "   AND   ingest_status_cd = 'RI') ";
+                     "   AND   ingest_status_cd = 'RI') " +
+                     "ORDER BY cm.file_name";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
