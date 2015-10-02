@@ -12,14 +12,31 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author rfeldman
- */
 public class CDISActivityLog {
      private final static Logger logger = Logger.getLogger(CDIS.class.getName());
      
-     public boolean insertActivity (Connection damsConn, Integer cdisMapId, String cdisStatusCd) {
+     
+    String cdisStatusCd;
+    Integer cdisMapId;
+
+    public String getCdisStatusCd() {
+        return this.cdisStatusCd;
+    }
+    
+    public Integer getCdisMapId() {
+        return this.cdisMapId;
+    }
+    
+    public void setCdisStatusCd(String cdisStatusCd) {
+        this.cdisStatusCd = cdisStatusCd;
+    }
+    
+    public void setCdisMapId(Integer cdisMapId) {
+        this.cdisMapId = cdisMapId;
+    }
+    
+     
+    public boolean insertActivity (Connection damsConn) {
         
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
@@ -31,8 +48,8 @@ public class CDISActivityLog {
                         "activity_dt) " +
                     "values ( " + 
                         "cdis_activity_log_id_seq.NextVal, " +
-                        cdisMapId + ", " +
-                        "'" + cdisStatusCd + "', " +
+                        getCdisMapId() + ", " +
+                        "'" + getCdisStatusCd() + "', " +
                         "SYSDATE)";
         try {
             

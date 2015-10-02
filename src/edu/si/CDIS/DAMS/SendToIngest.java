@@ -22,7 +22,7 @@ import edu.si.CDIS.DAMS.HotIngestFolder;
  *
  * @author rfeldman
  */
-public class DAMSIngest {
+public class SendToIngest {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     Connection damsConn;
@@ -54,8 +54,7 @@ public class DAMSIngest {
             logger.log(Level.FINEST, "Processing for cisUniqueMediaId: " + cisUniqueMediaId);
                 
             CDISMap cdisMap = new CDISMap();
-            CDISActivityLog cdisActivity = new CDISActivityLog();
-                
+           
             String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
                                 
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
@@ -67,7 +66,10 @@ public class DAMSIngest {
             }
                 
             //Log into the activity table
-            boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "MI");
+            CDISActivityLog cdisActivity = new CDISActivityLog();
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("MI");    
+            boolean activityLogged = cdisActivity.insertActivity(damsConn);
             if (!activityLogged) {
                 logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                 continue;
@@ -102,9 +104,11 @@ public class DAMSIngest {
                     continue;
                 }
                     
-                CDISActivityLog cdisActivity = new CDISActivityLog();
                 //Log into the activity table
-                boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SW");
+                CDISActivityLog cdisActivity = new CDISActivityLog();
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd("SW"); 
+                boolean activityLogged = cdisActivity.insertActivity(damsConn);
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;

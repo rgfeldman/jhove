@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.logging.Handler;
 import edu.si.CDIS.CIS.TMSIngest;
 import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.DAMS.DAMSIngest;
+import edu.si.CDIS.DAMS.SendToIngest;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import edu.si.CDIS.DAMS.Database.CDISMap;
@@ -309,29 +309,32 @@ public class CDIS {
             cdis.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
             
             switch (cdis.operationType) {
-                case "createCISmedia" :
-                    TMSIngest tmsIngest = new TMSIngest();
-                    tmsIngest.ingest(cdis);
-                    break;
-                    
+                
                 case "sendToIngest" :   
-                    DAMSIngest damsIngest = new DAMSIngest();
-                    damsIngest.ingest(cdis);  
+                    SendToIngest sendToIngest = new SendToIngest();
+                    sendToIngest.ingest(cdis);  
                     break;
                     
                 case "linkToCIS" :
-                    LinkCollections linkcollections = new LinkCollections();
-                    linkcollections.linkToCIS(cdis);
+                    LinkToCis linkToCis = new LinkToCis();
+                    linkToCis.linkToCIS(cdis);
                     break;
                     
                 case "metaDataSync" :    
                     MetaData metaData = new MetaData();
                     metaData.sync(cdis);
-                    //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
-                    //ImageFilePath imgPath = new ImageFilePath();
-                    //imgPath.sync(cdis);
                     break;
                     
+                case "createCISmedia" :
+                    TMSIngest tmsIngest = new TMSIngest();
+                    tmsIngest.ingest(cdis);
+                    break;  
+                
+                case "tmsMediaPathSync" :
+                    ImageFilePath imgPath = new ImageFilePath();
+                    imgPath.sync(cdis);
+                    break;
+                            
                 case "thumbnailSync" :    
                     Thumbnail thumbnail = new Thumbnail();
                     thumbnail.sync(cdis);

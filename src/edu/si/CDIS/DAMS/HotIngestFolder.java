@@ -204,8 +204,9 @@ public class HotIngestFolder {
                     FileUtils.moveFileToDirectory(fileForDams, currentHotFolderMaster, false);
                      
                     CDISActivityLog cdisActivity = new CDISActivityLog();
-                    
-                    boolean activityLogged = cdisActivity.insertActivity(damsConn, cdisMap.getCdisMapId(), "SH");
+                    cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisActivity.setCdisStatusCd("SH");   
+                    boolean activityLogged = cdisActivity.insertActivity(damsConn);
                     if (!activityLogged) {
                             logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                             continue;
