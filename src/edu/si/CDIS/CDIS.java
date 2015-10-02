@@ -316,7 +316,7 @@ public class CDIS {
                     break;
                     
                 case "linkToCIS" :
-                    LinkCollections linkToCis = new LinkCollections();
+                    LinkToCis linkToCis = new LinkToCis();
                     linkToCis.linkToCIS(cdis);
                     break;
                     
