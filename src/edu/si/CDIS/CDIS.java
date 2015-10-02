@@ -316,85 +316,7 @@ public class CDIS {
                     
                 case "sendToIngest" :   
                     DAMSIngest damsIngest = new DAMSIngest();
-                    damsIngest.ingest(cdis);
-                    
-                    /*
-                    //If we want to link right after the ingest, make sure the file has made it to DAMS...then ingest
-                    if (cdis.properties.getProperty("linkAfterIngest").equals("true") ){   
-                    
-                        // pause for a while...Then run the link operation type after the ingest is complete                   
-                    
-                        for(Iterator<String> iter = damsIngest.distinctHotFolders.iterator(); iter.hasNext();) {
-                            
-                            String currentHotFolderName = iter.next();
-                            String hotFolderdirName =  cdis.properties.getProperty("hotFolderBaseDir") + "\\" + currentHotFolderName + "\\MASTER";
-                            
-                            File hotFolderMasterDir = new File (hotFolderdirName);
-                            while (hotFolderMasterDir.list().length>0) {
-                                logger.log(Level.FINER, "HotFolder Master Directory is not empty.  Wait a few minutes to see if files from this batch are ingested");
-                
-                                try {
-                                    Thread.sleep(150000);
-                                } catch (Exception e) {
-                                    logger.log(Level.FINER, "Exception in sleep ", e);
-                                }
-                            }
-                        }
-                        
-                        //Loop through the staging for the current batch
-                        for(Iterator<String> iter = damsIngest.distinctHotFolders.iterator(); iter.hasNext();) {   
-                        
-                            String currentHotFolderName = iter.next();
-                            String stagingFolderdirName =  cdis.properties.getProperty("stagingFolderBaseDir") + "\\" + currentHotFolderName + "\\MASTER";
-                                
-                            File stagingFolder = new File (stagingFolderdirName);                    
-                            while (stagingFolder.list().length>0) {
- 
-                                logger.log(Level.FINER, "Staging Directory is not empty.  Wait a few minutes to see if files from this batch are ingested");
-                
-                                try {
-                                    Thread.sleep(150000);
-                                } catch (Exception e) {
-                                    logger.log(Level.FINER, "Exception in sleep ", e);
-                                }
-                            }
-                        }
-                        
-                        //Look for failures in the staging folder area
-                        for(Iterator<String> iter = damsIngest.distinctHotFolders.iterator(); iter.hasNext();) {
-                            String currentHotFolderName = iter.next();
-                            String failedFolderdirName =  cdis.properties.getProperty("stagingFolderBaseDir") + "\\" + currentHotFolderName + "\\FAILED";
-                            
-                            File failedFolder = new File (failedFolderdirName);                    
-                            File[] failedFiles = failedFolder.listFiles();
-                            
-                            for (int i = 0; i < failedFiles.length; i++) {
- 
-                                String failedFileName = failedFiles[i].getName();
-                
-                                CDISMap cdisMap = new CDISMap();
-                                cdisMap.setFileName(failedFileName);
-                                cdisMap.setBatchNumber(cdis.batchNumber);
-                                
-                                cdisMap.populateIDForFileBatch(cdis.damsConn);
-                                
-                                ErrorLog errorLog = new ErrorLog();                                
-                                errorLog.capture(cdisMap, "IPE", "Ingest process error for filename: " + failedFileName, cdis.damsConn );          
-                                 
-                            }
-                            
-                        }
-                    
-                        //discontinue the ingestLog handler before we switch to the link process
-                        logger.removeHandler(cdis.fh);
-                    
-                        //Execute the Link Process now that the files have been ingested
-                        String[] Arguments = new String[]{"linkToCIS"};
-                        CDIS.main(Arguments);
-                    
-                    }
-                            */
-                    
+                    damsIngest.ingest(cdis);  
                     break;
                     
                 case "linkToCIS" :
@@ -402,12 +324,12 @@ public class CDIS {
                     linkcollections.linkToCIS(cdis);
                     break;
                     
-                case "sync" :    
+                case "metaDataSync" :    
                     MetaData metaData = new MetaData();
                     metaData.sync(cdis);
                     //sync the imageFilePath.  This essentially should be moved out of metadata sync and be called on its own from the main CDIS
-                    ImageFilePath imgPath = new ImageFilePath();
-                    imgPath.sync(cdis);
+                    //ImageFilePath imgPath = new ImageFilePath();
+                    //imgPath.sync(cdis);
                     break;
                     
                 case "thumbnailSync" :    

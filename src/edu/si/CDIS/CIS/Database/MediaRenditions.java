@@ -35,7 +35,7 @@ public class MediaRenditions {
     }
     
     
-    private void setRenditionId (int renditionId) {
+    public void setRenditionId (int renditionId) {
         this.renditionId = renditionId; 
     }
     
@@ -146,5 +146,34 @@ public class MediaRenditions {
         
         return updateCount;
     }
-   
+     
+    /*  Method :        setForDamsFlag
+        Arguments:      
+        Description:    updates the isColor flag...which indicates the rendition is forDAMS
+        RFeldman 2/2015
+    */
+    public void setForDamsTrue(Connection cisConn) {
+        
+        int recordsUpdated = 0;
+        Statement stmt = null;
+        
+        String sql = "update mediaRenditions " +
+                    "set IsColor = 1 " +
+                    "where IsColor = 0 and RenditionID = " + getRenditionId();
+        
+         logger.log(Level.FINEST, "SQL! {0}", sql);
+         
+         try {
+            recordsUpdated = DataProvider.executeUpdate(cisConn, sql);
+                   
+            logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER,"ERROR: Could not update the forDams flag in TMS",e);
+        }finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+          
+    }
+    
 }

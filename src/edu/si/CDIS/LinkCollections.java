@@ -1,19 +1,16 @@
 
 package edu.si.CDIS;
 
-
-import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.LinkedHashMap;
-import edu.si.CDIS.utilties.DataProvider;;
 import java.util.logging.Level;
 import java.sql.Connection;
 
+import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.CDISActivityLog;
 
 import edu.si.CDIS.DAMS.Database.CDISMap;
@@ -37,7 +34,7 @@ public class LinkCollections  {
     }
     
     /*  Method :       linkToCIS
-        Arguments:      The CDIS object, and the StatisticsReport object
+        Arguments:      The CDIS object
         Description:    link to CIS operation specific code starts here
         RFeldman 2/2015
     */
@@ -58,36 +55,6 @@ public class LinkCollections  {
         linkUANtoFilename (cdis);    
         
     }
-    
-    /*  Method :        setForDamsFlag
-        Arguments:      
-        Description:    updates the isColor flag...which indicates the rendition is forDAMS
-        RFeldman 2/2015
-    */
-    private void setForDamsFlag(int RenditionId) {
-        
-        int recordsUpdated = 0;
-        Statement stmt = null;
-        
-        String sql = "update mediaRenditions " +
-                    "set IsColor = 1 " +
-                    "where IsColor = 0 and RenditionID = " + RenditionId;
-        
-         logger.log(Level.FINEST, "SQL! {0}", sql);
-         
-         try {
-            recordsUpdated = DataProvider.executeUpdate(this.cisConn, sql);
-                   
-            logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR: Could not update the forDams flag in TMS",e);
-        }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-          
-    }
-    
     
     /*  Method :        linkUANtoFilename
         Arguments:     
@@ -116,6 +83,9 @@ public class LinkCollections  {
         for (String key : neverLinkedDamsRendtion.keySet()) {
 
             try {
+                
+                
+                
                 CDISMap cdisMap = new CDISMap();
                 
                 cdisMap.setUoiid(key);
@@ -124,7 +94,6 @@ public class LinkCollections  {
                     currentIterationSql = sql.replace("?DAMSfileName?",  neverLinkedDamsRendtion.get(key));
                 }
                 
-                //logger.log(Level.FINER,"checking for UOI_ID " + cdisTbl.getUOIID() + " UAN: " + neverLinkedDamsRendtion.get(key));
                 logger.log(Level.FINEST,"SQL " + currentIterationSql);
                               
                 switch (cisSourceDB) {
@@ -168,7 +137,9 @@ public class LinkCollections  {
                         
                             //This is TMS specific code. For TMS only
                             if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
-                                setForDamsFlag(Integer.parseInt(cdisMap.getCisUniqueMediaId()));
+                                MediaRenditions mediaRenditions = new MediaRenditions();
+                                mediaRenditions.setRenditionId(Integer.parseInt(cdisMap.getCisUniqueMediaId()));
+                                mediaRenditions.setForDamsTrue(cisConn);
                             }
                         }
                         
@@ -179,17 +150,12 @@ public class LinkCollections  {
                             logger.log(Level.FINER,"ERROR: Activity not added successfully! " + cdisMap.getUoiid());
                         }
                         
-                        //SiAssetMetaData siAsst = new SiAssetMetaData();
-                        // we were successful in creating a record in the CDIS Table, we need to update DAMS with the source_system_id
-                        // update the SourceSystemID in DAMS with this value
-                        //int updatedRows = siAsst.updateDAMSSourceSystemID(damsConn, cdisMap.getUoiid(), "TO BE SYNCED BY CDIS" );
-                        
-                        //if (updatedRows != 1) {
-                        //    logger.log(Level.FINER,"ERROR: Unable to update siAssetMetadata SourceSystemID successfully! " + cdisMap.getUoiid());
-                        //}
-                        
                     } catch (Exception e) {
                         logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getUoiid(),e);
+                    }
+                    finally {
+                        try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); };
+                        try { if ( cdis.cisConn != null)  cdis.cisConn.commit(); } catch (Exception e) { e.printStackTrace(); };
                     }
                 }
                 
@@ -246,7 +212,7 @@ public class LinkCollections  {
             
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.FINER,"ERROR: Catched error in populateNeverLinkedDamsRenditions",e);
         } finally {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
             try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }

@@ -8,6 +8,7 @@ package edu.si.CDIS;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,7 +19,10 @@ import java.util.logging.Logger;
 import edu.si.CDIS.utilties.DataProvider;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Database.CDISTable;
+import edu.si.CDIS.DAMS.Database.CDISMap;
 import edu.si.CDIS.XmlSqlConfig;
+import edu.si.CDIS.utilties.ScrubStringForDb;
+import edu.si.CDIS.utilties.TruncateForDB;
 
 public class MetaData {
 
@@ -34,7 +38,7 @@ public class MetaData {
     Connection damsConn;
     int successfulUpdateCount;
     int failedUpdateCount;
-    ArrayList<String> columnsToUpdate;
+    HashMap <String,String> metaDataForDams; 
 
     private void setSqlUpdate(String sqlUpdate) {
         this.sqlUpdate = sqlUpdate;
@@ -61,30 +65,29 @@ public class MetaData {
             this.emailTo = cdis.properties.getProperty("emailTo");
         }
         this.flagForIDS = cdis.properties.getProperty("flagForIDS");
-               
-        // Get required column names
-        getRequiredColumnNames(cdis.xmlSelectHash);
 
         // initialize renditionID lists for sync
-        ArrayList<Integer> neverSyncedCDISIdLst = new ArrayList<Integer>();
+        ArrayList<String> damsNeverSyncedMedia = new ArrayList<String>();
         ArrayList<Integer> sourceUpdatedCDISIdLst = new ArrayList<Integer>();
 
         // Grab all the records that have NEVER EVER been synced by CDIS yet
-        neverSyncedCDISIdLst = getNeverSyncedRendition();
+        damsNeverSyncedMedia = getNeverSyncedRendition();
 
-        //Grab all the records that have been synced in the past, but have been updated
-        sourceUpdatedCDISIdLst = getCISUpdatedRendition();
+        //Grab all the records that have been synced in the past, but have been updated      
+        //sourceUpdatedCDISIdLst = getCISUpdatedRendition();
 
         // Loop through all the rendition IDs we determined we needed to sync
         // while i could have chosen to call the processRendition only one time instead of three, for now
         // I have broken this up to make this more trackable and in case we want to exclude certain types of
         // sync for certain units
-        if (!neverSyncedCDISIdLst.isEmpty()) {
-            processRenditionList(neverSyncedCDISIdLst, cdis.xmlSelectHash);
+        if (!damsNeverSyncedMedia.isEmpty()) {
+            processRenditionList(damsNeverSyncedMedia, cdis.xmlSelectHash);
         }
+        /*
         if (!sourceUpdatedCDISIdLst.isEmpty()) {
             processRenditionList(sourceUpdatedCDISIdLst, cdis.xmlSelectHash);
         }
+        */
     }
 
     /*  Method :        updateDamsData
@@ -104,26 +107,30 @@ public class MetaData {
         Description:    get Renditions by CDIS_ID that have never been synced 
         RFeldman 2/2015
     */
-    private ArrayList<Integer> getNeverSyncedRendition() {
+    private ArrayList<String> getNeverSyncedRendition() {
 
-        ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
+        ArrayList<String> damsMediaToSync = new ArrayList<String>();
 
         // this needs to get the record with the max metadaDataSyncDate if it is not unique
+        /*
         String sql = "select CDIS_ID "
                 + "from CDIS "
                 + "where MetaDataSyncDate is NULL "
                 + "order by CDIS_ID";
+        */
+        String sql = "select uoi_id from cdis_metadata";
         
         logger.log(Level.ALL, "updateStatment: " + sql);
 
         ResultSet rs;
 
-        rs = DataProvider.executeSelect(this.cisConn, sql);
+        //rs = DataProvider.executeSelect(this.cisConn, sql);
+        rs = DataProvider.executeSelect(this.damsConn, sql);
 
         try {
             while (rs.next()) {
-                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
-                    CDISIdList.add(rs.getInt(1));
+                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
+                    damsMediaToSync.add(rs.getString(1));
             }
 
         } catch (Exception e) {
@@ -138,7 +145,7 @@ public class MetaData {
             }
         }
 
-        return CDISIdList;
+        return damsMediaToSync;
     }
 
     /*  Method :       getCISUpdatedRendition
@@ -147,6 +154,7 @@ public class MetaData {
                         but have been updated in the Collection System (CIS), and DAMS requres those updates 
         RFeldman 2/2015
     */
+    /*
     private ArrayList<Integer> getCISUpdatedRendition() {
 
         ArrayList<Integer> CDISIdList = new ArrayList<Integer>();
@@ -210,120 +218,49 @@ public class MetaData {
         return CDISIdList;
     }
 
+    */
+    
+    
     /*  Method :       processRenditionList
         Arguments:      
         Description:    Goes through the list of rendition Records one at a time 
                         and determines how to update the metadata on each one
         RFeldman 2/2015
     */
-    private void processRenditionList(ArrayList<Integer> CDISIdList, HashMap <String,String[]> SelectHash) {
+    private void processRenditionList(ArrayList<String> imagesToSync, HashMap <String,String[]> SelectHash) {
 
-        // For each Rendition Number in list, obtain information from CDIS table
-        PreparedStatement stmt = null;
+        // for each Rendition ID that was identified for sync
+        for (Iterator<String> iter = imagesToSync.iterator(); iter.hasNext();) {
+            
+            CDISMap cdisMap = new CDISMap();
+            SiAssetMetaData siAsst = new SiAssetMetaData ();
 
-        try {
-            // prepare the sql for obtaining info from CDIS
-            stmt = this.cisConn.prepareStatement("select RenditionID, RenditionNumber, UOIID, UAN, MetaDataSyncDate, IDSRestrict, ObjectID "
-                    + "from CDIS "
-                    + "where CDIS_ID = ? "
-                    + "order by CDIS_ID");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        ResultSet rs = null;
-
-        try {
-
-            // for each Rendition ID that was identified for sync
-            for (Iterator<Integer> iter = CDISIdList.iterator(); iter.hasNext();) {
-
-                try {
-
-                    // Reassign object with each loop
-                    CDISTable cdisTbl = new CDISTable();
-                    
-                    // create the object to hold the metadata itself
-                    SiAssetMetaData siAsst = new SiAssetMetaData();
-
-                    // store the current RenditionID in the object, and send to sql statement
-                    cdisTbl.setCDIS_ID(iter.next());
-                    stmt.setInt(1, cdisTbl.getCDIS_ID());
-
-                    rs = DataProvider.executeSelect(this.cisConn, stmt);
-
-                    logger.log(Level.ALL, "Getting information for CDIS_ID: " + cdisTbl.getCDIS_ID());
-
-                    // Get the supplemental information for the current RenditionID that we are looping through
-                    if (rs.next()) {
-                        cdisTbl.setRenditionId(rs.getInt("RenditionID"));
-                        cdisTbl.setRenditionNumber(rs.getString("RenditionNumber"));
-                        cdisTbl.setUOIID(rs.getString("UOIID"));
-                        cdisTbl.setUAN(rs.getString("UAN"));
-                        cdisTbl.setMetaDataSyncDate(rs.getString("MetaDataSyncDate"));
-                        cdisTbl.setIDSRestrict(rs.getString("IDSRestrict"));
-                        cdisTbl.setObjectId(rs.getInt("objectID"));
-
-                        // execute the SQL statment to obtain the metadata.  They key value is RenditionID
-                        mapData(SelectHash, cdisTbl, siAsst);
-
-                        generateUpdate(siAsst, cdisTbl);
-
-                        // Perform the update to the Dams Data
-                        int updateDamsCount = updateDamsData();
-                     
-                         logger.log(Level.FINER, "DAMS Rows updated: " + updateDamsCount );
-                        
-                        // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
+            try {
+                
+                cdisMap.setUoiid(iter.next());
+                
+                // execute the SQL statment to obtain the metadata and populate variables.  They key value is RenditionID
+                mapData(SelectHash, cdisMap, siAsst);
+                
+                
+                //generate the update statement from the variables obtained in the mapData
+                generateUpdate(siAsst, cdisMap);
+ 
+                // Perform the update to the Dams Data
+                int updateDamsCount = updateDamsData();
+                
+                // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
                         if (updateDamsCount == 1) {
                             successfulUpdateCount ++;
-                           
-                            //calcute the new IDSRestriction value
-                            String newIDSRestrict = calcNewIDSRestrict(siAsst);
-                            
-                            // if the flag from the config file says we never update for IDS, skip this step.
-                            if (! this.flagForIDS.equals("never")) {
-                                updateMetaDataStateDate(cdisTbl, newIDSRestrict);
-                            }
-                            
-                            logger.log(Level.ALL, "About to update CDIS table");
-                            
-                            int cdisRecordsUpdated = updateCDISTbl(cdisTbl, newIDSRestrict);
-                            if (cdisRecordsUpdated != 1) {
-                                logger.log(Level.ALL, "Error, CDIS Table not updated");
-                            }
                         }
-                        else {
-                            logger.log(Level.ALL, "Error, CDIS Table not updated, metadata not synced");
-                            failedUpdateCount ++;
-                        }
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        if (rs != null) {
-                            rs.close();
-                        }
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (stmt != null) {
-                    stmt.close();
-                }
-            } catch (SQLException e) {
+                        
+                // Insert row into transaction_log table
+                        
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+ 
     }
     
     
@@ -333,7 +270,7 @@ public class MetaData {
         Description:    generates the update sql for updating metadata in the DAMS SI_ASSET_METADATA table
         RFeldman 2/2015
     */
-    private void generateUpdate(SiAssetMetaData siAsst, CDISTable cdisTbl) {
+    private boolean generateUpdate(SiAssetMetaData siAsst, CDISMap cdisMap) {
 
         // Go through the list and 
         
@@ -342,76 +279,24 @@ public class MetaData {
                 + " max_ids_size = '" + siAsst.getMaxIdsSize() + "',"
                 + " is_restricted = '" + siAsst.getIsRestricted() + "',";
         
-                if(!columnsToUpdate.isEmpty()) {
-                    
-                    for(Iterator<String> iter = columnsToUpdate.iterator(); iter.hasNext();) {
-                        String column = iter.next();
+        
+                
+                TruncateForDB trunc = new TruncateForDB();
+                                             
+                for (String column : metaDataForDams.keySet()) {
+            
+                        String columnValue = trunc.truncateString(column, metaDataForDams.get(column));
+                        if (columnValue.equals("ERROR: UNSUPPORTED COLUMN") ) {
+                            return false;
+                        }
                         
-                        //logger.log(Level.ALL, "Processing Column: " + column);
-                         
-                        if (column.equals("credit")) {
-                            updateStatement = updateStatement + " credit = '" + siAsst.getCredit() + "',";
-                        }
-                        else if (column.equals("caption")) {
-                            updateStatement = updateStatement + " caption = '" + siAsst.getCaption() + "',";
-                        }
-                        else if (column.equals("digital_item_notes")) {
-                            updateStatement = updateStatement + " digital_item_notes = '" + siAsst.getDigitalItemNotes() + "',";
-                        }
-                        else if (column.equals("description")) {
-                            updateStatement = updateStatement + " description = '" + siAsst.getDescription() + "',";
-                        }
-                        else if (column.equals("group_title")) {
-                            updateStatement = updateStatement + " group_title = '" + siAsst.getGroupTitle() + "',";
-                        }
-                        else if (column.equals("intellectual_content_creator")) {
-                            updateStatement = updateStatement + " intellectual_content_creator = '" + siAsst.getIntellectualContentCreator() + "',";
-                        }
-                        else if (column.equals("keywords")) {
-                            updateStatement = updateStatement + " keywords = '" + siAsst.getKeywords() + "',";
-                        }
-                        else if (column.equals("named_person")) {
-                            updateStatement = updateStatement + " named_person = '" + siAsst.getNamedPerson() + "',";
-                        }
-                        else if (column.equals("other_constraints")) {
-                            updateStatement = updateStatement + " other_constraints = '" + siAsst.getOtherConstraints() + "',";
-                        }
-                        else if (column.equals("primary_creator")) {
-                            updateStatement = updateStatement + " primary_creator = '" + siAsst.getPrimaryCreator() + "',";
-                        }
-                        else if (column.equals("rights_holder")) {
-                            updateStatement = updateStatement + " rights_holder = '" + siAsst.getRightsHolder() + "',";
-                        }
-                        else if (column.equals("series_title")) {
-                             updateStatement = updateStatement + " series_title = '" + siAsst.getSeriesTitle() + "',";
-                        }
-                        else if (column.equals("terms_and_restrictions")) {
-                            updateStatement = updateStatement + " terms_and_restrictions = '" + siAsst.getTermsAndRestrictions() + "',";
-                        }
-                        else if (column.equals("title")) {
-                            updateStatement = updateStatement + " title = '" + siAsst.getTitle() + "',";
-                        }
-                        else if (column.equals("use_restrictions")) {
-                            updateStatement = updateStatement + " use_restrictions = '" + siAsst.getUseRestrictions() + "',";
-                        }
-                        else if (column.equals("work_creation_date")) {
-                            updateStatement = updateStatement + " work_creation_date = '" + siAsst.getWorkCreationDate() + "',";
-                        }
-                        else if (column.equals("notes")) {
-                            updateStatement = updateStatement + " notes = '" + siAsst.getNotes() + "',";
-                        }
-                        else {
-                            if (!column.equals("source_system_id")  && !column.equals("max_ids_size") && !column.equals("is_restricted")) {
-                                    
-                                logger.log(Level.ALL, "Error attempting to map unhandled column: " + column);
-                            }
-                        }
-                    }
+                        updateStatement = updateStatement + " " + column + " = '" + columnValue + "',";
+                     
                 }
 
                 updateStatement = updateStatement +
                     " public_use = 'Yes' " +
-                    " WHERE uoi_id = '" + cdisTbl.getUOIID() + "'";
+                    " WHERE uoi_id = '" + cdisMap.getUoiid() + "'";
 
         //we collected nulls in the set/get commands.  strip out the word null from the update statement
         updateStatement = updateStatement.replaceAll("null", "");
@@ -419,38 +304,8 @@ public class MetaData {
         setSqlUpdate(updateStatement);
 
         logger.log(Level.ALL, "updateStatment: " + updateStatement);
-
-    }
-
-    /*  Method :        getRequiredColumnNames
-        Arguments:      
-        Returns:      
-        Description:    obtains the required columns for the metadata update and adds each one to the columnsToUpdate 
-        RFeldman 4/2015
-    */
-    private void getRequiredColumnNames(HashMap <String,String[]> metaDataSelectHash) {
         
-        this.columnsToUpdate = new ArrayList<String>();
-    
-        for (String key : metaDataSelectHash.keySet()) {
-            
-            String sql = key;
-             // Split the sql string on whitespace characters, then take the next column and add to array containing
-            // the variables that we want to update
-            int wordNum = 0;
-            String[] words = sql.split("\\s+");
-            for (String word : words) {
-                
-                if (word.equalsIgnoreCase("AS")) {
-                    
-                    String column = words[wordNum+1].replace(",","");
-                    //logger.log(Level.ALL, "Adding column to stack: " + column);
-                    
-                    columnsToUpdate.add(column);
-                }
-                wordNum ++;
-            } 
-        }
+        return true;
 
     }
     
@@ -460,13 +315,16 @@ public class MetaData {
         Description:    maps the information obtained from the TMS select statement to the appropriate member variables
         RFeldman 2/2015
     */
-    private void mapData(HashMap <String,String[]> metaDataSelectHash, CDISTable cdisTbl, SiAssetMetaData siAsst) {
-        ResultSet rs;
+
+    private void mapData(HashMap <String,String[]> metaDataSelectHash, CDISMap cdisMap, SiAssetMetaData siAsst) {
+        ResultSet rs = null;
         String sql;
         String sqlTypeArr[];
         String sqlType;
         String delimiter;
+        PreparedStatement pStmt = null;
         
+        ScrubStringForDb scrub = new ScrubStringForDb();
 
         logger.log(Level.ALL, "Mapping Data for metadata");
         
@@ -480,154 +338,58 @@ public class MetaData {
             sqlTypeArr = metaDataSelectHash.get(key);
             sqlType = sqlTypeArr[0];
             delimiter = sqlTypeArr[1];
-            
-            int selectCount = 0;
 
-            sql = sql.replace("?RenditionID?", String.valueOf(cdisTbl.getRenditionId()));
-            sql = sql.replace("?ObjectID?", String.valueOf(cdisTbl.getObjectId()));
+
+            sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getUoiid()));
+            //sql = sql.replace("?ObjectID?", String.valueOf(cdisTbl.getObjectId()));
+            //sql = sql.replace("?RenditionID?", String.valueOf(cdisTbl.getRenditionId()));
 
             logger.log(Level.ALL, "select Statement: " + sql);
-
-            rs = DataProvider.executeSelect(this.cisConn, sql);
             
             // populate the metadata object with the values found from the database query
             try {
+                pStmt = damsConn.prepareStatement(sql);
+                rs = pStmt.executeQuery();
+            
+                this.metaDataForDams = new HashMap <String, String>();
+                
                 while (rs.next()) {
-                    selectCount ++;
                     
-                    if (selectCount > 1) {
-                        if (sqlType.equals("singleResult")) {
-                            logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows");
-                        }
-                    }                   
+                    ResultSetMetaData rsmd = rs.getMetaData();
                     
-                    if (sql.contains("AS caption")) {
-                        if (rs.getString("caption") != null) {
+                    for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
+                        String columnName = rsmd.getColumnName(i);
+                        String columnValue = rs.getString(i);
+                        
+                        logger.log(Level.ALL, "columnInfo: " + columnName + " " + columnValue);
+                        
+                        scrub.scrubString(columnValue);
+                        
+                        //check if the column has already been populated
+                        String columnExisting = metaDataForDams.get(columnName);
+                        if (columnExisting != null) {
                             if (sqlType.equals("cursorAppend")) {
-                                siAsst.appendCaption(rs.getString("caption"),delimiter);
+                                //append to existing column
+                                metaDataForDams.put(columnName.toLowerCase(), columnExisting + delimiter + ' ' + columnValue);
                             }
                             else {
-                                siAsst.setCaption(rs.getString("caption"));
-                            }
+                                //put out error
+                                logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
+                                metaDataForDams.put(columnName.toLowerCase(),columnValue);
+                            }                            
+                        }
+                        else {
+                            //scrub string
+   
+                            metaDataForDams.put(columnName.toLowerCase(),columnValue);
                         }
                     }
-                    if (sql.contains("AS credit")) {
-                        if (rs.getString("credit") != null) {
-                            siAsst.setCredit(rs.getString("credit"));
-                        }
-                    }
-                    if (sql.contains("AS digital_item_notes")) {
-                        if (rs.getString("digital_item_notes") != null) {
-                            siAsst.setDigitalItemNotes(rs.getString("digital_item_notes"));
-                        }
-                    }
-                    if (sql.contains("AS description")) {
-                        if (rs.getString("description") != null) {
-                            siAsst.setDescription(rs.getString("description"));
-                        }
-                    }
-                    if (sql.contains("AS group_title")) {
-                        if (rs.getString("group_title") != null) {
-                            siAsst.setGroupTitle(rs.getString("group_title"));
-                        }
-                    }
-                    if (sql.contains("AS intellectual_content_creator")) {
-                        if (rs.getString("intellectual_content_creator") != null) {
-                            siAsst.setIntellectualContentCreator(rs.getString("intellectual_content_creator"));
-                        }
-                    }
-                    if (sql.contains("AS is_restricted")) {
-                        if (rs.getString("is_restricted") != null) {
-                            siAsst.setIsRestricted(rs.getString("is_restricted"));
-                        }
-                    }
-                    if (sql.contains("AS keywords")) {
-                        if (rs.getString("keywords") != null) {
-                            if (sqlType.equals("cursorAppend")) {
-                                siAsst.appendKeywords(rs.getString("keywords"),delimiter);
-                            }
-                            else {
-                                siAsst.setKeywords(rs.getString("keywords"));
-                            }
-                        }
-                    }
-                    if (sql.contains("AS max_ids_size")) {
-                        if (rs.getString("max_ids_size") != null) {
-                            siAsst.setMaxIdsSize(rs.getString("max_ids_size"));
-                        }
-                    }
-                    if (sql.contains("AS named_person")) {
-                        if (sqlType.equals("cursorAppend")) {
-                            if (rs.getString("named_person") != null) {
-                                siAsst.appendNamedPerson(rs.getString("named_person"),delimiter);
-                            }
-                            else {
-                                siAsst.setNamedPerson(rs.getString("named_person"));
-                            }
-                        }
-                    }
-                    if (sql.contains("AS notes")) {
-                        if (rs.getString("notes") != null) {
-                            siAsst.setNotes(rs.getString("notes"));
-                        }
-                    }
-                    if (sql.contains("AS other_constraints")) {
-                        if (rs.getString("other_constraints") != null) {
-                            siAsst.setOtherConstraints(rs.getString("other_constraints"));
-                        }
-                    }
-                    if (sql.contains("AS primary_creator")) {
-                        if (rs.getString("primary_creator") != null) {
-                            siAsst.setPrimaryCreator(rs.getString("primary_creator"));
-                        }
-                    }
-                    if (sql.contains("AS rights_holder")) {
-                        if (rs.getString("rights_holder") != null) {
-                            siAsst.setRightsHolder(rs.getString("rights_holder"));
-                        }
-                    }
-                    if (sql.contains("AS series_title")) {
-                        if (rs.getString("series_title") != null) {
-                            siAsst.setSeriesTitle(rs.getString("series_title"));
-                        }
-                    }
-                    if (sql.contains("AS source_system_id")) {
-                        if (rs.getString("source_system_id") != null) {
-                            siAsst.setSourceSystemId(rs.getString("source_system_id"));
-                        }
-                    }
-                    if (sql.contains("AS terms_and_restrictions")) {
-                        if (rs.getString("terms_and_restrictions") != null) {
-                            siAsst.setTermsAndRestrictions(rs.getString("terms_and_restrictions"));
-                        }
-                    }
-                    if (sql.contains("AS title")) {
-                        if (rs.getString("title") != null) {
-                            siAsst.setTitle(rs.getString("title"));
-                        }
-                    }
-                    if (sql.contains("AS use_restrictions")) {
-                        if (rs.getString("use_restrictions") != null) {
-                            siAsst.setUseRestrictions(rs.getString("use_restrictions"));
-                        }
-                    }
-                    if (sql.contains("AS work_creation_date")) {
-                        if (rs.getString("work_creation_date") != null) {
-                            siAsst.setWorkCreationDate(rs.getString("work_creation_date"));
-                        }
-                    }
-
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
-            } finally {
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+           } finally {
+                    try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+                    try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
             }
         }
     }

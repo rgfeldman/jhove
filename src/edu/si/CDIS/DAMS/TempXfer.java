@@ -20,7 +20,7 @@ import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.utilties.ReformatPath;
 
 
-public class MediaFile {
+public class TempXfer {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     String mediaPathLocation;
@@ -105,7 +105,7 @@ public class MediaFile {
         
     }
     
-    public boolean sendToIngest(CDIS cdis, String cisFileName, String cisUniqueMediaId,  CDISMap cdisMap){
+    public boolean sendTo(CDIS cdis, String cisFileName, String cisUniqueMediaId,  CDISMap cdisMap){
         
         this.damsConn = cdis.damsConn;
         boolean pathFound = false;

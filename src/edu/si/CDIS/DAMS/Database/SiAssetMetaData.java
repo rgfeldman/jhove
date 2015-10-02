@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 
 public class SiAssetMetaData {
     //class attributes
+    String adminContentType;
+    String alternateIdentifier1;
     String caption;
     String credit;
     String description;
@@ -46,6 +48,14 @@ public class SiAssetMetaData {
     
     // get functions
 
+    public String getAdminContentType () {
+        return this.adminContentType;
+    }
+        
+    public String getAlternateIdentifier1 () {
+        return this.alternateIdentifier1;
+    }
+    
     public String getCaption () {
         return this.caption;
     }
@@ -136,10 +146,33 @@ public class SiAssetMetaData {
     
     
     
-    // set functions
-
-    public void appendCaption(String caption, String delimiter) {
-        caption = scrubString(caption);
+    // set functions    
+    public void setAdminContentType(String adminContentType) {
+        adminContentType = adminContentType;
+        this.adminContentType = adminContentType;
+    }
+    
+    public void setAlternateIdentifier1(String alternateIdentifier1) {
+        
+        if ( alternateIdentifier1.length() > 40 ) {
+        	this.alternateIdentifier1 = alternateIdentifier1.substring(0,39);
+        }
+        else {
+            this.alternateIdentifier1 = alternateIdentifier1;
+        }
+    }
+    
+    public void setCaption(String caption) {
+        
+        if ( caption.length() > 4000 ) {
+        	this.caption = caption.substring(0,3999);
+        }
+        else {
+            this.caption = caption;
+        }
+    }
+    
+    public void setCaption(String caption, String delimiter) {
         
         if ( this.caption != null ) {
             
@@ -154,54 +187,8 @@ public class SiAssetMetaData {
                 this.caption = caption;
         }
     }
-        
-    public void appendKeywords(String keywords, String delimiter) {
-        keywords = scrubString(keywords);
-        
-        if ( this.keywords != null ) {
-            
-            if (this.keywords.length() + keywords.length() > 4000 ) {
-                this.keywords = this.keywords += delimiter + keywords.substring(0,3999);
-            }
-            else {
-                this.keywords = this.keywords += delimiter + keywords;
-            }
-        }
-        else {
-                this.keywords = keywords;   
-        }
-    }
-    
-    public void appendNamedPerson (String namedPerson, String delimiter) {
-        namedPerson = scrubString(namedPerson);
-        
-        if ( this.namedPerson != null ) {
-            
-            if (this.namedPerson.length() + namedPerson.length() > 2000 ) {
-                this.namedPerson = this.namedPerson += delimiter + namedPerson.substring(0,1999);
-            }
-            else {
-                this.namedPerson = this.namedPerson += delimiter + namedPerson;
-            }
-        }
-        else {
-                this.namedPerson = namedPerson;   
-        }
-    }
-    
-    public void setCaption(String caption) {
-        caption = scrubString(caption);
-        
-        if ( caption.length() > 4000 ) {
-        	this.caption = caption.substring(0,3999);
-        }
-        else {
-            this.caption = caption;
-        }
-    }
     
     public void setCredit(String credit) {
-        credit = scrubString(credit);
         
         if ( credit.length() > 2000 ) {
         	this.credit = credit.substring(0,1999);
@@ -212,7 +199,6 @@ public class SiAssetMetaData {
     }
     
     public void setDescription(String description) {
-         description = scrubString(description);
          
         if ( description.length() > 4000 ) {
         	this.description = description.substring(0,3999);
@@ -223,7 +209,6 @@ public class SiAssetMetaData {
     }
     
     public void setDigitalItemNotes(String digitalItemNotes) {
-        digitalItemNotes = scrubString(digitalItemNotes);
         
         if ( digitalItemNotes.length() > 200 ) {
         	this.digitalItemNotes = digitalItemNotes.substring(0,199);
@@ -234,7 +219,6 @@ public class SiAssetMetaData {
     }
     
     public void setGroupTitle(String groupTitle) {
-        groupTitle = scrubString(groupTitle);
         
         if (groupTitle.length() > 2000 ) {
             this.groupTitle = groupTitle.substring(0,1999);
@@ -245,7 +229,6 @@ public class SiAssetMetaData {
     }
     
     public void setIntellectualContentCreator(String intellectualContentCreator) {
-        intellectualContentCreator = scrubString(intellectualContentCreator);
                 
         if (intellectualContentCreator.length() > 999 ) {
             this.intellectualContentCreator = intellectualContentCreator.substring(0,1999);
@@ -266,7 +249,6 @@ public class SiAssetMetaData {
     }
     
     public void setKeywords(String keywords) {
-        keywords = scrubString(keywords);
         
         if (keywords.length() > 4000 ) {
             this.keywords = keywords.substring(0,3999);
@@ -276,9 +258,23 @@ public class SiAssetMetaData {
         }
     }
     
-    public void setMaxIdsSize(String maxIdsSize) {
+    public void setKeywords(String keywords, String delimiter) {
         
-        maxIdsSize = scrubString(maxIdsSize);
+        if ( this.keywords != null ) {
+            
+            if (this.keywords.length() + keywords.length() > 4000 ) {
+                this.keywords = this.keywords += delimiter + keywords.substring(0,3999);
+            }
+            else {
+                this.keywords = this.keywords += delimiter + keywords;
+            }
+        }
+        else {
+                this.keywords = keywords;   
+        }
+    }
+    
+    public void setMaxIdsSize(String maxIdsSize) {
         
         //make sure our maxIDS Size is an Int
         try {
@@ -294,8 +290,7 @@ public class SiAssetMetaData {
     }
     
     public void setNamedPerson(String namedPerson) {
-        namedPerson = scrubString(namedPerson);
-        
+ 
 	if (namedPerson.length() > 2000) {
                 this.namedPerson = namedPerson.substring(0,1999);
         }
@@ -304,8 +299,23 @@ public class SiAssetMetaData {
         }
     }
     
+    public void setNamedPerson (String namedPerson, String delimiter) {
+        
+        if ( this.namedPerson != null ) {
+            
+            if (this.namedPerson.length() + namedPerson.length() > 2000 ) {
+                this.namedPerson = this.namedPerson += delimiter + namedPerson.substring(0,1999);
+            }
+            else {
+                this.namedPerson = this.namedPerson += delimiter + namedPerson;
+            }
+        }
+        else {
+                this.namedPerson = namedPerson;   
+        }
+    }
+    
     public void setNotes(String notes) {
-        notes = scrubString(notes);
 
         if (notes.length() > 4000) {
                 this.notes = notes.substring(0,3999);
@@ -316,7 +326,6 @@ public class SiAssetMetaData {
     }            
     
     public void setOtherConstraints(String otherConstraints) {
-        otherConstraints = scrubString(otherConstraints);
         
 	if (otherConstraints.length() > 2000) {
                 this.otherConstraints = otherConstraints.substring(0,1999);
@@ -331,7 +340,6 @@ public class SiAssetMetaData {
     }
     
     public void setPrimaryCreator(String primaryCreator) {
-        primaryCreator = scrubString(primaryCreator);
         
 	if (primaryCreator.length() > 1000) {
                 this.primaryCreator = primaryCreator.substring(0,999);
@@ -342,7 +350,6 @@ public class SiAssetMetaData {
     }
     
     public void setRightsHolder(String rightsHolder) {
-        rightsHolder = scrubString(rightsHolder);
         
 	if (rightsHolder.length() > 2000) {
                 this.rightsHolder = rightsHolder.substring(0,1999);
@@ -353,7 +360,6 @@ public class SiAssetMetaData {
     }
     
     public void setSeriesTitle(String seriesTitle) {
-        seriesTitle = scrubString(seriesTitle);
         
 	if (seriesTitle.length() > 150) {
                 this.seriesTitle = seriesTitle.substring(0,149);
@@ -364,7 +370,6 @@ public class SiAssetMetaData {
     }
     
     public void setTermsAndRestrictions(String termsAndRestrictions) {
-        termsAndRestrictions = scrubString(termsAndRestrictions);
         
 	if (termsAndRestrictions.length() > 4000) {
                 this.termsAndRestrictions = termsAndRestrictions.substring(0,3999);
@@ -375,7 +380,6 @@ public class SiAssetMetaData {
     }
     
     public void setTitle(String title) {
-        title = scrubString(title);
         
 	if (title.length() > 2000) {
                 this.title = title.substring(0,1999);
@@ -390,7 +394,6 @@ public class SiAssetMetaData {
     }
     
     public void setUseRestrictions(String useRestrictions) {
-        useRestrictions = scrubString(useRestrictions);
         
         if (useRestrictions.length() > 250 ) {
             this.useRestrictions = useRestrictions.substring(0,249);
@@ -405,7 +408,6 @@ public class SiAssetMetaData {
     }
     
     public void setWorkCreationDate(String workCreationDate) {
-        workCreationDate = scrubString(workCreationDate);
         
         // get rid of extra leading 0's in the date
         workCreationDate = workCreationDate.replaceAll(" 0", "");
@@ -416,25 +418,6 @@ public class SiAssetMetaData {
         else {
             this.workCreationDate = workCreationDate;
         }
-    }
-    
-    // This method cleans/reformats the string data
-    
-    private String scrubString(String inputString) {
-          
-        String newString;
-        
-        // remove & for easy insert into db
-        newString = inputString.replaceAll("&", "and");
-		
-	//escape any single quotes
-	newString = newString.replaceAll("'", "''");
-        
-        // remove leading and trailing spaces
-        newString = newString.trim();
-        
-        return newString;
-        
     }
     
     /*  Method :        updateDAMSSourceSystemID
