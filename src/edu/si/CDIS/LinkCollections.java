@@ -145,7 +145,9 @@ public class LinkCollections  {
                         
                         //Set the activitylog table for statuscode LC for 'Link Complete'
                         CDISActivityLog activityLog = new CDISActivityLog();
-                        boolean activityAdded = activityLog.insertActivity(damsConn, cdisMap.getCdisMapId(), "LC");
+                        activityLog.setCdisMapId(cdisMap.getCdisMapId());
+                        activityLog.setCdisStatusCd("LC");        
+                        boolean activityAdded = activityLog.insertActivity(damsConn);
                         if (! activityAdded) {
                             logger.log(Level.FINER,"ERROR: Activity not added successfully! " + cdisMap.getUoiid());
                         }
