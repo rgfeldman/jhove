@@ -14,23 +14,31 @@ import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author rfeldman
- */
+
 public class MediaFiles {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
  
     int fileId;
+    String fileName;
     boolean isPrimary;
     int rank;
+    Integer pathId;
+    String renditionId;
     
     int pixelH;
     int pixelW;
     
     public int getFileId () {
         return this.fileId;
+    }
+    
+    public String getFileName () {
+        return this.fileName;
+    }
+    
+    public int getPathId () {
+        return this.pathId;
     }
     
     public int getPixelH () {
@@ -41,6 +49,18 @@ public class MediaFiles {
         return this.pixelW;
     }
     
+    public String getRenditionId () {
+        return this.renditionId;
+    }
+    
+    public void setFileName (String fileName) {
+        this.fileName = fileName;
+    }
+    
+    public void setPathId (Integer pathId) {
+        this.pathId = pathId;
+    }
+      
     private void setPixelH (int pixelH) {
         this.pixelH = pixelH;
     }
@@ -48,6 +68,11 @@ public class MediaFiles {
     private void setPixelW (int pixelW) {
         this.pixelW = pixelW;
     }
+    
+    public void setRenditionId (String renditionId) {
+        this.renditionId = renditionId;
+    }
+        
     
      /*  Method :        populateRenditionFromDamsInfo
         Arguments:      
@@ -162,4 +187,32 @@ public class MediaFiles {
 
     }
     
+    public boolean updateFileNameAndPath (Connection tmsConn) {
+        
+       int recordsUpdated = 0;
+       PreparedStatement pStmt = null;
+        
+       String sql = "UPDATE mediaFiles " +
+                    "SET pathid = " + getPathId() + " " +
+                    "FileName = " + getFileName() + " " +
+                    "WHERE RenditionID = " + getRenditionId() ;
+       
+       logger.log(Level.FINER, "SQL: {0}", sql);
+        
+      try {
+            
+            pStmt = tmsConn.prepareStatement(sql);
+            recordsUpdated = pStmt.executeUpdate(sql);
+            
+            logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+                e.printStackTrace();
+        }finally {
+                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+      
+        return true;
+    }
+
 }

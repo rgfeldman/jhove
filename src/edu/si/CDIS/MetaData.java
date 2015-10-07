@@ -16,7 +16,7 @@ import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.CDISMap;
 import edu.si.CDIS.XmlSqlConfig;
 import edu.si.CDIS.utilties.ScrubStringForDb;
-import edu.si.CDIS.DAMS.Database.UOIS;
+import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.Database.CDISActivityLog;
 
 public class MetaData {
@@ -63,7 +63,7 @@ public class MetaData {
         // initialize uoiid list for sync
         damsUoiidsToSync = new ArrayList<>();
         // Grab all the records that have NEVER EVER been synced by CDIS yet
-        getNeverSyncedRendition();
+        getNeverSyncedRendition(cdis);
 
         SiAssetMetaData siAsst = new SiAssetMetaData ();        
         
@@ -111,13 +111,24 @@ public class MetaData {
         Description:    get Renditions by CDIS_ID that have never been synced 
         RFeldman 2/2015
     */
-    private void getNeverSyncedRendition() {
+    private void getNeverSyncedRendition(CDIS cdis) {
 
         PreparedStatement pStmt = null;
         ResultSet rs = null;
-        
-        String sql = "select uoi_id from cdis_metadata";
+        String sqlTypeArr[] = null;
+        String sql = null;
 
+        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
+        for (String key : cdis.xmlSelectHash.keySet()) {     
+            
+            sqlTypeArr = cdis.xmlSelectHash.get(key);
+            
+            if (sqlTypeArr[0].equals("getUnsyncedRecords")) {   
+                sql = key;    
+                logger.log(Level.FINEST, "SQL: {0}", sql);
+            }
+        }
+        
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
@@ -173,7 +184,7 @@ public class MetaData {
                     logger.log(Level.ALL, "Warniong, updated multiple rows of metadata for uoi_id: " + cdisMap.getUoiid());
                 }
                 
-                UOIS uois = new UOIS();
+                Uois uois = new Uois();
                 uois.setUoiid(cdisMap.getUoiid());
                 updateCount = uois.updateMetaDataStateDate(damsConn);
                 if (updateCount < 1) {
