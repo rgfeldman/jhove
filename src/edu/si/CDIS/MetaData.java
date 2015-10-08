@@ -18,6 +18,7 @@ import edu.si.CDIS.XmlSqlConfig;
 import edu.si.CDIS.utilties.ScrubStringForDb;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.Database.CDISActivityLog;
+import edu.si.CDIS.utilties.ErrorLog;
 
 public class MetaData {
 
@@ -181,14 +182,15 @@ public class MetaData {
                     throw new Exception (); 
                 }
                 else if (updateCount > 1) {
-                    logger.log(Level.ALL, "Warniong, updated multiple rows of metadata for uoi_id: " + cdisMap.getUoiid());
+                    logger.log(Level.ALL, "Warning, updated multiple rows of metadata for uoi_id: " + cdisMap.getDamsUoiid());
                 }
                 
                 Uois uois = new Uois();
-                uois.setUoiid(cdisMap.getUoiid());
+                uois.setUoiid(cdisMap.getDamsUoiid());
                 updateCount = uois.updateMetaDataStateDate(damsConn);
                 if (updateCount < 1) {
-                    logger.log(Level.ALL, "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getUoiid());
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "MSD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid(), damsConn);   
                     continue; 
                 }
                 
@@ -198,12 +200,14 @@ public class MetaData {
                 cdisActivity.setCdisStatusCd("MS");
                 boolean activityLogged = cdisActivity.insertActivity(damsConn);
                 if (!activityLogged) {
-                    logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "CAL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid(), damsConn);   
                     continue;
                 }
                         
             } catch (Exception e) {
-                logger.log(Level.ALL, "ERROR updating metadata for uoi_id: " + cdisMap.getUoiid());
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "MDU", "Error, unable to update Dams with new Metadata " + cdisMap.getDamsUoiid(), damsConn);   
             }
         }
  
@@ -242,7 +246,7 @@ public class MetaData {
 
             updateStatement = updateStatement +
                 " public_use = 'Yes' " +
-                " WHERE uoi_id = '" + cdisMap.getUoiid() + "'";
+                " WHERE uoi_id = '" + cdisMap.getDamsUoiid() + "'";
 
             //we collected nulls in the set/get commands.  strip out the word null from the update statement
             updateStatement = updateStatement.replaceAll("null", "");
@@ -288,7 +292,7 @@ public class MetaData {
             delimiter = sqlTypeArr[1];
 
 
-            sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getUoiid()));
+            sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
             //sql = sql.replace("?ObjectID?", String.valueOf(cdisTbl.getObjectId()));
             //sql = sql.replace("?RenditionID?", String.valueOf(cdisTbl.getRenditionId()));
 

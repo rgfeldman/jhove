@@ -323,7 +323,7 @@ public class Report {
                 }
                 
                 SiAssetMetaData siAsst = new SiAssetMetaData();
-                siAsst.setUoiid(cdisMap.getUoiid());
+                siAsst.setUoiid(cdisMap.getDamsUoiid());
                 siAsst.populateOwningUnitUniqueName(damsConn);
                 
                 String listing = null;

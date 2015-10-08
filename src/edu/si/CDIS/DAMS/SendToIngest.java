@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.DAMS.HotIngestFolder;
+import java.util.Iterator;
 
 /**
  *
@@ -45,9 +46,13 @@ public class SendToIngest {
     
     private void processList (CDIS cdis) {
                
-        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table
-        for (String cisUniqueMediaId : renditionsForDAMS.keySet()) {
+        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
+        Iterator<String> it = renditionsForDAMS.keySet().iterator();
+        
+        while (it.hasNext())  {  
                 
+            String cisUniqueMediaId = it.next();
+            
             //Make sure the last transaction is committed
             try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
@@ -57,11 +62,16 @@ public class SendToIngest {
            
             String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
                                 
+            cdisMap.setFileName(cisFileName);
+            cdisMap.setCisUniqueMediaId(cisUniqueMediaId);
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
-            boolean mapEntryCreated = cdisMap.createRecord(cdis, cisUniqueMediaId, cisFileName);
+            boolean mapEntryCreated = cdisMap.createRecord(cdis);
                     
             if (!mapEntryCreated) {
                 logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
+
+                //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
+                it.remove();
                 continue;
             }
                 
@@ -72,6 +82,12 @@ public class SendToIngest {
             boolean activityLogged = cdisActivity.insertActivity(damsConn);
             if (!activityLogged) {
                 logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                 //Remove from the list of renditions to ingest, we dont want to bring this file over without an activity_log entry
+                it.remove();
+                
+                //rollback the database to remove the map Entry
+                try { if ( damsConn != null)  damsConn.rollback(); } catch (Exception e) { e.printStackTrace(); }
+                
                 continue;
             }
         }

@@ -13,20 +13,17 @@ import java.sql.Connection;
 import edu.si.CDIS.DAMS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.Database.CDISMap;
 
-/**
- *
- * @author rfeldman
- */
+
 public class ErrorLog {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    
+
     public void capture (CDISMap cdisMap, String errorCode, String logMessage, Connection damsConn) {
         
         logger.log(Level.FINER, logMessage);
         
         CDISError cdisError = new CDISError();
-        cdisError.insertError(damsConn, "STDI", cdisMap.getCdisMapId(), errorCode);
+        cdisError.insertError(damsConn, cdisMap.getCdisMapId(), errorCode);
         
         CDISActivityLog cdisActivity = new CDISActivityLog();
         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());

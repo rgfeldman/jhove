@@ -49,7 +49,7 @@ public class LinkCollections  {
         this.neverLinkedDamsRendtion = new LinkedHashMap <String, String>();
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
-        populateNeverLinkedDamsRenditions (cdis);
+        populateNeverLinkedDamsMedia (cdis);
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in the CIS
         linkUANtoFilename (cdis);    
@@ -69,6 +69,7 @@ public class LinkCollections  {
         String currentIterationSql = null;
         String sqlTypeArr[] = null;
         
+        
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
         for (String key : cdis.xmlSelectHash.keySet()) {     
               
@@ -84,14 +85,13 @@ public class LinkCollections  {
 
             try {
                 
-                
-                
                 CDISMap cdisMap = new CDISMap();
                 
                 cdisMap.setUoiid(key);
                 
                 if (sql.contains("?DAMSfileName?")) {
-                    currentIterationSql = sql.replace("?DAMSfileName?",  neverLinkedDamsRendtion.get(key));
+                    cdisMap.setFileName(neverLinkedDamsRendtion.get(key));
+                    currentIterationSql = sql.replace("?DAMSfileName?",cdisMap.getFileName());
                 }
                 
                 logger.log(Level.FINEST,"SQL " + currentIterationSql);
@@ -115,28 +115,36 @@ public class LinkCollections  {
                     
                     try {
                         
-                        cdisMap.setCdisMapId(rs.getInt(1));           
+                        cdisMap.setCdisMapId(rs.getInt(1));    
+                        cdisMap.setCisUniqueMediaId(rs.getString(2));
                     
-                        logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisMap.getUoiid() + " CDIS_MAP_ID: " + cdisMap.getCdisMapId());
+                        logger.log(Level.FINER,"Got Linking Pair! UOI_ID! " + cdisMap.getDamsUoiid() + " CDIS_MAP_ID: " + cdisMap.getCdisMapId());
                                                         
-                        // update CDISMap table with uoiid
-                        boolean uoiidUpdated = cdisMap.updateUoiid(damsConn);
+                        // update CDISMap table with uoiid or insert new record.  This can be used to link records that were not sent to ingest 
+                        // by CDIS and therefore have no existing mapping record
+                        if (cdis.properties.getProperty("createCdisMapRecord").equals("true")) {
+                            // See if a map record exists for this CIS, if it does not then add it
+                            cdisMap.createRecord(cdis);
+                        }
+                        else {
+                            boolean uoiidUpdated = cdisMap.updateUoiid(damsConn);
         
-                        if (! uoiidUpdated) {
-                            logger.log(Level.FINER,"ERROR: CDIS Map record not linked successfully! " + cdisMap.getUoiid());
-                            //get the next id from the list
-                            continue;
+                            if (! uoiidUpdated) {
+                                logger.log(Level.FINER,"ERROR: CDIS Map record not linked successfully! " + cdisMap.getDamsUoiid());
+                                //get the next id from the list
+                                continue;
+                            }
                         }
                         
                         if (cisSourceDB.equals("TMSDB")) {
                             //Update the TMS blob. For TMS only 
                             if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
                                 Thumbnail thumbnail = new Thumbnail();
-                                thumbnail.generate (damsConn, cisConn, cdisMap.getUoiid(), Integer.parseInt(cdisMap.getCisUniqueMediaId()));
+                                thumbnail.generate (damsConn, cisConn, cdisMap.getDamsUoiid(), Integer.parseInt(cdisMap.getCisUniqueMediaId()));
                             }
                         
                             //This is TMS specific code. For TMS only
-                            if (cdis.properties.getProperty("setForDamsFlag").equals("true") ) {
+                            if (cdis.properties.getProperty("setTMSForDamsFlag").equals("true") ) {
                                 MediaRenditions mediaRenditions = new MediaRenditions();
                                 mediaRenditions.setRenditionId(Integer.parseInt(cdisMap.getCisUniqueMediaId()));
                                 mediaRenditions.setForDamsTrue(cisConn);
@@ -149,11 +157,11 @@ public class LinkCollections  {
                         activityLog.setCdisStatusCd("LC");        
                         boolean activityAdded = activityLog.insertActivity(damsConn);
                         if (! activityAdded) {
-                            logger.log(Level.FINER,"ERROR: Activity not added successfully! " + cdisMap.getUoiid());
+                            logger.log(Level.FINER,"ERROR: Activity not added successfully! " + cdisMap.getDamsUoiid());
                         }
                         
                     } catch (Exception e) {
-                        logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getUoiid(),e);
+                        logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getDamsUoiid(),e);
                     }
                     finally {
                         try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); };
@@ -173,13 +181,13 @@ public class LinkCollections  {
     }
     
     
-    /*  Method :        populateNeverLinkedRenditions
+    /*  Method :        populateNeverLinkedMedia
         Arguments:      
         Description:    Populates a hash list that contains DAMS renditions that need to be linked 
                         with the Collection system (TMS)
         RFeldman 2/2015
     */
-    private void populateNeverLinkedDamsRenditions (CDIS cdis) {
+    private void populateNeverLinkedDamsMedia (CDIS cdis) {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;

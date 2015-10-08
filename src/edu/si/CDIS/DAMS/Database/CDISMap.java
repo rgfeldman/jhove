@@ -47,7 +47,7 @@ public class CDISMap {
         return this.fileName;
     }
     
-    public String getUoiid () {
+    public String getDamsUoiid () {
         return this.uoiid;
     }
     
@@ -139,7 +139,9 @@ public class CDISMap {
         return true;
     }
     
-    public boolean createRecord(CDIS cdis, String cisUniqueMediaId, String cisFileName) {
+    //public boolean createRecord(CDIS cdis, String cisUniqueMediaId, String cisFileName) {
+    
+    public boolean createRecord(CDIS cdis) {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -164,12 +166,25 @@ public class CDISMap {
                 try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
             
+         
         
         try {
+            
+            String uoiid = getDamsUoiid();
+            String uoiidClause = null;
+            
+            if (uoiid != null) {
+                uoiidClause = "'" + uoiid + "', ";
+            }
+            else {
+                uoiidClause = "'', ";
+            }
+            
             sql =  "INSERT INTO cdis_map (" +
                             "cdis_map_id, " +
                             "si_holding_unit, " +
                             "cis_unique_media_id, " +
+                            "dams_uoi_id, " +
                             "file_name, " +
                             "batch_number, " +
                             "deleted_ind, " +
@@ -177,8 +192,9 @@ public class CDISMap {
                         "VALUES (" +
                             getCdisMapId() + ", " +
                             "'" + cdis.properties.getProperty("siHoldingUnit") + "', " +
-                            "'" + cisUniqueMediaId + "', " +
-                            "'" + cisFileName + "', " +
+                            "'" + getCisUniqueMediaId() + "', " +
+                            uoiidClause +
+                            "'" + getFileName() + "', " +
                             cdis.getBatchNumber() + ", " +
                             "'N' ," +
                             "'N')";
@@ -209,7 +225,7 @@ public class CDISMap {
         int rowsUpdated = 0;
         
         String sql =  "UPDATE cdis_map " +
-                      "SET dams_uoi_id = '" + getUoiid() + "' " +
+                      "SET dams_uoi_id = '" + getDamsUoiid() + "' " +
                       "WHERE cdis_map_id = " + getCdisMapId();
         
         logger.log(Level.FINEST,"SQL! " + sql); 
