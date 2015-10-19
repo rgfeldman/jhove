@@ -34,9 +34,9 @@ import com.lowagie.text.*;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
 
-import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.DAMS.Database.CDISErrorCodeR;
+import edu.si.CDIS.Database.CDISErrorCodeR;
 
 
 public class Report {

@@ -11,9 +11,8 @@ import java.sql.Connection;
 
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.DAMS.Database.CDISActivityLog;
-
-import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.CDISMap;
 
   
 public class LinkCollections  {

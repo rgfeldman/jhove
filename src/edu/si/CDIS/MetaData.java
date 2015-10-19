@@ -13,11 +13,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.XmlSqlConfig;
 import edu.si.CDIS.utilties.ScrubStringForDb;
 import edu.si.CDIS.DAMS.Database.Uois;
-import edu.si.CDIS.DAMS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.utilties.ErrorLog;
 
 public class MetaData {

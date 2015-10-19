@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.CIS.Database.MediaFiles;
 

@@ -6,8 +6,8 @@
 package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.DAMS.Database.CDISActivityLog;
-import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.utilties.ErrorLog;
 import java.io.File;
 import java.sql.PreparedStatement;

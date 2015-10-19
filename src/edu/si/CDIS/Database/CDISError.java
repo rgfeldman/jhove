@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.CDIS.DAMS.Database;
+package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
 import java.sql.SQLException;
@@ -11,7 +11,7 @@ import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
-import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISMap;
 
 
 /**
@@ -27,10 +27,12 @@ public class CDISError {
         int rowsUpdated = 0;
         
         String sql = "INSERT INTO cdis_error ( " +
+                        "cdis_error_id, " +
                         "cdis_map_id, " +
                         "error_cd, " +
                         "error_dt) " +
                     "values ( " + 
+                        "cdis_error_id_seq, " +
                         cdisMapId + ", " +
                         "'" + errorCd + "'," +
                         "SYSDATE)";

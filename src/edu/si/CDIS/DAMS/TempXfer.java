@@ -14,8 +14,8 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
-import edu.si.CDIS.DAMS.Database.CDISForIngest;
-import edu.si.CDIS.DAMS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISForIngest;
+import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.utilties.ReformatPath;
 
