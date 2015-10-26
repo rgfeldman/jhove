@@ -5,6 +5,7 @@
  */
 package edu.si.CDIS;
 
+import edu.si.CDIS.vfcu.VendorFileCopy;
 import edu.si.CDIS.CIS.ImageFilePath;
 import java.io.FileInputStream;
 import java.util.Properties;
@@ -343,6 +344,11 @@ public class CDIS {
                 case "genReport" :
                     Report report = new Report();
                     report.generate(cdis);
+                    break;
+                
+                case "vendorFileCopy" :
+                    VendorFileCopy vfcu = new VendorFileCopy();
+                    vfcu.validateAndCopy(cdis);
                     break;
                     
                 default:     

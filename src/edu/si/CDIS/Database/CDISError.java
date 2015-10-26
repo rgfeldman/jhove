@@ -41,7 +41,7 @@ public class CDISError {
             pStmt = damsConn.prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql); 
             
-             if (rowsUpdated != 1) {
+            if (rowsUpdated != 1) {
                 throw new Exception();
             }
                 
