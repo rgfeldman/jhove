@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.io.FileInputStream;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.IOUtils;
-import edu.si.CDIS.vfcu.Database.VFCUFileBatch;
+import edu.si.CDIS.vfcu.Database.VFCUMediaFile;
 import edu.si.CDIS.vfcu.Database.VFCUActivityLog;
 
 /**
@@ -39,6 +39,7 @@ public class VendorMd5File {
     public String getDamsStagingPath () {
         return this.damsStagingPath;
     }
+    
     public String getVendorPath () {
         return this.vendorPath;
     }
@@ -81,11 +82,11 @@ public class VendorMd5File {
     }
     
     
-    public boolean extractDBInsertData (Connection damsConn) {
+    public boolean extractData (Connection damsConn, VFCUMd5File vfcuMd5File) {
         
         String fileWithPath = null;
         LineIterator lt = null;
-        VFCUFileBatch vfcuFileBatch = new VFCUFileBatch();
+        
         
         try {
             fileWithPath = getDamsStagingPath() + "\\" + getFileName();
@@ -97,8 +98,16 @@ public class VendorMd5File {
                 String line=lt.nextLine();
                 String[] md5HashWithFileName = line.split(" ");
                 
+                VFCUMediaFile vfcuFileBatch = new VFCUMediaFile();
                 vfcuFileBatch.setVendorCheckSum(md5HashWithFileName[0]);
                 vfcuFileBatch.setMediaFileName(md5HashWithFileName[1]);
+                vfcuFileBatch.setVfcuMd5FileId(vfcuMd5File.getVfcuMd5FileId());
+                vfcuFileBatch.insertRow(damsConn);
+                
+                VFCUActivityLog vfcuActivityLog = new VFCUActivityLog();
+                vfcuActivityLog.setVfcuStatusCd("VI");
+                
+                vfcuActivityLog.insertRow(damsConn);
                 
             }
         

@@ -23,6 +23,7 @@ public class VFCUMd5File {
 
     private String vendorFilePath;
     private String vendorMd5FileName;
+    private Integer vfcuMd5FileId;
 
     public String getVendorFilePath () {
         return vendorFilePath;
@@ -30,6 +31,10 @@ public class VFCUMd5File {
         
     public String getVendorMd5FileName () {
         return vendorMd5FileName;
+    }
+    
+    public Integer getVfcuMd5FileId () {
+        return vfcuMd5FileId;
     }
     
     public void setVendorFilePath (String vendorFilePath) {
@@ -43,22 +48,41 @@ public class VFCUMd5File {
     
     public boolean insertRecord (Connection damsConn) {
         
-        Integer rowsInserted = 0;
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
-        String sql = "INSERT INTO vfcu_md5_file ( " +
-                        "vfcu_md5_file_id, " +
-                        "vendor_md5_file_name, " +
-                        "vendor_file_path, " +
-                        "md5_file_retrieval_dt ) " +
-                    "VALUES (" +
-                        "vfcu_md5_file_id_seq.NextVal, " +
-                        "'" + getVendorMd5FileName() + "'," +
-                        "'" + getVendorFilePath() + "'," +
-                        "SYSDATE )"; 
-    
         try {
+            //Generate the ID for the primary key for this table
+            String sql = "SELECT vfcu_md5_file_id_seq.NextVal FROM dual"; 
+            
+            pStmt = damsConn.prepareStatement(sql);
+            pStmt.executeUpdate(sql);
+            
+            if (rs.next()) {
+                vfcuMd5FileId = rs.getInt(1);
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to insert into vfcu_md5_file table", e );
+                return false;
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (Exception se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (Exception se) { se.printStackTrace(); }
+        }
+        
+        Integer rowsInserted = 0;
+        try {
+            
+            String sql = "INSERT INTO vfcu_md5_file ( " +
+                            "vfcu_md5_file_id, " +
+                            "vendor_md5_file_name, " +
+                            "vendor_file_path, " +
+                            "md5_file_retrieval_dt ) " +
+                        "VALUES (" +
+                            vfcuMd5FileId + ", " +
+                            "'" + getVendorMd5FileName() + "'," +
+                            "'" + getVendorFilePath() + "'," +
+                            "SYSDATE )"; 
             
             pStmt = damsConn.prepareStatement(sql);
             rowsInserted = pStmt.executeUpdate(sql); 
@@ -110,4 +134,6 @@ public class VFCUMd5File {
         }
         
     }
+    
+
 }

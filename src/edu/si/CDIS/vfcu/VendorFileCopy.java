@@ -11,13 +11,15 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import edu.si.CDIS.vfcu.Database.VFCUMd5File;
-import java.security.MessageDigest;
+import edu.si.CDIS.vfcu.Database.VFCUMediaFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import java.sql.Connection;
 import edu.si.CDIS.vfcu.VendorMd5File;
-
+import java.util.Iterator;
+import edu.si.CDIS.vfcu.MediaFile;
+import edu.si.CDIS.vfcu.Database.VFCUActivityLog;
 
 
 /**
@@ -28,23 +30,8 @@ public class VendorFileCopy {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
+    private String stagingForDAMS;
     
-    String stagingForDAMS;
-    
-    private boolean loadMd5FileContents (File file) {
-        //open file.  read into hash.  insert into database
-        return true;
-    }
-    
-    private boolean generateRecordNewMd5 () {
-        //run checksum on file
-        //record checksum
-        return true;
-    }
-    
-    private boolean validateMd5Value () {
-        return true;
-    }
     
     /**
      *
@@ -106,7 +93,7 @@ public class VendorFileCopy {
                     continue;
                 }
                     
-                boolean dataExtracted = md5File.extractDBInsertData (cdis.damsConn);
+                boolean dataExtracted = md5File.extractData (cdis.damsConn, vfcuMd5File);
                 if (! dataExtracted) {
                     continue;
                 }    
@@ -116,18 +103,47 @@ public class VendorFileCopy {
         
         //End DB setup process
         
+        //Assign Files right away to a batch
+        VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+        vfcuMediaFile.setMaxFiles(Integer.parseInt(cdis.properties.getProperty("vfcuMaxFilesBatch")));
+        vfcuMediaFile.setVfcuBatchNumber(cdis.getBatchNumber());
+        vfcuMediaFile.updateVfcuBatchNumber(cdis.damsConn);
         
+        //Now we updated the files and assigned to current batch, commit so we lock them into current batch
+        try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+                
+        //create array of files just assigned to batch
+        vfcuMediaFile.getFileIdsCurrentBatch(cdis.damsConn);
         
-        //Get Files not yet assigned a batch yet, and create array of IDs for them
-        // assign batch number on all of them
-        
-        //Step through array.
-            //copy file to local area
-            //generateRecordNewMd5 for the file;     
-            //validateMd5Value vs whats in database ();
-            //leave stub for jhove validation
-            //record status as failed or successful
-            //when all is done, mark batch status as done.
+        for (Iterator<Integer> iter = vfcuMediaFile.getFilesIdsForBatch().iterator()  ; iter.hasNext();) {
+            
+            MediaFile mediaFile = new MediaFile();
+            mediaFile.setVfcuMediaFileId(iter.next());
+            mediaFile.setDamsStagingPath(stagingForDAMS);
+            
+            //get fileName, vendor_file_path for the current id
+            mediaFile.populateFileNameAndPath(cdis.damsConn);
+            
+            mediaFile.copyToDamsStaging();
 
+            //generateNewMd5 checksum for the file;     
+            mediaFile.generateMd5Hash();
+            
+            //record checksum for the file; 
+            vfcuMediaFile = new VFCUMediaFile();
+            vfcuMediaFile.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
+            
+            vfcuMediaFile.setVfcuChecksum(mediaFile.getVfcuMd5Hash());
+            vfcuMediaFile.updateVfcuChecksum(cdis.damsConn);
+            
+            //vfcuMediaFile.compare() {
+            
+        }
     }
+        
+        
+        //when all is done, mark status as done into md5 table.
+        //}
+        
+    
 }

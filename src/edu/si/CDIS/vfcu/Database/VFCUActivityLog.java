@@ -8,7 +8,6 @@ package edu.si.CDIS.vfcu.Database;
 import edu.si.CDIS.CDIS;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,27 +19,45 @@ public class VFCUActivityLog {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
+    String vfcuStatusCd;
+    Integer vfcuMediaFileId;
     
+    
+    public Integer getVfcuMediaFileId () {
+        return this.vfcuMediaFileId;
+    }
+    
+    public String getVfcuStatusCd () {
+        return this.vfcuStatusCd;
+    }
+    
+    public void setVfcuMediaFileId (Integer vfcuMediaFileId) {
+        this.vfcuMediaFileId = vfcuMediaFileId;
+    }
+    
+    public void setVfcuStatusCd (String vfcuStatusCd) {
+        this.vfcuStatusCd = vfcuStatusCd;
+    }
+            
     public boolean insertRow (Connection damsConn) {
         
         Integer rowsInserted = 0;
         PreparedStatement pStmt = null;
-        ResultSet rs = null;
         
         String sql = "INSERT INTO vfcu_activity_log ( " +
                         "vfcu_activity_log_id, " +
-                        "vfcu_file_batch_id, " +
+                        "vfcu_media_file_id, " +
                         "vfcu_status_cd, " +
                         "activity_dt ) " +
                     "VALUES (" +  
                         "vfcu_activity_log_id_seq.NextVal, " + 
-                        "vfcu_file_batch_id" + 
-                        "vfcu_status_cd " +
+                        getVfcuMediaFileId() + ", " +
+                        "'" + getVfcuStatusCd() + "', " +
                         "SYSDATE )"; 
-                
-        
         
         try {
+        
+            logger.log(Level.FINEST, "SQL: {0}", sql);
             
             pStmt = damsConn.prepareStatement(sql);
             rowsInserted = pStmt.executeUpdate(sql); 
@@ -57,8 +74,7 @@ public class VFCUActivityLog {
         }
         
         return true;
-        
-        
     }
+    
     
 }
