@@ -5,19 +5,17 @@
  */
 package edu.si.CDIS.vfcu;
 
-import edu.si.CDIS.CDIS;
 import java.io.File;
-import java.io.InputStream;
-import java.util.logging.Logger;
+import java.io.FileInputStream;
+import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 
-
-import java.io.FileInputStream;
-import java.security.MessageDigest;
+import edu.si.CDIS.CDIS;
 
 /**
  *

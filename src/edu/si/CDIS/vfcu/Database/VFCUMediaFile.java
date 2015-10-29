@@ -216,4 +216,34 @@ public class VFCUMediaFile {
         return true;
     }
     
+    public boolean populateVendorChecksum (Connection damsConn) {
+    
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+        
+        try {
+            String sql = "SELECT  vendor_checksum " +
+                        "FROM     vfcu_media_file " +
+                        "WHERE    vfcu_media_file_id = " + getVfcuMediaFileId() + " ";
+            
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+            pStmt = damsConn.prepareStatement(sql);
+            pStmt.executeUpdate(sql);
+            
+            if (rs.next()) {
+                 setVendorCheckSum(rs.getString(1));
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable get vendor checksum value", e );
+                return false;
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (Exception se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (Exception se) { se.printStackTrace(); }
+        }
+         
+        return true;
+    }
+    
 }

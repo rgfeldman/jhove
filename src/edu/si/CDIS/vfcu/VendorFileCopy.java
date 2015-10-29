@@ -14,12 +14,11 @@ import edu.si.CDIS.vfcu.Database.VFCUMd5File;
 import edu.si.CDIS.vfcu.Database.VFCUMediaFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.io.FileUtils;
-import java.sql.Connection;
 import edu.si.CDIS.vfcu.VendorMd5File;
 import java.util.Iterator;
 import edu.si.CDIS.vfcu.MediaFile;
 import edu.si.CDIS.vfcu.Database.VFCUActivityLog;
+import edu.si.CDIS.vfcu.Database.VFCUError;
 
 
 /**
@@ -97,7 +96,6 @@ public class VendorFileCopy {
                 if (! dataExtracted) {
                     continue;
                 }    
-                
             }
         }
         
@@ -135,15 +133,57 @@ public class VendorFileCopy {
             
             vfcuMediaFile.setVfcuChecksum(mediaFile.getVfcuMd5Hash());
             vfcuMediaFile.updateVfcuChecksum(cdis.damsConn);
+            vfcuMediaFile.populateVendorChecksum(cdis.damsConn);
             
-            //vfcuMediaFile.compare() {
+            VFCUActivityLog activityLog = new VFCUActivityLog();
+            activityLog.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
             
+            //check to see if checksum values are the same from database
+            if (vfcuMediaFile.getVendorChecksum().equals(vfcuMediaFile.getVendorChecksum()) ) {
+                //log in the database
+                activityLog.setVfcuStatusCd("VC");
+            }
+            else {
+                activityLog.setVfcuStatusCd("ER");
+                
+                VFCUError vfcuError = new VFCUError();
+                vfcuError.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
+                vfcuError.setVfcuErrorCd("MVV");
+                vfcuError.insertRecord(cdis.damsConn);
+            }    
+        }
+        
+        
+        //count the number of physical files and compare them to the number of physical files
+        // in 
+        
+        //put CDIS_ready.txt file in directory
+        //count the number of records that have not been assigned a batch for this date.
+        // if the number of records = 0 then create a ready file
+        createReadyFile();
+        
+    }
+
+    private void createReadyFile () {
+    
+        String readyFilewithPath = null;
+        
+        try {
+                //Create the ready.txt file and put in the media location
+                readyFilewithPath = stagingForDAMS + "//CDIS_ready.txt";
+
+                logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
+                
+                File readyFile = new File (readyFilewithPath);
+            
+                readyFile.createNewFile();
+  
+        } catch (Exception e) {
+            logger.log(Level.FINER,"ERROR encountered when trying to create ready.txt file",e);;
         }
     }
         
         
-        //when all is done, mark status as done into md5 table.
-        //}
-        
     
+        
 }
