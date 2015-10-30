@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
+import java.text.SimpleDateFormat;
 
 import edu.si.CDIS.CDIS;
 
@@ -25,6 +26,7 @@ public class MediaFile {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private String damsStagingPath;
+    private String fileDate;
     private String fileName;
     private String vfcuMd5Hash;
     private String vendorPath;
@@ -58,7 +60,7 @@ public class MediaFile {
         this.damsStagingPath = damsStagingPath;
     }
        
-    public void setFileName (String FileName) {
+    public void setFileName (String fileName) {
         this.fileName = fileName;
     }
     
@@ -88,7 +90,7 @@ public class MediaFile {
             return true;
        
         } catch (Exception e) {
-            logger.log(Level.FINEST, "Error copying media file " + fileWithPath +  " + to: " + getDamsStagingPath());
+            logger.log(Level.FINEST, "Error copying media file " + fileWithPath +  " to: " + getDamsStagingPath());
             return false;
         }
     }
@@ -98,15 +100,16 @@ public class MediaFile {
         ResultSet rs = null; 
         
         try {
-            String sql = "SELECT  a.media_file_name, b.vendor_file_path " +
-                        "FROM     vfcu_file_batch a, " +
-                        "         vfcu_md5File b " +
+            String sql = "SELECT  b.media_file_name, a.vendor_file_path " +
+                        "FROM     vfcu_md5_File a, " +
+                        "         vfcu_media_file b " +
                         "WHERE    a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
-                        "AND      a.vfcu_file_batch_id = " + getVfcuMediaFileId();
+                        "AND      b.vfcu_media_file_id = " + getVfcuMediaFileId();
                         
+            logger.log(Level.FINEST, "SQL: {0}", sql);
             
             pStmt = damsConn.prepareStatement(sql);
-            pStmt.executeUpdate(sql);
+            rs = pStmt.executeQuery();
             
             if (rs.next()) {
                 setFileName(rs.getString(1));
@@ -124,11 +127,29 @@ public class MediaFile {
         return true;
     }
     
+    public boolean populateMediaFileDate () {
+        String fileWithPath = getDamsStagingPath() + "\\" + getFileName ();
+        
+        fileWithPath = getVendorPath() + "\\" + getFileName ();
+        File vendorFile = new File(fileWithPath);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        
+        fileDate = sdf.format(vendorFile.lastModified());
+               
+        logger.log(Level.FINER, "FileDate: " + fileDate );
+        
+        return true;
+    }
+    
+    
     public boolean generateMd5Hash () {
+        
+        String fileWithPath = getDamsStagingPath() + "\\" + getFileName ();
         
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            FileInputStream fis = new FileInputStream("c:\\loging.log");
+            FileInputStream fis = new FileInputStream(fileWithPath);
         
             byte[] dataBytes = new byte[1024];
              
@@ -146,7 +167,7 @@ public class MediaFile {
 
             this.vfcuMd5Hash = sb.toString();
 
-            logger.log(Level.FINER, "Md4 hash value: ", this.vfcuMd5Hash );
+            logger.log(Level.FINER, "Md4 hash value: " + this.vfcuMd5Hash );
              
              
         } catch (Exception e) {

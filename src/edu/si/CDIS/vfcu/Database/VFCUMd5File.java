@@ -21,28 +21,37 @@ public class VFCUMd5File {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
 
+    private String siHoldingUnit;
     private String vendorFilePath;
     private String vendorMd5FileName;
     private Integer vfcuMd5FileId;
 
+    public String getSiHoldingUnit () {
+        return this.siHoldingUnit;
+    }
+     
     public String getVendorFilePath () {
-        return vendorFilePath;
+        return this.vendorFilePath;
     }
         
     public String getVendorMd5FileName () {
-        return vendorMd5FileName;
+        return this.vendorMd5FileName;
     }
     
     public Integer getVfcuMd5FileId () {
-        return vfcuMd5FileId;
+        return this.vfcuMd5FileId;
     }
     
+    public void setSiHoldingUnit (String siHoldingUnit) {
+        this.siHoldingUnit = siHoldingUnit;
+    }
+       
     public void setVendorFilePath (String vendorFilePath) {
-        vendorFilePath = this.vendorFilePath;
+        this.vendorFilePath = vendorFilePath;
     }
     
     public void setVendorMd5FileName (String vendorMd5FileName) {
-        vendorMd5FileName = this.vendorMd5FileName;
+        this.vendorMd5FileName = vendorMd5FileName;
     }
     
     
@@ -56,14 +65,14 @@ public class VFCUMd5File {
             String sql = "SELECT vfcu_md5_file_id_seq.NextVal FROM dual"; 
             
             pStmt = damsConn.prepareStatement(sql);
-            pStmt.executeUpdate(sql);
+            rs = pStmt.executeQuery();
             
             if (rs.next()) {
                 vfcuMd5FileId = rs.getInt(1);
             }
                 
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to insert into vfcu_md5_file table", e );
+                logger.log(Level.FINER, "Error: unable to get identifier sequence for vfcu_md5_file", e );
                 return false;
         }finally {
             try { if (pStmt != null) pStmt.close(); } catch (Exception se) { se.printStackTrace(); }
@@ -75,14 +84,20 @@ public class VFCUMd5File {
             
             String sql = "INSERT INTO vfcu_md5_file ( " +
                             "vfcu_md5_file_id, " +
+                            "si_holding_unit, " +
                             "vendor_md5_file_name, " +
                             "vendor_file_path, " +
-                            "md5_file_retrieval_dt ) " +
+                            "md5_file_retrieval_dt, " +
+                            "vfcu_complete) " +
                         "VALUES (" +
                             vfcuMd5FileId + ", " +
+                            "'" + getSiHoldingUnit() + "', " +
                             "'" + getVendorMd5FileName() + "'," +
                             "'" + getVendorFilePath() + "'," +
-                            "SYSDATE )"; 
+                            "SYSDATE, " + 
+                            "'N')"; 
+            
+            logger.log(Level.FINEST,"SQL! " + sql); 
             
             pStmt = damsConn.prepareStatement(sql);
             rowsInserted = pStmt.executeUpdate(sql); 
@@ -104,14 +119,15 @@ public class VFCUMd5File {
     
     public boolean findExistingMd5File (Connection damsConn) {
         
-        String sql = "SELECT 'X' FROM vfcu_md5_file " + 
-                     "WHERE vendor_md5_file_name = '" + getVendorMd5FileName() + "' " +
-                     "AND vendor_file_path = '" + getVendorFilePath() + "'";
 
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
         try {
+            String sql = "SELECT 'X' FROM vfcu_md5_file " + 
+                     "WHERE vendor_md5_file_name = '" + getVendorMd5FileName() + "' " +
+                     "AND vendor_file_path = '" + getVendorFilePath() + "'";
+                   
             logger.log(Level.FINEST,"SQL! " + sql); 
              
             pStmt = damsConn.prepareStatement(sql);

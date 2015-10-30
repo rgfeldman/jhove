@@ -21,6 +21,7 @@ public class VFCUMediaFile {
     ArrayList<Integer> filesIdsForBatch;
     Integer maxFiles;
     String  mediaFileName;
+    String mediaFileDate;
     String  vendorChecksum;
     Long    vfcuBatchNumber;
     String  vfcuChecksum;
@@ -33,6 +34,10 @@ public class VFCUMediaFile {
         return this.filesIdsForBatch;
     }
     
+    public String getMediaFileDate () {
+        return this.mediaFileDate;
+    }
+        
     public String getMediaFileName () {
         return this.mediaFileName;
     }
@@ -100,9 +105,9 @@ public class VFCUMediaFile {
                         "vendor_checksum) " +
                     "VALUES (" +
                         "vfcu_media_file_id_seq.NextVal, " +
-                        getVfcuMd5FileId() + "'," +
+                        getVfcuMd5FileId() + "," +
                         "'" + getMediaFileName() + "'," +
-                        "'" + getVendorChecksum() + "')";
+                        "UPPER ('" + getVendorChecksum() + "'))";
     
         try {
             logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -139,14 +144,14 @@ public class VFCUMediaFile {
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
             pStmt = damsConn.prepareStatement(sql);
-            pStmt.executeUpdate(sql);
+            rs = pStmt.executeQuery();
             
             while (rs.next()) {
                  filesIdsForBatch.add(rs.getInt(1));
             }
                 
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to insert into vfcu_md5_file table", e );
+                logger.log(Level.FINER, "Error: unable to obtain vfcu_media_file_ids for current batch", e );
                 return false;
         }finally {
             try { if (pStmt != null) pStmt.close(); } catch (Exception se) { se.printStackTrace(); }
@@ -156,17 +161,17 @@ public class VFCUMediaFile {
         return true;
     }
     
-    public boolean updateVfcuBatchNumber (Connection damsConn) {
+    public int updateVfcuBatchNumber (Connection damsConn) {
         
-        Integer rowsUpdated = 0;
+        int rowsUpdated = 0;
         PreparedStatement pStmt = null;
         
         try {
             
-            String sql = "UPDATE    vfcu_media_file" +
+            String sql = "UPDATE    vfcu_media_file " +
                          "SET       vfcu_batch_number = " + getVfcuBatchNumber() + " " +
                          "WHERE     vfcu_batch_number IS NULL " + 
-                         "AND       rownum < " + maxFiles;
+                         "AND       rownum < " + maxFiles + " + 1";
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -174,28 +179,28 @@ public class VFCUMediaFile {
             rowsUpdated= pStmt.executeUpdate(sql); 
             
             logger.log(Level.FINER, "Rows updated for current batch", rowsUpdated );
-            
                 
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update batch number in vfcu_file_batch", e );
-                return false;
+                return -1;
         }finally {
             try { if (pStmt != null) pStmt.close(); } catch (Exception se) { se.printStackTrace(); }
         }
         
-        return true;
+        return rowsUpdated;
     }
     
     
-    public boolean updateVfcuChecksum (Connection damsConn) {
+    public boolean updateVfcuChecksumAndDate (Connection damsConn) {
        
         Integer rowsUpdated = 0;
         PreparedStatement pStmt = null;
         
         try {
           
-            String sql = "UPDATE    vfcu_media_file" +
-                         "SET       vfcu_checksum = '" + getVfcuChecksum() + "' " +
+            String sql = "UPDATE    vfcu_media_file " +
+                         "SET       vfcu_checksum = UPPER('" + getVfcuChecksum() + "'), " +
+                         "          media_file_date = TO_DATE ('YYYY-MM-DD', " + getMediaFileDate() + ")', " +
                          "WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -229,7 +234,7 @@ public class VFCUMediaFile {
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
             pStmt = damsConn.prepareStatement(sql);
-            pStmt.executeUpdate(sql);
+            rs = pStmt.executeQuery();
             
             if (rs.next()) {
                  setVendorCheckSum(rs.getString(1));

@@ -12,7 +12,6 @@ import java.sql.Connection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
-import java.util.HashMap;
 import java.io.FileInputStream;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.IOUtils;
@@ -29,7 +28,6 @@ public class VendorMd5File {
     
     private String damsStagingPath;
     private String fileName;
-    private File md5File;
     private String vendorPath;
     
     public String getFileName () {
@@ -96,13 +94,13 @@ public class VendorMd5File {
 
             while(lt.hasNext()) {
                 String line=lt.nextLine();
-                String[] md5HashWithFileName = line.split(" ");
+                String[] md5HashWithFileName = line.split("  ");
                 
-                VFCUMediaFile vfcuFileBatch = new VFCUMediaFile();
-                vfcuFileBatch.setVendorCheckSum(md5HashWithFileName[0]);
-                vfcuFileBatch.setMediaFileName(md5HashWithFileName[1]);
-                vfcuFileBatch.setVfcuMd5FileId(vfcuMd5File.getVfcuMd5FileId());
-                vfcuFileBatch.insertRow(damsConn);
+                VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+                vfcuMediaFile.setVendorCheckSum(md5HashWithFileName[0]);
+                vfcuMediaFile.setMediaFileName(md5HashWithFileName[1]);
+                vfcuMediaFile.setVfcuMd5FileId(vfcuMd5File.getVfcuMd5FileId());
+                vfcuMediaFile.insertRow(damsConn);
                 
                 VFCUActivityLog vfcuActivityLog = new VFCUActivityLog();
                 vfcuActivityLog.setVfcuStatusCd("VI");
@@ -122,27 +120,31 @@ public class VendorMd5File {
                   
     }
     
-    public boolean locate (Connection damsConn) {
+    public int locate (Connection damsConn) {
         
         File dirLocation = new File(getVendorPath());
         
         if(! dirLocation.isDirectory()){ 
             //get directory listing of all files in the directory,
-            logger.log(Level.FINEST, "Error, unable to locate Vender Location Directory");
-            return false;
+            logger.log(Level.FINEST, "Error, unable to locate Vendor Location Directory: " + getVendorPath());
+            return -1;
         }
         
+        int numFiles = 0;
         File[] listOfFiles = dirLocation.listFiles(); 
         for (File file : listOfFiles) {
             if (file.toString().endsWith(".md5")) {
                                 
                 // if we have an md5 file at the location, save the info 
-                setFileName (file.getName());
-                this.md5File = file; 
+                setFileName (file.getName()); 
+                
+                logger.log(Level.FINEST, "Found md5 file: " + getFileName());
+                
+                numFiles ++;
             }    
         }       
            
-        return true;
+        return numFiles;
     }
     
 }

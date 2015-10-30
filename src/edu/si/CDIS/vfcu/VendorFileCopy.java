@@ -14,9 +14,7 @@ import edu.si.CDIS.vfcu.Database.VFCUMd5File;
 import edu.si.CDIS.vfcu.Database.VFCUMediaFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.CDIS.vfcu.VendorMd5File;
 import java.util.Iterator;
-import edu.si.CDIS.vfcu.MediaFile;
 import edu.si.CDIS.vfcu.Database.VFCUActivityLog;
 import edu.si.CDIS.vfcu.Database.VFCUError;
 
@@ -48,7 +46,7 @@ public class VendorFileCopy {
         
         stagingForDAMS = cdis.properties.getProperty("vfcuStagingForCDIS");
         if (stagingForDAMS.contains("?DATE?")) {
-            stagingForDAMS = stagingForDAMS.replaceAll("?DATE?", currentDate);
+            stagingForDAMS = stagingForDAMS.replaceAll("\\?DATE\\?", currentDate);
         }
         
         //for each vendorFileDirectory in config file, process the md5 file
@@ -56,8 +54,10 @@ public class VendorFileCopy {
             
             vendorBatchLocation = vendorFileDirs[i];
             
+            logger.log(Level.FINEST, "Looking for md5 file in directory : " + vendorBatchLocation );
+            
             if (vendorBatchLocation.contains("?DATE?")) {
-                vendorBatchLocation = vendorBatchLocation.replaceAll("?DATE?", currentDate);
+                vendorBatchLocation = vendorBatchLocation.replaceAll("\\?DATE\\?", currentDate);
             }
             
             // set variables for md5file 
@@ -65,15 +65,18 @@ public class VendorFileCopy {
             md5File.setVendorPath(vendorBatchLocation);
             md5File.setDamsStagingPath(stagingForDAMS);
             
-            boolean fileLocated = md5File.locate (cdis.damsConn);
+            int numFiles = md5File.locate (cdis.damsConn);
             
-            if (! fileLocated) {
-                logger.log(Level.FINEST, ".md5 File cannot be located in specified directory : " + vendorBatchLocation );
+            if (! (numFiles > 0)) {
+                logger.log(Level.FINEST, "No .md5 File found in specified directory : " + vendorBatchLocation );
+                //look in the next vendor directory listed for an .md5 file
+                continue;
             }
             //see if this file is tracked in the database yet
             VFCUMd5File vfcuMd5File = new VFCUMd5File ();
             vfcuMd5File.setVendorFilePath(vendorBatchLocation);
             vfcuMd5File.setVendorMd5FileName(md5File.getFileName());
+            vfcuMd5File.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));
                         
             boolean md5FileInDB = vfcuMd5File.findExistingMd5File(cdis.damsConn);
             
@@ -105,7 +108,14 @@ public class VendorFileCopy {
         VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
         vfcuMediaFile.setMaxFiles(Integer.parseInt(cdis.properties.getProperty("vfcuMaxFilesBatch")));
         vfcuMediaFile.setVfcuBatchNumber(cdis.getBatchNumber());
-        vfcuMediaFile.updateVfcuBatchNumber(cdis.damsConn);
+        
+        int rowsUpdated = vfcuMediaFile.updateVfcuBatchNumber(cdis.damsConn);
+ 
+        if (rowsUpdated < 1 ) {
+            //no files found that can be assigned to a validate and copy batch.  We have no need to go further
+            logger.log(Level.FINEST, "No files found in DB that require copy and validation" );
+            return;
+        }
         
         //Now we updated the files and assigned to current batch, commit so we lock them into current batch
         try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -124,15 +134,16 @@ public class VendorFileCopy {
             
             mediaFile.copyToDamsStaging();
 
-            //generateNewMd5 checksum for the file;     
+            //generateNewMd5 checksum for the file, and get the file date     
             mediaFile.generateMd5Hash();
+            mediaFile.populateMediaFileDate();
             
             //record checksum for the file; 
             vfcuMediaFile = new VFCUMediaFile();
             vfcuMediaFile.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
             
             vfcuMediaFile.setVfcuChecksum(mediaFile.getVfcuMd5Hash());
-            vfcuMediaFile.updateVfcuChecksum(cdis.damsConn);
+            vfcuMediaFile.updateVfcuChecksumAndDate(cdis.damsConn);
             vfcuMediaFile.populateVendorChecksum(cdis.damsConn);
             
             VFCUActivityLog activityLog = new VFCUActivityLog();
