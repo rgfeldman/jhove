@@ -31,12 +31,17 @@ public class MediaFile {
     private String vfcuMd5Hash;
     private String vendorPath;
     private Integer vfcuMediaFileId;
+    private Integer vfcuMd5FileId;
     
    
     public String getDamsStagingPath () {
         return this.damsStagingPath;
     }
         
+    public String getFileDate () {
+        return this.fileDate;
+    }
+       
     public String getFileName () {
         return this.fileName;
     }
@@ -53,6 +58,9 @@ public class MediaFile {
         return this.vfcuMediaFileId;
     }
     
+    public Integer getVfcuMd5FileId () {
+        return this.vfcuMd5FileId;
+    }
     
     
     
@@ -70,6 +78,10 @@ public class MediaFile {
     
     public void setVfcuMediaFileId (Integer vfcuMediaFileId) {
         this.vfcuMediaFileId = vfcuMediaFileId;
+    }
+    
+    public void setVfcuMd5FileId (Integer vfcuMd5FileId ) {
+        this.vfcuMd5FileId = vfcuMd5FileId;
     }
     
     public boolean copyToDamsStaging () {
@@ -95,12 +107,12 @@ public class MediaFile {
         }
     }
     
-    public boolean populateFileNameAndPath (Connection damsConn) {
+    public boolean populateMediaFileValues (Connection damsConn) {
         PreparedStatement pStmt = null;
         ResultSet rs = null; 
         
         try {
-            String sql = "SELECT  b.media_file_name, a.vendor_file_path " +
+            String sql = "SELECT  b.media_file_name, a.vendor_file_path, b.vfcu_md5_file_id " +
                         "FROM     vfcu_md5_File a, " +
                         "         vfcu_media_file b " +
                         "WHERE    a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
@@ -114,6 +126,7 @@ public class MediaFile {
             if (rs.next()) {
                 setFileName(rs.getString(1));
                 setVendorPath(rs.getString(2));
+                setVfcuMd5FileId(rs.getInt(3));
             }
                 
         } catch (Exception e) {
@@ -135,9 +148,9 @@ public class MediaFile {
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         
-        fileDate = sdf.format(vendorFile.lastModified());
+        this.fileDate = sdf.format(vendorFile.lastModified());
                
-        logger.log(Level.FINER, "FileDate: " + fileDate );
+        logger.log(Level.FINER, "FileDate: " + this.fileDate );
         
         return true;
     }

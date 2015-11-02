@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import edu.si.CDIS.vfcu.MediaFile;
 
 
 public class VFCUMediaFile {
@@ -21,22 +22,15 @@ public class VFCUMediaFile {
     ArrayList<Integer> filesIdsForBatch;
     Integer maxFiles;
     String  mediaFileName;
-    String mediaFileDate;
     String  vendorChecksum;
     Long    vfcuBatchNumber;
-    String  vfcuChecksum;
     Integer vfcuMediaFileId;
     Integer vfcuMd5FileId;
-    
-   
     
     public ArrayList<Integer> getFilesIdsForBatch () {
         return this.filesIdsForBatch;
     }
     
-    public String getMediaFileDate () {
-        return this.mediaFileDate;
-    }
         
     public String getMediaFileName () {
         return this.mediaFileName;
@@ -52,10 +46,6 @@ public class VFCUMediaFile {
     
     public Long getVfcuBatchNumber () {
         return this.vfcuBatchNumber;
-    }
-    
-    public String getVfcuChecksum () {
-        return this.vfcuChecksum;
     }
     
     public Integer getVfcuMediaFileId () {
@@ -78,10 +68,6 @@ public class VFCUMediaFile {
     
     public void setVfcuBatchNumber (Long vfcuBatchNumber) {
         this.vfcuBatchNumber = vfcuBatchNumber;
-    }
-    
-    public void setVfcuChecksum (String vfcuChecksum) {
-        this.vfcuChecksum = vfcuChecksum;
     }
     
     public void setVfcuMediaFileId (Integer vfcuMediaFileId) {
@@ -168,10 +154,19 @@ public class VFCUMediaFile {
         
         try {
             
-            String sql = "UPDATE    vfcu_media_file " +
-                         "SET       vfcu_batch_number = " + getVfcuBatchNumber() + " " +
-                         "WHERE     vfcu_batch_number IS NULL " + 
-                         "AND       rownum < " + maxFiles + " + 1";
+            //order by filename so each process has an even distribution of raws and .tifs.
+            //Need multiple subqueries for order by with rownum clause
+            String sql = 
+                    "UPDATE vfcu_media_file a " +
+                    "SET    a.vfcu_batch_number = " + getVfcuBatchNumber() + " " +
+                    "WHERE  a.vfcu_media_file_id IN ( " +
+                        "SELECT vfcu_media_file_id " + 
+                        "FROM ( " +
+                            "Select * " +
+                            "FROM vfcu_media_file b " +
+                            "WHERE  b.vfcu_batch_number IS NULL " +
+                            "ORDER BY b.media_file_name ) " +
+                            " where rownum < " + this.maxFiles + "+ 1) ";
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -191,7 +186,7 @@ public class VFCUMediaFile {
     }
     
     
-    public boolean updateVfcuChecksumAndDate (Connection damsConn) {
+    public boolean updateVfcuChecksumAndDate (Connection damsConn, MediaFile mediaFile) {
        
         Integer rowsUpdated = 0;
         PreparedStatement pStmt = null;
@@ -199,9 +194,9 @@ public class VFCUMediaFile {
         try {
           
             String sql = "UPDATE    vfcu_media_file " +
-                         "SET       vfcu_checksum = UPPER('" + getVfcuChecksum() + "'), " +
-                         "          media_file_date = TO_DATE ('YYYY-MM-DD', " + getMediaFileDate() + ")', " +
-                         "WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
+                         "SET       vfcu_checksum = UPPER('" + mediaFile.getVfcuMd5Hash() + "'), " +
+                         "          media_file_date = TO_DATE ('" + mediaFile.getFileDate() + "','YYYY-MM-DD') " +
+                         "WHERE     vfcu_media_file_id = " + mediaFile.getVfcuMediaFileId();
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
             

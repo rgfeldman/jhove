@@ -54,9 +54,7 @@ public class VFCUMd5File {
         this.vendorMd5FileName = vendorMd5FileName;
     }
     
-    
-    public boolean insertRecord (Connection damsConn) {
-        
+    public boolean generateVfcuMd5FileId (Connection damsConn ) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
@@ -68,7 +66,7 @@ public class VFCUMd5File {
             rs = pStmt.executeQuery();
             
             if (rs.next()) {
-                vfcuMd5FileId = rs.getInt(1);
+                this.vfcuMd5FileId = rs.getInt(1);
             }
                 
         } catch (Exception e) {
@@ -79,6 +77,15 @@ public class VFCUMd5File {
             try { if (rs != null) rs.close(); } catch (Exception se) { se.printStackTrace(); }
         }
         
+        return true;
+    }
+    
+    
+    public boolean insertRecord (Connection damsConn) {
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+    
         Integer rowsInserted = 0;
         try {
             
@@ -90,7 +97,7 @@ public class VFCUMd5File {
                             "md5_file_retrieval_dt, " +
                             "vfcu_complete) " +
                         "VALUES (" +
-                            vfcuMd5FileId + ", " +
+                            getVfcuMd5FileId() + ", " +
                             "'" + getSiHoldingUnit() + "', " +
                             "'" + getVendorMd5FileName() + "'," +
                             "'" + getVendorFilePath() + "'," +

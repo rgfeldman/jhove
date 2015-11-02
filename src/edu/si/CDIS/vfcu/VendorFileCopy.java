@@ -63,8 +63,7 @@ public class VendorFileCopy {
             // set variables for md5file 
             VendorMd5File md5File = new VendorMd5File();
             md5File.setVendorPath(vendorBatchLocation);
-            md5File.setDamsStagingPath(stagingForDAMS);
-            
+           
             int numFiles = md5File.locate (cdis.damsConn);
             
             if (! (numFiles > 0)) {
@@ -81,8 +80,20 @@ public class VendorFileCopy {
             boolean md5FileInDB = vfcuMd5File.findExistingMd5File(cdis.damsConn);
             
             if (! md5FileInDB) {          
+                
                
-                //copy md5 file from vendor area.  If we are use the local copy of this file from here on
+               
+                //get id sequence
+                boolean idSequenceObtained = vfcuMd5File.generateVfcuMd5FileId(cdis.damsConn);
+                if (! idSequenceObtained) {
+                    continue;
+                }
+                
+                //append the dams staging location with the md5fileID
+                md5File.setDamsStagingPath(stagingForDAMS + "\\" + vfcuMd5File.getVfcuMd5FileId());
+                
+                //copy md5 file from vendor area.  we should use the local copy of this file from here on 
+                //because we will have control of that file
                 boolean fileCopied = md5File.copyToDAMSStaging ();                            
                 if (! fileCopied) {
                     //Get the next record in for loop
@@ -127,10 +138,13 @@ public class VendorFileCopy {
             
             MediaFile mediaFile = new MediaFile();
             mediaFile.setVfcuMediaFileId(iter.next());
-            mediaFile.setDamsStagingPath(stagingForDAMS);
+                    
+            
             
             //get fileName, vendor_file_path for the current id
-            mediaFile.populateFileNameAndPath(cdis.damsConn);
+            mediaFile.populateMediaFileValues(cdis.damsConn);
+            
+            mediaFile.setDamsStagingPath(stagingForDAMS + "\\" + mediaFile.getVfcuMd5FileId());
             
             mediaFile.copyToDamsStaging();
 
@@ -140,16 +154,16 @@ public class VendorFileCopy {
             
             //record checksum for the file; 
             vfcuMediaFile = new VFCUMediaFile();
-            vfcuMediaFile.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
-            
-            vfcuMediaFile.setVfcuChecksum(mediaFile.getVfcuMd5Hash());
-            vfcuMediaFile.updateVfcuChecksumAndDate(cdis.damsConn);
-            vfcuMediaFile.populateVendorChecksum(cdis.damsConn);
+            vfcuMediaFile.updateVfcuChecksumAndDate(cdis.damsConn, mediaFile);
             
             VFCUActivityLog activityLog = new VFCUActivityLog();
             activityLog.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
             
+            // set the ID
+            vfcuMediaFile.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
+             
             //check to see if checksum values are the same from database
+            vfcuMediaFile.populateVendorChecksum(cdis.damsConn);
             if (vfcuMediaFile.getVendorChecksum().equals(vfcuMediaFile.getVendorChecksum()) ) {
                 //log in the database
                 activityLog.setVfcuStatusCd("VC");
@@ -163,14 +177,19 @@ public class VendorFileCopy {
                 vfcuError.insertRecord(cdis.damsConn);
             }    
         }
+
+        // count the number of files in md5 table not marked complete, and the number of physical files in vendor area, and the number of files in the destination.
+        //   They should all be the same.  If they are, then mark as complete.
+        // 
         
+        // count number of files in md5 table not marked complete
         
-        //count the number of physical files and compare them to the number of physical files
-        // in 
+        // count the number of files in physical vendor area
         
-        //put CDIS_ready.txt file in directory
-        //count the number of records that have not been assigned a batch for this date.
-        // if the number of records = 0 then create a ready file
+        //count the number of files in staging area 
+        
+        // count the number of files in dams staging area
+        
         createReadyFile();
         
     }
