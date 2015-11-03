@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import java.text.SimpleDateFormat;
 
 import edu.si.CDIS.CDIS;
@@ -189,6 +190,30 @@ public class MediaFile {
         }
         
         return true;
+    }
+    
+    public int countInDirectory(String path) {
+        int numFiles = 0;
+        String pathLocation = null;
+        
+        File dirLocation = new File(pathLocation);
+        
+        if(! dirLocation.isDirectory()){ 
+            //get directory listing of all files in the directory,
+            logger.log(Level.FINEST, "Error, unable to locate Vendor Location Directory: " + pathLocation);
+            return -1;
+        }
+        
+        File[] listOfFiles = dirLocation.listFiles(); 
+        for (File file : listOfFiles) {
+            switch (FilenameUtils.getExtension(file.getName())) {
+                case "tif" :
+                case "iiq" :    
+                    numFiles ++;
+            }
+        }       
+           
+        return numFiles;
     }
     
     

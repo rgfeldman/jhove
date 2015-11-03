@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import java.util.Iterator;
 import edu.si.CDIS.vfcu.Database.VFCUActivityLog;
 import edu.si.CDIS.vfcu.Database.VFCUError;
+import java.util.HashMap;
 
 
 /**
@@ -139,8 +140,6 @@ public class VendorFileCopy {
             MediaFile mediaFile = new MediaFile();
             mediaFile.setVfcuMediaFileId(iter.next());
                     
-            
-            
             //get fileName, vendor_file_path for the current id
             mediaFile.populateMediaFileValues(cdis.damsConn);
             
@@ -149,7 +148,19 @@ public class VendorFileCopy {
             mediaFile.copyToDamsStaging();
 
             //generateNewMd5 checksum for the file, and get the file date     
-            mediaFile.generateMd5Hash();
+            boolean hashGenerated = mediaFile.generateMd5Hash();
+            if (!hashGenerated) {
+                VFCUActivityLog activityLog = new VFCUActivityLog();
+                
+                activityLog.setVfcuStatusCd("ER");
+                
+                VFCUError vfcuError = new VFCUError();
+                vfcuError.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
+                vfcuError.setVfcuErrorCd("MDG");
+                vfcuError.insertRecord(cdis.damsConn);
+                
+                continue;
+            }
             mediaFile.populateMediaFileDate();
             
             //record checksum for the file; 
@@ -182,19 +193,55 @@ public class VendorFileCopy {
         //   They should all be the same.  If they are, then mark as complete.
         // 
         
-        // count number of files in md5 table not marked complete
+        // get list of md5 files not marked complete
+        VFCUMd5File vfcuMd5File = new VFCUMd5File ();
+        HashMap <Integer,String> idPathNotCompleted;
+        idPathNotCompleted = new HashMap<> (); 
         
-        // count the number of files in physical vendor area
+        idPathNotCompleted = vfcuMd5File.checkForCompleteness(cdis.damsConn);
         
-        //count the number of files in staging area 
+        if (idPathNotCompleted.isEmpty()) {
+            //done with processing
+            try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            return;
+        }
+        //for each md5 file that has not been processed yet, perform validations
+        Iterator<Integer> it = idPathNotCompleted.keySet().iterator();
         
-        // count the number of files in dams staging area
-        
-        createReadyFile();
+        for (Integer key : idPathNotCompleted.keySet()) { 
+            
+            vfcuMediaFile = new VFCUMediaFile();
+            vfcuMediaFile.setVfcuMd5FileId(key);
+          
+            // count the number of files in DB
+            int numDbFiles = vfcuMediaFile.countNumFilesForMd5ID(cdis.damsConn);
+            
+            MediaFile mediaFile = new MediaFile();
+            
+            // count the number of files in physical vendor area that are under the same id 
+            //get the path of the file
+            int numVendorFiles = mediaFile.countInDirectory(idPathNotCompleted.get(key));
+            
+            //count the number of files in staging area at the same location as the md5 path 
+            int numStagingFiles = mediaFile.countInDirectory(stagingForDAMS + "\\" + it);
+            
+            // if all three match, then mark the batch as complete in the database, and create the ready text file
+            
+            if (numDbFiles != numVendorFiles) {
+                logger.log(Level.FINEST, "number of files in DB != number of vendor files" );
+            }
+            else if (numDbFiles != numStagingFiles) {
+                logger.log(Level.FINEST, "number of files in DB != number of staged files" );
+            }
+            else {
+                //mark as complete
+                createCdisReadyFile();
+            }
+        }
         
     }
 
-    private void createReadyFile () {
+    private void createCdisReadyFile () {
     
         String readyFilewithPath = null;
         

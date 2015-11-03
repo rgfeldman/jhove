@@ -24,10 +24,7 @@ import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.SendToIngest;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
-import edu.si.CDIS.Database.CDISMap;
 import java.io.File;
-import java.util.Iterator;
-import edu.si.CDIS.utilties.ErrorLog;
 
 
 public class CDIS {

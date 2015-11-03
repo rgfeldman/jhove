@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  *
@@ -125,7 +127,6 @@ public class VFCUMd5File {
     }
     
     public boolean findExistingMd5File (Connection damsConn) {
-        
 
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -158,5 +159,41 @@ public class VFCUMd5File {
         
     }
     
+    public HashMap checkForCompleteness (Connection damsConn) {
+
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+        
+        HashMap <Integer,String> idPathNotCompleted;
+        idPathNotCompleted = new HashMap<> (); 
+        
+        try {
+            String sql = "SELECT a.vfcu_md5_file_id, vendor_file_path  " +
+                        "FROM vfcu_md5_file a " + 
+                        "WHERE a.vfcu_complete != 'Y' " +
+                        "AND NOT EXISTS ( " +
+                            "SELECT 'X' FROM vfcu_media_file b " +
+                            "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
+                            "AND b.vfcu_batch_number is null)";
+                     
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            while (rs.next()) {
+                idPathNotCompleted.put(rs.getInt(1),rs.getString(2));
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return idPathNotCompleted;
+        
+    }
 
 }

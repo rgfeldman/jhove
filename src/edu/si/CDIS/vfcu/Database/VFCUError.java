@@ -47,7 +47,7 @@ public class VFCUError {
                         "vfcu_error_cd, " +
                         "error_dt ) " +
                     "VALUES (" +  
-                        "vfcu_error_log_id_seq.NextVal, " + 
+                        "vfcu_error_id_seq.NextVal, " + 
                         getVfcuMediaFileId() + ", " +
                         "'" + getVfcuErrorCd() + "', " +
                         "SYSDATE )"; 
