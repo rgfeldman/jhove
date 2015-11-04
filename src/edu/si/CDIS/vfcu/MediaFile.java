@@ -194,24 +194,29 @@ public class MediaFile {
     
     public int countInDirectory(String path) {
         int numFiles = 0;
-        String pathLocation = null;
         
-        File dirLocation = new File(pathLocation);
+        try {
+            File dirLocation = new File(path);
         
-        if(! dirLocation.isDirectory()){ 
-            //get directory listing of all files in the directory,
-            logger.log(Level.FINEST, "Error, unable to locate Vendor Location Directory: " + pathLocation);
-            return -1;
-        }
-        
-        File[] listOfFiles = dirLocation.listFiles(); 
-        for (File file : listOfFiles) {
-            switch (FilenameUtils.getExtension(file.getName())) {
-                case "tif" :
-                case "iiq" :    
-                    numFiles ++;
+            if(! dirLocation.isDirectory()){ 
+                //get directory listing of all files in the directory,
+                logger.log(Level.FINEST, "Error, unable to locate Location Directory: " + path);
+                return -1;
             }
-        }       
+        
+            File[] listOfFiles = dirLocation.listFiles(); 
+            for (File file : listOfFiles) {
+                switch (FilenameUtils.getExtension(file.getName())) {
+                    case "tif" :
+                    case "iiq" :    
+                        numFiles ++;
+                }
+            }
+        }
+        catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain count of files from directory", e );
+                return -1;
+        }
            
         return numFiles;
     }

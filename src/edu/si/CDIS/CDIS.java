@@ -112,12 +112,9 @@ public class CDIS {
 
         //log All events
         logger.setLevel(Level.ALL);
-	
         
-	DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmm");
-	
         try {
-		fh = new FileHandler("log\\CDISLog-" + this.operationType + df.format(new Date()) + ".txt");
+		fh = new FileHandler("log\\CDISLog-" + this.operationType + this.batchNumber + ".txt");
 	
         } catch (Exception e) {
 		e.printStackTrace();
@@ -180,7 +177,7 @@ public class CDIS {
             setBatchNumber (Long.parseLong(df.format(new Date())));
             
         } catch (Exception e) {
-             logger.log(Level.FINER, "Error: obtaining Batch number", e );
+              System.out.println("Error: obtaining Batch number" + e );
              return false;
         }
         
@@ -264,6 +261,12 @@ public class CDIS {
         
             cdis.properties = new Properties();
               
+            boolean batchNumberSet = cdis.calcBatchNumber();
+            if (! batchNumberSet) {
+                 System.out.println("Fatal Error: Batch number could not be generated");
+                return;
+            }
+            
             //set the logger
             boolean loggingSet = cdis.setLogger();
             if (! loggingSet) {
@@ -290,11 +293,7 @@ public class CDIS {
                 return;
             }
             
-            boolean batchNumberSet = cdis.calcBatchNumber();
-            if (! batchNumberSet) {
-                logger.log(Level.SEVERE, "Fatal Error: Batch number could not be generated");
-                return;
-            }
+
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             

@@ -254,7 +254,7 @@ public class VFCUMediaFile {
         try {
             String sql = "SELECT  count(*) " +
                         "FROM     vfcu_media_file " +
-                        "WHERE    vfcu_media_file_id = " + getVfcuMd5FileId() + " ";
+                        "WHERE    vfcu_md5_file_id = " + getVfcuMd5FileId() + " ";
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
             

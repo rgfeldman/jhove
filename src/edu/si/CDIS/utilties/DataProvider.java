@@ -50,24 +50,7 @@ public class DataProvider {
 		
 	}
 	
-	public static ResultSet executeSelect(Connection conn, String sql) {
-		
-		PreparedStatement stmt = null;
-		ResultSet rs = null;
-		
-		try {
-			stmt = conn.prepareStatement(sql);
-			rs = stmt.executeQuery();
-		}
-		catch(SQLException sqlex) {
-			sqlex.printStackTrace();
-			return null;
-		}
-		
-		
-		return rs;
-	}
-	
+        
 	public static ResultSet executeSelect(Connection conn, PreparedStatement statement) {
 		
 		PreparedStatement stmt = statement;
@@ -84,6 +67,7 @@ public class DataProvider {
 		return rs;
 	}
 	
+        
 	public static boolean executeInsert(Connection conn, String sql) {
 		
 		Statement stmt = null;
@@ -129,24 +113,4 @@ public class DataProvider {
 		
 	}
 	
-	public static int executeUpdate(Connection conn, PreparedStatement statement) {
-		
-		PreparedStatement stmt = statement;
-		int rowCount;
-		
-		try {
-			rowCount = stmt.executeUpdate();
-		}
-		catch(SQLException sqlex) {
-			sqlex.printStackTrace();
-			return 0;
-		}
-		finally {
-			try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-		}
-		
-		return rowCount;
-		
-	}
-
 }

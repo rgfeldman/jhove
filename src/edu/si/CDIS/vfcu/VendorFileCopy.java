@@ -18,6 +18,7 @@ import java.util.Iterator;
 import edu.si.CDIS.vfcu.Database.VFCUActivityLog;
 import edu.si.CDIS.vfcu.Database.VFCUError;
 import java.util.HashMap;
+import java.sql.Connection;
 
 
 /**
@@ -81,8 +82,6 @@ public class VendorFileCopy {
             boolean md5FileInDB = vfcuMd5File.findExistingMd5File(cdis.damsConn);
             
             if (! md5FileInDB) {          
-                
-               
                
                 //get id sequence
                 boolean idSequenceObtained = vfcuMd5File.generateVfcuMd5FileId(cdis.damsConn);
@@ -126,7 +125,7 @@ public class VendorFileCopy {
         if (rowsUpdated < 1 ) {
             //no files found that can be assigned to a validate and copy batch.  We have no need to go further
             logger.log(Level.FINEST, "No files found in DB that require copy and validation" );
-            return;
+            validateNumFiles(cdis.damsConn);
         }
         
         //Now we updated the files and assigned to current batch, commit so we lock them into current batch
@@ -187,34 +186,41 @@ public class VendorFileCopy {
                 vfcuError.setVfcuErrorCd("MVV");
                 vfcuError.insertRecord(cdis.damsConn);
             }    
+            
+            try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            
         }
 
         // count the number of files in md5 table not marked complete, and the number of physical files in vendor area, and the number of files in the destination.
         //   They should all be the same.  If they are, then mark as complete.
         // 
+        validateNumFiles (cdis.damsConn);
+        
+    }
+    
+    private void validateNumFiles(Connection damsConn) {
         
         // get list of md5 files not marked complete
         VFCUMd5File vfcuMd5File = new VFCUMd5File ();
         HashMap <Integer,String> idPathNotCompleted;
         idPathNotCompleted = new HashMap<> (); 
         
-        idPathNotCompleted = vfcuMd5File.checkForCompleteness(cdis.damsConn);
+        idPathNotCompleted = vfcuMd5File.checkForCompleteness(damsConn);
         
         if (idPathNotCompleted.isEmpty()) {
             //done with processing
-            try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             return;
         }
         //for each md5 file that has not been processed yet, perform validations
-        Iterator<Integer> it = idPathNotCompleted.keySet().iterator();
         
         for (Integer key : idPathNotCompleted.keySet()) { 
             
-            vfcuMediaFile = new VFCUMediaFile();
+            VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
             vfcuMediaFile.setVfcuMd5FileId(key);
           
             // count the number of files in DB
-            int numDbFiles = vfcuMediaFile.countNumFilesForMd5ID(cdis.damsConn);
+            int numDbFiles = vfcuMediaFile.countNumFilesForMd5ID(damsConn);
             
             MediaFile mediaFile = new MediaFile();
             
@@ -223,9 +229,12 @@ public class VendorFileCopy {
             int numVendorFiles = mediaFile.countInDirectory(idPathNotCompleted.get(key));
             
             //count the number of files in staging area at the same location as the md5 path 
-            int numStagingFiles = mediaFile.countInDirectory(stagingForDAMS + "\\" + it);
+            int numStagingFiles = mediaFile.countInDirectory(stagingForDAMS + "\\" + key);
             
             // if all three match, then mark the batch as complete in the database, and create the ready text file
+            logger.log(Level.FINEST, "number of files in DB: " + numDbFiles );
+            logger.log(Level.FINEST, "number of vendor files: " + numVendorFiles);
+            logger.log(Level.FINEST, "number of staged files: " +  numStagingFiles);
             
             if (numDbFiles != numVendorFiles) {
                 logger.log(Level.FINEST, "number of files in DB != number of vendor files" );
@@ -235,19 +244,22 @@ public class VendorFileCopy {
             }
             else {
                 //mark as complete
-                createCdisReadyFile();
+                createCdisReadyFile(stagingForDAMS + "\\" + key);
+                
+                //set status to completed
+                vfcuMd5File.updateVfcuComplete(damsConn);
             }
         }
         
     }
 
-    private void createCdisReadyFile () {
+    private void createCdisReadyFile (String path) {
     
         String readyFilewithPath = null;
         
         try {
                 //Create the ready.txt file and put in the media location
-                readyFilewithPath = stagingForDAMS + "//CDIS_ready.txt";
+                readyFilewithPath = path + "\\CDIS_ready.txt";
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 

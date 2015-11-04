@@ -195,5 +195,39 @@ public class VFCUMd5File {
         return idPathNotCompleted;
         
     }
+    
+    public boolean updateVfcuComplete (Connection damsConn) {
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null; 
+        
+        int rowsUpdated = 0;
+        
+        try {
+            String sql = "UPDATE vfcu_md5_file " +
+                         "SET vfcu_complete = 'Y' " +
+                         "WHERE vfcu_md5_file_id = " + getVfcuMd5FileId();
+                     
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            pStmt = damsConn.prepareStatement(sql);
+            rowsUpdated = pStmt.executeUpdate(sql); 
+            
+            if (rowsUpdated != 1) {
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update vfcu_complete status in DB", e );
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return true;
+    }
 
 }

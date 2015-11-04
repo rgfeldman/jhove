@@ -61,6 +61,8 @@ public class ImageFilePath {
     // Get list of images that require sync file path to be updated
     private boolean getNeverSyncedImagePath () {
         
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
         
         String sql = "SELECT RenditionID " +
                      "FROM MediaFiles a, " +
@@ -72,11 +74,10 @@ public class ImageFilePath {
         
         logger.log(Level.FINEST, "IDS syncPath Select: " + sql);
         
-        ResultSet rs;
-        
-        rs = DataProvider.executeSelect(this.cisConn, sql);
-
         try {
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
             while (rs.next()) {
                 //We add all unlinked Renditions that are marked as 'For DAMS' to a list
                 RenditionIdToSyncList.add(rs.getString(1));
