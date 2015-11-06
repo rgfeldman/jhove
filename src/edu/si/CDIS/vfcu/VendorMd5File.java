@@ -100,10 +100,13 @@ public class VendorMd5File {
                 vfcuMediaFile.setVendorCheckSum(md5HashWithFileName[0]);
                 vfcuMediaFile.setMediaFileName(md5HashWithFileName[1]);
                 vfcuMediaFile.setVfcuMd5FileId(vfcuMd5File.getVfcuMd5FileId());
+                
+                vfcuMediaFile.generateMediaFileId(damsConn);
                 vfcuMediaFile.insertRow(damsConn);
                 
                 VFCUActivityLog vfcuActivityLog = new VFCUActivityLog();
                 vfcuActivityLog.setVfcuStatusCd("VI");
+                vfcuActivityLog.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
                 
                 vfcuActivityLog.insertRow(damsConn);
                 

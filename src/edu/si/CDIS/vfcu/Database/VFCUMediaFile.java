@@ -79,6 +79,32 @@ public class VFCUMediaFile {
         this.vfcuMd5FileId = vfcuMd5FileId;
     }
     
+   public boolean generateMediaFileId (Connection damsConn ) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+        
+        try {
+            //Generate the ID for the primary key for this table
+            String sql = "SELECT vfcu_media_file_id_seq.NextVal FROM dual"; 
+            
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs.next()) {
+                this.vfcuMediaFileId = rs.getInt(1);
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to get identifier sequence for vfcu_md5_file", e );
+                return false;
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (Exception se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (Exception se) { se.printStackTrace(); }
+        }
+        
+        return true;
+    }
+    
     public boolean insertRow (Connection damsConn) {
         
         Integer rowsInserted = 0;
@@ -90,8 +116,8 @@ public class VFCUMediaFile {
                         "media_file_name, " +
                         "vendor_checksum) " +
                     "VALUES (" +
-                        "vfcu_media_file_id_seq.NextVal, " +
-                        getVfcuMd5FileId() + "," +
+                        getVfcuMediaFileId() + ", " +
+                        getVfcuMd5FileId() + ", " +
                         "'" + getMediaFileName() + "'," +
                         "UPPER ('" + getVendorChecksum() + "'))";
     

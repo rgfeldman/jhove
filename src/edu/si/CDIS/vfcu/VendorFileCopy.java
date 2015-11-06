@@ -19,6 +19,7 @@ import edu.si.CDIS.vfcu.Database.VFCUActivityLog;
 import edu.si.CDIS.vfcu.Database.VFCUError;
 import java.util.HashMap;
 import java.sql.Connection;
+import edu.si.CDIS.vfcu.ErrorLog;
 
 
 /**
@@ -136,55 +137,57 @@ public class VendorFileCopy {
         
         for (Iterator<Integer> iter = vfcuMediaFile.getFilesIdsForBatch().iterator()  ; iter.hasNext();) {
             
+            VFCUActivityLog activityLog = new VFCUActivityLog();
             MediaFile mediaFile = new MediaFile();
+            
             mediaFile.setVfcuMediaFileId(iter.next());
                     
+            vfcuMediaFile = new VFCUMediaFile();
+            
+            // set the ID
+            vfcuMediaFile.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
+            
             //get fileName, vendor_file_path for the current id
             mediaFile.populateMediaFileValues(cdis.damsConn);
             
             mediaFile.setDamsStagingPath(stagingForDAMS + "\\" + mediaFile.getVfcuMd5FileId());
             
-            mediaFile.copyToDamsStaging();
+            boolean fileCopied = mediaFile.copyToDamsStaging();
+            if (!fileCopied) {        
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(vfcuMediaFile, "VFC", "Failure to copy Vendor File", cdis.damsConn);
+                continue;
+            }
+                
+            activityLog.setVfcuStatusCd("VC");
+            activityLog.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
+            activityLog.insertRow(cdis.damsConn);
 
             //generateNewMd5 checksum for the file, and get the file date     
             boolean hashGenerated = mediaFile.generateMd5Hash();
             if (!hashGenerated) {
-                VFCUActivityLog activityLog = new VFCUActivityLog();
-                
-                activityLog.setVfcuStatusCd("ER");
-                
-                VFCUError vfcuError = new VFCUError();
-                vfcuError.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
-                vfcuError.setVfcuErrorCd("MDG");
-                vfcuError.insertRecord(cdis.damsConn);
-                
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(vfcuMediaFile, "MDG", "Unable to generate hash value", cdis.damsConn);
                 continue;
             }
             mediaFile.populateMediaFileDate();
             
             //record checksum for the file; 
-            vfcuMediaFile = new VFCUMediaFile();
+            
             vfcuMediaFile.updateVfcuChecksumAndDate(cdis.damsConn, mediaFile);
             
-            VFCUActivityLog activityLog = new VFCUActivityLog();
-            activityLog.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
             
-            // set the ID
-            vfcuMediaFile.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
-             
             //check to see if checksum values are the same from database
             vfcuMediaFile.populateVendorChecksum(cdis.damsConn);
             if (vfcuMediaFile.getVendorChecksum().equals(vfcuMediaFile.getVendorChecksum()) ) {
                 //log in the database
-                activityLog.setVfcuStatusCd("VC");
+                activityLog.setVfcuStatusCd("MP");
+                activityLog.insertRow(cdis.damsConn);
             }
             else {
-                activityLog.setVfcuStatusCd("ER");
-                
-                VFCUError vfcuError = new VFCUError();
-                vfcuError.setVfcuMediaFileId(mediaFile.getVfcuMediaFileId());
-                vfcuError.setVfcuErrorCd("MVV");
-                vfcuError.insertRecord(cdis.damsConn);
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(vfcuMediaFile, "MVV", "MD5 checksum validation failure", cdis.damsConn);
+                continue;
             }    
             
             try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
