@@ -56,6 +56,10 @@ public class VFCUMd5File {
         this.vendorMd5FileName = vendorMd5FileName;
     }
     
+    public void setVfcuMd5FileId (Integer vfcuMd5FileId) {
+        this.vfcuMd5FileId = vfcuMd5FileId;
+    }
+    
     public boolean generateVfcuMd5FileId (Connection damsConn ) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;

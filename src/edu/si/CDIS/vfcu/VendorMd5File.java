@@ -123,6 +123,57 @@ public class VendorMd5File {
                   
     }
     
+    public boolean process (Connection damsConn, CDIS cdis) {
+            
+            int numFiles = locate (damsConn);
+            
+            if (! (numFiles > 0)) {
+                logger.log(Level.FINEST, "No .md5 File found in specified directory : " + getVendorPath() );
+                //look in the next vendor directory listed for an .md5 file
+                return false;
+            }
+            //see if this file is tracked in the database yet
+            VFCUMd5File vfcuMd5File = new VFCUMd5File ();
+            vfcuMd5File.setVendorFilePath(getVendorPath());
+            vfcuMd5File.setVendorMd5FileName(getFileName());
+            vfcuMd5File.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));
+                        
+            boolean md5FileInDB = vfcuMd5File.findExistingMd5File(damsConn);
+            
+            if (! md5FileInDB) {          
+               
+                //get id sequence
+                boolean idSequenceObtained = vfcuMd5File.generateVfcuMd5FileId(damsConn);
+                if (! idSequenceObtained) {
+                    return false;
+                }
+                
+                //append the dams staging location with the md5fileID
+                setDamsStagingPath(cdis.properties.getProperty("vfcuStagingForCDIS") + "\\" + vfcuMd5File.getVfcuMd5FileId());
+                
+                //copy md5 file from vendor area.  we should use the local copy of this file from here on 
+                //because we will have control of that file
+                boolean fileCopied = copyToDAMSStaging ();                            
+                if (! fileCopied) {
+                    //Get the next record in for loop
+                    return false;
+                }
+                    
+                //insert logging record
+                boolean recordInserted = vfcuMd5File.insertRecord(cdis.damsConn);
+                if (! recordInserted) {
+                    return false;
+                }
+                    
+                boolean dataExtracted = extractData (cdis.damsConn, vfcuMd5File);
+                if (! dataExtracted) {
+                    return false;
+                }    
+            }
+            
+            return true;
+    }
+    
     public int locate (Connection damsConn) {
         
         File dirLocation = new File(getVendorPath());

@@ -47,11 +47,6 @@ public class VendorFileCopy {
         //Get the location from the config file.  We typically have multiple file locations, one per filetype
         String[] vendorFileDirs = cdis.properties.getProperty("vendorBatchLocation").split(",");
         
-        stagingForDAMS = cdis.properties.getProperty("vfcuStagingForCDIS");
-        if (stagingForDAMS.contains("?DATE?")) {
-            stagingForDAMS = stagingForDAMS.replaceAll("\\?DATE\\?", currentDate);
-        }
-        
         //for each vendorFileDirectory in config file, process the md5 file
         for (int i = 0; i < vendorFileDirs.length; i++) {
             
@@ -59,62 +54,20 @@ public class VendorFileCopy {
             
             logger.log(Level.FINEST, "Looking for md5 file in directory : " + vendorBatchLocation );
             
-            if (vendorBatchLocation.contains("?DATE?")) {
-                vendorBatchLocation = vendorBatchLocation.replaceAll("\\?DATE\\?", currentDate);
+            if (vendorBatchLocation.contains("?YYYYMMDD?")) {
+                vendorBatchLocation = vendorBatchLocation.replaceAll("\\?YYYYMMDD\\?", currentDate);
             }
-            
+           
             // set variables for md5file 
             VendorMd5File md5File = new VendorMd5File();
             md5File.setVendorPath(vendorBatchLocation);
-           
-            int numFiles = md5File.locate (cdis.damsConn);
+            md5File.process(cdis.damsConn, cdis);
             
-            if (! (numFiles > 0)) {
-                logger.log(Level.FINEST, "No .md5 File found in specified directory : " + vendorBatchLocation );
-                //look in the next vendor directory listed for an .md5 file
-                continue;
-            }
-            //see if this file is tracked in the database yet
-            VFCUMd5File vfcuMd5File = new VFCUMd5File ();
-            vfcuMd5File.setVendorFilePath(vendorBatchLocation);
-            vfcuMd5File.setVendorMd5FileName(md5File.getFileName());
-            vfcuMd5File.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));
-                        
-            boolean md5FileInDB = vfcuMd5File.findExistingMd5File(cdis.damsConn);
-            
-            if (! md5FileInDB) {          
-               
-                //get id sequence
-                boolean idSequenceObtained = vfcuMd5File.generateVfcuMd5FileId(cdis.damsConn);
-                if (! idSequenceObtained) {
-                    continue;
-                }
-                
-                //append the dams staging location with the md5fileID
-                md5File.setDamsStagingPath(stagingForDAMS + "\\" + vfcuMd5File.getVfcuMd5FileId());
-                
-                //copy md5 file from vendor area.  we should use the local copy of this file from here on 
-                //because we will have control of that file
-                boolean fileCopied = md5File.copyToDAMSStaging ();                            
-                if (! fileCopied) {
-                    //Get the next record in for loop
-                    continue;
-                }
-                    
-                //insert logging record
-                boolean recordInserted = vfcuMd5File.insertRecord(cdis.damsConn);
-                if (! recordInserted) {
-                    continue;
-                }
-                    
-                boolean dataExtracted = md5File.extractData (cdis.damsConn, vfcuMd5File);
-                if (! dataExtracted) {
-                    continue;
-                }    
-            }
         }
+        //End MD5 file loading process
         
-        //End DB setup process
+        // count the number of files that are not assigned to a batchId yet
+        // While there are files not assigned to a batch id, loop around until all are assigned
         
         //Assign Files right away to a batch
         VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
@@ -221,6 +174,7 @@ public class VendorFileCopy {
             
             VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
             vfcuMediaFile.setVfcuMd5FileId(key);
+            vfcuMd5File.setVfcuMd5FileId(key);
           
             // count the number of files in DB
             int numDbFiles = vfcuMediaFile.countNumFilesForMd5ID(damsConn);
