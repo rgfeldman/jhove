@@ -5,10 +5,9 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.vfcu.VendorFileCopy;
 import edu.si.CDIS.CIS.ImageFilePath;
 import java.io.FileInputStream;
-import java.util.Properties;
+import java.util.Properties; 
 import java.sql.Connection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -141,7 +140,7 @@ public class CDIS {
        
         this.properties = new Properties();
         
-        String iniFile = "conf\\config.ini";
+        String iniFile = "conf\\cdis.ini";
                 
         try {
             logger.log(Level.FINER, "Loading ini file: " + iniFile);
@@ -340,11 +339,6 @@ public class CDIS {
                 case "genReport" :
                     Report report = new Report();
                     report.generate(cdis);
-                    break;
-                
-                case "vendorFileCopy" :
-                    VendorFileCopy vfcu = new VendorFileCopy();
-                    vfcu.validateAndCopy(cdis);
                     break;
                     
                 default:     
