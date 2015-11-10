@@ -58,6 +58,8 @@ public class VendorFileCopy {
                 vendorBatchLocation = vendorBatchLocation.replaceAll("\\?YYYYMMDD\\?", currentDate);
             }
            
+            stagingForDAMS= cdis.properties.getProperty("vfcuStagingForCDIS");
+            
             // set variables for md5file 
             VendorMd5File md5File = new VendorMd5File();
             md5File.setVendorPath(vendorBatchLocation);
@@ -94,7 +96,7 @@ public class VendorFileCopy {
             MediaFile mediaFile = new MediaFile();
             
             mediaFile.setVfcuMediaFileId(iter.next());
-                    
+                      
             vfcuMediaFile = new VFCUMediaFile();
             
             // set the ID
