@@ -30,10 +30,10 @@ public class SendToIngest {
     Connection cisConn;
     String cisSourceDB;
     
-    LinkedHashMap <String,String> renditionsForDAMS; 
+    LinkedHashMap <String,String> mediaIdsForDams; 
     
-    private void addRenditionsForDAMS (String cisUniqueMediaId, String filename) {
-        this.renditionsForDAMS.put(cisUniqueMediaId, filename); 
+    private void addUniqueMediaIdsForDAMS (String cisUniqueMediaId, String filename) {
+        this.mediaIdsForDams.put(cisUniqueMediaId, filename); 
     }
     
     /*  Method :        processList
@@ -47,7 +47,7 @@ public class SendToIngest {
     private void processList (CDIS cdis) {
                
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
-        Iterator<String> it = renditionsForDAMS.keySet().iterator();
+        Iterator<String> it = mediaIdsForDams.keySet().iterator();
         
         while (it.hasNext())  {  
                 
@@ -60,7 +60,7 @@ public class SendToIngest {
                 
             CDISMap cdisMap = new CDISMap();
            
-            String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
+            String cisFileName = mediaIdsForDams.get(cisUniqueMediaId);
                                 
             cdisMap.setFileName(cisFileName);
             cdisMap.setCisUniqueMediaId(cisUniqueMediaId);
@@ -93,10 +93,10 @@ public class SendToIngest {
         }
             
         //loop through the NotLinked RenditionList and copy the files
-        for (String cisUniqueMediaId : renditionsForDAMS.keySet()) {       
+        for (String cisUniqueMediaId : mediaIdsForDams.keySet()) {       
                 
             CDISMap cdisMap = new CDISMap();
-            String cisFileName = renditionsForDAMS.get(cisUniqueMediaId);
+            String cisFileName = mediaIdsForDams.get(cisUniqueMediaId);
             
             try {
                 
@@ -196,7 +196,7 @@ public class SendToIngest {
                     
                     
                     while (rs.next()) {           
-                        addRenditionsForDAMS(rs.getString("cisUniqueMediaId"), rs.getString("fileName"));
+                        addUniqueMediaIdsForDAMS(rs.getString("cisUniqueMediaId"), rs.getString("fileName"));
                         numCisRenditionsFound ++;
                     }   
 
@@ -229,7 +229,7 @@ public class SendToIngest {
             this.cisConn = cdis.cisConn;
         }
   
-        this.renditionsForDAMS = new LinkedHashMap<String, String>();
+        this.mediaIdsForDams = new LinkedHashMap<String, String>();
         
         // Get the list of new Media to add to DAMS
         Integer numCisRenditions = populateNewMediaList (cdis);

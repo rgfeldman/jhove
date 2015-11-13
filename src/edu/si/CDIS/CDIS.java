@@ -306,9 +306,9 @@ public class CDIS {
             
             switch (cdis.operationType) {
                 
-                case "sendToIngest" :   
-                    SendToIngest sendToIngest = new SendToIngest();
-                    sendToIngest.ingest(cdis);  
+                case "sendToHotFolder" :   
+                    SendToIngest sendToHotFolder = new SendToIngest();
+                    sendToHotFolder.ingest(cdis);  
                     break;
                     
                 case "linkToCIS" :
