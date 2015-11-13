@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.logging.Handler;
 import edu.si.CDIS.CIS.TMSIngest;
 import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.DAMS.SendToIngest;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import java.io.File;
@@ -307,7 +306,7 @@ public class CDIS {
             switch (cdis.operationType) {
                 
                 case "sendToHotFolder" :   
-                    SendToIngest sendToHotFolder = new SendToIngest();
+                    SendToHotFolder sendToHotFolder = new SendToHotFolder();
                     sendToHotFolder.ingest(cdis);  
                     break;
                     
