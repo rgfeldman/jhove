@@ -25,6 +25,7 @@ public class CDISMap {
     String fileName;
     String uoiid;
     String cisUniqueMediaId;
+    Integer vfcuMediaFileId;
     char errorInd;
     
     public Long getBatchNumber () {
@@ -51,6 +52,11 @@ public class CDISMap {
         return this.uoiid;
     }
     
+    public Integer getVfcuMediaFileId () {
+        return this.vfcuMediaFileId;
+    }
+    
+    
     public void setBatchNumber (Long batchNumber) {
         this.batchNumber = batchNumber;
     }
@@ -73,6 +79,10 @@ public class CDISMap {
     
     public void setUoiid (String uoiid) {
         this.uoiid = uoiid;
+    }
+    
+    public void setVfcuMediaFileId (Integer vfcuMediaFileId) {
+        this.vfcuMediaFileId = vfcuMediaFileId;
     }
     
    
@@ -109,6 +119,37 @@ public class CDISMap {
         return true;
     }
     
+     public boolean populateIdFromVfcuId (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE vfcu_media_file_id = '" + getVfcuMediaFileId() +
+                    "AND batch_number = " + getBatchNumber();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+        return true;
+         
+     }
+    
     public boolean populateIDForFileBatch (Connection damsConn) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -139,7 +180,6 @@ public class CDISMap {
         return true;
     }
     
-    //public boolean createRecord(CDIS cdis, String cisUniqueMediaId, String cisFileName) {
     
     public boolean createRecord(CDIS cdis) {
         
@@ -165,37 +205,23 @@ public class CDISMap {
                 try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
                 try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-            
-         
         
         try {
-            
-            String uoiid = getDamsUoiid();
-            String uoiidClause = null;
-            
-            if (uoiid != null) {
-                uoiidClause = "'" + uoiid + "', ";
-            }
-            else {
-                uoiidClause = "'', ";
-            }
             
             sql =  "INSERT INTO cdis_map (" +
                             "cdis_map_id, " +
                             "si_holding_unit, " +
-                            "cis_unique_media_id, " +
-                            "dams_uoi_id, " +
                             "file_name, " +
                             "batch_number, " +
+                            "vfcu_media_file_id, " +
                             "deleted_ind, " +
                             "error_ind ) " +
                         "VALUES (" +
                             getCdisMapId() + ", " +
                             "'" + cdis.properties.getProperty("siHoldingUnit") + "', " +
-                            "'" + getCisUniqueMediaId() + "', " +
-                            uoiidClause +
                             "'" + getFileName() + "', " +
                             cdis.getBatchNumber() + ", " +
+                            getVfcuMediaFileId() + ", " +
                             "'N' ," +
                             "'N')";
                  
