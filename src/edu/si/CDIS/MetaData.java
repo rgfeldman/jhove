@@ -19,7 +19,7 @@ import edu.si.CDIS.utilties.DataProvider;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.StatisticsReport;
-import edu.si.CDIS.XmlSqlConfig;
+import edu.si.CDIS.utilties.XmlSqlConfig;
 
 public class MetaData {
 
