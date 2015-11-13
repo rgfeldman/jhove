@@ -5,6 +5,7 @@
  */
 package edu.si.CDIS;
 
+import edu.si.CDIS.CDIS;
 import java.io.File;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;

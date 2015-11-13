@@ -5,7 +5,6 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.utilties.XmlSqlConfig;
 import edu.si.CDIS.CIS.ImageFilePath;
 import java.io.FileInputStream;
 import java.util.Properties;
