@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.logging.Handler;
 import edu.si.CDIS.CIS.TMSIngest;
 import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.DAMS.DAMSIngest;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import java.io.File;
@@ -236,7 +235,7 @@ public class CDIS {
                     break;
                     
                 case "ingestToDAMS" :     
-                    DAMSIngest damsIngest = new DAMSIngest();
+                    SendToHotFolder damsIngest = new SendToHotFolder();
                     damsIngest.ingest(cdis, statReport);
                     break;
                 
