@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.CDIS;
+package edu.si.CDIS.utilties;
 
+import edu.si.CDIS.CDIS;
 import edu.si.CDIS.CDIS;
 import java.io.File;
 import javax.xml.parsers.DocumentBuilder;
