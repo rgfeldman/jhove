@@ -77,7 +77,7 @@ public class CDIS {
         
         
         try {
-                if (this.properties.getProperty("cisSourceDB").equals("CDISDB")) {
+                if (this.properties.getProperty("cisSourceDB").equals("none")) {
                     
                     logger.log(Level.FINER, "CIS source is CDISDB. No connection to CIS database needed.");
                     

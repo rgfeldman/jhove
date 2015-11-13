@@ -21,7 +21,7 @@ import edu.si.CDIS.utilties.ReformatPath;
 
 
 public class TempXfer {
-    
+/*    code commented out.  not used
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     String mediaPathLocation;
     String mediaDrive;
@@ -178,4 +178,6 @@ public class TempXfer {
         return true;
         
     }
+    
+    */
 }

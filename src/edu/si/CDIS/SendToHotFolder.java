@@ -16,8 +16,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import edu.si.CDIS.utilties.ErrorLog;
-import edu.si.CDIS.DAMS.HotIngestFolder;
-import edu.si.CDIS.DAMS.HotIngestFolder;
+import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.DAMS.TempXfer;
 import java.util.Iterator;
 
@@ -32,10 +31,10 @@ public class SendToHotFolder {
     Connection cisConn;
     String cisSourceDB;
     
-    LinkedHashMap <String,String> mediaIdsForDams; 
+    LinkedHashMap <String,String> masterMediaIds; 
     
-    private void addUniqueMediaIdsForDAMS (String cisUniqueMediaId, String filename) {
-        this.mediaIdsForDams.put(cisUniqueMediaId, filename); 
+    private void masterMediaIds (String uniqueMediaId, String filename) {
+        this.masterMediaIds.put(uniqueMediaId, filename); 
     }
     
     /*  Method :        processList
@@ -46,26 +45,26 @@ public class SendToHotFolder {
         RFeldman 3/2015
     */
     
+    
+    
     private void processList (CDIS cdis) {
                
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
-        Iterator<String> it = mediaIdsForDams.keySet().iterator();
+        Iterator<String> it = masterMediaIds.keySet().iterator();
         
         while (it.hasNext())  {  
                 
-            String cisUniqueMediaId = it.next();
+            String uniqueMediaId = it.next();
             
             //Make sure the last transaction is committed
             try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
-            logger.log(Level.FINEST, "Processing for cisUniqueMediaId: " + cisUniqueMediaId);
+            logger.log(Level.FINEST, "Processing for uniqueMediaId: " + uniqueMediaId);
                 
-            CDISMap cdisMap = new CDISMap();
-           
-            String cisFileName = mediaIdsForDams.get(cisUniqueMediaId);
-                                
-            cdisMap.setFileName(cisFileName);
-            cdisMap.setCisUniqueMediaId(cisUniqueMediaId);
+            CDISMap cdisMap = new CDISMap();                           
+            cdisMap.setFileName(masterMediaIds.get(uniqueMediaId));
+            cdisMap.setVfcuMediaFileId(Integer.parseInt(uniqueMediaId));
+            
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
             boolean mapEntryCreated = cdisMap.createRecord(cdis);
                     
@@ -80,7 +79,7 @@ public class SendToHotFolder {
             //Log into the activity table
             CDISActivityLog cdisActivity = new CDISActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("MI");    
+            cdisActivity.setCdisStatusCd("MIC");    
             boolean activityLogged = cdisActivity.insertActivity(damsConn);
             if (!activityLogged) {
                 logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
@@ -94,49 +93,53 @@ public class SendToHotFolder {
             }
         }
             
-        //loop through the NotLinked RenditionList and copy the files
-        for (String cisUniqueMediaId : mediaIdsForDams.keySet()) {       
-                
-            CDISMap cdisMap = new CDISMap();
-            String cisFileName = mediaIdsForDams.get(cisUniqueMediaId);
+        //loop through the NotLinked Master Media and copy the files
+        for (String masterMediaId : masterMediaIds.keySet()) {       
             
             try {
                 
+                CDISMap cdisMap = new CDISMap();
+                StagedFile stagedFile = new StagedFile();
+ 
+                String childMediaId = null;
+                
+                String masterMediaFileName = masterMediaIds.get(masterMediaId);
+            
                 try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
                 
-                cdisMap.setBatchNumber(cdis.getBatchNumber());
-                cdisMap.setFileName(cisFileName);
-                cdisMap.populateIDForFileBatch(damsConn);
-                    
-                boolean sentToWorkFolder = false;
-                    
-                TempXfer tempXfer = new TempXfer();
-                    
-                //Find the image on the media drive
-                sentToWorkFolder = tempXfer.sendTo(cdis, cisFileName, cisUniqueMediaId, cdisMap);   
+                //get the subFile ID and populate FileName from the masterID first
+                childMediaId = stagedFile.retrieveSubFileInfo(damsConn, masterMediaId);
+                
+                //Get the file path for the vfcu_id
+                stagedFile.populatePathFromVfcuId(cdis.damsConn, Integer.parseInt(childMediaId));
+                String sendType = null;
 
+                //Find the image and move/copy to hotfolder
+                sendType = stagedFile.sendToHotFolder(cdis); 
+                
+                
+                /*
+                cdisMap.setFileName(masterMediaFileName);
+                cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
+                */
+                
+                //Get the CDIS_ID that was inserted in the previous loop
+                cdisMap.populateIdFromVfcuId(damsConn);
                     
-                // If we have no error condition, mark status in activity table, else flag as error
-                if (! sentToWorkFolder) {
-                    //We should have logged the error.  Pull the next record
-                    continue;
-                }
-                    
-                //Log into the activity table
+                
+
                 CDISActivityLog cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("SW"); 
+                cdisActivity.setCdisStatusCd(sendType);         
                 boolean activityLogged = cdisActivity.insertActivity(damsConn);
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
                 }
-
-               
                 
             } catch (Exception e) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + cisFileName  + " " + e, damsConn);   
+                //ErrorLog errorLog = new ErrorLog ();
+                //errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + mediaFileName  + " " + e, damsConn);   
                 
             } finally {
                 
@@ -152,7 +155,7 @@ public class SendToHotFolder {
     /*  Method :        populateNewMediaList
         Arguments:      
         Returns:      
-        Description:    Adds to the list of CIS IDs that need to be integrated into DAMS
+        Description:    Adds to the list of media IDs that need to be integrated into DAMS
         RFeldman 3/2015
     */
     private Integer populateNewMediaList (CDIS cdis) {
@@ -168,7 +171,7 @@ public class SendToHotFolder {
             
             sqlTypeArr = cdis.xmlSelectHash.get(key);
               
-            if (sqlTypeArr[0].equals("cisSelectList")) {   
+            if (sqlTypeArr[0].equals("idListToSend")) {   
                 sql = key;      
             }   
         }
@@ -181,7 +184,7 @@ public class SendToHotFolder {
             
             try {
                     switch (cisSourceDB) {
-                        case "CDISDB" :
+                        case "none" :
                              stmt = damsConn.prepareStatement(sql);
                              break;
                         case "TMSDB" :
@@ -192,13 +195,11 @@ public class SendToHotFolder {
                             logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cisSourceDB );
                             return numCisRenditionsFound;
                     }
-                   
-                                                   
+                                                    
                     rs = stmt.executeQuery();
-                    
-                    
+                     
                     while (rs.next()) {           
-                        addUniqueMediaIdsForDAMS(rs.getString("cisUniqueMediaId"), rs.getString("fileName"));
+                        masterMediaIds(rs.getString("uniqueMediaId"), rs.getString("mediafileName"));
                         numCisRenditionsFound ++;
                     }   
 
@@ -227,22 +228,23 @@ public class SendToHotFolder {
         this.damsConn = cdis.damsConn;
         this.cisSourceDB = cdis.properties.getProperty("cisSourceDB"); 
          
-        if (! this.cisSourceDB.equals("CDISDB")) { 
+        if (! this.cisSourceDB.equals("none")) { 
             this.cisConn = cdis.cisConn;
         }
   
-        this.mediaIdsForDams = new LinkedHashMap<String, String>();
+        this.masterMediaIds = new LinkedHashMap<String, String>();
         
         // Get the list of new Media to add to DAMS
         Integer numCisRenditions = populateNewMediaList (cdis);
         if  (! (numCisRenditions > 0 )) {
-             logger.log(Level.FINER, "No Renditions Found to process in this batch.  Exiting");
+             logger.log(Level.FINER, "No Media Found to process in this batch.  Exiting");
         }
         
-        // check if the renditions are in dams...and process each one in list (move to workfolder
+        // Process each media item from list (move to workfolder/hotfolder)
         logger.log(Level.FINER, "Processing media List");
         processList(cdis);
         
+        /*
         HotIngestFolder hotFolder = new HotIngestFolder();
         hotFolder.populateDistinctList(damsConn, cdis.getBatchNumber());
         hotFolder.setBaseDir(cdis.properties.getProperty("hotFolderBaseDir"));
@@ -278,6 +280,7 @@ public class SendToHotFolder {
         //Move from workfolder to hotfolder
         
         hotFolder.sendTo(damsConn, cdis.getBatchNumber());
-         
+         */
+        
      }
 }
