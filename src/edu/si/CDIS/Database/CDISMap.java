@@ -124,8 +124,8 @@ public class CDISMap {
         ResultSet rs = null;
   
         String sql = "SELECT cdis_map_id FROM cdis_map " +
-                    "WHERE vfcu_media_file_id = '" + getVfcuMediaFileId() +
-                    "AND batch_number = " + getBatchNumber();
+                    "WHERE vfcu_media_file_id = " + getVfcuMediaFileId() +
+                    " AND batch_number = " + getBatchNumber();
         
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
@@ -133,9 +133,13 @@ public class CDISMap {
             pStmt = damsConn.prepareStatement(sql);
             rs = pStmt.executeQuery();
             
-            if (rs != null && rs.next()) {
+            if (rs.next()) {
                 setCdisMapId (rs.getInt(1));
             }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                throw new Exception();
+            }
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );

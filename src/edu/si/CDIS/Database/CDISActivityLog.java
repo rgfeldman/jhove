@@ -52,6 +52,7 @@ public class CDISActivityLog {
                         "'" + getCdisStatusCd() + "', " +
                         "SYSDATE)";
         try {
+            logger.log(Level.FINER, "SQL: " + sql );
             
             pStmt = damsConn.prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql); 

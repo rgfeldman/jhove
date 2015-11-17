@@ -50,12 +50,12 @@ public class StagedFile {
         this.path = path;
     }
     
-    public boolean populatePathFromVfcuId (Connection dbConn, Integer vfcuMediaFileId) {
+    public boolean populateNamePathFromId (Connection dbConn, Integer vfcuMediaFileId) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
         try {
-            String sql = "SELECT a.staging_file_path " +
+            String sql = "SELECT b.media_file_name, a.staging_file_path " +
                          "FROM  vfcu_md5_file a, " +
                          "      vfcu_media_file b " +
                          "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
@@ -67,7 +67,8 @@ public class StagedFile {
             rs = pStmt.executeQuery();
             
             if (rs.next()) {
-                setPath(rs.getString(1));
+                setFileName(rs.getString(1));
+                setPath(rs.getString(2));
             }   
             else {
                 return false;
@@ -85,19 +86,24 @@ public class StagedFile {
         return true;
     }
     
-    public String retrieveSubFileInfo (Connection dbConn, String vfcuMasterMediaId) {
+    public String retrieveSubFileId (Connection dbConn, String vfcuMasterMediaId) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
         String childMediaId = null;
         
         try {
-            String sql = "SELECT a.vfcu_media_file_id, a.media_file_name " +
-                        "FROM  vfcu_media_file a, " +
-                        "      vfcu_md5_file b " +
-                        "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
-                        "AND   b.vfcu_master_md5_file_id != b.vfcu_md5_file_id " +
-                        "AND   b.vfcu_master_md5_file_id = " + vfcuMasterMediaId;
+            String sql = "SELECT  aa.vfcu_media_file_id, " + 
+                         "aa.media_file_name " +
+                         "FROM  vfcu_media_file a, " +       
+                         "  vfcu_md5_file b, " +
+                         "  vfcu_media_file aa, " +
+                         "  vfcu_md5_file bb " +
+                         "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
+                         "AND   aa.vfcu_md5_file_id = bb.vfcu_md5_file_id " +
+                         "AND   bb.master_md5_file_id != bb.VFCU_MD5_FILE_ID " +
+                         "AND   SUBSTR(a.media_file_name, 0, INSTR(a.media_file_name, '.')-1) = " + " SUBSTR(aa.media_file_name, 0, INSTR(aa.media_file_name, '.')-1) " +
+                         "AND   a.vfcu_media_file_id = " + vfcuMasterMediaId; 
                    
             logger.log(Level.FINEST,"SQL! " + sql); 
              
@@ -119,74 +125,51 @@ public class StagedFile {
         return childMediaId;
     }
     
-    
-    public String sendToHotFolder (CDIS cdis) {
-          
-        String operationType = null;
-
-        
+    // Moves the staged file to the MASTER folder
+    public boolean moveToMaster (String destination) {
         String fileNamewithPath = getPath() + "\\" + getFileName();
-        String fileExtension = FilenameUtils.getExtension(getFileName());
-        
         File stagedFile = new File (fileNamewithPath);
         
-        String hotFolderBaseName = null;
-        File hotFolderBase;
+        String hotFolderDestStr = destination + "\\" + "MASTER";
+        File hotFolderDest = new File (hotFolderDestStr);
         
-        boolean lastHotFolder = false;
-        int hotFolderIncrement = 1;
-        
-        while (!lastHotFolder) {
-           
-            hotFolderBaseName = cdis.properties.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
-            hotFolderBase = new File (hotFolderBaseName);
+        try {
             
-            if (hotFolderBase.exists()) {
-                //check if master area in hotfolder is empty
+            FileUtils.moveFileToDirectory(stagedFile, hotFolderDest, false);
                
-            }
-            
-            hotFolderIncrement ++;
-            
+            logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
+            logger.log(Level.FINER,"File moved to hotfolder location: " + hotFolderDestStr );
+                    
+        } catch (Exception e) {
+            logger.log(Level.FINER,"ERROR encountered when moving to master directory",e);
+            return false;
         }
         
-
+    
+        return true;
+    }
+    
+    // Copies the staged file to the SUBFILE folder
+    public boolean copyToSubfile (String destination) {
+        String fileNamewithPath = getPath() + "\\" + getFileName();
+        File stagedFile = new File (fileNamewithPath);
         
-        if (fileExtension.equals(cdis.properties.getProperty("masterMediaType"))) {
-            //move to hot folder master
-            operationType = "FMM";
-            try {
-                String masterHotFolder = hotFolderBaseName + "\\" + "SUBFILES";
-                File hotFolderDest = new File (masterHotFolder);
+        String hotFolderDestStr = destination + "\\" + "SUBFILES";
+        File hotFolderDest = new File (hotFolderDestStr);
+       
+        try {
             
-                FileUtils.moveFileToDirectory(stagedFile, hotFolderDest, false);
+            FileUtils.copyFileToDirectory(stagedFile, hotFolderDest, false);
+            
+            logger.log(Level.FINER,"File copied from staging location: " + fileNamewithPath );
+            logger.log(Level.FINER,"File copied to hotfolder location: " + hotFolderDestStr );
                
-            } catch (Exception e) {
-                logger.log(Level.FINER,"ERROR encountered when moving to subFolder directory",e);
-            }
-             
+        } catch (Exception e) {
+            logger.log(Level.FINER,"ERROR encountered when copying to subFolder directory",e);
+            return false;
         }
-        else if (fileExtension.equals(cdis.properties.getProperty("subFileMediaType"))) {
-            //copy to hot folder subdir
-            operationType = "FCS";
-            
-            try {
-                String masterHotFolder = hotFolderBaseName + "\\" + "MASTER";
-                File hotFolderDest = new File (masterHotFolder);
-            
-                FileUtils.copyFileToDirectory(stagedFile, hotFolderDest, false);
-                
-        
-            } catch (Exception e) {
-                logger.log(Level.FINER,"ERROR encountered when moving to subFolder directory",e);
-            }
-            
-        }   
-        else {
-            //error
-        }
-                             
-        return operationType;
+                                 
+        return true;
     }
     
 

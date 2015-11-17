@@ -15,10 +15,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
-import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.DAMS.StagedFile;
-import edu.si.CDIS.DAMS.TempXfer;
+import java.io.File;
 import java.util.Iterator;
+import java.lang.Thread;
 
 /**
  *
@@ -92,6 +92,79 @@ public class SendToHotFolder {
                 continue;
             }
         }
+        
+        //Obtain empty hot folder to put these files into
+        String hotFolderBaseName = null;
+        File hotFolderBase;
+        
+        boolean lastHotFolder = false;
+        int hotFolderIncrement = 1;
+
+        while (!lastHotFolder) {
+        
+            hotFolderBaseName = cdis.properties.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
+            hotFolderBase = new File (hotFolderBaseName);
+            
+            
+            if (hotFolderBase.exists()) {
+                int numMasterFolderFiles = 0;
+                int numSubFolderFiles = 0;
+        
+                //count files in hotfolder master area
+                String fullMasterHotFolderNm = hotFolderBaseName + "\\MASTER";
+                File fullHotFolder = new File(fullMasterHotFolderNm);
+                
+                if (fullHotFolder.exists()) {
+                    numMasterFolderFiles = fullHotFolder.list().length;
+                }
+                else {
+                    logger.log(Level.FINER, "Error, Could not find MASTER hotfolder directory in: ", fullMasterHotFolderNm);
+                    break;
+                }
+                
+                //count files in hotfolder subfiles area
+                String fullSubFilesHotFolderNm = hotFolderBaseName + "\\SUBFILES";
+                File subFilesHotFolderNm = new File(fullSubFilesHotFolderNm);
+                
+                if (subFilesHotFolderNm.exists()) {
+                    numSubFolderFiles = subFilesHotFolderNm.list().length;
+                }
+                else {
+                    logger.log(Level.FINER, "Error, Could not find SUBFILES hotfolder directory in: ", subFilesHotFolderNm);
+                    break;
+                }
+                                
+                if (numMasterFolderFiles + numSubFolderFiles == 0 ) {
+                    //check the subfile too, just in case
+                    // We found an empty hotfolder, use this one
+                    break;
+                }
+                
+            }
+            else {
+                if (hotFolderIncrement > 1) {
+                    //we went trhough more than one hot folder, but this one is not found.
+                    // thus this is the last hotfolder in a series. 
+                    lastHotFolder = true;
+                    try {
+                        Thread.sleep(100000);
+                        hotFolderIncrement = 1;
+                    } catch (Exception e) {
+                        logger.log(Level.FINER, "Exception in Thread.sleep: " + hotFolderBaseName);
+                    }
+                    
+                }
+                else {
+                    logger.log(Level.FINER, "Unable to locate Hot Folder Main Directory: " + hotFolderBaseName);
+                }
+                        
+            }
+            
+            hotFolderIncrement ++;
+        }
+        
+        logger.log(Level.FINER, "Will use current hotfolder: " + hotFolderBaseName);
+        
             
         //loop through the NotLinked Master Media and copy the files
         for (String masterMediaId : masterMediaIds.keySet()) {       
@@ -99,39 +172,59 @@ public class SendToHotFolder {
             try {
                 
                 CDISMap cdisMap = new CDISMap();
+                cdisMap.setBatchNumber(cdis.batchNumber);
                 StagedFile stagedFile = new StagedFile();
  
                 String childMediaId = null;
-                
-                String masterMediaFileName = masterMediaIds.get(masterMediaId);
             
                 try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
                 
                 //get the subFile ID and populate FileName from the masterID first
-                childMediaId = stagedFile.retrieveSubFileInfo(damsConn, masterMediaId);
+                childMediaId = stagedFile.retrieveSubFileId(damsConn, masterMediaId);
                 
                 //Get the file path for the vfcu_id
-                stagedFile.populatePathFromVfcuId(cdis.damsConn, Integer.parseInt(childMediaId));
-                String sendType = null;
-
-                //Find the image and move/copy to hotfolder
-                sendType = stagedFile.sendToHotFolder(cdis); 
-                
-                
-                /*
-                cdisMap.setFileName(masterMediaFileName);
-                cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
-                */
-                
-                //Get the CDIS_ID that was inserted in the previous loop
+                stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(childMediaId));
+                cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
                 cdisMap.populateIdFromVfcuId(damsConn);
-                    
                 
-
+                logger.log(Level.FINEST,"DEBUG2: CDIS_MAP_ID IS :" + cdisMap.getCdisMapId());
+                 
+                //Find the image and move/copy to hotfolder
+                boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName); 
+                
+                if (! fileCopied) {
+                    logger.log(Level.FINER, "Error, unable to copy file to Subfile");
+                    continue;
+                }
+                
+                logger.log(Level.FINEST,"DEBUG3: CDIS_MAP_ID IS :" + cdisMap.getCdisMapId());
+                
                 CDISActivityLog cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd(sendType);         
+                cdisActivity.setCdisStatusCd("FCS");
                 boolean activityLogged = cdisActivity.insertActivity(damsConn);
+                if (!activityLogged) {
+                    logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                    continue;
+                }
+                
+                
+                //now send the master file to the hotfolder
+                boolean fileMoved = stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(masterMediaId));
+                 if (! fileMoved) {
+                    logger.log(Level.FINER, "Error, unable to move file to master");
+                    continue;
+                }
+               
+                //Get the CDIS_ID 
+                cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
+                cdisMap.populateIdFromVfcuId(damsConn);
+                stagedFile.moveToMaster(hotFolderBaseName);    
+                
+                cdisActivity = new CDISActivityLog();
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());   
+                cdisActivity.setCdisStatusCd("FMM");
+                activityLogged = cdisActivity.insertActivity(damsConn);
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
@@ -238,49 +331,11 @@ public class SendToHotFolder {
         Integer numCisRenditions = populateNewMediaList (cdis);
         if  (! (numCisRenditions > 0 )) {
              logger.log(Level.FINER, "No Media Found to process in this batch.  Exiting");
+             return;
         }
         
         // Process each media item from list (move to workfolder/hotfolder)
         logger.log(Level.FINER, "Processing media List");
         processList(cdis);
-        
-        /*
-        HotIngestFolder hotFolder = new HotIngestFolder();
-        hotFolder.populateDistinctList(damsConn, cdis.getBatchNumber());
-        hotFolder.setBaseDir(cdis.properties.getProperty("hotFolderBaseDir"));
-        
-        if(hotFolder.distinctHotFolders.isEmpty()) {
-            logger.log(Level.FINER, "Error: Unable to get HotFolder from database, returning ");
-            return;
-        }
-        
-        // Check to see if anything in any of the workfolder directories.
-        // We only need to continue if there is a file there.
-        Integer numWorkFiles = hotFolder.countIngestFiles(cdis.getBatchNumber(), "workFolder");
-        if (! (numWorkFiles > 0)) {
-            logger.log(Level.FINER, "No work Files detected to process, returning");
-            return;
-        }
-        
-        // Check to see if anything in any of the hotfolder directories.
-        // We pause if there is a file in the hotfolder and wait for the hotfolder file to be ingested.
-        
-        logger.log(Level.FINER, "{0} Workfiles detected.  Need to check if ANY hotfiles exist from another process before continuing", numWorkFiles);
-        while (hotFolder.countIngestFiles(cdis.getBatchNumber(), "master") > 0) {
- 
-            logger.log(Level.FINER, "hotFolder Master Directory is not empty.  Check back in 5 minutes");
-                
-            try {
-                Thread.sleep(300000);
-            } catch (Exception e) {
-                logger.log(Level.FINER, "Exception in sleep ", e);
-            }
-        }
-        
-        //Move from workfolder to hotfolder
-        
-        hotFolder.sendTo(damsConn, cdis.getBatchNumber());
-         */
-        
      }
 }
