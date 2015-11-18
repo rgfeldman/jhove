@@ -91,6 +91,44 @@ public class SendToHotFolder {
                 
                 continue;
             }
+            
+            StagedFile stagedFile = new StagedFile();
+            // Get the child record
+            String childMediaId = null;
+            childMediaId = stagedFile.retrieveSubFileId(damsConn, uniqueMediaId);
+
+            cdisMap = new CDISMap();
+            cdisMap.setFileName(childMediaId);
+            cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
+            cdisMap.populateIdFromVfcuId(damsConn);
+            
+            // put the entry into the CDIS_MAP table
+            mapEntryCreated = cdisMap.createRecord(cdis);
+            
+             if (!mapEntryCreated) {
+                logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
+
+                //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
+                it.remove();
+                continue;
+            }
+                
+            //Log into the activity table
+            cdisActivity = new CDISActivityLog();
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("MIC");    
+            activityLogged = cdisActivity.insertActivity(damsConn);
+            if (!activityLogged) {
+                logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                 //Remove from the list of renditions to ingest, we dont want to bring this file over without an activity_log entry
+                it.remove();
+                
+                //rollback the database to remove the map Entry
+                try { if ( damsConn != null)  damsConn.rollback(); } catch (Exception e) { e.printStackTrace(); }
+                
+                continue;
+            }
+            
         }
         
         //Obtain empty hot folder to put these files into
@@ -186,8 +224,6 @@ public class SendToHotFolder {
                 stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(childMediaId));
                 cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
                 cdisMap.populateIdFromVfcuId(damsConn);
-                
-                logger.log(Level.FINEST,"DEBUG2: CDIS_MAP_ID IS :" + cdisMap.getCdisMapId());
                  
                 //Find the image and move/copy to hotfolder
                 boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName); 
@@ -196,8 +232,6 @@ public class SendToHotFolder {
                     logger.log(Level.FINER, "Error, unable to copy file to Subfile");
                     continue;
                 }
-                
-                logger.log(Level.FINEST,"DEBUG3: CDIS_MAP_ID IS :" + cdisMap.getCdisMapId());
                 
                 CDISActivityLog cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
