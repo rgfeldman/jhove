@@ -19,6 +19,7 @@ import edu.si.CDIS.DAMS.StagedFile;
 import java.io.File;
 import java.util.Iterator;
 import java.lang.Thread;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  *
@@ -98,9 +99,9 @@ public class SendToHotFolder {
             childMediaId = stagedFile.retrieveSubFileId(damsConn, uniqueMediaId);
 
             cdisMap = new CDISMap();
-            cdisMap.setFileName(childMediaId);
+            String childFileName = FilenameUtils.getBaseName(masterMediaIds.get(uniqueMediaId)) + ".tif";
+            cdisMap.setFileName(childFileName);
             cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
-            cdisMap.populateIdFromVfcuId(damsConn);
             
             // put the entry into the CDIS_MAP table
             mapEntryCreated = cdisMap.createRecord(cdis);
@@ -137,6 +138,10 @@ public class SendToHotFolder {
         
         boolean lastHotFolder = false;
         int hotFolderIncrement = 1;
+        
+        String fullMasterHotFolderNm = null;
+        File fullHotFolder = null;
+        
 
         while (!lastHotFolder) {
         
@@ -149,8 +154,8 @@ public class SendToHotFolder {
                 int numSubFolderFiles = 0;
         
                 //count files in hotfolder master area
-                String fullMasterHotFolderNm = hotFolderBaseName + "\\MASTER";
-                File fullHotFolder = new File(fullMasterHotFolderNm);
+                fullMasterHotFolderNm = hotFolderBaseName + "\\MASTER";
+                fullHotFolder = new File(fullMasterHotFolderNm);
                 
                 if (fullHotFolder.exists()) {
                     numMasterFolderFiles = fullHotFolder.list().length;
@@ -275,7 +280,13 @@ public class SendToHotFolder {
                 
             }
         }
-    
+        
+        // if there are any files in the hotfolder now, create a ready.txt file
+        if (fullHotFolder.exists()) {
+            if (fullHotFolder.list().length > 0) {
+                createReadyFile(hotFolderBaseName + "\\MASTER");
+            }
+        }
     }
 
     
@@ -372,4 +383,25 @@ public class SendToHotFolder {
         logger.log(Level.FINER, "Processing media List");
         processList(cdis);
      }
+     
+    private void createReadyFile (String hotDirectoryName) {
+    
+        String readyFilewithPath = null;
+        
+        try {
+                //Create the ready.txt file and put in the media location
+                readyFilewithPath = hotDirectoryName + "\\ready.txt";
+
+                logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
+                
+                File readyFile = new File (readyFilewithPath);
+            
+                readyFile.createNewFile();
+  
+        } catch (Exception e) {
+            logger.log(Level.FINER,"ERROR encountered when trying to create ready.txt file",e);;
+        }
+    }
+    
+    
 }

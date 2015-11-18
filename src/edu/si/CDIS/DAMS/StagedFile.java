@@ -173,24 +173,6 @@ public class StagedFile {
     }
     
 
-    private void createReadyFile (String hotDirectoryName) {
-    
-        String readyFilewithPath = null;
-        
-        try {
-                //Create the ready.txt file and put in the media location
-                readyFilewithPath = hotDirectoryName + "\\ready.txt";
-
-                logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
-                
-                File readyFile = new File (readyFilewithPath);
-            
-                readyFile.createNewFile();
-  
-        } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR encountered when trying to create ready.txt file",e);;
-        }
-    }
     
 }
     
