@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.CDIS.Database;
+package edu.si.CDIS.Database; 
 
 /**
  *
@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Connection;
+import java.util.HashMap;
 
 public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
@@ -307,6 +308,40 @@ public class CDISMap {
         }   
         
         return true;
+    }
+    
+    public HashMap<Integer, String> findNullUoiids (Connection dbConn) {
+        
+        HashMap<Integer, String> unlinkedDamsRecords;
+        unlinkedDamsRecords = new HashMap<> ();
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT cdis_map_id, file_name " +
+                    "FROM CDIS " +
+                    "WHERE dams_uoi_id IS NULL ";
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = dbConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                // NEED TO DO THIS
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+        return unlinkedDamsRecords;
+        
     }
     
 }
