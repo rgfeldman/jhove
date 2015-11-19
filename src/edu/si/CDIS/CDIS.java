@@ -316,6 +316,16 @@ public class CDIS {
                     linkToCis.linkToCIS(cdis);
                     break;
                     
+                case "linkToCISMdpp" :
+                    LinkToCISMdpp linkToCisMdpp = new LinkToCISMdpp();
+                    linkToCisMdpp.link(cdis);
+                break;
+                                    
+                case "linkToDAMS" :
+                    LinkToDAMS linkToDams = new LinkToDAMS();
+                    linkToDams.link(cdis);
+                    break;
+
                 case "metaDataSync" :    
                     MetaData metaData = new MetaData();
                     metaData.sync(cdis);
