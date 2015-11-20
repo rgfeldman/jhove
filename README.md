@@ -8,15 +8,18 @@ The batch processes are run on a nightly basis, but can also be manually execute
   
 The batch process operation types are as follows:
 
-IngestToCIS   (Adds the CIS media record of a DAMS image to an existing object in the CIS).
 
-SendToHotFolder  (Copies media to the DAMS hotfolder for ingest into DAMS).
+* SendToHotFolder  (Copies media to the appropriate DAMS hotfolder so it can be ingested into DAMS).
 
-LinkToCIS     (Establishes a link from the DAMS media back to the CIS).
+* LinkToDAMS	  (Establishes the link from media already in DAMS to a CDIS_MAP record and records the DAMS unique ID).
 
-Sync          (Brings over metadata from the CIS to the DAMS, Syncs the pathname in the CIS to point to the IDS derivative rather than the media drive).
+* LinkToCIS     (Establishes a link from DAMS/CDIS media back to the CIS system by recording the CIS unique ID).
 
-ThumbnailSync (replaces the thumbnail image in the CIS with the current thumbnail image in the DAMS system).
+* IngestToCIS   (Adds the CIS media record of a DAMS image to an existing object in the CIS).
+
+* Sync          (Brings over metadata from the CIS to the DAMS, Syncs the pathname in the CIS to point to the IDS derivative rather than the media drive).
+
+* ThumbnailSync (replaces the thumbnail image in the CIS with the current thumbnail image in the DAMS system).
 
 
 The java code for ALL of these execution types is found in this repository and is to be compiled into a single .jar file.
