@@ -5,11 +5,21 @@
  */
 package edu.si.CDIS.DAMS.Database;
 
+import edu.si.CDIS.CDIS;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 /**
  *
  * @author rfeldman
  */
 public class SiPreservationMetadata {
+    
+    private final static Logger logger = Logger.getLogger(CDIS.class.getName());
  
     String assetSourceDate;
     String preservationIdNumber;
@@ -39,25 +49,46 @@ public class SiPreservationMetadata {
         this.uoiid = uoiid;
     }
     
-    public void insertRow () {
-        String sql = "Insert into si_preservation_metadata (" +
+    public boolean insertRow (Connection damsConn) {
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+        int rowsUpdated = 0;
+        
+        String sql = "INSERT INTO towner.si_preservation_metadata (" +
                         "uoi_id, " +
                         "preservation_id_number, " +
                         "preservation_id_type, " +
                         "asset_source, " +
                         "asset_source_date )" +
-                      "values (" +
+                      "VALUES (" +
                         "'" + getUoiid() +"', " +
                         "'" + getPreservationIdNumber() +"', " +
                         "'md5', " +
-                        "NEED VENDOR NAME" +
-                        "NEED DATE OF FILE";
-                        
+                        "DPO - MDPP" +
+                        "TO_DATE ( '" + getAssetSourceDate() + "','YYYY-MM')";
+        
+        logger.log(Level.FINER, "!SQL: " + sql);
+         
+        try {
+            pStmt = damsConn.prepareStatement(sql);
+            rowsUpdated = pStmt.executeUpdate(sql);
+            
+            if (rowsUpdated != 1) {
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        } 
+        
+        return true;
                         
     }
     
-    /*PRESERVATION_ID_TYPE: MD5
-ASSET_SOURCE: Vendor name
-ASSET_SOURCE_DATE: 
-            */
 }

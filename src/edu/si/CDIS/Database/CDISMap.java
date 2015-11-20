@@ -120,6 +120,36 @@ public class CDISMap {
         return true;
     }
     
+    public boolean populateNameVfcuId (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT file_name, vfcu_media_file_id " + 
+                    "FROM cdis_map " +
+                    "WHERE cdis_map_id = " + getCdisMapId();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setFileName (rs.getString(1));
+                setVfcuMediaFileId (rs.getInt(2));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return true;
+    }
+    
      public boolean populateIdFromVfcuId (Connection damsConn) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -310,7 +340,7 @@ public class CDISMap {
         return true;
     }
     
-    public HashMap<Integer, String> findNullUoiids (Connection dbConn) {
+    public HashMap<Integer, String> returnUnlinkedMediaHash (Connection dbConn) {
         
         HashMap<Integer, String> unlinkedDamsRecords;
         unlinkedDamsRecords = new HashMap<> ();
@@ -318,9 +348,17 @@ public class CDISMap {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
-        String sql = "SELECT cdis_map_id, file_name " +
-                    "FROM CDIS " +
-                    "WHERE dams_uoi_id IS NULL ";
+        String sql = "SELECT    a.cdis_map_id, a.file_name " +
+                    "FROM       cdis_map a, " +
+                    "           cdis_activity_log b " +
+                    "WHERE      a.cdis_map_id = b.cdis_map_id " +
+                    "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
+                    "AND        dams_uoi_id IS NULL " +
+                    "AND NOT EXISTS (" +
+                    "   SELECT  'X' " + 
+                    "   FROM    cdis_error c " +
+                    "   WHERE   a.cdis_map_id = c.cdis_map_id) ";  
+                                
         
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
@@ -328,9 +366,9 @@ public class CDISMap {
             pStmt = dbConn.prepareStatement(sql);
             rs = pStmt.executeQuery();
             
-            if (rs != null && rs.next()) {
-                // NEED TO DO THIS
-            }   
+            while (rs.next()) {
+                unlinkedDamsRecords.put(rs.getInt(1), rs.getString(2));
+            }
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
@@ -343,5 +381,7 @@ public class CDISMap {
         return unlinkedDamsRecords;
         
     }
+    
+    
     
 }

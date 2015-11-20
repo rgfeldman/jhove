@@ -126,6 +126,32 @@ public class StagedFile {
     }
     
     // Moves the staged file to the MASTER folder
+    public boolean moveToEmu (String destination) {
+
+        String fileNamewithPath = getPath() + "\\" + getFileName();
+        File stagedFile = new File (fileNamewithPath);
+        
+        String hotFolderDestStr = destination + "\\" + "MASTER";
+        File hotFolderDest = new File (hotFolderDestStr);
+        
+        try {
+            
+            FileUtils.moveFileToDirectory(stagedFile, hotFolderDest, false);
+               
+            logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
+            logger.log(Level.FINER,"File moved to hotfolder location: " + hotFolderDestStr );
+                    
+        } catch (Exception e) {
+            logger.log(Level.FINER,"ERROR encountered when moving to master directory",e);
+            return false;
+        }
+        
+    
+        return true;
+    }
+    
+    
+    // Moves the staged file to the MASTER folder
     public boolean moveToMaster (String destination) {
         String fileNamewithPath = getPath() + "\\" + getFileName();
         File stagedFile = new File (fileNamewithPath);

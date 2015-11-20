@@ -103,4 +103,42 @@ public class Uois {
         return recordsUpdated;
 
     }
+    
+    public boolean populateUoiidForNameChksum(Connection damsConn, String checksum) {
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT    a.uoi_id " +
+                    "FROM       towner.uois a, " +
+                    "           towner.checksum_view b " +
+                    "WHERE      a.uoi_id = b.uoi_id " +
+                    "AND        a.content_state = 'NORMAL' " +
+                    "AND        a.content_type != 'SHORTCUT' " +
+                    "AND        a.name = '" + getName() + "' " +
+                    "AND        b.content_checksum = '" + checksum;
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setUoiid (rs.getString(1));
+                return true;
+            }   
+            else {
+                return false;
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain name from uois table", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }      
+    }
 }
