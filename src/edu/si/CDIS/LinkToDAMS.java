@@ -27,9 +27,10 @@ public class LinkToDAMS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String path;
-    String vendorChecksum;
     String assetDate;
+    String vendorChecksum;
+    String pathBase;
+    String pathEnding;
     
     public void link (CDIS cdis) {
         
@@ -87,7 +88,6 @@ public class LinkToDAMS {
         }
         
         // See if we can find the media in DAMS based on the filename and checksum combination
-
         for (Integer key : unlinkedDamsRecords.keySet()) {  
 
             Uois uois = new Uois();
@@ -119,15 +119,13 @@ public class LinkToDAMS {
                 continue;
             }
             
-
             // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)
- 
-            
             StagedFile stagedFile = new StagedFile();
-            stagedFile.setPath(path);
+            stagedFile.setBasePath(pathBase);
+            stagedFile.setPathEnding(pathEnding);
             stagedFile.setFileName(cdisMap.getFileName());
             
-            stagedFile.moveToEmu(cdis.properties.getProperty("emuLocation"));
+            stagedFile.moveToEmu(cdis.properties.getProperty("emuPickupLocation"));
  
             // Create an EMu_ready.txt file in the EMu pick up directory.
                 
@@ -148,10 +146,12 @@ public class LinkToDAMS {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
-        String sql = "SELECT    a.staging_file_path, b.vendor_checksum, TO_CHAR(b.media_file_date,'YYYY-MM')  " + 
+        String sql = "SELECT    a.base_path_staging, a.file_path_ending, " +
+                    "           b.vendor_checksum, " +
+                    "           TO_CHAR(b.media_file_date,'YYYY-MM')  " + 
                     "FROM       vfcu_md5_file a, " +
                     "           vfcu_media_file b " +
-                    "WHERE      a.md5_file_id = b.md5_file_id " +
+                    "WHERE      a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
                     "AND        b.vfcu_media_file_id = " + vfcuMediaFileId ;
         
         try {
@@ -161,9 +161,10 @@ public class LinkToDAMS {
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
-                this.path = rs.getString(1);
-                this.vendorChecksum = rs.getString(2);
-                this.assetDate = rs.getString(3);
+                this.pathBase = rs.getString(1);
+                this.pathEnding = rs.getString(2);
+                this.vendorChecksum = rs.getString(3);
+                this.assetDate = rs.getString(4);
             }   
             else {
                 return false;

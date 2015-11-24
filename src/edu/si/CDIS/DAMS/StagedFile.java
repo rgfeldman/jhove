@@ -31,14 +31,19 @@ public class StagedFile {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private String fileName;
-    private String path;
+    private String basePath;
+    private String pathEnding; 
     
     public String getFileName () {
         return this.fileName;
     }
     
-    public String getPath () {
-        return this.path;
+    public String getBasePath () {
+        return this.basePath;
+    }
+    
+    public String getPathEnding () {
+        return this.pathEnding;
     }
     
     
@@ -46,8 +51,12 @@ public class StagedFile {
         this.fileName = fileName;
     }
     
-    public void setPath (String path) {
-        this.path = path;
+    public void setBasePath (String basePath) {
+        this.basePath = basePath;
+    }
+    
+    public void setPathEnding (String pathEnding) {
+        this.pathEnding = pathEnding;
     }
     
     public boolean populateNamePathFromId (Connection dbConn, Integer vfcuMediaFileId) {
@@ -55,7 +64,7 @@ public class StagedFile {
         ResultSet rs = null;
         
         try {
-            String sql = "SELECT b.media_file_name, a.staging_file_path " +
+            String sql = "SELECT b.media_file_name, a.base_path_staging, a.file_path_ending " +
                          "FROM  vfcu_md5_file a, " +
                          "      vfcu_media_file b " +
                          "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
@@ -68,7 +77,8 @@ public class StagedFile {
             
             if (rs.next()) {
                 setFileName(rs.getString(1));
-                setPath(rs.getString(2));
+                setBasePath(rs.getString(2));
+                setPathEnding(rs.getString(3));
             }   
             else {
                 return false;
@@ -128,21 +138,21 @@ public class StagedFile {
     // Moves the staged file to the MASTER folder
     public boolean moveToEmu (String destination) {
 
-        String fileNamewithPath = getPath() + "\\" + getFileName();
+        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
         File stagedFile = new File (fileNamewithPath);
         
-        String hotFolderDestStr = destination + "\\" + "MASTER";
-        File hotFolderDest = new File (hotFolderDestStr);
+        String emuPickupLocation = destination + "\\" + getPathEnding()  + "\\" + "MASTER";
+        File emuPickupDir = new File (emuPickupLocation);
         
         try {
             
-            FileUtils.moveFileToDirectory(stagedFile, hotFolderDest, false);
+            FileUtils.moveFileToDirectory(stagedFile, emuPickupDir, true);
                
             logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
-            logger.log(Level.FINER,"File moved to hotfolder location: " + hotFolderDestStr );
+            logger.log(Level.FINER,"File moved to emuPickup location: " + emuPickupLocation );
                     
         } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR encountered when moving to master directory",e);
+            logger.log(Level.FINER,"ERROR encountered when moving to emuPickup directory",e);
             return false;
         }
         
@@ -153,7 +163,7 @@ public class StagedFile {
     
     // Moves the staged file to the MASTER folder
     public boolean moveToMaster (String destination) {
-        String fileNamewithPath = getPath() + "\\" + getFileName();
+        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
         File stagedFile = new File (fileNamewithPath);
         
         String hotFolderDestStr = destination + "\\" + "MASTER";
@@ -177,7 +187,7 @@ public class StagedFile {
     
     // Copies the staged file to the SUBFILE folder
     public boolean copyToSubfile (String destination) {
-        String fileNamewithPath = getPath() + "\\" + getFileName();
+        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
         File stagedFile = new File (fileNamewithPath);
         
         String hotFolderDestStr = destination + "\\" + "SUBFILES";
