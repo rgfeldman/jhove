@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
+import edu.si.CDIS.Database.CDISActivityLog;
         
 public class LinkToDAMS {
     
@@ -92,6 +93,10 @@ public class LinkToDAMS {
 
             Uois uois = new Uois();
             cdisMap = new CDISMap();
+            CDISActivityLog activityLog = new CDISActivityLog();
+      
+            cdisMap.setCdisMapId(key);
+            activityLog.setCdisMapId(cdisMap.getCdisMapId());
             
             // populate the cdis vfcuId and fileName
             boolean namePopulated = cdisMap.populateNameVfcuId(cdis.damsConn);
@@ -111,22 +116,28 @@ public class LinkToDAMS {
             }
             
             cdisMap.setUoiid(uois.getUoiid());
-            cdisMap.setCdisMapId(key);
             
             boolean uoiidUpdated = cdisMap.updateUoiid(cdis.damsConn);
             if (!uoiidUpdated) {
                 logger.log(Level.FINER, "ERROR: unable to update UOIID in DAMS for uoiid: " + uois.getUoiid() );
                 continue;
             }
+            activityLog.setCdisStatusCd("LDC");
+            activityLog.insertActivity(cdis.damsConn);
             
             // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)
-            StagedFile stagedFile = new StagedFile();
-            stagedFile.setBasePath(pathBase);
-            stagedFile.setPathEnding(pathEnding);
-            stagedFile.setFileName(cdisMap.getFileName());
             
-            stagedFile.moveToEmu(cdis.properties.getProperty("emuPickupLocation"));
- 
+            if (cdisMap.getFileName().endsWith(".tif")) {
+                StagedFile stagedFile = new StagedFile();
+                stagedFile.setBasePath(pathBase);
+                stagedFile.setPathEnding(pathEnding);
+                stagedFile.setFileName(cdisMap.getFileName());
+            
+                stagedFile.moveToEmu(cdis.properties.getProperty("emuPickupLocation"));
+                activityLog.setCdisStatusCd("FME");
+                activityLog.insertActivity(cdis.damsConn);
+            }
+            
             // Create an EMu_ready.txt file in the EMu pick up directory.
                 
             // Update the DAMS checksum information in preservation module
@@ -135,6 +146,11 @@ public class LinkToDAMS {
             siPreservation.setAssetSourceDate(this.assetDate);
             siPreservation.setPreservationIdNumber(this.vendorChecksum);
             siPreservation.insertRow(cdis.damsConn);
+            
+            activityLog.setCdisStatusCd("VCD");
+            activityLog.insertActivity(cdis.damsConn);
+            
+            try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
         }
         

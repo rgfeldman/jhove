@@ -116,7 +116,7 @@ public class Uois {
                     "AND        a.content_state = 'NORMAL' " +
                     "AND        a.content_type != 'SHORTCUT' " +
                     "AND        a.name = '" + getName() + "' " +
-                    "AND        b.content_checksum = '" + checksum;
+                    "AND        UPPER(b.content_checksum) = '" + checksum + "'";
         
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 

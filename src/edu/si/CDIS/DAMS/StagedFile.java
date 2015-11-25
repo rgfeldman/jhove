@@ -141,7 +141,7 @@ public class StagedFile {
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
         File stagedFile = new File (fileNamewithPath);
         
-        String emuPickupLocation = destination + "\\" + getPathEnding()  + "\\" + "MASTER";
+        String emuPickupLocation = destination + "\\" + getPathEnding();
         File emuPickupDir = new File (emuPickupLocation);
         
         try {

@@ -65,8 +65,8 @@ public class SiPreservationMetadata {
                         "'" + getUoiid() +"', " +
                         "'" + getPreservationIdNumber() +"', " +
                         "'md5', " +
-                        "DPO - MDPP" +
-                        "TO_DATE ( '" + getAssetSourceDate() + "','YYYY-MM')";
+                        "'DPO - MDPP', " +
+                        "TO_DATE ( '" + getAssetSourceDate() + "','YYYY-MM'))";
         
         logger.log(Level.FINER, "!SQL: " + sql);
          

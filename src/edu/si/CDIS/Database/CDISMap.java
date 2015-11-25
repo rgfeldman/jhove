@@ -340,6 +340,36 @@ public class CDISMap {
         return true;
     }
     
+    public boolean updateCisUniqueMediaId(Connection damsConn) {
+        PreparedStatement pStmt = null;
+        int rowsUpdated = 0;
+        
+        String sql =  "UPDATE cdis_map " +
+                      "SET cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
+                      "WHERE cdis_map_id = " + getCdisMapId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try {
+            
+            pStmt = damsConn.prepareStatement(sql);
+            rowsUpdated = pStmt.executeUpdate(sql);
+            
+            if (rowsUpdated != 1) {
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update CDIS_MAP table with cis_unique_media_id", e );
+                return false;
+        }finally {
+                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }   
+        
+        return true;
+    }
+    
+    
     public HashMap<Integer, String> returnUnlinkedMediaHash (Connection dbConn) {
         
         HashMap<Integer, String> unlinkedDamsRecords;
@@ -357,7 +387,7 @@ public class CDISMap {
                     "AND NOT EXISTS (" +
                     "   SELECT  'X' " + 
                     "   FROM    cdis_error c " +
-                    "   WHERE   a.cdis_map_id = c.cdis_map_id) ";  
+                    "   WHERE   a.cdis_map_id = c.cdis_map_id) ";
                                 
         
         try {
