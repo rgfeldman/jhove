@@ -140,4 +140,36 @@ public class SiAssetMetaData {
         }
         return true;
     }
+    
+    public boolean updatePublicUse (Connection dbConn) {
+        
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+        int recordsUpdated;
+  
+        String sql = "UPDATE si_asset_metadata " +
+                    "SET public_use = 'Y' " +
+                    "WHERE uoi_id = '" + getUoiid() + "'";
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            recordsUpdated = pStmt.executeUpdate(sql);
+            
+            if (recordsUpdated == 1) {
+                return true;
+            }
+            else {
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update Public Use flag for uoi_id: " + getUoiid() + " " + e);
+                return false;
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+    }
 }

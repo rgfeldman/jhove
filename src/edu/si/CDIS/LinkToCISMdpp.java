@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 /**
  *
@@ -26,7 +27,7 @@ public class LinkToCISMdpp {
     public void link (CDIS cdis) {
         //  The CDIS process will check CDIS for Ingest table for any entries with status RI. 
         
-        //from the config file, get the cdis_map_id and the dams uoiid for any records that need to be updated
+        //from the config file, get the cdis_map_id and the cisId for any records that need to be updated
         String sqlTypeArr[] = null;
         String sql = null;
         PreparedStatement pStmt = null;
@@ -72,13 +73,20 @@ public class LinkToCISMdpp {
             
             cdisMap.updateCisUniqueMediaId(cdis.damsConn);
            
-            activityLog.setCdisMapId(cdisMap.getCdisMapId());
-            activityLog.setCdisStatusCd("LC");
-            activityLog.insertActivity(cdis.damsConn);
+            //get the uoi_id (and filename)
+            cdisMap.populateMapInfo(cdis.damsConn);
+            
             
             //  Update the security policy 
             
-            //  Set public_use = 'Y' ---not sure if this should be in metadata sync step 
+            //  Set public_use = 'Y' 
+            SiAssetMetaData siAsst = new SiAssetMetaData();
+            siAsst.setUoiid(cdisMap.getDamsUoiid());      
+            siAsst.updatePublicUse(cdis.damsConn);
+             
+            activityLog.setCdisMapId(cdisMap.getCdisMapId());
+            activityLog.setCdisStatusCd("LCC");
+            activityLog.insertActivity(cdis.damsConn);
             
         }
         
