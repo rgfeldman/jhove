@@ -15,6 +15,8 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SecurityPolicyUois;
+import edu.si.CDIS.Database.CdisLinkToCis;
 
 /**
  *
@@ -78,6 +80,14 @@ public class LinkToCISMdpp {
             
             
             //  Update the security policy 
+            if (cdisMap.getFileName().endsWith("tif") ) {
+                SecurityPolicyUois secPolicy = new SecurityPolicyUois();
+                secPolicy.setUoiid(cdisMap.getDamsUoiid());
+                //secPolicy.setSecPolicyId();
+               
+                secPolicy.updateSecPolicyId(cdis.damsConn);
+                
+            }
             
             //  Set public_use = 'Y' 
             SiAssetMetaData siAsst = new SiAssetMetaData();
@@ -87,11 +97,10 @@ public class LinkToCISMdpp {
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             activityLog.setCdisStatusCd("LCC");
             activityLog.insertActivity(cdis.damsConn);
-            
+        
+           try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+             
         }
-        
-        
-        
 
         
     }

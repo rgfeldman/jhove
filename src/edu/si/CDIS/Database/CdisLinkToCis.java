@@ -17,12 +17,13 @@ import java.util.logging.Logger;
  *
  * @author rfeldman
  */
-public class CDISForIngest {
+public class CdisLinkToCis {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     String hotFolder;
     String cisUniqueMediaId;
     String siHoldingUnit;
+    String securityPolicy;
     
     public String getHotFolder () {
         return this.hotFolder;
@@ -32,9 +33,14 @@ public class CDISForIngest {
         return this.cisUniqueMediaId;
     }
     
+    public String getSecurityPolicyId () {
+        return this.securityPolicy;
+    }
+        
     public String getSiHoldingUnit () {
         return this.siHoldingUnit;
     }
+        
     
     public void setHotFolder (String hotFolder) {
         this.hotFolder = hotFolder;
