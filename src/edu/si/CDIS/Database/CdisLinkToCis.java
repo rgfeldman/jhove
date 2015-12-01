@@ -20,21 +20,17 @@ import java.util.logging.Logger;
 public class CdisLinkToCis {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String hotFolder;
     String cisUniqueMediaId;
     String siHoldingUnit;
-    String securityPolicy;
+    Integer securityPolicyId;
     
-    public String getHotFolder () {
-        return this.hotFolder;
-    }
     
     public String getCisUniqueMediaId () {
         return this.cisUniqueMediaId;
     }
     
-    public String getSecurityPolicyId () {
-        return this.securityPolicy;
+    public Integer getSecurityPolicyId () {
+        return this.securityPolicyId;
     }
         
     public String getSiHoldingUnit () {
@@ -42,12 +38,12 @@ public class CdisLinkToCis {
     }
         
     
-    public void setHotFolder (String hotFolder) {
-        this.hotFolder = hotFolder;
-    }
-    
     public void setCisUniqueMediaId (String cisUniqueMediaId) {
         this.cisUniqueMediaId = cisUniqueMediaId;
+    }
+    
+    public void setSecurityPolicyId (Integer securityPolicyId) {
+        this.securityPolicyId = securityPolicyId;
     }
     
     public void setSiHoldingUnit (String siHoldingUnit) {
@@ -55,15 +51,14 @@ public class CdisLinkToCis {
     }
     
     
-    
-    public boolean populateHotFolder (Connection damsConn) {
+    public boolean populateSecPolicyId (Connection damsConn) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
-        String sql = "SELECT hot_folder " +
-                    "FROM cdis_for_ingest " +
+        String sql = "SELECT sec_policy_id " + 
+                    "FROM cdis_link_to_cis " +
                     "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                    "AND si_holding_unit = '" + getSiHoldingUnit() + "'";
+                    "AND si__holding_unit = '" + getSiHoldingUnit() + "'";
         
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
@@ -72,14 +67,11 @@ public class CdisLinkToCis {
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
-                setHotFolder (rs.getString(1));
+                setSecurityPolicyId (rs.getInt(1));
             }   
-            else {
-                throw new Exception();
-            }
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain HotFolder name from cdis_for_ingest", e );
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
                 return false;
         
         }finally {
@@ -87,6 +79,7 @@ public class CdisLinkToCis {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         return true;
+        
     }
-      
+    
 }

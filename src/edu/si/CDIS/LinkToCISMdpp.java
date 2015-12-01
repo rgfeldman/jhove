@@ -83,10 +83,15 @@ public class LinkToCISMdpp {
             if (cdisMap.getFileName().endsWith("tif") ) {
                 SecurityPolicyUois secPolicy = new SecurityPolicyUois();
                 secPolicy.setUoiid(cdisMap.getDamsUoiid());
-                //secPolicy.setSecPolicyId();
-               
-                secPolicy.updateSecPolicyId(cdis.damsConn);
                 
+                CdisLinkToCis cdisLinkTbl = new CdisLinkToCis();
+                cdisLinkTbl.setCisUniqueMediaId(cdisMap.getCisUniqueMediaId());
+                cdisLinkTbl.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));
+                cdisLinkTbl.populateSecPolicyId(cdis.damsConn);
+                
+                secPolicy.setSecPolicyId(cdisLinkTbl.getSecurityPolicyId());
+               
+                secPolicy.updateSecPolicyId(cdis.damsConn);          
             }
             
             //  Set public_use = 'Y' 
