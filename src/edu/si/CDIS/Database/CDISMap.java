@@ -87,135 +87,6 @@ public class CDISMap {
     }
     
    
-    public boolean populateMapInfo (Connection damsConn) {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-  
-        String sql = "SELECT cis_unique_media_id, " + 
-                            "dams_uoi_id, " +
-                            "file_name " +
-                    "FROM cdis_map " +
-                    "WHERE cdis_map_id = " + getCdisMapId();
-        
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = damsConn.prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
-            if (rs != null && rs.next()) {
-                setCisUniqueMediaId (rs.getString(1));
-                setUoiid (rs.getString(2));
-                setFileName (rs.getString(3));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
-                return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        return true;
-    }
-    
-    public boolean populateNameVfcuId (Connection damsConn) {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-  
-        String sql = "SELECT file_name, vfcu_media_file_id " + 
-                    "FROM cdis_map " +
-                    "WHERE cdis_map_id = " + getCdisMapId();
-        
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = damsConn.prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
-            if (rs != null && rs.next()) {
-                setFileName (rs.getString(1));
-                setVfcuMediaFileId (rs.getInt(2));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
-                return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        return true;
-    }
-    
-     public boolean populateIdFromVfcuId (Connection damsConn) {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-  
-        String sql = "SELECT cdis_map_id FROM cdis_map " +
-                    "WHERE vfcu_media_file_id = " + getVfcuMediaFileId() +
-                    " AND batch_number = " + getBatchNumber();
-        
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = damsConn.prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
-            if (rs.next()) {
-                setCdisMapId (rs.getInt(1));
-            }   
-            else {
-                // we need a map id, if we cant find one then raise error
-                throw new Exception();
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
-                return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        
-        return true;
-         
-     }
-    
-    public boolean populateIDForFileBatch (Connection damsConn) {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-  
-        String sql = "SELECT cdis_map_id FROM cdis_map " +
-                    "WHERE file_name = '" + getFileName() + "'" +
-                    "AND batch_number = " + getBatchNumber();
-        
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = damsConn.prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
-            if (rs != null && rs.next()) {
-                setCdisMapId (rs.getInt(1));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
-                return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        
-        return true;
-    }
-    
-    
     public boolean createRecord(CDIS cdis) {
         
         PreparedStatement pStmt = null;
@@ -279,6 +150,134 @@ public class CDISMap {
                 
         return true;
        
+    }
+    
+    public boolean populateIdFromVfcuId (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE vfcu_media_file_id = " + getVfcuMediaFileId() +
+                    " AND batch_number = " + getBatchNumber();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+        return true;
+         
+    }
+    
+    public boolean populateIDForFileBatch (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE file_name = '" + getFileName() + "'" +
+                    "AND batch_number = " + getBatchNumber();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+        return true;
+    }
+    
+    public boolean populateMapInfo (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT cis_unique_media_id, " + 
+                            "dams_uoi_id, " +
+                            "file_name " +
+                    "FROM cdis_map " +
+                    "WHERE cdis_map_id = " + getCdisMapId();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setCisUniqueMediaId (rs.getString(1));
+                setUoiid (rs.getString(2));
+                setFileName (rs.getString(3));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return true;
+    }
+    
+    public boolean populateNameVfcuId (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT file_name, vfcu_media_file_id " + 
+                    "FROM cdis_map " +
+                    "WHERE cdis_map_id = " + getCdisMapId();
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setFileName (rs.getString(1));
+                setVfcuMediaFileId (rs.getInt(2));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        return true;
     }
     
     public boolean updateUoiid(Connection damsConn) {
@@ -369,6 +368,36 @@ public class CDISMap {
         return true;
     }
     
+    public boolean populateIdForNameNullUoiid (Connection damsConn) {
+        PreparedStatement pStmt = null;
+        ResultSet rs = null;
+  
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE file_name = '" + getFileName() + "' " +
+                    "AND dams_uoi_id IS NULL " +
+                    "AND error_ind is 'N' " + 
+                    "AND deleted_ind is 'N' ";
+        
+        try {
+            logger.log(Level.FINEST,"SQL! " + sql); 
+             
+            pStmt = damsConn.prepareStatement(sql);
+            rs = pStmt.executeQuery();
+            
+            if (rs != null && rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for file/null uoiid", e );
+                return false;
+        
+        }finally {
+            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }     
+        return true; 
+    }
     
     public HashMap<Integer, String> returnUnlinkedMediaHash (Connection dbConn) {
         
@@ -384,10 +413,8 @@ public class CDISMap {
                     "WHERE      a.cdis_map_id = b.cdis_map_id " +
                     "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
                     "AND        dams_uoi_id IS NULL " +
-                    "AND NOT EXISTS (" +
-                    "   SELECT  'X' " + 
-                    "   FROM    cdis_error c " +
-                    "   WHERE   a.cdis_map_id = c.cdis_map_id) ";
+                    "AND        a.error_ind = 'N' " +
+                    "AND        a.deleted_ind = 'N'";
                                 
         
         try {
@@ -408,10 +435,7 @@ public class CDISMap {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
-        return unlinkedDamsRecords;
-        
+        return unlinkedDamsRecords; 
     }
-    
-    
     
 }

@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.utilties.ErrorLog;
         
 public class LinkToDAMS {
     
@@ -32,6 +33,84 @@ public class LinkToDAMS {
     String vendorChecksum;
     String pathBase;
     String pathEnding;
+    
+    
+    private void logIngestFailedFile (String filename, Connection damsConn) {
+        logger.log(Level.FINER, "FailedFileName found: " + filename);
+        
+        //getCdisMapID for filename/status so we can log in table
+        //may want to check by checksum too later to make sure we have uniqueness....but drawback is we want to verify file is not corrupted
+        
+        CDISMap cdisMap = new CDISMap();
+        cdisMap.setFileName(filename);
+        cdisMap.populateIdForNameNullUoiid(damsConn);
+                
+        ErrorLog errorLog = new ErrorLog ();
+        errorLog.capture(cdisMap, "IPE", "Error, Record failed upon ingest", damsConn);         
+        
+    }
+    
+    private void checkForFailedFiles (CDIS cdis) {
+        
+        // look in all hot folder failed folders to check if there are files there, if there are, record them in error log
+        boolean lastHotFolder = false;
+        int hotFolderIncrement = 1;
+        
+        while (!lastHotFolder) {
+        
+            String hotFolderBaseName = cdis.properties.getProperty("failedFolderArea") + "_" + hotFolderIncrement;
+            File hotFolderBase = new File (hotFolderBaseName);
+         
+            logger.log(Level.FINER, "hotFolderBaseName: " +  hotFolderBaseName);
+            
+            if (hotFolderBase.exists()) {
+                int numFailedFiles = 0;
+
+                //count files in failed folder master area
+                String failedFolderNm = hotFolderBaseName + "\\FAILED";
+                File failedHotFolder = new File(failedFolderNm);
+                
+                logger.log(Level.FINER, "FailedDir: " + failedFolderNm);
+                
+                if (failedHotFolder.exists()) {
+                    String[] filenames = failedHotFolder.list();
+                    
+                    for (String filename : filenames) {
+                        logIngestFailedFile(filename, cdis.damsConn);
+                        numFailedFiles ++;
+                    }
+                    
+                }
+                else {
+                    logger.log(Level.FINER, "ERROR: Could not find Failed directory in: " + failedFolderNm);
+                    break;
+                }
+                
+                if (numFailedFiles == 0) {
+                    //We have no failures
+                    logger.log(Level.FINER, "There are no files in the FAILED directory " );
+                }
+                else {
+                    logger.log(Level.FINER, "ERROR: found FAILED files in: " + failedFolderNm);
+                    File[] listOfFiles = failedHotFolder.listFiles();
+                    
+                     for (int i = 0; i < listOfFiles.length; i++) {
+                         logger.log(Level.FINER, "Failed File: " + listOfFiles[i].getName() );
+                     }
+                }
+                
+                //increment to the next hot folder in the series
+                hotFolderIncrement ++;
+                
+            }
+            else {
+                //The failed folder in the series has been reached, the main hot folder directory does not exist
+                lastHotFolder = true;
+            }
+        }
+    }
+    
+    
     
     public void link (CDIS cdis) {
         
@@ -43,50 +122,7 @@ public class LinkToDAMS {
         
         unlinkedDamsRecords = cdisMap.returnUnlinkedMediaHash(cdis.damsConn);
                 
-        // Now look in all hot folder failed folders to check if there are files there, if there are, record them in error log
-        String hotFolderBaseName = null;
-        File hotFolderBase;
-        
-        boolean lastHotFolder = false;
-        int hotFolderIncrement = 1;
-        
-        String failedFolderNm = null;
-        File failedHotFolder = null;
-        
-        while (!lastHotFolder) {
-        
-            hotFolderBaseName = cdis.properties.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
-            hotFolderBase = new File (hotFolderBaseName);
-         
-            if (hotFolderBase.exists()) {
-                int numFailedFiles = 0;
-
-                //count files in hotfolder master area
-                failedFolderNm = hotFolderBaseName + "\\FAILED";
-                failedHotFolder = new File(failedFolderNm);
-                
-                if (failedHotFolder.exists()) {
-                    numFailedFiles = failedHotFolder.list().length;
-                }
-                else {
-                    logger.log(Level.FINER, "ERROR: Could not find MASTER hotfolder directory in: ", failedFolderNm);
-                    break;
-                }
-                
-                if (numFailedFiles == 0) {
-                    //We have no failures
-                    logger.log(Level.FINER, "There are no files in the FAILED directory " );
-                }
-                else {
-                    logger.log(Level.FINER, "ERROR: found FAILED files in: ", failedFolderNm);
-                    File[] listOfFiles = failedHotFolder.listFiles();
-                    
-                     for (int i = 0; i < listOfFiles.length; i++) {
-                         logger.log(Level.FINER, "Failed File: " + listOfFiles[i].getName() );
-                     }
-                }
-            }
-        }
+        checkForFailedFiles(cdis);
         
         // See if we can find the media in DAMS based on the filename and checksum combination
         for (Integer key : unlinkedDamsRecords.keySet()) {  
@@ -122,12 +158,10 @@ public class LinkToDAMS {
                 logger.log(Level.FINER, "ERROR: unable to update UOIID in DAMS for uoiid: " + uois.getUoiid() );
                 continue;
             }
-            activityLog.setCdisStatusCd("LDC");
-            activityLog.insertActivity(cdis.damsConn);
             
             // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)
             
-            if (cdisMap.getFileName().endsWith(".tif")) {
+            if (cdisMap.getFileName().endsWith("tif")) {
                 StagedFile stagedFile = new StagedFile();
                 stagedFile.setBasePath(pathBase);
                 stagedFile.setPathEnding(pathEnding);
@@ -147,7 +181,7 @@ public class LinkToDAMS {
             siPreservation.setPreservationIdNumber(this.vendorChecksum);
             siPreservation.insertRow(cdis.damsConn);
             
-            activityLog.setCdisStatusCd("VCD");
+            activityLog.setCdisStatusCd("LDC");
             activityLog.insertActivity(cdis.damsConn);
             
             try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }

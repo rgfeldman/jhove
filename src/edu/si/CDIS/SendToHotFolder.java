@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.Iterator;
 import java.lang.Thread;
 import org.apache.commons.io.FilenameUtils;
+import edu.si.CDIS.utilties.ErrorLog;
 
 /**
  *
@@ -226,15 +227,21 @@ public class SendToHotFolder {
                 childMediaId = stagedFile.retrieveSubFileId(damsConn, masterMediaId);
                 
                 //Get the file path for the vfcu_id
-                stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(childMediaId));
+                boolean infoPopulated = stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(childMediaId));
+                if (! infoPopulated) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "FCF", "Error, unable to populate name and path from database for subfile ", damsConn);
+                    continue;
+                }
+                
                 cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
                 cdisMap.populateIdFromVfcuId(damsConn);
                  
                 //Find the image and move/copy to hotfolder
-                boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName); 
-                
+                boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName);   
                 if (! fileCopied) {
-                    logger.log(Level.FINER, "Error, unable to copy file to Subfile");
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "FCF", "Error, unable to copy file to subfile: " + stagedFile.getFileName(), damsConn);
                     continue;
                 }
                 
@@ -249,16 +256,22 @@ public class SendToHotFolder {
                 
                 
                 //now send the master file to the hotfolder
-                boolean fileMoved = stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(masterMediaId));
-                 if (! fileMoved) {
-                    logger.log(Level.FINER, "Error, unable to move file to master");
+                infoPopulated = stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(masterMediaId));
+                if (! infoPopulated) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "FMF", "Error, unable to populate name and path from database for master file ", damsConn);
                     continue;
                 }
                
                 //Get the CDIS_ID 
                 cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
                 cdisMap.populateIdFromVfcuId(damsConn);
-                stagedFile.moveToMaster(hotFolderBaseName);    
+                boolean fileMoved = stagedFile.moveToMaster(hotFolderBaseName);  
+                if (! fileMoved) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "FMF", "Error, unable to move file to master: " + stagedFile.getFileName(), damsConn);
+                    continue;
+                }
                 
                 cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());   

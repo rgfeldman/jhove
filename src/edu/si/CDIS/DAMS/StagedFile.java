@@ -181,7 +181,6 @@ public class StagedFile {
             return false;
         }
         
-    
         return true;
     }
     
