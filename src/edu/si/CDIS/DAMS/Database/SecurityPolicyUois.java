@@ -47,7 +47,7 @@ public class SecurityPolicyUois {
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
-        String sql =  "UPDATE cdis_map " +
+        String sql =  "UPDATE towner.security_policy_uois " +
                       "SET sec_policy_id = " + getSecPolicyId() +
                       " WHERE uoi_id = '" + getUoiid() + "'";
         
