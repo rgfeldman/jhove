@@ -58,15 +58,11 @@ public class SiPreservationMetadata {
         String sql = "INSERT INTO towner.si_preservation_metadata (" +
                         "uoi_id, " +
                         "preservation_id_number, " +
-                        "preservation_id_type, " +
-                        "asset_source, " +
-                        "asset_source_date )" +
+                        "preservation_id_type " +
                       "VALUES (" +
                         "'" + getUoiid() +"', " +
                         "'" + getPreservationIdNumber() +"', " +
-                        "'md5', " +
-                        "'DPO - MDPP', " +
-                        "TO_DATE ( '" + getAssetSourceDate() + "','YYYY-MM'))";
+                        "'md5')";
         
         logger.log(Level.FINER, "!SQL: " + sql);
          
