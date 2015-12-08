@@ -32,11 +32,13 @@ public class CDISError {
                         "error_cd, " +
                         "error_dt) " +
                     "values ( " + 
-                        "cdis_error_id_seq, " +
+                        "cdis_error_id_seq.NextVal, " +
                         cdisMapId + ", " +
                         "'" + errorCd + "'," +
                         "SYSDATE)";
         try {
+            
+            logger.log(Level.FINER, "SQL: " + sql );
             
             pStmt = damsConn.prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql); 
@@ -46,7 +48,7 @@ public class CDISError {
             }
                 
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_ERROR in table", e );
+                logger.log(Level.FINER, "Error: unable to insert into CDIS_ERROR table", e );
                 return false;
         }finally {
             try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
