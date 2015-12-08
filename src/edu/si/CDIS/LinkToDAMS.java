@@ -29,7 +29,6 @@ public class LinkToDAMS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String assetDate;
     String vendorChecksum;
     String pathBase;
     String pathEnding;
@@ -215,7 +214,6 @@ public class LinkToDAMS {
                 this.pathBase = rs.getString(1);
                 this.pathEnding = rs.getString(2);
                 this.vendorChecksum = rs.getString(3);
-                this.assetDate = rs.getString(4);
             }   
             else {
                 return false;
