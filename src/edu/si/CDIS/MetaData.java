@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.utilties.XmlSqlConfig;
 import edu.si.CDIS.utilties.ScrubStringForDb;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISActivityLog;
@@ -24,15 +23,9 @@ public class MetaData {
 
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
 
-    String sqlUpdate;
-    String siUnit;
-    String emailTo;
-    String metaDataXmlFile;
-    int NumberOfSyncedRenditions;
-    Connection cisConn;
     Connection damsConn;
-    int successfulUpdateCount;
-    int failedUpdateCount;
+    String siUnit;
+    String sqlUpdate;
     HashMap <String,String> metaDataValuesForDams; 
     ArrayList<String> damsUoiidsToSync;
 
@@ -53,13 +46,9 @@ public class MetaData {
 
          //assign the database connections for later use
         this.damsConn = cdis.damsConn;
-        this.cisConn = cdis.cisConn;
         
         //obtain properties values from the config file
         this.siUnit = cdis.properties.getProperty("siUnit");
-        if (cdis.properties.getProperty("emailTo") != null) {
-            this.emailTo = cdis.properties.getProperty("emailTo");
-        }
 
         // initialize uoiid list for sync
         damsUoiidsToSync = new ArrayList<>();
@@ -165,14 +154,14 @@ public class MetaData {
 
             try {
                 
-                cdisMap.setUoiid(iter.next());
+                cdisMap.setDamsUoiid(iter.next());
+                siAsst.setUoiid (cdisMap.getDamsUoiid());
                 
                 // execute the SQL statment to obtain the metadata and populate variables.  They key value is RenditionID
                 mapData(SelectHash, cdisMap);
                 
-                
                 //generate the update statement from the variables obtained in the mapData
-                generateUpdate(siAsst, cdisMap);
+                generateUpdate(siAsst);
  
                 // Perform the update to the Dams Data
                 int updateCount = updateDamsData();
@@ -220,14 +209,16 @@ public class MetaData {
         Description:    generates the update sql for updating metadata in the DAMS SI_ASSET_METADATA table
         RFeldman 2/2015
     */
-    private boolean generateUpdate(SiAssetMetaData siAsst, CDISMap cdisMap) {
+    private boolean generateUpdate(SiAssetMetaData siAsst) {
 
         // Go through the list and 
         try {
+            boolean firstIteration = true;
+             
             String updateStatement = "UPDATE SI_ASSET_METADATA SET ";
                                              
             for (String column : metaDataValuesForDams.keySet()) {
-            
+                
                 String columnValue = metaDataValuesForDams.get(column);
             
                 if (columnValue != null) {
@@ -240,13 +231,19 @@ public class MetaData {
                     }  
                 } 
                         
-                updateStatement = updateStatement + " " + column + " = '" + columnValue + "',";
-                     
+                if (! firstIteration) {
+                    updateStatement = updateStatement + ", ";
+                }
+                else {
+                    firstIteration = false;
+                }
+                
+                updateStatement = updateStatement + " " + column + " = '" + columnValue + "'";
+                
             }
 
             updateStatement = updateStatement +
-                " public_use = 'Yes' " +
-                " WHERE uoi_id = '" + cdisMap.getDamsUoiid() + "'";
+                " WHERE uoi_id = '" + siAsst.getUoiid() + "'";
 
             //we collected nulls in the set/get commands.  strip out the word null from the update statement
             updateStatement = updateStatement.replaceAll("null", "");
@@ -283,6 +280,7 @@ public class MetaData {
 
         logger.log(Level.ALL, "Mapping Data for metadata");
         
+        //for each select statement found in the xml 
         for (String key : metaDataSelectHash.keySet()) {
 
             // Get the sql value from the hasharray
@@ -290,16 +288,14 @@ public class MetaData {
             sqlTypeArr = metaDataSelectHash.get(key);
             sqlType = sqlTypeArr[0];
             delimiter = sqlTypeArr[1];
-
-
-            sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
-            //sql = sql.replace("?ObjectID?", String.valueOf(cdisTbl.getObjectId()));
-            //sql = sql.replace("?RenditionID?", String.valueOf(cdisTbl.getRenditionId()));
-
-            logger.log(Level.ALL, "select Statement: " + sql);
             
-            // populate the metadata object with the values found from the database query
             try {
+                sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
+
+                logger.log(Level.ALL, "select Statement: " + sql);
+            
+                // populate the metadata object with the values found from the database query
+            
                 pStmt = damsConn.prepareStatement(sql);
                 rs = pStmt.executeQuery();
             
@@ -307,39 +303,48 @@ public class MetaData {
                 
                 while (rs.next()) {
                     
-                    ResultSetMetaData rsmd = rs.getMetaData();
+                    try {
                     
-                    for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
-                        String columnName = rsmd.getColumnName(i);
-                        String columnValue = rs.getString(i);
-                        
-                        logger.log(Level.ALL, "columnInfo: " + columnName + " " + columnValue);
-                        
-                        if (columnValue != null) {
-                            scrub.scrubString(columnValue);
-                        }
+                        ResultSetMetaData rsmd = rs.getMetaData();
                     
-                        //check if the column has already been populated
-                        String columnExisting = metaDataValuesForDams.get(columnName);
-                        if (columnExisting != null) {
-                            if (sqlType.equals("cursorAppend")) {
-                                //append to existing column
-                                metaDataValuesForDams.put(columnName.toLowerCase(), columnExisting + delimiter + ' ' + columnValue);
+                        for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
+                            String columnName = rsmd.getColumnName(i);
+                            String columnValue = rs.getString(i);
+                        
+                            logger.log(Level.ALL, "columnInfo: " + columnName + " " + columnValue);
+                        
+                            if (columnValue != null) {
+                                scrub.scrubString(columnValue);
+                            }
+                    
+                            //check if the column has already been populated
+                            String columnExisting = metaDataValuesForDams.get(columnName);
+                            if (columnExisting != null) {
+                                if (sqlType.equals("cursorAppend")) {
+                                    //append to existing column
+                                    metaDataValuesForDams.put(columnName.toLowerCase(), columnExisting + delimiter + ' ' + columnValue);
+                                }
+                                else {
+                                    //put out error
+                                    logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
+                                    metaDataValuesForDams.put(columnName.toUpperCase(),columnValue);
+                                }                            
                             }
                             else {
-                                //put out error
-                                logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
                                 metaDataValuesForDams.put(columnName.toUpperCase(),columnValue);
-                            }                            
-                        }
-                        else {
-                            metaDataValuesForDams.put(columnName.toUpperCase(),columnValue);
-                        }
+                            }
+                       
+                               
+                        }  
+                    } catch (Exception e) {
+                        logger.log(Level.ALL, "Error, exception raised in metadata while loop", e); 
+                        continue;
                     }
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
-           } finally {
+            } catch (Exception e) {
+                logger.log(Level.ALL, "Error, exception raised in metadata for loop", e); 
+                continue;
+            } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
                     try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
             }

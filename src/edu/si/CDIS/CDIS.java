@@ -63,7 +63,7 @@ public class CDIS {
             //decrypt the password, it is stored in ini in encypted fashion
             String damsPass = EncryptDecrypt.decryptString(this.properties.getProperty("damsPass"));
             
-            this.damsConn = DataProvider.getConnection(this.properties.getProperty("damsDriver"), 
+            this.damsConn = DataProvider.establishConnection(this.properties.getProperty("damsDriver"), 
 					this.properties.getProperty("damsConnString"), 
 					this.properties.getProperty("damsUser"), 
 					damsPass);
@@ -85,7 +85,7 @@ public class CDIS {
                     //decrypt the password, it is stored in ini in encypted fashion
                     String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("cisPass"));
                 
-                    this.cisConn = DataProvider.getConnection(this.properties.getProperty("cisDriver"), 
+                    this.cisConn = DataProvider.establishConnection(this.properties.getProperty("cisDriver"), 
                     this.properties.getProperty("cisConnString"), 
                     this.properties.getProperty("cisUser"), 
                     tmsPass);

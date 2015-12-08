@@ -120,7 +120,7 @@ public class LinkToDAMS {
         HashMap<Integer, String> unlinkedDamsRecords;
         unlinkedDamsRecords = new HashMap<> ();
         
-        unlinkedDamsRecords = cdisMap.returnUnlinkedMediaHash(cdis.damsConn);
+        unlinkedDamsRecords = cdisMap.returnUnlinkedMediaInDams(cdis.damsConn);
                 
         checkForFailedFiles(cdis);
         
@@ -132,26 +132,30 @@ public class LinkToDAMS {
             CDISActivityLog activityLog = new CDISActivityLog();
       
             cdisMap.setCdisMapId(key);
+            cdisMap.setFileName(unlinkedDamsRecords.get(key));
+            
+            uois.setName(unlinkedDamsRecords.get(key));
+            
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             
-            // populate the cdis vfcuId and fileName
-            boolean namePopulated = cdisMap.populateNameVfcuId(cdis.damsConn);
-            if (! namePopulated) {
-                logger.log(Level.FINER, "ERROR: unable to get FileName for map_id: " + cdisMap.getCdisMapId());
+            // populate the cdis vfcuId
+            boolean vfcuIdPopulated = cdisMap.populateVfcuId(cdis.damsConn);
+            if (! vfcuIdPopulated) {
+                logger.log(Level.FINER, "ERROR: unable to get vfcuId for map_id: " + cdisMap.getCdisMapId());
                 continue;
             }
             
+            //with the vfcuId get the rest of the VFCU data including the paths and checksum info
             retrieveVfcuData(cdis.damsConn, cdisMap.getVfcuMediaFileId());
             
-            uois.setName(unlinkedDamsRecords.get(key));
+            //Get the uoiid for the name and checksum
             boolean uoiidFound = uois.populateUoiidForNameChksum(cdis.damsConn, vendorChecksum);
-            
             if (!uoiidFound) {
                 logger.log(Level.FINER, "No matches in DAMS for filename/checksum " + uois.getName() );
                 continue;
             }
             
-            cdisMap.setUoiid(uois.getUoiid());
+            cdisMap.setDamsUoiid(uois.getUoiid());
             
             boolean uoiidUpdated = cdisMap.updateUoiid(cdis.damsConn);
             if (!uoiidUpdated) {
@@ -177,7 +181,6 @@ public class LinkToDAMS {
             // Update the DAMS checksum information in preservation module
             SiPreservationMetadata siPreservation = new SiPreservationMetadata();
             siPreservation.setUoiid(cdisMap.getDamsUoiid()); 
-            siPreservation.setAssetSourceDate(this.assetDate);
             siPreservation.setPreservationIdNumber(this.vendorChecksum);
             siPreservation.insertRow(cdis.damsConn);
             
@@ -187,7 +190,6 @@ public class LinkToDAMS {
             try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
         }
-        
     }
 
     
@@ -197,8 +199,7 @@ public class LinkToDAMS {
         ResultSet rs = null;
   
         String sql = "SELECT    a.base_path_staging, a.file_path_ending, " +
-                    "           b.vendor_checksum, " +
-                    "           TO_CHAR(b.media_file_date,'YYYY-MM')  " + 
+                    "           b.vendor_checksum " +
                     "FROM       vfcu_md5_file a, " +
                     "           vfcu_media_file b " +
                     "WHERE      a.vfcu_md5_file_id = b.vfcu_md5_file_id " +

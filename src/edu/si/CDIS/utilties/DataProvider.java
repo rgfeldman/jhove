@@ -14,7 +14,7 @@ import java.sql.Statement;
 public class DataProvider {
 	
 	
-	public static Connection getConnection(String driver, String url, String user, String pass) throws Exception {
+	public static Connection establishConnection(String driver, String url, String user, String pass) throws Exception {
 		
 		Connection conn = null;
 

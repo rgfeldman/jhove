@@ -86,7 +86,7 @@ public class LinkCollections  {
                 
                 CDISMap cdisMap = new CDISMap();
                 
-                cdisMap.setUoiid(key);
+                cdisMap.setDamsUoiid(key);
                 
                 if (sql.contains("?DAMSfileName?")) {
                     cdisMap.setFileName(neverLinkedDamsRendtion.get(key));
