@@ -7,7 +7,6 @@ package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.utilties.DataProvider;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -51,7 +50,7 @@ public class MediaXrefs {
         Description:    calculates and populates the isPrimary member variable
         RFeldman 3/2015
     */
-    public void populateIsPrimary(Integer ObjectID, Connection cisConn) {
+    public void populateIsPrimary(Integer ObjectID) {
         //Now that we have the rank, need to set the primary flag
         
         ResultSet rs = null;
@@ -72,7 +71,7 @@ public class MediaXrefs {
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
              try {
-		stmt = cisConn.prepareStatement(sql);
+		stmt = CDIS.getCisConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
                 
                 if (rs.next()) {
@@ -140,7 +139,7 @@ public class MediaXrefs {
     
     }
     
-    public boolean insertNewRecord(Connection cisConn, Integer mediaMasterId, Integer objectId) {
+    public boolean insertNewRecord(Integer mediaMasterId, Integer objectId) {
      
         Boolean inserted;
         
@@ -163,7 +162,7 @@ public class MediaXrefs {
         
         logger.log(Level.FINER, "SQL: {0}", sql);
    
-        inserted = DataProvider.executeInsert(cisConn, sql);     
+        inserted = DataProvider.executeInsert(CDIS.getCisConn(), sql);     
                 
         return inserted;
                 

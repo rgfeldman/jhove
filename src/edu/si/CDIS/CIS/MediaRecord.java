@@ -5,8 +5,6 @@
  */
 package edu.si.CDIS.CIS;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.text.SimpleDateFormat;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
@@ -29,16 +27,12 @@ public class MediaRecord {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Connection damsConn;
-    Connection cisConn;
-    
-    
-    private boolean formatNewRenditionNumber (CDIS cdis, String damsImageFileName, MediaRenditions mediaRendition) {
+    private boolean formatNewRenditionNumber ( String damsImageFileName, MediaRenditions mediaRendition) {
         
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
         
-        String tmsDelimiter = cdis.properties.getProperty("tmsDelimiter");
-        String damsDelimiter = cdis.properties.getProperty("damsDelimiter");
+        String tmsDelimiter = CDIS.getProperty("tmsDelimiter");
+        String damsDelimiter = CDIS.getProperty("damsDelimiter");
         
         // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
         if (tmsDelimiter.equals (damsDelimiter) ) {
@@ -54,11 +48,8 @@ public class MediaRecord {
         
     }
     
-    public boolean create (CDIS cdis, SiAssetMetaData siAsst, MediaRenditions mediaRendition, TMSObject tmsObject) {
+    public boolean create (SiAssetMetaData siAsst, MediaRenditions mediaRendition, TMSObject tmsObject) {
  
-        this.cisConn = cdis.cisConn;    
-        this.damsConn = cdis.damsConn;
-        
         boolean objectIdPopulated = false;
         boolean returnVal;
         int updateCount = 0;
@@ -69,7 +60,7 @@ public class MediaRecord {
         //Get the rendition name, and the dimensions
         // if the barcode is set, use the name to get the barcode info,
         //else use the name to get rendition name with the rendition   
-        String damsImageFileName = mediaFiles.populateFromDams(siAsst.getUoiid(), damsConn);
+        String damsImageFileName = mediaFiles.populateFromDams(siAsst.getUoiid());
         
         if (damsImageFileName.isEmpty()) {
             logger.log(Level.FINER, "unable to retrieve media file, returning");
@@ -92,21 +83,21 @@ public class MediaRecord {
         // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
         // and the objectID is populated by an alternate method
         
-        if (Integer.parseInt(cdis.properties.getProperty("assignToObjectID")) > 0) {
-            tmsObject.setObjectID (Integer.parseInt(cdis.properties.getProperty("assignToObjectID")));
+        if (Integer.parseInt(CDIS.getProperty("assignToObjectID")) > 0) {
+            tmsObject.setObjectID (Integer.parseInt(CDIS.getProperty("assignToObjectID")));
             objectIdPopulated = true;
-            formatNewRenditionNumber (cdis, extensionlessFileName, mediaRendition);
+            formatNewRenditionNumber (extensionlessFileName, mediaRendition);
             logger.log(Level.FINER, "Set object to ObjectID");
         }
                 
         if (! objectIdPopulated) {
-            if (cdis.properties.getProperty("mapFileNameToBarcode").equals("true")) {
-                objectIdPopulated = tmsObject.mapFileNameToBarcode(extensionlessFileName, cisConn);
+            if (CDIS.getProperty("mapFileNameToBarcode").equals("true")) {
+                objectIdPopulated = tmsObject.mapFileNameToBarcode(extensionlessFileName);
                 
                 if (objectIdPopulated) {
                 
                     // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
-                    if (cdis.properties.getProperty("appendTimeToNumber").equals("true"))  {
+                    if (CDIS.getProperty("appendTimeToNumber").equals("true"))  {
                         DateFormat df = new SimpleDateFormat("kkmmss");
                         mediaRendition.setRenditionNumber(tmsObject.getObjectID() + "_" + String.format("%03d", mediaXrefs.getRank()) + "_" + df.format(new Date()));
                     }
@@ -118,20 +109,20 @@ public class MediaRecord {
             }
         }
         if (! objectIdPopulated) {
-            if (cdis.properties.getProperty("mapFileNameToObjectNumber").equals("true")) {
+            if (CDIS.getProperty("mapFileNameToObjectNumber").equals("true")) {
             
-                objectIdPopulated = tmsObject.mapFileNameToObjectNumber(extensionlessFileName, cdis);
+                objectIdPopulated = tmsObject.mapFileNameToObjectNumber(extensionlessFileName);
                 if (objectIdPopulated) {
-                    formatNewRenditionNumber (cdis, extensionlessFileName, mediaRendition);
+                    formatNewRenditionNumber (extensionlessFileName, mediaRendition);
                 }
  
             }
         }
         
         if (! objectIdPopulated) {
-            if (cdis.properties.getProperty("mapFileNameToObjectID").equals("true")) {
+            if (CDIS.getProperty("mapFileNameToObjectID").equals("true")) {
                
-                objectIdPopulated = tmsObject.mapFileNameToObjectID(damsImageFileName, cisConn);
+                objectIdPopulated = tmsObject.mapFileNameToObjectID(damsImageFileName);
                 if (objectIdPopulated) {
                     mediaRendition.setRenditionNumber(extensionlessFileName); 
                 }
@@ -148,21 +139,17 @@ public class MediaRecord {
         }
         
         // Set the primaryRenditionFlag
-        mediaXrefs.populateIsPrimary(tmsObject.getObjectID(), cisConn);
+        mediaXrefs.populateIsPrimary(tmsObject.getObjectID());
         
         logger.log(Level.FINER, "about to create TMS media Record:");
         logger.log(Level.FINER, "ObjectID: " + tmsObject.getObjectID());
         logger.log(Level.FINER, "RenditionNumber: {0}", mediaRendition.getRenditionNumber());
         logger.log(Level.FINER, "Rank: " + mediaXrefs.getRank());
-        //logger.log(Level.FINER, "PixelH: " + mediaFiles.getPixelH());
-        //logger.log(Level.FINER, "PixelW: " + mediaFiles.getPixelW());
-        logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getPrimary()); 
-        //logger.log(Level.FINER, "IDSPath: " + cdis.properties.getProperty("IDSPathId")); 
-        //logger.log(Level.FINER, "PDFPath: " + cdis.properties.getProperty("PDFPathId")); 
+        logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getPrimary());  
       
         // Insert into the MediaMaster table
         MediaMaster mediaMaster = new MediaMaster();
-        returnVal = mediaMaster.insertNewRecord(cisConn);
+        returnVal = mediaMaster.insertNewRecord();
         
         if (! returnVal) {
            logger.log(Level.FINER, "ERROR: MediaMaster table creation failed, returning");
@@ -170,35 +157,35 @@ public class MediaRecord {
         }
         
         // Insert into MediaRenditions
-        returnVal = mediaRendition.insertNewRecord(cdis, mediaMaster.getMediaMasterId());
+        returnVal = mediaRendition.insertNewRecord(mediaMaster.getMediaMasterId());
         if (! returnVal) {
            logger.log(Level.FINER, "ERROR: MediaRendition table creation failed, returning");
            return false;
         }
         
         // Update mediaMaster with the renditionIds
-        updateCount = mediaMaster.setRenditionIds(cisConn, mediaRendition.getRenditionId() );
+        updateCount = mediaMaster.setRenditionIds(mediaRendition.getRenditionId() );
         if (updateCount != 1) {
             logger.log(Level.FINER, "ERROR: MediaMaster table not updated correctly, returning");
             return false;
         }
         
         // Insert into MediaFiles
-        returnVal = mediaFiles.insertNewRecord(cdis, siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionId(), fileType );
+        returnVal = mediaFiles.insertNewRecord(siAsst.getOwningUnitUniqueName(), mediaRendition.getRenditionId(), fileType );
         if (! returnVal) {
            logger.log(Level.FINER, "ERROR: MediaFiles table creation failed, returning");
            return false;
         }
         
         //Update mediaRendition with the fileId
-        updateCount = mediaRendition.setFileId(cisConn, mediaFiles.getFileId());
+        updateCount = mediaRendition.setFileId(mediaFiles.getFileId());
         if (updateCount != 1) {
             logger.log(Level.FINER, "ERROR: MediaRendition table not updated correctly, returning");
             return false;
         }
                 
         // Insert into MediaXrefs
-        returnVal = mediaXrefs.insertNewRecord(cisConn, mediaMaster.getMediaMasterId(), tmsObject.getObjectID() );
+        returnVal = mediaXrefs.insertNewRecord(mediaMaster.getMediaMasterId(), tmsObject.getObjectID() );
         if (! returnVal) {
            logger.log(Level.FINER, "ERROR: MediaXref table creation failed, returning");
            return false;

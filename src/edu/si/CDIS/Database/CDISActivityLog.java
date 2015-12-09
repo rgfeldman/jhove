@@ -6,7 +6,6 @@
 package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -36,7 +35,7 @@ public class CDISActivityLog {
     }
     
      
-    public boolean insertActivity (Connection damsConn) {
+    public boolean insertActivity () {
         
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
@@ -54,7 +53,7 @@ public class CDISActivityLog {
         try {
             logger.log(Level.FINER, "SQL: " + sql );
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql); 
             
              if (rowsUpdated != 1) {

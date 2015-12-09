@@ -1,7 +1,6 @@
 
 package edu.si.CDIS;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -23,7 +22,6 @@ public class MetaData {
 
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
 
-    Connection damsConn;
     String siUnit;
     String sqlUpdate;
     HashMap <String,String> metaDataValuesForDams; 
@@ -42,29 +40,26 @@ public class MetaData {
         Description:    The main driver for the sync operation Type 
         RFeldman 2/2015
     */
-    public void sync(CDIS cdis) {
-
-         //assign the database connections for later use
-        this.damsConn = cdis.damsConn;
+    public void sync() {
         
         //obtain properties values from the config file
-        this.siUnit = cdis.properties.getProperty("siUnit");
+        this.siUnit = CDIS.getProperty("siUnit");
 
         // initialize uoiid list for sync
         damsUoiidsToSync = new ArrayList<>();
         // Grab all the records that have NEVER EVER been synced by CDIS yet
-        getNeverSyncedRendition(cdis);
+        getNeverSyncedRendition();
 
         SiAssetMetaData siAsst = new SiAssetMetaData ();        
         
         //Populate column definitions and length array
-        siAsst.populateMetaDataDBLengths (damsConn);
+        siAsst.populateMetaDataDBLengths ();
         
         //Grab all the records that have been synced in the past, but have been updated      
         //sourceUpdatedCDISIdLst = getCISUpdatedRendition();
 
         if (!damsUoiidsToSync.isEmpty()) {
-            processRenditionList(siAsst, cdis.xmlSelectHash);
+            processRenditionList(siAsst);
         }
 
     }
@@ -81,7 +76,7 @@ public class MetaData {
         
         try {
  
-            pStmt = damsConn.prepareStatement(getSqlUpdate());
+            pStmt = CDIS.getDamsConn().prepareStatement(getSqlUpdate());
             recordsUpdated = pStmt.executeUpdate(getSqlUpdate());
             
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
@@ -101,7 +96,7 @@ public class MetaData {
         Description:    get Renditions by CDIS_ID that have never been synced 
         RFeldman 2/2015
     */
-    private void getNeverSyncedRendition(CDIS cdis) {
+    private void getNeverSyncedRendition() {
 
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -109,9 +104,9 @@ public class MetaData {
         String sql = null;
 
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : cdis.xmlSelectHash.keySet()) {     
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
             
-            sqlTypeArr = cdis.xmlSelectHash.get(key);
+            sqlTypeArr =  CDIS.getXmlSelectHash().get(key);
             
             if (sqlTypeArr[0].equals("getUnsyncedRecords")) {   
                 sql = key;    
@@ -122,7 +117,7 @@ public class MetaData {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             while (rs.next()) {
@@ -145,7 +140,7 @@ public class MetaData {
                         and determines how to update the metadata on each one
         RFeldman 2/2015
     */
-    private void processRenditionList(SiAssetMetaData siAsst, HashMap <String,String[]> SelectHash) {
+    private void processRenditionList(SiAssetMetaData siAsst) {
 
         // for each UOI_ID that was identified for sync
         for (Iterator<String> iter = damsUoiidsToSync.iterator(); iter.hasNext();) {
@@ -158,7 +153,7 @@ public class MetaData {
                 siAsst.setUoiid (cdisMap.getDamsUoiid());
                 
                 // execute the SQL statment to obtain the metadata and populate variables.  They key value is RenditionID
-                mapData(SelectHash, cdisMap);
+                mapData(cdisMap);
                 
                 //generate the update statement from the variables obtained in the mapData
                 generateUpdate(siAsst);
@@ -176,10 +171,10 @@ public class MetaData {
                 
                 Uois uois = new Uois();
                 uois.setUoiid(cdisMap.getDamsUoiid());
-                updateCount = uois.updateMetaDataStateDate(damsConn);
+                updateCount = uois.updateMetaDataStateDate();
                 if (updateCount < 1) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "MSD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid(), damsConn);   
+                    errorLog.capture(cdisMap, "MSD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
                     continue; 
                 }
                 
@@ -187,16 +182,16 @@ public class MetaData {
                 CDISActivityLog cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                 cdisActivity.setCdisStatusCd("MS");
-                boolean activityLogged = cdisActivity.insertActivity(damsConn);
+                boolean activityLogged = cdisActivity.insertActivity();
                 if (!activityLogged) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CAL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid(), damsConn);   
+                    errorLog.capture(cdisMap, "CAL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
                     continue;
                 }
                         
             } catch (Exception e) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "MDU", "Error, unable to update Dams with new Metadata " + cdisMap.getDamsUoiid(), damsConn);   
+                errorLog.capture(cdisMap, "MDU", "Error, unable to update Dams with new Metadata " + cdisMap.getDamsUoiid());   
             }
         }
  
@@ -268,7 +263,7 @@ public class MetaData {
         RFeldman 2/2015
     */
 
-    private void mapData(HashMap <String,String[]> metaDataSelectHash, CDISMap cdisMap) {
+    private void mapData(CDISMap cdisMap) {
         ResultSet rs = null;
         String sql;
         String sqlTypeArr[];
@@ -281,11 +276,11 @@ public class MetaData {
         logger.log(Level.ALL, "Mapping Data for metadata");
         
         //for each select statement found in the xml 
-        for (String key : metaDataSelectHash.keySet()) {
+        for (String key : CDIS.getXmlSelectHash().keySet()) {
 
             // Get the sql value from the hasharray
             sql = key;
-            sqlTypeArr = metaDataSelectHash.get(key);
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             sqlType = sqlTypeArr[0];
             delimiter = sqlTypeArr[1];
             
@@ -296,7 +291,7 @@ public class MetaData {
             
                 // populate the metadata object with the values found from the database query
             
-                pStmt = damsConn.prepareStatement(sql);
+                pStmt = CDIS.getDamsConn().prepareStatement(sql);
                 rs = pStmt.executeQuery();
             
                 this.metaDataValuesForDams = new HashMap <String, String>();

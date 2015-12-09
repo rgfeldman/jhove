@@ -10,7 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
@@ -49,7 +48,7 @@ public class SiPreservationMetadata {
         this.uoiid = uoiid;
     }
     
-    public boolean insertRow (Connection damsConn) {
+    public boolean insertRow () {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -67,7 +66,7 @@ public class SiPreservationMetadata {
         logger.log(Level.FINER, "!SQL: " + sql);
          
         try {
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {
@@ -75,7 +74,7 @@ public class SiPreservationMetadata {
             }
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                logger.log(Level.FINER, "Error: unable to Insert Preservation data", e );
                 return false;
         
         }finally {

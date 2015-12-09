@@ -9,7 +9,6 @@ import edu.si.CDIS.CDIS;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,8 +28,6 @@ import edu.si.CDIS.utilties.ErrorLog;
 public class SendToHotFolder {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    Connection damsConn;
-    Connection cisConn;
     String cisSourceDB;
     
     LinkedHashMap <String,String> masterMediaIds; 
@@ -49,7 +46,7 @@ public class SendToHotFolder {
     
     
     
-    private void processList (CDIS cdis) {
+    private void processList () {
                
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
         Iterator<String> it = masterMediaIds.keySet().iterator();
@@ -59,7 +56,7 @@ public class SendToHotFolder {
             String uniqueMediaId = it.next();
             
             //Make sure the last transaction is committed
-            try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
             logger.log(Level.FINEST, "Processing for uniqueMediaId: " + uniqueMediaId);
                 
@@ -68,7 +65,7 @@ public class SendToHotFolder {
             cdisMap.setVfcuMediaFileId(Integer.parseInt(uniqueMediaId));
             
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
-            boolean mapEntryCreated = cdisMap.createRecord(cdis);
+            boolean mapEntryCreated = cdisMap.createRecord();
                     
             if (!mapEntryCreated) {
                 logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
@@ -82,14 +79,14 @@ public class SendToHotFolder {
             CDISActivityLog cdisActivity = new CDISActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
             cdisActivity.setCdisStatusCd("MIC");    
-            boolean activityLogged = cdisActivity.insertActivity(damsConn);
+            boolean activityLogged = cdisActivity.insertActivity();
             if (!activityLogged) {
                 logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                  //Remove from the list of renditions to ingest, we dont want to bring this file over without an activity_log entry
                 it.remove();
                 
                 //rollback the database to remove the map Entry
-                try { if ( damsConn != null)  damsConn.rollback(); } catch (Exception e) { e.printStackTrace(); }
+                try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().rollback(); } catch (Exception e) { e.printStackTrace(); }
                 
                 continue;
             }
@@ -97,7 +94,7 @@ public class SendToHotFolder {
             StagedFile stagedFile = new StagedFile();
             // Get the child record
             String childMediaId = null;
-            childMediaId = stagedFile.retrieveSubFileId(damsConn, uniqueMediaId);
+            childMediaId = stagedFile.retrieveSubFileId(uniqueMediaId);
 
             cdisMap = new CDISMap();
             String childFileName = FilenameUtils.getBaseName(masterMediaIds.get(uniqueMediaId)) + ".tif";
@@ -105,7 +102,7 @@ public class SendToHotFolder {
             cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
             
             // put the entry into the CDIS_MAP table
-            mapEntryCreated = cdisMap.createRecord(cdis);
+            mapEntryCreated = cdisMap.createRecord();
             
              if (!mapEntryCreated) {
                 logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
@@ -119,14 +116,14 @@ public class SendToHotFolder {
             cdisActivity = new CDISActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
             cdisActivity.setCdisStatusCd("MIC");    
-            activityLogged = cdisActivity.insertActivity(damsConn);
+            activityLogged = cdisActivity.insertActivity();
             if (!activityLogged) {
                 logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                  //Remove from the list of renditions to ingest, we dont want to bring this file over without an activity_log entry
                 it.remove();
                 
                 //rollback the database to remove the map Entry
-                try { if ( damsConn != null)  damsConn.rollback(); } catch (Exception e) { e.printStackTrace(); }
+                try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().rollback(); } catch (Exception e) { e.printStackTrace(); }
                 
                 continue;
             }
@@ -146,7 +143,7 @@ public class SendToHotFolder {
 
         while (!lastHotFolder) {
         
-            hotFolderBaseName = cdis.properties.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
+            hotFolderBaseName = CDIS.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
             hotFolderBase = new File (hotFolderBaseName);
             
             
@@ -216,39 +213,39 @@ public class SendToHotFolder {
             try {
                 
                 CDISMap cdisMap = new CDISMap();
-                cdisMap.setBatchNumber(cdis.batchNumber);
+                cdisMap.setBatchNumber(CDIS.getBatchNumber());
                 StagedFile stagedFile = new StagedFile();
  
                 String childMediaId = null;
             
-                try { if ( damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+                try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 
                 //get the subFile ID and populate FileName from the masterID first
-                childMediaId = stagedFile.retrieveSubFileId(damsConn, masterMediaId);
+                childMediaId = stagedFile.retrieveSubFileId(masterMediaId);
                 
                 //Get the file path for the vfcu_id
-                boolean infoPopulated = stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(childMediaId));
+                boolean infoPopulated = stagedFile.populateNamePathFromId(Integer.parseInt(childMediaId));
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FCF", "Error, unable to populate name and path from database for subfile ", damsConn);
+                    errorLog.capture(cdisMap, "FCF", "Error, unable to populate name and path from database for subfile ");
                     continue;
                 }
                 
                 cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
-                cdisMap.populateIdFromVfcuId(damsConn);
+                cdisMap.populateIdFromVfcuId();
                  
                 //Find the image and move/copy to hotfolder
                 boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName);   
                 if (! fileCopied) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FCF", "Error, unable to copy file to subfile: " + stagedFile.getFileName(), damsConn);
+                    errorLog.capture(cdisMap, "FCF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
                     continue;
                 }
                 
                 CDISActivityLog cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                 cdisActivity.setCdisStatusCd("FCS");
-                boolean activityLogged = cdisActivity.insertActivity(damsConn);
+                boolean activityLogged = cdisActivity.insertActivity();
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
@@ -256,27 +253,27 @@ public class SendToHotFolder {
                 
                 
                 //now send the master file to the hotfolder
-                infoPopulated = stagedFile.populateNamePathFromId(cdis.damsConn, Integer.parseInt(masterMediaId));
+                infoPopulated = stagedFile.populateNamePathFromId(Integer.parseInt(masterMediaId));
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FMF", "Error, unable to populate name and path from database for master file ", damsConn);
+                    errorLog.capture(cdisMap, "FMF", "Error, unable to populate name and path from database for master file ");
                     continue;
                 }
                
                 //Get the CDIS_ID 
                 cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
-                cdisMap.populateIdFromVfcuId(damsConn);
+                cdisMap.populateIdFromVfcuId();
                 boolean fileMoved = stagedFile.moveToMaster(hotFolderBaseName);  
                 if (! fileMoved) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FMF", "Error, unable to move file to master: " + stagedFile.getFileName(), damsConn);
+                    errorLog.capture(cdisMap, "FMF", "Error, unable to move file to master: " + stagedFile.getFileName());
                     continue;
                 }
                 
                 cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());   
                 cdisActivity.setCdisStatusCd("FMM");
-                activityLogged = cdisActivity.insertActivity(damsConn);
+                activityLogged = cdisActivity.insertActivity();
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
@@ -289,7 +286,7 @@ public class SendToHotFolder {
             } finally {
                 
                 //make sure we commit the final time through the loop
-                try { if (damsConn != null)  damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+                try { if (CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 
             }
         }
@@ -309,7 +306,7 @@ public class SendToHotFolder {
         Description:    Adds to the list of media IDs that need to be integrated into DAMS
         RFeldman 3/2015
     */
-    private Integer populateNewMediaList (CDIS cdis) {
+    private Integer populateNewMediaList () {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -318,9 +315,9 @@ public class SendToHotFolder {
         String sql = null;
         String sqlTypeArr[];
         
-        for (String key : cdis.xmlSelectHash.keySet()) {
+        for (String key : CDIS.getXmlSelectHash().keySet()) {
             
-            sqlTypeArr = cdis.xmlSelectHash.get(key);
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
               
             if (sqlTypeArr[0].equals("idListToSend")) {   
                 sql = key;      
@@ -329,17 +326,17 @@ public class SendToHotFolder {
         
         if (sql != null) {           
         
-            sql = sql + "AND ROWNUM < " + cdis.properties.getProperty("maxNumFiles") + " + 1";
+            sql = sql + "AND ROWNUM < " + CDIS.getProperty("maxNumFiles") + " + 1";
             
             logger.log(Level.FINER, "SQL: {0}", sql);
             
             try {
                     switch (cisSourceDB) {
                         case "none" :
-                             stmt = damsConn.prepareStatement(sql);
+                             stmt = CDIS.getDamsConn().prepareStatement(sql);
                              break;
                         case "TMSDB" :
-                            stmt = cisConn.prepareStatement(sql);
+                            stmt = CDIS.getCisConn().prepareStatement(sql);
                             break;
                             
                         default:     
@@ -374,19 +371,14 @@ public class SendToHotFolder {
         Description:    The main entrypoint or 'driver' for the ingestToDams operation Type
         RFeldman 3/2015
     */
-     public void ingest (CDIS cdis) {
+     public void ingest () {
                                                                                        
-        this.damsConn = cdis.damsConn;
-        this.cisSourceDB = cdis.properties.getProperty("cisSourceDB"); 
-         
-        if (! this.cisSourceDB.equals("none")) { 
-            this.cisConn = cdis.cisConn;
-        }
+        this.cisSourceDB = CDIS.getProperty("cisSourceDB"); 
   
         this.masterMediaIds = new LinkedHashMap<String, String>();
         
         // Get the list of new Media to add to DAMS
-        Integer numCisRenditions = populateNewMediaList (cdis);
+        Integer numCisRenditions = populateNewMediaList ();
         if  (! (numCisRenditions > 0 )) {
              logger.log(Level.FINER, "No Media Found to process in this batch.  Exiting");
              return;
@@ -394,7 +386,7 @@ public class SendToHotFolder {
         
         // Process each media item from list (move to workfolder/hotfolder)
         logger.log(Level.FINER, "Processing media List");
-        processList(cdis);
+        processList();
      }
      
     private void createReadyFile (String hotDirectoryName) {

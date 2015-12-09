@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.CDIS.DAMS.Database.Uois;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,7 +33,7 @@ public class LinkToDAMS {
     String pathEnding;
     
     
-    private void logIngestFailedFile (String filename, Connection damsConn) {
+    private void logIngestFailedFile (String filename) {
         logger.log(Level.FINER, "FailedFileName found: " + filename);
         
         //getCdisMapID for filename/status so we can log in table
@@ -42,14 +41,14 @@ public class LinkToDAMS {
         
         CDISMap cdisMap = new CDISMap();
         cdisMap.setFileName(filename);
-        cdisMap.populateIdForNameNullUoiid(damsConn);
+        cdisMap.populateIdForNameNullUoiid();
                 
         ErrorLog errorLog = new ErrorLog ();
-        errorLog.capture(cdisMap, "IPE", "Error, Record failed upon ingest", damsConn);         
+        errorLog.capture(cdisMap, "IPE", "Error, Record failed upon ingest");         
         
     }
     
-    private void checkForFailedFiles (CDIS cdis) {
+    private void checkForFailedFiles () {
         
         // look in all hot folder failed folders to check if there are files there, if there are, record them in error log
         boolean lastHotFolder = false;
@@ -57,7 +56,7 @@ public class LinkToDAMS {
         
         while (!lastHotFolder) {
         
-            String hotFolderBaseName = cdis.properties.getProperty("failedFolderArea") + "_" + hotFolderIncrement;
+            String hotFolderBaseName = CDIS.getProperty("failedFolderArea") + "_" + hotFolderIncrement;
             File hotFolderBase = new File (hotFolderBaseName);
          
             logger.log(Level.FINER, "hotFolderBaseName: " +  hotFolderBaseName);
@@ -75,7 +74,7 @@ public class LinkToDAMS {
                     String[] filenames = failedHotFolder.list();
                     
                     for (String filename : filenames) {
-                        logIngestFailedFile(filename, cdis.damsConn);
+                        logIngestFailedFile(filename);
                         numFailedFiles ++;
                     }
                     
@@ -111,7 +110,7 @@ public class LinkToDAMS {
     
     
     
-    public void link (CDIS cdis) {
+    public void link () {
         
         // now find all the unlinked images in DAMS (uoiid is null)
         CDISMap cdisMap = new CDISMap();
@@ -119,9 +118,9 @@ public class LinkToDAMS {
         HashMap<Integer, String> unlinkedDamsRecords;
         unlinkedDamsRecords = new HashMap<> ();
         
-        unlinkedDamsRecords = cdisMap.returnUnlinkedMediaInDams(cdis.damsConn);
+        unlinkedDamsRecords = cdisMap.returnUnlinkedMediaInDams();
                 
-        checkForFailedFiles(cdis);
+        checkForFailedFiles();
         
         // See if we can find the media in DAMS based on the filename and checksum combination
         for (Integer key : unlinkedDamsRecords.keySet()) {  
@@ -138,17 +137,17 @@ public class LinkToDAMS {
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             
             // populate the cdis vfcuId
-            boolean vfcuIdPopulated = cdisMap.populateVfcuId(cdis.damsConn);
+            boolean vfcuIdPopulated = cdisMap.populateVfcuId();
             if (! vfcuIdPopulated) {
                 logger.log(Level.FINER, "ERROR: unable to get vfcuId for map_id: " + cdisMap.getCdisMapId());
                 continue;
             }
             
             //with the vfcuId get the rest of the VFCU data including the paths and checksum info
-            retrieveVfcuData(cdis.damsConn, cdisMap.getVfcuMediaFileId());
+            retrieveVfcuData(cdisMap.getVfcuMediaFileId());
             
             //Get the uoiid for the name and checksum
-            boolean uoiidFound = uois.populateUoiidForNameChksum(cdis.damsConn, vendorChecksum);
+            boolean uoiidFound = uois.populateUoiidForNameChksum(vendorChecksum);
             if (!uoiidFound) {
                 logger.log(Level.FINER, "No matches in DAMS for filename/checksum " + uois.getName() );
                 continue;
@@ -156,7 +155,7 @@ public class LinkToDAMS {
             
             cdisMap.setDamsUoiid(uois.getUoiid());
             
-            boolean uoiidUpdated = cdisMap.updateUoiid(cdis.damsConn);
+            boolean uoiidUpdated = cdisMap.updateUoiid();
             if (!uoiidUpdated) {
                 logger.log(Level.FINER, "ERROR: unable to update UOIID in DAMS for uoiid: " + uois.getUoiid() );
                 continue;
@@ -170,9 +169,9 @@ public class LinkToDAMS {
                 stagedFile.setPathEnding(pathEnding);
                 stagedFile.setFileName(cdisMap.getFileName());
             
-                stagedFile.moveToEmu(cdis.properties.getProperty("emuPickupLocation"));
+                stagedFile.moveToEmu(CDIS.getProperty("emuPickupLocation"));
                 activityLog.setCdisStatusCd("FME");
-                activityLog.insertActivity(cdis.damsConn);
+                activityLog.insertActivity();
             }
             
             // Create an EMu_ready.txt file in the EMu pick up directory.
@@ -181,18 +180,18 @@ public class LinkToDAMS {
             SiPreservationMetadata siPreservation = new SiPreservationMetadata();
             siPreservation.setUoiid(cdisMap.getDamsUoiid()); 
             siPreservation.setPreservationIdNumber(this.vendorChecksum);
-            siPreservation.insertRow(cdis.damsConn);
+            siPreservation.insertRow();
             
             activityLog.setCdisStatusCd("LDC");
-            activityLog.insertActivity(cdis.damsConn);
+            activityLog.insertActivity();
             
-            try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
         }
     }
 
     
-    private boolean retrieveVfcuData(Connection damsConn, Integer vfcuMediaFileId) {
+    private boolean retrieveVfcuData(Integer vfcuMediaFileId) {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -207,7 +206,7 @@ public class LinkToDAMS {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {

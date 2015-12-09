@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import java.util.HashMap;
 
 public class CDISMap {
@@ -87,7 +86,7 @@ public class CDISMap {
     }
     
    
-    public boolean createRecord(CDIS cdis) {
+    public boolean createRecord() {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -97,7 +96,7 @@ public class CDISMap {
         
          try {
             
-            pStmt = cdis.damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
 
             if (rs != null && rs.next()) {
@@ -124,16 +123,16 @@ public class CDISMap {
                             "error_ind ) " +
                         "VALUES (" +
                             getCdisMapId() + ", " +
-                            "'" + cdis.properties.getProperty("siHoldingUnit") + "', " +
+                            "'" + CDIS.getProperty("siHoldingUnit") + "', " +
                             "'" + getFileName() + "', " +
-                            cdis.getBatchNumber() + ", " +
+                            CDIS.getBatchNumber() + ", " +
                             getVfcuMediaFileId() + ", " +
                             "'N' ," +
                             "'N')";
                  
             logger.log(Level.FINEST,"SQL! " + sql);  
         
-            pStmt = cdis.damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {
@@ -153,7 +152,7 @@ public class CDISMap {
     }
     
     
-    public boolean populateIdForNameNullUoiid (Connection damsConn) {
+    public boolean populateIdForNameNullUoiid () {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
@@ -166,7 +165,7 @@ public class CDISMap {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
@@ -185,7 +184,7 @@ public class CDISMap {
     }
     
     
-    public boolean populateIdFromVfcuId (Connection damsConn) {
+    public boolean populateIdFromVfcuId () {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
@@ -196,7 +195,7 @@ public class CDISMap {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs.next()) {
@@ -220,7 +219,7 @@ public class CDISMap {
          
     }
     
-    public boolean populateIDForFileBatch (Connection damsConn) {
+    public boolean populateIDForFileBatch () {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
@@ -231,7 +230,7 @@ public class CDISMap {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
@@ -250,7 +249,7 @@ public class CDISMap {
         return true;
     }
     
-    public boolean populateMapInfo (Connection damsConn) {
+    public boolean populateMapInfo () {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
@@ -263,7 +262,7 @@ public class CDISMap {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
@@ -283,7 +282,7 @@ public class CDISMap {
         return true;
     }
     
-    public boolean populateVfcuId (Connection damsConn) {
+    public boolean populateVfcuId () {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
@@ -294,7 +293,7 @@ public class CDISMap {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
@@ -314,7 +313,7 @@ public class CDISMap {
     
     
     
-    public boolean updateCisUniqueMediaId(Connection damsConn) {
+    public boolean updateCisUniqueMediaId() {
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
@@ -326,7 +325,7 @@ public class CDISMap {
         
         try {
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {
@@ -344,7 +343,7 @@ public class CDISMap {
     }
     
     
-    public boolean updateUoiid(Connection damsConn) {
+    public boolean updateUoiid() {
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
@@ -356,7 +355,7 @@ public class CDISMap {
         
         try {
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {
@@ -373,7 +372,7 @@ public class CDISMap {
         return true;
     }
     
-    public boolean updateErrorInd (Connection damsConn) {
+    public boolean updateErrorInd () {
         
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
@@ -386,7 +385,7 @@ public class CDISMap {
         
         try {
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {
@@ -403,7 +402,7 @@ public class CDISMap {
         return true;
     }
     
-    public HashMap<Integer, String> returnUnlinkedMediaInDams (Connection dbConn) {
+    public HashMap<Integer, String> returnUnlinkedMediaInDams () {
         
         HashMap<Integer, String> unlinkedDamsRecords;
         unlinkedDamsRecords = new HashMap<> ();
@@ -426,7 +425,7 @@ public class CDISMap {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = dbConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             while (rs.next()) {

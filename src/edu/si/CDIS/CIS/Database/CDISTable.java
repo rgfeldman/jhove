@@ -6,7 +6,6 @@
 package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.Connection;
 import edu.si.CDIS.utilties.DataProvider;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -100,7 +99,7 @@ public class CDISTable {
         this.UOIID = UOIID;
     }
  
-    public boolean createRecord(CDISTable cdisTbl, Connection cisConn) {
+    public boolean createRecord(CDISTable cdisTbl) {
         
         Statement stmt = null;
         ResultSet rs = null;
@@ -116,7 +115,7 @@ public class CDISTable {
         logger.log(Level.FINEST,"SQL! " + sql);  
         
         try {
-            stmt = cisConn.createStatement();
+            stmt = CDIS.getCisConn().createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
             rs = stmt.getGeneratedKeys();
@@ -135,7 +134,7 @@ public class CDISTable {
     }
     
     // Update CDIS table to log this transaction
-    public int updateIDSSyncDate(Connection cisConn) {
+    public int updateIDSSyncDate() {
         
         int updateCount = 0;
         
@@ -145,13 +144,13 @@ public class CDISTable {
 
         logger.log(Level.FINEST,"SQL! " + sql);
 
-        updateCount = DataProvider.executeUpdate(cisConn, sql);
+        updateCount = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
 
         return (updateCount);
 
     }
     
-    public int updateThumbnailSyncDate(Connection cisConn) {
+    public int updateThumbnailSyncDate() {
         
         int updateCount = 0;
         
@@ -161,7 +160,7 @@ public class CDISTable {
 
         logger.log(Level.FINEST,"SQL! " + sql);
 
-        updateCount = DataProvider.executeUpdate(cisConn, sql);
+        updateCount = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
 
         return (updateCount);
 

@@ -8,7 +8,6 @@ package edu.si.CDIS.DAMS.Database;
 import edu.si.CDIS.CDIS;
 import java.sql.SQLException;
 import java.util.logging.Level;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Logger;
@@ -25,8 +24,6 @@ public class SiAssetMetaData {
     String uoiid;  
     
     public HashMap <String,Integer> metaDataDBLengths; 
-
-    Connection damsConn;
       
     public String getOwningUnitUniqueName() {
            return this.owningUnitUniqueName;
@@ -52,7 +49,7 @@ public class SiAssetMetaData {
         RFeldman 2/2015
     */
     
-    public int updateDAMSSourceSystemID (Connection damsConn, String uoiid, String sourceSystemId) {
+    public int updateDAMSSourceSystemID (String uoiid, String sourceSystemId) {
         int recordsUpdated = 0;
         PreparedStatement pStmt = null;
         
@@ -63,7 +60,7 @@ public class SiAssetMetaData {
         
         try {
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             recordsUpdated = pStmt.executeUpdate(sql);
             
         
@@ -79,7 +76,7 @@ public class SiAssetMetaData {
         
     }
     
-    public boolean populateMetaDataDBLengths (Connection damsConn) {
+    public boolean populateMetaDataDBLengths () {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         metaDataDBLengths = new HashMap<> (); 
@@ -94,7 +91,7 @@ public class SiAssetMetaData {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             while (rs != null && rs.next()) {
@@ -112,7 +109,7 @@ public class SiAssetMetaData {
         return true;
     }
     
-    public boolean populateOwningUnitUniqueName (Connection damsConn) {
+    public boolean populateOwningUnitUniqueName () {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -123,7 +120,7 @@ public class SiAssetMetaData {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
@@ -141,7 +138,7 @@ public class SiAssetMetaData {
         return true;
     }
     
-    public boolean updatePublicUse (Connection dbConn) {
+    public boolean updatePublicUse () {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;

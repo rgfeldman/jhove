@@ -79,7 +79,7 @@ public class MediaFiles {
         Description:    determines and populates the mediaFiles member variables from information in DAMS
         RFeldman 3/2015
     */
-    public String populateFromDams(String uoiid, Connection damsConn) {
+    public String populateFromDams(String uoiid) {
         
         String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + uoiid + "'";
         String imageName = null;
@@ -90,7 +90,7 @@ public class MediaFiles {
         PreparedStatement stmt = null;
         
         try {
-		stmt = damsConn.prepareStatement(sql);
+		stmt = CDIS.getDamsConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
@@ -114,7 +114,7 @@ public class MediaFiles {
     }   
   
     
-    public boolean insertNewRecord(CDIS cdis, String uan, Integer renditionId, String fileType) {
+    public boolean insertNewRecord(String uan, Integer renditionId, String fileType) {
         
         Integer mediaFormatId = null;
         Integer pathId = null;
@@ -126,14 +126,14 @@ public class MediaFiles {
         
          // Get variables from the properties list
         try {
-            mediaFormatId = Integer.parseInt (cdis.properties.getProperty("mediaFormatID"));
+            mediaFormatId = Integer.parseInt (CDIS.getProperty("mediaFormatID"));
             
             if (fileType.equalsIgnoreCase("PDF")) {
-                pathId = Integer.parseInt (cdis.properties.getProperty("PDFPathId"));
+                pathId = Integer.parseInt (CDIS.getProperty("PDFPathId"));
                 fileName = uan + ".pdf";
             }
             else {
-                pathId = Integer.parseInt (cdis.properties.getProperty("IDSPathId"));
+                pathId = Integer.parseInt (CDIS.getProperty("IDSPathId"));
                 fileName = uan;
             }
              
@@ -168,7 +168,7 @@ public class MediaFiles {
        logger.log(Level.FINER, "SQL: {0}", sql);
         
         try {
-            stmt = cdis.cisConn.createStatement();
+            stmt = CDIS.getCisConn().createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
             rs = stmt.getGeneratedKeys();
@@ -187,7 +187,7 @@ public class MediaFiles {
 
     }
     
-    public boolean updateFileNameAndPath (Connection tmsConn) {
+    public boolean updateFileNameAndPath () {
         
        int recordsUpdated = 0;
        PreparedStatement pStmt = null;
@@ -201,7 +201,7 @@ public class MediaFiles {
         
       try {
             
-            pStmt = tmsConn.prepareStatement(sql);
+            pStmt = CDIS.getCisConn().prepareStatement(sql);
             recordsUpdated = pStmt.executeUpdate(sql);
             
             logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);

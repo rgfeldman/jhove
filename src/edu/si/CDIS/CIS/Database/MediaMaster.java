@@ -9,7 +9,6 @@ import edu.si.CDIS.CDIS;
 import edu.si.CDIS.utilties.DataProvider;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,7 +27,7 @@ public class MediaMaster {
         return mediaMasterId;
     }
     
-    public boolean insertNewRecord(Connection cisConn) {
+    public boolean insertNewRecord() {
      
         Statement stmt = null;
         
@@ -50,7 +49,7 @@ public class MediaMaster {
         logger.log(Level.FINER, "SQL: {0}", sql);
         
         try {
-            stmt = cisConn.createStatement();
+            stmt = CDIS.getCisConn().createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
             ResultSet rs = stmt.getGeneratedKeys();
@@ -67,7 +66,7 @@ public class MediaMaster {
         return true;
     }
     
-    public int setRenditionIds(Connection cisConn, Integer renditionId) {
+    public int setRenditionIds(Integer renditionId) {
         
         int updateCount;
         
@@ -78,7 +77,7 @@ public class MediaMaster {
         
          logger.log(Level.FINER, "SQL: {0}", sql);
         
-        updateCount = DataProvider.executeUpdate(cisConn, sql);
+        updateCount = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
 
         return updateCount;
       

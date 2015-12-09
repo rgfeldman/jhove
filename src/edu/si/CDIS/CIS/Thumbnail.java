@@ -6,14 +6,10 @@
 package edu.si.CDIS.CIS;
 
 import java.sql.ResultSet;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.logging.Level;
@@ -33,8 +29,6 @@ public class Thumbnail {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     String damsImageNameLocation;
-    Connection damsConn;
-    Connection cisConn;
     String uoiid;
     String renditionNumber;
     int fileSize;
@@ -63,7 +57,7 @@ public class Thumbnail {
         logger.log(Level.FINEST,"SQL! " + sql);
         
         try {
-            stmt = damsConn.prepareStatement(sql);
+            stmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = stmt.executeQuery();
         
             if(rs.next()) {
@@ -90,11 +84,9 @@ public class Thumbnail {
         Description:    Finds the physical image and generates the thumbnail sized image 
         RFeldman 3/2015
     */
-    public boolean generate(Connection damsConn, Connection cisConn, String uoiid, Integer renditionId) {
+    public boolean generate(String uoiid, Integer renditionId) {
         
         this.uoiid = uoiid;
-        this.damsConn = damsConn;
-        this.cisConn = cisConn;
         
         InputStream is = null;
         String imageFile = null;
@@ -175,7 +167,7 @@ public class Thumbnail {
                 //update the thumbnail sync date in the CDIS table
                 CDISTable cdisTbl = new CDISTable();
                 cdisTbl.setRenditionId(renditionId);
-                cdisTbl.updateThumbnailSyncDate(cisConn);
+                cdisTbl.updateThumbnailSyncDate();
             }
             
         }
@@ -199,7 +191,7 @@ public class Thumbnail {
         //Input the binary stream into the update statement for the table...and execute
         try {
 											
-            stmt = cisConn.prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
+            stmt = CDIS.getCisConn().prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
                 " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionID =  ? ) ");
 			
             stmt.setBytes(1, this.bytes);
@@ -231,7 +223,7 @@ public class Thumbnail {
         Description:    Populate a list of thumnails that need to be generated/updated 
         RFeldman 3/2015
     */
-    private void populateRenditionsToUpdate (CDIS cdis) {
+    private void populateRenditionsToUpdate () {
         ResultSet rs = null;
         PreparedStatement stmt = null;
         String owning_unit_unique_name = null;
@@ -239,9 +231,9 @@ public class Thumbnail {
         String sql = null;
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : cdis.xmlSelectHash.keySet()) {     
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
             
-            sqlTypeArr = cdis.xmlSelectHash.get(key);
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
             if (sqlTypeArr[0].equals("retrieveRenditionIds")) {   
                 sql = key;    
@@ -251,7 +243,7 @@ public class Thumbnail {
                 
         try {
             
-            stmt = cisConn.prepareStatement(sql);                                
+            stmt = CDIS.getCisConn().prepareStatement(sql);                                
             rs = stmt.executeQuery();
         
             // For each record in the sql query, add it to the unlinked rendition List
@@ -279,19 +271,16 @@ public class Thumbnail {
         Description:    Thumbnail sync driver 
         RFeldman 3/2015
     */
-    public void sync (CDIS cdis) {
-        
-        this.cisConn = cdis.cisConn;
-        this.damsConn = cdis.damsConn;
+    public void sync () {
         
         this.thumbnailsToSync = new LinkedHashMap <Integer, String>();
         
         //Get a list of RenditionIDs that require syncing from the sql XML file
-        populateRenditionsToUpdate (cdis);
+        populateRenditionsToUpdate ();
         
         //create the thumbnail in TMS from those DAMS images 
         for (Integer key : thumbnailsToSync.keySet()) {
-             boolean blobUpdated = generate (damsConn, cisConn, thumbnailsToSync.get(key), key);
+             boolean blobUpdated = generate (thumbnailsToSync.get(key), key);
         }
         
     }

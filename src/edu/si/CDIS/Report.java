@@ -13,7 +13,6 @@ import java.util.Properties;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,7 +41,6 @@ import edu.si.CDIS.Database.CDISErrorCodeR;
 public class Report {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Connection damsConn;
     private Double rptDays;
     private String rptHours;
     ArrayList<Integer> completedIds;
@@ -73,7 +71,7 @@ public class Report {
         
         try {
                 
-		stmt = damsConn.prepareStatement(sql);
+		stmt = CDIS.getDamsConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
                     
                 while (rs.next()) {
@@ -120,7 +118,7 @@ public class Report {
         
         try {
                 
-		stmt = damsConn.prepareStatement(sql);
+		stmt = CDIS.getDamsConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
                     
                 while (rs.next()) {
@@ -158,7 +156,7 @@ public class Report {
         
         try {
                 
-		stmt = damsConn.prepareStatement(sql);
+		stmt = CDIS.getDamsConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
                     
                 while (rs.next()) {
@@ -207,7 +205,7 @@ public class Report {
         PreparedStatement stmt = null;
         
         try {
-		stmt = damsConn.prepareStatement(sql);
+		stmt = CDIS.getDamsConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
                     
                 while (rs.next()) {
@@ -315,7 +313,7 @@ public class Report {
                 CDISMap cdisMap = new CDISMap();
                 cdisMap.setCdisMapId(iter.next());
                        
-                boolean returnVal = cdisMap.populateMapInfo(damsConn);
+                boolean returnVal = cdisMap.populateMapInfo();
                 
                 if (! returnVal ) {
                     logger.log(Level.FINEST, "ERROR in obtaining map data for Report");
@@ -324,7 +322,7 @@ public class Report {
                 
                 SiAssetMetaData siAsst = new SiAssetMetaData();
                 siAsst.setUoiid(cdisMap.getDamsUoiid());
-                siAsst.populateOwningUnitUniqueName(damsConn);
+                siAsst.populateOwningUnitUniqueName();
                 
                 String listing = null;
                     
@@ -340,7 +338,7 @@ public class Report {
                         break;
                     case "failed":
                         CDISErrorCodeR cdisErrorCode = new CDISErrorCodeR();            
-                        returnVal = cdisErrorCode.populateDescription(damsConn, cdisMap.getCdisMapId() );
+                        returnVal = cdisErrorCode.populateDescription(cdisMap.getCdisMapId() );
                 
                         listing = "FileName: " + cdisMap.getFileName() + ",  CIS Media ID: " + cdisMap.getCisUniqueMediaId() + ",   Error: " + cdisErrorCode.getDescription() ; 
                         break;    
@@ -409,12 +407,10 @@ public class Report {
     }
     
     
-    public void generate (CDIS cdis) {
-        
-        this.damsConn = cdis.damsConn;
+    public void generate () {
         
         try {
-            this.rptHours = cdis.properties.getProperty("rptHours");
+            this.rptHours = CDIS.getProperty("rptHours");
             this.rptDays = Double.parseDouble(rptHours) / 24;
             
         } catch(Exception e) {
@@ -423,7 +419,7 @@ public class Report {
             this.rptHours = "24";
         }        
         
-        create(cdis.properties.getProperty("siHoldingUnit"));
+        create(CDIS.getProperty("siHoldingUnit"));
          
         //Get list of completed records (UOI_IDs) from the past increment
         // In progress should be collected first in case there are some currently in progress while the report is running
@@ -465,11 +461,11 @@ public class Report {
         //close the Document
         document.close();
         
-        if (cdis.properties.getProperty("emailReportTo") != null) { 
+        if (CDIS.getProperty("emailReportTo") != null) { 
             //send email to list
             logger.log(Level.FINEST, "Need To send Email Report");
             
-            send(cdis.properties.getProperty("siHoldingUnit"), cdis.properties.getProperty("emailReportTo") );
+            send(CDIS.getProperty("siHoldingUnit"), CDIS.getProperty("emailReportTo") );
         }
         
     }

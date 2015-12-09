@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
-import java.sql.Connection;
 
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.Thumbnail;
@@ -19,8 +18,6 @@ public class LinkCollections  {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Connection cisConn;
-    Connection damsConn;
     LinkedHashMap <String,String> neverLinkedDamsRendtion;   
     String cisSourceDB;
 
@@ -37,21 +34,19 @@ public class LinkCollections  {
         Description:    link to CIS operation specific code starts here
         RFeldman 2/2015
     */
-    public void linkToCIS (CDIS cdis) {
+    public void linkToCIS () {
         
         // establish connectivity, and other most important variables
-        this.damsConn = cdis.damsConn;
-        this.cisConn = cdis.cisConn;
-        this.cisSourceDB = cdis.properties.getProperty("cisSourceDB"); 
+        this.cisSourceDB = CDIS.getProperty("cisSourceDB"); 
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsRendtion = new LinkedHashMap <String, String>();
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
-        populateNeverLinkedDamsMedia (cdis);
+        populateNeverLinkedDamsMedia ();
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in the CIS
-        linkUANtoFilename (cdis);    
+        linkUANtoFilename ();    
         
     }
     
@@ -60,7 +55,7 @@ public class LinkCollections  {
         Description:    Connects the filename in TMS with the DAMS UAN
         RFeldman 4/2015
     */
-    private void linkUANtoFilename(CDIS cdis) {
+    private void linkUANtoFilename() {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -70,9 +65,9 @@ public class LinkCollections  {
         
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : cdis.xmlSelectHash.keySet()) {     
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
               
-            sqlTypeArr = cdis.xmlSelectHash.get(key);
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
             if (sqlTypeArr[0].equals("checkAgainstCIS")) {   
                 sql = key;    
@@ -97,10 +92,10 @@ public class LinkCollections  {
                               
                 switch (cisSourceDB) {
                         case "CDISDB" :
-                             stmt = damsConn.prepareStatement(currentIterationSql);
+                             stmt = CDIS.getDamsConn().prepareStatement(currentIterationSql);
                              break;
                         case "TMSDB" :
-                            stmt = cisConn.prepareStatement(currentIterationSql);
+                            stmt = CDIS.getCisConn().prepareStatement(currentIterationSql);
                             break;
                             
                         default:     
@@ -121,12 +116,12 @@ public class LinkCollections  {
                                                         
                         // update CDISMap table with uoiid or insert new record.  This can be used to link records that were not sent to ingest 
                         // by CDIS and therefore have no existing mapping record
-                        if (cdis.properties.getProperty("createCdisMapRecord").equals("true")) {
+                        if (CDIS.getProperty("createCdisMapRecord").equals("true")) {
                             // See if a map record exists for this CIS, if it does not then add it
-                            cdisMap.createRecord(cdis);
+                            cdisMap.createRecord();
                         }
                         else {
-                            boolean uoiidUpdated = cdisMap.updateUoiid(damsConn);
+                            boolean uoiidUpdated = cdisMap.updateUoiid();
         
                             if (! uoiidUpdated) {
                                 logger.log(Level.FINER,"ERROR: CDIS Map record not linked successfully! " + cdisMap.getDamsUoiid());
@@ -137,16 +132,16 @@ public class LinkCollections  {
                         
                         if (cisSourceDB.equals("TMSDB")) {
                             //Update the TMS blob. For TMS only 
-                            if (cdis.properties.getProperty("updateTMSThumbnail").equals("true") ) {
+                            if (CDIS.getProperty("updateTMSThumbnail").equals("true") ) {
                                 Thumbnail thumbnail = new Thumbnail();
-                                thumbnail.generate (damsConn, cisConn, cdisMap.getDamsUoiid(), Integer.parseInt(cdisMap.getCisUniqueMediaId()));
+                                thumbnail.generate (cdisMap.getDamsUoiid(), Integer.parseInt(cdisMap.getCisUniqueMediaId()));
                             }
                         
                             //This is TMS specific code. For TMS only
-                            if (cdis.properties.getProperty("setTMSForDamsFlag").equals("true") ) {
+                            if (CDIS.getProperty("setTMSForDamsFlag").equals("true") ) {
                                 MediaRenditions mediaRenditions = new MediaRenditions();
                                 mediaRenditions.setRenditionId(Integer.parseInt(cdisMap.getCisUniqueMediaId()));
-                                mediaRenditions.setForDamsTrue(cisConn);
+                                mediaRenditions.setForDamsTrue();
                             }
                         }
                         
@@ -154,7 +149,7 @@ public class LinkCollections  {
                         CDISActivityLog activityLog = new CDISActivityLog();
                         activityLog.setCdisMapId(cdisMap.getCdisMapId());
                         activityLog.setCdisStatusCd("LC");        
-                        boolean activityAdded = activityLog.insertActivity(damsConn);
+                        boolean activityAdded = activityLog.insertActivity();
                         if (! activityAdded) {
                             logger.log(Level.FINER,"ERROR: Activity not added successfully! " + cdisMap.getDamsUoiid());
                         }
@@ -163,8 +158,8 @@ public class LinkCollections  {
                         logger.log(Level.FINER,"ERROR: Catched error in processing for UOIID! " + cdisMap.getDamsUoiid(),e);
                     }
                     finally {
-                        try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); };
-                        try { if ( cdis.cisConn != null)  cdis.cisConn.commit(); } catch (Exception e) { e.printStackTrace(); };
+                        try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); };
+                        try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); };
                     }
                 }
                 
@@ -186,7 +181,7 @@ public class LinkCollections  {
                         with the Collection system (TMS)
         RFeldman 2/2015
     */
-    private void populateNeverLinkedDamsMedia (CDIS cdis) {
+    private void populateNeverLinkedDamsMedia () {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
@@ -194,9 +189,9 @@ public class LinkCollections  {
         String sql = null;
         
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : cdis.xmlSelectHash.keySet()) {     
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
             
-            sqlTypeArr = cdis.xmlSelectHash.get(key);
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
             if (sqlTypeArr[0].equals("retrieveDamsImages")) {   
                 sql = key;    
@@ -206,7 +201,7 @@ public class LinkCollections  {
                 
         try {
             
-            stmt = damsConn.prepareStatement(sql);                                
+            stmt = CDIS.getDamsConn().prepareStatement(sql);                                
             rs = stmt.executeQuery();
         
             // For each record in the sql query, add it to the unlinked rendition List

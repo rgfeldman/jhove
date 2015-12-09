@@ -37,7 +37,7 @@ public class Uois {
         this.uoiid = uoiid;
     }
     
-    public boolean populateName (Connection damsConn) {
+    public boolean populateName () {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -48,7 +48,7 @@ public class Uois {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
@@ -73,7 +73,7 @@ public class Uois {
         Description:    Update the Uois table with the MetaDataStateDate.  This will trigger IDS.
         RFeldman 2/2015
     */
-    public Integer updateMetaDataStateDate(Connection damsConn) {
+    public Integer updateMetaDataStateDate() {
         
         int recordsUpdated = 0;
         PreparedStatement pStmt = null;
@@ -88,7 +88,7 @@ public class Uois {
         
         try {
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             recordsUpdated = pStmt.executeUpdate(sql);
             
         
@@ -104,7 +104,7 @@ public class Uois {
 
     }
     
-    public boolean populateUoiidForNameChksum(Connection damsConn, String checksum) {
+    public boolean populateUoiidForNameChksum(String checksum) {
         
         PreparedStatement pStmt = null;
         ResultSet rs = null;
@@ -121,7 +121,7 @@ public class Uois {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {

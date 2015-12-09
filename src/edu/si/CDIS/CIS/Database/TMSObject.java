@@ -12,9 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
-
-
         
 public class TMSObject {
     
@@ -48,7 +45,7 @@ public class TMSObject {
         Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS Barcode
         RFeldman 2/2015
     */
-    public boolean mapFileNameToBarcode (String barcode, Connection cisConn) {
+    public boolean mapFileNameToBarcode (String barcode) {
     
         
         //Strip all characters in the barcode after the underscore to look up the label
@@ -69,7 +66,7 @@ public class TMSObject {
         PreparedStatement stmt = null;
         
         try {
-		stmt = cisConn.prepareStatement(sql);
+		stmt = CDIS.getCisConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
@@ -100,13 +97,10 @@ public class TMSObject {
         Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS ObjectID
         RFeldman 2/2015
     */
-    public boolean mapFileNameToObjectID(String extensionlessFileName, Connection cisConn) {
-        
-        Transform transform = new Transform();
+    public boolean mapFileNameToObjectID(String extensionlessFileName) {
         
         ResultSet rs = null;
         PreparedStatement stmt = null;
-        String objectIDRank;
         Integer objID;
         
         try {
@@ -126,7 +120,7 @@ public class TMSObject {
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
         try {
-            stmt = cisConn.prepareStatement(sql);
+            stmt = CDIS.getCisConn().prepareStatement(sql);
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -157,7 +151,7 @@ public class TMSObject {
         Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS ObjectNumber
         RFeldman 2/2015
     */
-    public boolean mapFileNameToObjectNumber (String damsImageFileName, CDIS cdis_new){
+    public boolean mapFileNameToObjectNumber (String damsImageFileName){
 
         String damsDelimiter;
         String tmsDelimiter;
@@ -166,10 +160,10 @@ public class TMSObject {
         
         try {
             // populate ObjectNumber using various formats specified in the config file
-            damsDelimiter = cdis_new.properties.getProperty("damsDelimiter");
-            tmsDelimiter = cdis_new.properties.getProperty("tmsDelimiter");
-            locateByLetterRange = cdis_new.properties.getProperty("locateByLetterRange");
-            imageObjectTrunc = Integer.parseInt(cdis_new.properties.getProperty("imageObjectTrunc"));
+            damsDelimiter = CDIS.getProperty("damsDelimiter");
+            tmsDelimiter = CDIS.getProperty("tmsDelimiter");
+            locateByLetterRange = CDIS.getProperty("locateByLetterRange");
+            imageObjectTrunc = Integer.parseInt(CDIS.getProperty("imageObjectTrunc"));
         } catch (Exception e) {
                 e.printStackTrace();
                 return false;
@@ -217,7 +211,7 @@ public class TMSObject {
                 logger.log(Level.FINEST,"SQL! " + sql);
         
         try {
-            stmt = cdis_new.cisConn.prepareStatement(sql);                                
+            stmt = CDIS.getCisConn().prepareStatement(sql);                                
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -225,7 +219,7 @@ public class TMSObject {
             }
             else {
                 if (locateByLetterRange.equals("true")) {
-                    locateObjectIDLetterComponent(cdis_new);
+                    locateObjectIDLetterComponent();
                 }
                 if (getObjectID() == 0) {
                     return false;
@@ -249,7 +243,7 @@ public class TMSObject {
         Description:    Finds, and sets the objectID based on the RenditionID 
         RFeldman 2/2015
     */
-    public void populateObjectIDByRenditionId (Integer renditionId, Connection cisConn) {
+    public void populateObjectIDByRenditionId (Integer renditionId) {
         
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -268,7 +262,7 @@ public class TMSObject {
         logger.log(Level.FINEST,"SQL! " + sql);
         
         try {
-            stmt = cisConn.prepareStatement(sql);                                
+            stmt = CDIS.getCisConn().prepareStatement(sql);                                
             rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -294,7 +288,7 @@ public class TMSObject {
                         (ex 2013_201_3c_001 -> 2013_201_3a-c OR 2013_201_3ac )
         RFeldman 2/2015
     */
-    private void locateObjectIDLetterComponent(CDIS cdis_new) {
+    private void locateObjectIDLetterComponent() {
 
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -328,7 +322,7 @@ public class TMSObject {
         logger.log(Level.FINEST,"SQL! " + sql);
         
         try {
-            stmt = cdis_new.cisConn.prepareStatement(sql);                                
+            stmt = CDIS.getCisConn().prepareStatement(sql);                                
             rs = stmt.executeQuery();
             
             if (rs.next()) {

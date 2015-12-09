@@ -7,7 +7,6 @@ package edu.si.CDIS.CIS;
 
 import edu.si.CDIS.utilties.DataProvider;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,10 +25,8 @@ import java.util.logging.Logger;
 
 // This is the main entrypoint for syncing the image file and image file path in TMS
 public class ImageFilePath {
-	private final static Logger logger = Logger.getLogger(CDIS.class.getName());
+    private final static Logger logger = Logger.getLogger(CDIS.class.getName());
 	
-    Connection cisConn;
-    Connection damsConn;
     int successfulUpdateCount;
   
     int idsPathId;
@@ -42,10 +39,8 @@ public class ImageFilePath {
     	
     	logger.log(Level.FINER, "ImageFilePath.sync()");
         //assign the database connections for later use
-        this.cisConn = cdis.cisConn;
-        this.damsConn = cdis.damsConn;
-        this.idsPathId = Integer.parseInt(cdis.properties.getProperty("IDSPathId"));
-        this.pdfPathId = Integer.parseInt(cdis.properties.getProperty("PDFPathId"));
+        this.idsPathId = Integer.parseInt(CDIS.getProperty("IDSPathId"));
+        this.pdfPathId = Integer.parseInt(CDIS.getProperty("PDFPathId"));
         
         ArrayList<Integer> RenditionIdToSyncList = new ArrayList<Integer>();
 
@@ -75,7 +70,7 @@ public class ImageFilePath {
         logger.log(Level.FINEST, "IDS syncPath Select: " + sql);
         
         try {
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getCisConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             while (rs.next()) {
@@ -102,7 +97,7 @@ public class ImageFilePath {
 
         try {
             // prepare the sql for obtaining info from CDIS
-            pStmt = this.cisConn.prepareStatement("SELECT dams_uoi_id "
+            pStmt = CDIS.getCisConn().prepareStatement("SELECT dams_uoi_id "
                     + "FROM cdis_map "
                     + "WHERE RenditionID = ? "
                     + "ORDER BY CDIS_ID");
@@ -124,7 +119,7 @@ public class ImageFilePath {
                 cdisMap.setCisUniqueMediaId(iter.next());       
                 pStmt.setString(1, cdisMap.getCisUniqueMediaId());
                    
-                rs = DataProvider.executeSelect(this.cisConn, pStmt);
+                rs = DataProvider.executeSelect(CDIS.getCisConn(), pStmt);
 
                 logger.log(Level.FINEST, "Getting information for CDIS_MAP_ID: " + cdisMap.getCisUniqueMediaId());
 
@@ -132,12 +127,12 @@ public class ImageFilePath {
                 if (rs.next()) {
                     SiAssetMetaData siAsst = new SiAssetMetaData();
                     siAsst.setUoiid(rs.getString(1));
-                    siAsst.populateOwningUnitUniqueName(damsConn);
+                    siAsst.populateOwningUnitUniqueName();
                 
                     // FileName from DAMS
                     Uois uois = new Uois();
                     uois.setUoiid(siAsst.getUoiid());
-                    uois.populateName(damsConn);
+                    uois.populateName();
                     
                     MediaFiles mediaFiles = new MediaFiles ();
                     mediaFiles.setRenditionId (cdisMap.getCisUniqueMediaId());
@@ -153,7 +148,7 @@ public class ImageFilePath {
                         mediaFiles.setPathId (this.idsPathId);
                     }
                     
-                    mediaFiles.updateFileNameAndPath(cisConn);
+                    mediaFiles.updateFileNameAndPath();
                             
                 }
                     

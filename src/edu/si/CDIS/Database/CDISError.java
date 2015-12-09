@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import edu.si.CDIS.Database.CDISMap;
 
 
@@ -21,7 +20,7 @@ import edu.si.CDIS.Database.CDISMap;
 public class CDISError {
      private final static Logger logger = Logger.getLogger(CDIS.class.getName());
      
-     public boolean insertError (Connection damsConn, Integer cdisMapId, String errorCd) {
+     public boolean insertError (Integer cdisMapId, String errorCd) {
         
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
@@ -40,7 +39,7 @@ public class CDISError {
             
             logger.log(Level.FINER, "SQL: " + sql );
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql); 
             
             if (rowsUpdated != 1) {

@@ -6,9 +6,6 @@
 package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.Database.CDISActivityLog;
-import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.utilties.ErrorLog;
 import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -59,7 +56,7 @@ public class StagedFile {
         this.pathEnding = pathEnding;
     }
     
-    public boolean populateNamePathFromId (Connection dbConn, Integer vfcuMediaFileId) {
+    public boolean populateNamePathFromId (Integer vfcuMediaFileId) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
@@ -72,7 +69,7 @@ public class StagedFile {
                    
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = dbConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs.next()) {
@@ -96,7 +93,7 @@ public class StagedFile {
         return true;
     }
     
-    public String retrieveSubFileId (Connection dbConn, String vfcuMasterMediaId) {
+    public String retrieveSubFileId (String vfcuMasterMediaId) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
@@ -117,7 +114,7 @@ public class StagedFile {
                    
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = dbConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs.next()) {

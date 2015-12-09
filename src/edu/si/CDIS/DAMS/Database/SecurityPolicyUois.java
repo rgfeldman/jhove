@@ -43,7 +43,7 @@ public class SecurityPolicyUois {
         
      
      
-     public boolean updateSecPolicyId(Connection damsConn) {
+     public boolean updateSecPolicyId() {
         PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
@@ -55,7 +55,7 @@ public class SecurityPolicyUois {
         
         try {
             
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {

@@ -6,7 +6,6 @@
 package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -51,7 +50,7 @@ public class CdisLinkToCis {
     }
     
     
-    public boolean populateSecPolicyId (Connection damsConn) {
+    public boolean populateSecPolicyId () {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
@@ -63,7 +62,7 @@ public class CdisLinkToCis {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {

@@ -6,7 +6,6 @@
 package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,7 +31,7 @@ public class CDISErrorCodeR {
     }
     
     
-    public boolean populateDescription (Connection damsConn, Integer cdisMapId) {
+    public boolean populateDescription (Integer cdisMapId) {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
   
@@ -45,7 +44,7 @@ public class CDISErrorCodeR {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {

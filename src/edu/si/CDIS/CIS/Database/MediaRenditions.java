@@ -45,7 +45,7 @@ public class MediaRenditions {
     
     
     
-    public void populateIdByRenditionNumber (Connection cisConn) {
+    public void populateIdByRenditionNumber () {
         String sql = "Select max (RenditionID) " +
                      "From MediaRenditions " +
                      "Where RenditionNumber = '" + getRenditionNumber() + "'";
@@ -56,7 +56,7 @@ public class MediaRenditions {
         PreparedStatement stmt = null;
         
         try {
-		stmt = cisConn.prepareStatement(sql);
+		stmt = CDIS.getCisConn().prepareStatement(sql);
 		rs = stmt.executeQuery();
               
                 if (rs.next()) {
@@ -74,7 +74,7 @@ public class MediaRenditions {
         
         
     }
-    public boolean insertNewRecord(CDIS cdis, Integer mediaMasterID ) {
+    public boolean insertNewRecord(Integer mediaMasterID ) {
         
         Integer mediaTypeID = null;
         Integer mediaStatusID = null;
@@ -82,8 +82,8 @@ public class MediaRenditions {
         
         // Get variables from the properties list
         try {
-            mediaTypeID = Integer.parseInt (cdis.properties.getProperty("mediaTypeID"));
-            mediaStatusID = Integer.parseInt (cdis.properties.getProperty("mediaStatusID"));
+            mediaTypeID = Integer.parseInt (CDIS.getProperty("mediaTypeID"));
+            mediaStatusID = Integer.parseInt (CDIS.getProperty("mediaStatusID"));
         } catch (Exception e) {
                 e.printStackTrace();
                 return false;
@@ -116,7 +116,7 @@ public class MediaRenditions {
         logger.log(Level.FINER, "SQL: {0}", sql);
         
         try {
-            stmt = cdis.cisConn.createStatement();
+            stmt = CDIS.getCisConn().createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
             ResultSet rs = stmt.getGeneratedKeys();
@@ -135,14 +135,14 @@ public class MediaRenditions {
     }
     
     
-    public int setFileId(Connection cisConn, Integer fileId) {
+    public int setFileId(Integer fileId) {
         int updateCount;
         
         String sql = "update MediaRenditions " +
                     "set PrimaryFileID = " + fileId + " " +
                     "where renditionID = " + getRenditionId() ;
                                
-        updateCount = DataProvider.executeUpdate(cisConn, sql);
+        updateCount = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
         
         return updateCount;
     }
@@ -152,7 +152,7 @@ public class MediaRenditions {
         Description:    updates the isColor flag...which indicates the rendition is forDAMS
         RFeldman 2/2015
     */
-    public void setForDamsTrue(Connection cisConn) {
+    public void setForDamsTrue() {
         
         int recordsUpdated = 0;
         Statement stmt = null;
@@ -164,7 +164,7 @@ public class MediaRenditions {
          logger.log(Level.FINEST, "SQL! {0}", sql);
          
          try {
-            recordsUpdated = DataProvider.executeUpdate(cisConn, sql);
+            recordsUpdated = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
                    
             logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
             

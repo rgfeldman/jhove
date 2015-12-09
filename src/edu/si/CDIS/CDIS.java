@@ -30,25 +30,48 @@ public class CDIS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
    
-    public Connection cisConn;
-    public Connection damsConn;
+    private static Connection cisConn;
+    private static Connection damsConn;
     public String operationType;
-    public Properties properties;
-    public HashMap <String,String[]> xmlSelectHash;
-    Long batchNumber;
+    private static Properties properties;
+    private static HashMap <String,String[]> xmlSelectHash;
+    private static Long batchNumber;
     Handler fh;
-            
-    public Long getBatchNumber () {
-        return this.batchNumber;
-    }
-    
-    private void setBatchNumber (Long batchNumber) {
-        this.batchNumber = batchNumber;
-    }
     
     private void setOperationType (String operationType) {
         this.operationType = operationType;
     }
+    
+    public static HashMap<String, String[]> getXmlSelectHash() {
+        return CDIS.xmlSelectHash;
+    }
+    
+    public static Connection getCisConn() {
+        return CDIS.cisConn;
+    }
+    
+    public static Connection getDamsConn() {
+        return CDIS.damsConn;
+    }
+        
+    public static Long getBatchNumber() {
+        return CDIS.batchNumber;
+    }
+        
+    public static Properties getProperties() {
+        return CDIS.properties;
+    }
+    
+    public static String getProperty (String property) {
+        return CDIS.properties.getProperty(property);
+    }
+    
+    
+    
+    private void setBatchNumber (Long batchNumber) {
+        CDIS.batchNumber = batchNumber;
+    }
+    
     
     /*  Method :        connectToDatabases
         Arguments:      
@@ -61,11 +84,11 @@ public class CDIS {
 	
         try {
             //decrypt the password, it is stored in ini in encypted fashion
-            String damsPass = EncryptDecrypt.decryptString(this.properties.getProperty("damsPass"));
+            String damsPass = EncryptDecrypt.decryptString(CDIS.getProperty("damsPass"));
             
-            this.damsConn = DataProvider.establishConnection(this.properties.getProperty("damsDriver"), 
-					this.properties.getProperty("damsConnString"), 
-					this.properties.getProperty("damsUser"), 
+            this.damsConn = DataProvider.establishConnection(CDIS.getProperty("damsDriver"), 
+					CDIS.getProperty("damsConnString"), 
+					CDIS.getProperty("damsUser"), 
 					damsPass);
                 
         } catch(Exception ex) {
@@ -77,17 +100,17 @@ public class CDIS {
         
         
         try {
-                if (this.properties.getProperty("cisSourceDB").equals("none")) {
+                if (CDIS.getProperty("cisSourceDB").equals("none")) {
                     
                     logger.log(Level.FINER, "CIS source is CDISDB. No connection to CIS database needed.");
                     
                 } else {
                     //decrypt the password, it is stored in ini in encypted fashion
-                    String tmsPass = EncryptDecrypt.decryptString(this.properties.getProperty("cisPass"));
+                    String tmsPass = EncryptDecrypt.decryptString(CDIS.getProperty("cisPass"));
                 
-                    this.cisConn = DataProvider.establishConnection(this.properties.getProperty("cisDriver"), 
-                    this.properties.getProperty("cisConnString"), 
-                    this.properties.getProperty("cisUser"), 
+                    this.cisConn = DataProvider.establishConnection(CDIS.getProperty("cisDriver"), 
+                    CDIS.getProperty("cisConnString"), 
+                    CDIS.getProperty("cisUser"), 
                     tmsPass);
                     
                     logger.log(Level.FINER, "Connection to CIS database established.");
@@ -137,21 +160,19 @@ public class CDIS {
         RFeldman 2/2015
     */
     private boolean readIni () {
-       
-        this.properties = new Properties();
         
         String iniFile = "conf\\cdis.ini";
                 
         try {
             logger.log(Level.FINER, "Loading ini file: " + iniFile);
             
-            this.properties.load(new FileInputStream(iniFile));
+            CDIS.properties.load(new FileInputStream(iniFile));
             
             logger.log(Level.FINER, "Ini File loaded");
             
             //send all properties to the logfile
-            for (String key : properties.stringPropertyNames()) {
-                String value = properties.getProperty(key);
+            for (String key : CDIS.properties.stringPropertyNames()) {
+                String value = CDIS.properties.getProperty(key);
                 logger.log(Level.FINER, "Property: " + key + " value: " + value);
             }
             
@@ -188,7 +209,7 @@ public class CDIS {
         Description:    verifies the required properties have been loaded
         RFeldman 7/2015
     */
-    private boolean verifyProps (Properties properties) {
+    private boolean verifyProps () {
         
         //verify global properties exist in config file
             String[] requiredProps = {"siHoldingUnit",
@@ -201,7 +222,7 @@ public class CDIS {
         
         for(int i = 0; i < requiredProps.length; i++) {
             String reqProp = requiredProps[i];
-            if(!properties.containsKey(reqProp)) {
+            if(! CDIS.properties.containsKey(reqProp)) {
                 logger.log(Level.SEVERE, "Missing required property: {0}", reqProp);
                 return false;
             }
@@ -258,7 +279,7 @@ public class CDIS {
 
         try {
         
-            cdis.properties = new Properties();
+            CDIS.properties = new Properties();
               
             boolean batchNumberSet = cdis.calcBatchNumber();
             if (! batchNumberSet) {
@@ -280,7 +301,7 @@ public class CDIS {
                 return;
             }
             
-            boolean propsVerified = cdis.verifyProps (cdis.properties);
+            boolean propsVerified = cdis.verifyProps ();
             if (! propsVerified) {
                 logger.log(Level.SEVERE, "Fatal Error: Required Property missing.  Exiting");
                 return;
@@ -296,7 +317,7 @@ public class CDIS {
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             
-            boolean xmlReturn = xml.read(cdis.operationType, cdis.properties.getProperty("xmlSQLFile"));
+            boolean xmlReturn = xml.read(cdis.operationType, CDIS.getProperty("xmlSQLFile"));
             if (! xmlReturn) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
                 return;
@@ -308,32 +329,32 @@ public class CDIS {
                 
                 case "sendToHotFolder" :   
                     SendToHotFolder sendToHotFolder = new SendToHotFolder();
-                    sendToHotFolder.ingest(cdis);  
+                    sendToHotFolder.ingest();  
                     break;
                     
                 case "linkToCIS" :
                     LinkCollections linkToCis = new LinkCollections();
-                    linkToCis.linkToCIS(cdis);
+                    linkToCis.linkToCIS();
                     break;
                     
                 case "linkToCISMdpp" :
                     LinkToCISMdpp linkToCisMdpp = new LinkToCISMdpp();
-                    linkToCisMdpp.link(cdis);
+                    linkToCisMdpp.link();
                 break;
                                     
                 case "linkToDAMS" :
                     LinkToDAMS linkToDams = new LinkToDAMS();
-                    linkToDams.link(cdis);
+                    linkToDams.link();
                     break;
 
                 case "metaDataSync" :    
                     MetaData metaData = new MetaData();
-                    metaData.sync(cdis);
+                    metaData.sync();
                     break;
                     
                 case "createCISmedia" :
                     TMSIngest tmsIngest = new TMSIngest();
-                    tmsIngest.ingest(cdis);
+                    tmsIngest.ingest();
                     break;  
                 
                 case "tmsMediaPathSync" :
@@ -343,12 +364,12 @@ public class CDIS {
                             
                 case "thumbnailSync" :    
                     Thumbnail thumbnail = new Thumbnail();
-                    thumbnail.sync(cdis);
+                    thumbnail.sync();
                     break;
                     
                 case "genReport" :
                     Report report = new Report();
-                    report.generate(cdis);
+                    report.generate();
                     break;
                     
                 default:     
@@ -360,10 +381,10 @@ public class CDIS {
         } catch (Exception e) {
                 e.printStackTrace();
         } finally {
-            try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
-            try { if ( cdis.cisConn != null)  cdis.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
-            try { if ( cdis.damsConn != null)  cdis.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( cisConn != null)  cdis.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( damsConn != null)  cdis.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
     
     }

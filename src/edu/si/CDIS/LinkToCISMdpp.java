@@ -26,7 +26,7 @@ public class LinkToCISMdpp {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    public void link (CDIS cdis) {
+    public void link () {
         //  The CDIS process will check CDIS for Ingest table for any entries with status RI. 
         
         //from the config file, get the cdis_map_id and the cisId for any records that need to be updated
@@ -35,9 +35,9 @@ public class LinkToCISMdpp {
         PreparedStatement pStmt = null;
         ResultSet rs = null;
         
-        for (String key : cdis.xmlSelectHash.keySet()) {     
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
             
-            sqlTypeArr = cdis.xmlSelectHash.get(key);
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
             if (sqlTypeArr[0].equals("retrieveImagesToLink")) {   
                 sql = key;    
@@ -50,7 +50,7 @@ public class LinkToCISMdpp {
         try {
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = cdis.damsConn.prepareStatement(sql);
+            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rs = pStmt.executeQuery();
             
             while (rs.next()) {
@@ -73,10 +73,10 @@ public class LinkToCISMdpp {
             cdisMap.setCdisMapId(key);
             cdisMap.setCisUniqueMediaId(mapIdsToIntegrate.get(key));
             
-            cdisMap.updateCisUniqueMediaId(cdis.damsConn);
+            cdisMap.updateCisUniqueMediaId();
            
             //get the uoi_id (and filename)
-            cdisMap.populateMapInfo(cdis.damsConn);
+            cdisMap.populateMapInfo();
             
             
             //  Update the security policy 
@@ -86,24 +86,24 @@ public class LinkToCISMdpp {
                 
                 CdisLinkToCis cdisLinkTbl = new CdisLinkToCis();
                 cdisLinkTbl.setCisUniqueMediaId(cdisMap.getCisUniqueMediaId());
-                cdisLinkTbl.setSiHoldingUnit(cdis.properties.getProperty("siHoldingUnit"));
-                cdisLinkTbl.populateSecPolicyId(cdis.damsConn);
+                cdisLinkTbl.setSiHoldingUnit(CDIS.getProperty("siHoldingUnit"));
+                cdisLinkTbl.populateSecPolicyId();
                 
                 secPolicy.setSecPolicyId(cdisLinkTbl.getSecurityPolicyId());
                
-                secPolicy.updateSecPolicyId(cdis.damsConn);          
+                secPolicy.updateSecPolicyId();          
             }
             
             //  Set public_use = 'Y' 
             SiAssetMetaData siAsst = new SiAssetMetaData();
             siAsst.setUoiid(cdisMap.getDamsUoiid());      
-            siAsst.updatePublicUse(cdis.damsConn);
+            siAsst.updatePublicUse();
              
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             activityLog.setCdisStatusCd("LCC");
-            activityLog.insertActivity(cdis.damsConn);
+            activityLog.insertActivity();
         
-           try { if ( cdis.damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+           try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
              
         }
 
