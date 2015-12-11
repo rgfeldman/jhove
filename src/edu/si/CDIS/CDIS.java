@@ -36,7 +36,6 @@ public class CDIS {
     private static Properties properties;
     private static HashMap <String,String[]> xmlSelectHash;
     private static Long batchNumber;
-    Handler fh;
     
     private void setOperationType (String operationType) {
         this.operationType = operationType;
@@ -65,9 +64,7 @@ public class CDIS {
     public static String getProperty (String property) {
         return CDIS.properties.getProperty(property);
     }
-    
-    
-    
+
     private void setBatchNumber (Long batchNumber) {
         CDIS.batchNumber = batchNumber;
     }
@@ -134,7 +131,8 @@ public class CDIS {
 
         //log All events
         logger.setLevel(Level.ALL);
-        
+        Handler fh;
+            
         try {
 		fh = new FileHandler("log\\CDISLog-" + this.operationType + this.batchNumber + ".txt");
 	
@@ -142,7 +140,6 @@ public class CDIS {
 		e.printStackTrace();
                 return false;
 	}
-        
         
         fh.setFormatter(new SimpleFormatter());          
 	logger.addHandler(fh);

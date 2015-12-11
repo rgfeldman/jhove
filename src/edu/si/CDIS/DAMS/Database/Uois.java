@@ -8,7 +8,6 @@ package edu.si.CDIS.DAMS.Database;
 import edu.si.CDIS.CDIS;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,8 +17,8 @@ public class Uois {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String uoiid;
-    String name;
+    private String uoiid;
+    private String name;
     
     public String getName () {
         return this.name;

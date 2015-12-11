@@ -20,7 +20,7 @@ public class CDISErrorCodeR {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String description;
+    private String description;
     
     public String getDescription () {
         return this.description;

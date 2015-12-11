@@ -27,13 +27,13 @@ import java.util.logging.Logger;
 public class ImageFilePath {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
 	
-    int successfulUpdateCount;
+    private int successfulUpdateCount;
   
-    int idsPathId;
-    int pdfPathId;
-    String fileType;
-    String uan;
-    ArrayList<String> RenditionIdToSyncList;
+    private int idsPathId;
+    private int pdfPathId;
+    private String fileType;
+    private String uan;
+    private ArrayList<String> RenditionIdToSyncList;
         
     public void sync(CDIS cdis) {
     	

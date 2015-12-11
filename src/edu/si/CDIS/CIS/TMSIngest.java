@@ -22,9 +22,9 @@ public class TMSIngest {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    LinkedHashMap <String,String> neverLinkedDamsRendtion;  
-    int successCount;
-    int failCount;
+    private LinkedHashMap <String,String> neverLinkedDamsRendtion;  
+    private int successCount;
+    private int failCount;
     
     private void addNeverLinkedDamsRendtion (String UOIID, String uan) {
         this.neverLinkedDamsRendtion.put(UOIID, uan); 

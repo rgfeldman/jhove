@@ -6,7 +6,6 @@
 package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,15 +18,15 @@ public class MediaFiles {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
  
-    int fileId;
-    String fileName;
-    boolean isPrimary;
-    int rank;
-    Integer pathId;
-    String renditionId;
+    private int fileId;
+    private String fileName;
+    private boolean isPrimary;
+    private int rank;
+    private Integer pathId;
+    private String renditionId;
     
-    int pixelH;
-    int pixelW;
+    private int pixelH;
+    private int pixelW;
     
     public int getFileId () {
         return this.fileId;

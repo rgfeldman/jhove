@@ -20,8 +20,8 @@ public class SiAssetMetaData {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     //class attributes
-    String owningUnitUniqueName;
-    String uoiid;  
+    private String owningUnitUniqueName;
+    private String uoiid;  
     
     public HashMap <String,Integer> metaDataDBLengths; 
       

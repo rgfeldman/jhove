@@ -21,7 +21,7 @@ public class MediaMaster {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Integer mediaMasterId;
+    private Integer mediaMasterId;
     
     public Integer getMediaMasterId() {
         return mediaMasterId;

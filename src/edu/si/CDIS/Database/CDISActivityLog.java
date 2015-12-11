@@ -12,11 +12,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class CDISActivityLog {
-     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-     
-     
-    String cdisStatusCd;
-    Integer cdisMapId;
+    private final static Logger logger = Logger.getLogger(CDIS.class.getName());
+    
+    private String cdisStatusCd;
+    private Integer cdisMapId;
 
     public String getCdisStatusCd() {
         return this.cdisStatusCd;

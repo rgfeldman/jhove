@@ -7,7 +7,6 @@ package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.utilties.DataProvider;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,8 +22,8 @@ public class MediaRenditions {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    int renditionId;
-    String renditionNumber;
+    private int renditionId;
+    private String renditionNumber;
             
     public int getRenditionId () {
         return this.renditionId;

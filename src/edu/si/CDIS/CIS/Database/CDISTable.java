@@ -22,14 +22,14 @@ public class CDISTable {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     // attributes
-    Integer CDIS_ID;
-    String metaDataSyncDate;
-    Integer objectID;
-    String IDSRestrict;
-    Integer renditionId;
-    String renditionNumber;
-    String UOIID;
-    String UAN;
+    private Integer CDIS_ID;
+    private String metaDataSyncDate;
+    private Integer objectID;
+    private String IDSRestrict;
+    private Integer renditionId;
+    private String renditionNumber;
+    private String UOIID;
+    private String UAN;
     
        
     // get methods

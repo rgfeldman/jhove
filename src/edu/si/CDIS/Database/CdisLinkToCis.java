@@ -19,9 +19,9 @@ import java.util.logging.Logger;
 public class CdisLinkToCis {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String cisUniqueMediaId;
-    String siHoldingUnit;
-    Integer securityPolicyId;
+    private String cisUniqueMediaId;
+    private String siHoldingUnit;
+    private Integer securityPolicyId;
     
     
     public String getCisUniqueMediaId () {

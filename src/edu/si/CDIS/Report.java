@@ -43,15 +43,15 @@ public class Report {
     
     private Double rptDays;
     private String rptHours;
-    ArrayList<Integer> completedIds;
-    ArrayList<Integer> metaSyncedIds;
-    ArrayList<Integer> inProgressIds;
-    ArrayList<Integer> failedIds;
-    File linkedFile;
-    File metaDataSyncFile;
-    File errorFile;
-    Document document;
-    String rptFile;
+    private ArrayList<Integer> completedIds;
+    private ArrayList<Integer> metaSyncedIds;
+    private ArrayList<Integer> inProgressIds;
+    private ArrayList<Integer> failedIds;
+    private File linkedFile;
+    private File metaDataSyncFile;
+    private File errorFile;
+    private Document document;
+    private String rptFile;
     
     
      private boolean genMetaSyncedIdList () {

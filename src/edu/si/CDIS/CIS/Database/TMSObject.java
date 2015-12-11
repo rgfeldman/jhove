@@ -17,8 +17,8 @@ public class TMSObject {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    int objectID;
-    String objectNumber;
+    private int objectID;
+    private String objectNumber;
     
     
     public int getObjectID () {

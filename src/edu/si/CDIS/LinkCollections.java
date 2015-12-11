@@ -18,8 +18,8 @@ public class LinkCollections  {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    LinkedHashMap <String,String> neverLinkedDamsRendtion;   
-    String cisSourceDB;
+    private LinkedHashMap <String,String> neverLinkedDamsRendtion;   
+    private String cisSourceDB;
 
     public LinkedHashMap <String,String> getNeverLinkedDamsRendtion() {
         return this.neverLinkedDamsRendtion;

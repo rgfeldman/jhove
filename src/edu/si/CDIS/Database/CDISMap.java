@@ -20,13 +20,13 @@ import java.util.HashMap;
 public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Integer CDISMapId;
-    Long batchNumber;
-    String fileName;
-    String damsUoiid;
-    String cisUniqueMediaId;
-    Integer vfcuMediaFileId;
-    char errorInd;
+    private Integer CDISMapId;
+    private Long batchNumber;
+    private String fileName;
+    private String damsUoiid;
+    private String cisUniqueMediaId;
+    private Integer vfcuMediaFileId;
+    private char errorInd;
     
     public Long getBatchNumber () {
         return this.batchNumber;

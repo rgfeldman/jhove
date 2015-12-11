@@ -22,10 +22,10 @@ public class MetaData {
 
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
 
-    String siUnit;
-    String sqlUpdate;
-    HashMap <String,String> metaDataValuesForDams; 
-    ArrayList<String> damsUoiidsToSync;
+    private String siUnit;
+    private String sqlUpdate;
+    private HashMap <String,String> metaDataValuesForDams; 
+    private ArrayList<String> damsUoiidsToSync;
 
     private void setSqlUpdate(String sqlUpdate) {
         this.sqlUpdate = sqlUpdate;

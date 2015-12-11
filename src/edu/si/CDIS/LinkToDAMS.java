@@ -28,9 +28,9 @@ public class LinkToDAMS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String vendorChecksum;
-    String pathBase;
-    String pathEnding;
+    private String vendorChecksum;
+    private String pathBase;
+    private String pathEnding;
     
     
     private void logIngestFailedFile (String filename) {

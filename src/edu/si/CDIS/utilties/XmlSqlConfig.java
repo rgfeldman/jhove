@@ -22,8 +22,8 @@ public class XmlSqlConfig {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Document doc;
-    HashMap <String,String[]> SelectStmtHash ;
+    private Document doc;
+    private HashMap <String,String[]> SelectStmtHash ;
     
     public HashMap <String,String[]> getSelectStmtHash() {
         return this.SelectStmtHash;

@@ -29,16 +29,16 @@ import org.apache.commons.io.FileUtils;
 
 public class StatisticsReport {
     
-    File successFile;
-    File failFile;
-    File headerFile;
-    File reportFile;
+    private File successFile;
+    private File failFile;
+    private File headerFile;
+    private File reportFile;
     
-    PrintWriter successFileWrt;
-    PrintWriter failFileWrt;
-    PrintWriter headerFileWrt;
+    private PrintWriter successFileWrt;
+    private PrintWriter failFileWrt;
+    private PrintWriter headerFileWrt;
     
-    String timestamp;
+    private String timestamp;
     
     // This is the default constructor...initialize the files
     StatisticsReport () {

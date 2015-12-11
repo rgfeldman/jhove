@@ -28,13 +28,13 @@ public class Thumbnail {
 
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    String damsImageNameLocation;
-    String uoiid;
-    String renditionNumber;
-    int fileSize;
-    byte[] bytes;
+    private String damsImageNameLocation;
+    private String uoiid;
+    private String renditionNumber;
+    private int fileSize;
+    private byte[] bytes;
     
-    LinkedHashMap <Integer,String> thumbnailsToSync;  
+    private LinkedHashMap <Integer,String> thumbnailsToSync;  
     
     private void addthumbnailsToSync (Integer renditionID, String UOIID) {
         this.thumbnailsToSync.put(renditionID, UOIID); 

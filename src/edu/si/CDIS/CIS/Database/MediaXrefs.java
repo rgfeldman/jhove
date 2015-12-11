@@ -21,9 +21,9 @@ public class MediaXrefs {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    int primary;
-    int rank;
-    String charRank;
+    private int primary;
+    private int rank;
+    private String charRank;
         
     public int getPrimary() {
         return this.primary;

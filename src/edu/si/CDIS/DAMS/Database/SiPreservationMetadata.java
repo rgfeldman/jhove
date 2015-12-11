@@ -20,9 +20,9 @@ public class SiPreservationMetadata {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
  
-    String assetSourceDate;
-    String preservationIdNumber;
-    String uoiid;
+    private String assetSourceDate;
+    private String preservationIdNumber;
+    private String uoiid;
     
     public String getAssetSourceDate() {
         return this.assetSourceDate;

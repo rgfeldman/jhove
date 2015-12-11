@@ -28,7 +28,7 @@ import edu.si.CDIS.utilties.ErrorLog;
 public class SendToHotFolder {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    String cisSourceDB;
+    private String cisSourceDB;
     
     LinkedHashMap <String,String> masterMediaIds; 
     
