@@ -50,34 +50,24 @@ public class MediaRenditions {
                      "Where RenditionNumber = '" + getRenditionNumber() + "'";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
-		stmt = CDIS.getCisConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
-              
-                if (rs.next()) {
-                    setRenditionId(rs.getInt(1));
-                }        
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery() ){
+		
+            if (rs.next()) {
+                setRenditionId(rs.getInt(1));
+            }        
 	}
             
-	catch(SQLException sqlex) {
-		sqlex.printStackTrace();
+	catch(Exception e) {
+		e.printStackTrace();
 	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
-        
-        
     }
     public boolean insertNewRecord(Integer mediaMasterID ) {
         
         Integer mediaTypeID = null;
         Integer mediaStatusID = null;
         Statement stmt = null;
+        ResultSet rs = null;
         
         // Get variables from the properties list
         try {
@@ -118,19 +108,19 @@ public class MediaRenditions {
             stmt = CDIS.getCisConn().createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
-            ResultSet rs = stmt.getGeneratedKeys();
+            rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 this.renditionId = rs.getInt(1);
             }    
         } catch (Exception e) {
-                e.printStackTrace();
-                return false;
+            e.printStackTrace();
+            return false;
         }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
-        return true;
-                              
+        return true;         
     }
     
     
@@ -170,7 +160,7 @@ public class MediaRenditions {
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR: Could not update the forDams flag in TMS",e);
         }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
           
     }

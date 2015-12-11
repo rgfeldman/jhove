@@ -331,35 +331,33 @@ public class SendToHotFolder {
             logger.log(Level.FINER, "SQL: {0}", sql);
             
             try {
-                    switch (cisSourceDB) {
-                        case "none" :
-                             stmt = CDIS.getDamsConn().prepareStatement(sql);
-                             break;
-                        case "TMSDB" :
-                            stmt = CDIS.getCisConn().prepareStatement(sql);
-                            break;
+                switch (cisSourceDB) {
+                    case "none" :
+                        stmt = CDIS.getDamsConn().prepareStatement(sql);
+                        break;
+                    case "TMSDB" :
+                        stmt = CDIS.getCisConn().prepareStatement(sql);
+                        break;
                             
-                        default:     
-                            logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cisSourceDB );
-                            return numCisRenditionsFound;
-                    }
+                    default:     
+                        logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cisSourceDB );
+                        return numCisRenditionsFound;
+                }
                                                     
-                    rs = stmt.executeQuery();
+                rs = stmt.executeQuery();
                      
-                    while (rs.next()) {           
-                        masterMediaIds(rs.getString("uniqueMediaId"), rs.getString("mediafileName"));
-                        numCisRenditionsFound ++;
-                    }   
+                while (rs.next()) {           
+                    masterMediaIds(rs.getString("uniqueMediaId"), rs.getString("mediafileName"));
+                    numCisRenditionsFound ++;
+                }   
 
             } catch (Exception e) {
                     logger.log(Level.FINER, "Error: obtaining CIS ID list ", e );
-                    return numCisRenditionsFound;
-                    
+                    return numCisRenditionsFound;    
             } finally {
                     try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
                     try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
             }
-            
         }
         
         return numCisRenditionsFound;
@@ -406,7 +404,5 @@ public class SendToHotFolder {
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when trying to create ready.txt file",e);;
         }
-    }
-    
-    
+    }   
 }

@@ -8,7 +8,6 @@ package edu.si.CDIS.Database;
 import edu.si.CDIS.CDIS;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,8 +31,6 @@ public class CDISErrorCodeR {
     
     
     public boolean populateDescription (Integer cdisMapId) {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
   
         String sql = "SELECT a.description " +
                     "FROM error_code_r a, " +
@@ -41,12 +38,11 @@ public class CDISErrorCodeR {
                     "WHERE a.error_cd = b.error_cd " +
                     "AND b.cdis_map_id = " + cdisMapId;
         
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()) {
+        
             if (rs != null && rs.next()) {
                 setDescription (rs.getString(1));
             }   
@@ -54,10 +50,6 @@ public class CDISErrorCodeR {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain description from cdis_error_code_r", e );
                 return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         return true;
     }

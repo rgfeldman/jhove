@@ -10,20 +10,20 @@ package edu.si.CDIS;
  * @author rfeldman
  */
 
+import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
+import edu.si.CDIS.DAMS.Database.Uois;
+import edu.si.CDIS.DAMS.StagedFile;
+import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.utilties.ErrorLog;
+
 import java.io.File;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.CDIS.DAMS.Database.Uois;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import edu.si.CDIS.DAMS.StagedFile;
-import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
-import edu.si.CDIS.Database.CDISActivityLog;
-import edu.si.CDIS.utilties.ErrorLog;
-        
+
 public class LinkToDAMS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
@@ -31,7 +31,6 @@ public class LinkToDAMS {
     private String vendorChecksum;
     private String pathBase;
     private String pathEnding;
-    
     
     private void logIngestFailedFile (String filename) {
         logger.log(Level.FINER, "FailedFileName found: " + filename);
@@ -44,8 +43,7 @@ public class LinkToDAMS {
         cdisMap.populateIdForNameNullUoiid();
                 
         ErrorLog errorLog = new ErrorLog ();
-        errorLog.capture(cdisMap, "IPE", "Error, Record failed upon ingest");         
-        
+        errorLog.capture(cdisMap, "IPE", "Error, Record failed upon ingest");
     }
     
     private void checkForFailedFiles () {
@@ -192,9 +190,6 @@ public class LinkToDAMS {
 
     
     private boolean retrieveVfcuData(Integer vfcuMediaFileId) {
-        
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
   
         String sql = "SELECT    a.base_path_staging, a.file_path_ending, " +
                     "           b.vendor_checksum " +
@@ -203,11 +198,10 @@ public class LinkToDAMS {
                     "WHERE      a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
                     "AND        b.vfcu_media_file_id = " + vfcuMediaFileId ;
         
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
             
             if (rs != null && rs.next()) {
                 this.pathBase = rs.getString(1);
@@ -221,11 +215,7 @@ public class LinkToDAMS {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
                 return false;
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-        
         return true;
     }
 }

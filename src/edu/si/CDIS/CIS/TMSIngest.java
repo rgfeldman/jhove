@@ -5,6 +5,12 @@
  */
 package edu.si.CDIS.CIS;
 
+import edu.si.CDIS.CDIS;
+import edu.si.CDIS.CIS.Database.CDISTable;
+import edu.si.CDIS.CIS.Database.TMSObject;
+import edu.si.CDIS.CIS.Database.MediaRenditions;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,11 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.CDISTable;
-import edu.si.CDIS.CIS.Database.TMSObject;
-import edu.si.CDIS.CIS.Database.MediaRenditions;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 public class TMSIngest {
     
@@ -36,8 +37,6 @@ public class TMSIngest {
         RFeldman 2/2015
     */
     private void populateNeverLinkedImages () {
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
         String uan = null;
         String sql = null;
         String sqlTypeArr[];
@@ -55,26 +54,17 @@ public class TMSIngest {
         
             logger.log(Level.FINER, "SQL: {0}", sql);
             
-            try {
-                    stmt = CDIS.getDamsConn().prepareStatement(sql);                                
-                    rs = stmt.executeQuery();
-        
-                    while (rs.next()) {           
-                        logger.log(Level.FINER, "Adding uoi_id to unsynced hash: " + rs.getString("UOI_ID") + " " + rs.getString("OWNING_UNIT_UNIQUE_NAME") );
-                        addNeverLinkedDamsRendtion(rs.getString("UOI_ID"), rs.getString("OWNING_UNIT_UNIQUE_NAME"));
-                    }   
-
+            try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+                 ResultSet rs = pStmt.executeQuery()) {
+                                                    
+                while (rs.next()) {           
+                    logger.log(Level.FINER, "Adding uoi_id to unsynced hash: " + rs.getString("UOI_ID") + " " + rs.getString("OWNING_UNIT_UNIQUE_NAME") );
+                    addNeverLinkedDamsRendtion(rs.getString("UOI_ID"), rs.getString("OWNING_UNIT_UNIQUE_NAME"));
+                }   
             } catch (Exception e) {
                     e.printStackTrace();
-            } finally {
-                    try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            }
-            
-        }
-        
-        return;
-            
+            }         
+        }               
     }
     
     /*  Method :        processUAN
@@ -82,11 +72,8 @@ public class TMSIngest {
         Description:    prcoesses the DAMS uans one at a time from the list  
         RFeldman 2/2015
     */
-    private void processUAN () {
-    
+    private void processUAN () { 
         // See if we can find if this uan already exists in TMS
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
         String uan = null;
         String sql = null;
         String sqlTypeArr[];
@@ -98,7 +85,6 @@ public class TMSIngest {
                 sql = key;    
               
             }
-            
         }
         
         if ( sql != null) {           
@@ -116,10 +102,9 @@ public class TMSIngest {
                 
                 logger.log(Level.FINEST, "SQL: {0}", currentIterationSql);
                 
-                try {
-                    stmt = CDIS.getCisConn().prepareStatement(currentIterationSql);                                
-                    rs = stmt.executeQuery();
-                       
+                try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(currentIterationSql);
+                     ResultSet rs = pStmt.executeQuery()) {
+                                                   
                     if ( rs.next()) {   
                         MediaRenditions mediaRendition = new MediaRenditions();
                         TMSObject tmsObject = new TMSObject();
@@ -165,8 +150,7 @@ public class TMSIngest {
                             failCount ++;
                             continue; //Go to the next record in the for-sloop
                         }
-                        
-                        
+                                             
                         int rowsUpdated = cdisTbl.updateIDSSyncDate();
                         
                         if (rowsUpdated == 0) {    
@@ -203,13 +187,9 @@ public class TMSIngest {
                     return;
                 } catch (Exception e) {
                     e.printStackTrace();
-                } finally {
-                    try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-                }
-            }
-                        
-        } 
+                } 
+            }               
+        }
         else {
             logger.log(Level.FINER, "ERROR: unable to check if TMS Media exists, supporting SQL not provided");
         }
@@ -231,7 +211,6 @@ public class TMSIngest {
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
         processUAN ();  
-        
         
     }
 }

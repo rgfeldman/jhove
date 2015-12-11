@@ -63,7 +63,6 @@ public class LinkCollections  {
         String currentIterationSql = null;
         String sqlTypeArr[] = null;
         
-        
         //Go through the hash containing the select statements from the XML, and obtain the proper select statement
         for (String key : CDIS.getXmlSelectHash().keySet()) {     
               
@@ -183,8 +182,6 @@ public class LinkCollections  {
     */
     private void populateNeverLinkedDamsMedia () {
         
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
         String sqlTypeArr[] = null;
         String sql = null;
         
@@ -199,11 +196,9 @@ public class LinkCollections  {
             }
         }
                 
-        try {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery() ) {
             
-            stmt = CDIS.getDamsConn().prepareStatement(sql);                                
-            rs = stmt.executeQuery();
-        
             // For each record in the sql query, add it to the unlinked rendition List
             while (rs.next()) {   
                 addNeverLinkedDamsRendtion(rs.getString("UOI_ID"), rs.getString("NAME"));
@@ -214,13 +209,9 @@ public class LinkCollections  {
             
             logger.log(Level.FINER,"Number of records in DAMS that are unlinked: {0}", numRecords);
             
-
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR: Catched error in populateNeverLinkedDamsRenditions",e);
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
+        } 
         
         return;
     }

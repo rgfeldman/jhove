@@ -159,12 +159,12 @@ public class CDIS {
     private boolean readIni () {
         
         String iniFile = "conf\\cdis.ini";
+        
+        logger.log(Level.FINER, "Loading ini file: " + iniFile);
                 
-        try {
-            logger.log(Level.FINER, "Loading ini file: " + iniFile);
+        try (FileInputStream fis = new FileInputStream(iniFile)) {
             
-            CDIS.properties.load(new FileInputStream(iniFile));
-            
+            CDIS.properties.load(fis);
             logger.log(Level.FINER, "Ini File loaded");
             
             //send all properties to the logfile
@@ -179,7 +179,6 @@ public class CDIS {
         }
         
         return true;
-        
     }
     
     /*  Method :        calcBatchNumber
@@ -197,7 +196,6 @@ public class CDIS {
               System.out.println("Error: obtaining Batch number" + e );
              return false;
         }
-        
         return true;
     }
     

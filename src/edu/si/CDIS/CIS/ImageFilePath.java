@@ -56,9 +56,6 @@ public class ImageFilePath {
     // Get list of images that require sync file path to be updated
     private boolean getNeverSyncedImagePath () {
         
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-        
         String sql = "SELECT RenditionID " +
                      "FROM MediaFiles a, " +
                      "MediaRenditions b " +
@@ -67,11 +64,9 @@ public class ImageFilePath {
                      "and a.PathID != " + this.idsPathId + " " + 
                      "and a.PathID != " + this.pdfPathId;       
         
-        logger.log(Level.FINEST, "IDS syncPath Select: " + sql);
-        
-        try {
-            pStmt = CDIS.getCisConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
+        logger.log(Level.FINEST, "IDS syncPath Select: " + sql);      
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()) {
             
             while (rs.next()) {
                 //We add all unlinked Renditions that are marked as 'For DAMS' to a list
@@ -81,10 +76,7 @@ public class ImageFilePath {
         } catch (Exception e) {
             logger.log(Level.FINEST, "Error obtaining list to sync mediaPath and Name: ");
             return false;
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); } 
-        }
-        
+        } 
         return true;
     }
     
@@ -93,6 +85,7 @@ public class ImageFilePath {
     // That the list of renditions by CDIS_ID and loop through them one at a time, and perform synchronizations
     private void processRenditionList() {
         // For each Rendition Number in list, obtain information from CDIS table
+        //not sure if all resources are closed properly, this may need to be rewritten more concicively with try-with-resources block later
         PreparedStatement pStmt = null;
 
         try {

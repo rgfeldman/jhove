@@ -51,36 +51,28 @@ public class SiAssetMetaData {
     
     public int updateDAMSSourceSystemID (String uoiid, String sourceSystemId) {
         int recordsUpdated = 0;
-        PreparedStatement pStmt = null;
-        
+
         String sql = "update SI_ASSET_METADATA set source_system_id = '" + sourceSystemId + "' " +
                     "where UOI_ID = '" + uoiid + "'";
 
         logger.log(Level.FINEST, "SQL! {0}", sql);
         
-        try {
-            
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql) ) {
+             
             recordsUpdated = pStmt.executeUpdate(sql);
-            
-        
+              
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
                 e.printStackTrace();
-        }finally {
-                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
             
-        return recordsUpdated;
-        
+        return recordsUpdated;    
     }
     
     public boolean populateMetaDataDBLengths () {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-        metaDataDBLengths = new HashMap<> (); 
-        
+
+        metaDataDBLengths = new HashMap<> ();  
         String sql = "SELECT column_name, data_length " + 
                      "FROM all_tab_columns " +
                      "WHERE table_name = 'SI_ASSET_METADATA' " + 
@@ -88,11 +80,9 @@ public class SiAssetMetaData {
                      "AND data_type != 'DATE' " + 
                      "AND column_name NOT IN ('PUBLIC_USE','UOI_ID','OWNING_UNIT_UNIQUE_NAME')";
         
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
             
             while (rs != null && rs.next()) {
                 metaDataDBLengths.put(rs.getString(1),rs.getInt(2));
@@ -101,28 +91,19 @@ public class SiAssetMetaData {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain data field lengths ", e);
         
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-        
         return true;
     }
     
     public boolean populateOwningUnitUniqueName () {
-        
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
   
         String sql = "SELECT owning_unit_unique_name FROM si_asset_metadata " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
             if (rs != null && rs.next()) {
                 setOwningUnitUniqueName (rs.getString(1));
             }   
@@ -130,27 +111,20 @@ public class SiAssetMetaData {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
                 return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         return true;
     }
     
     public boolean updatePublicUse () {
-        
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-        int recordsUpdated;
   
+        int recordsUpdated;
         String sql = "UPDATE si_asset_metadata " +
                     "SET public_use = 'Y' " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
+        logger.log(Level.FINEST,"SQL! " + sql);    
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
+       
             recordsUpdated = pStmt.executeUpdate(sql);
             
             if (recordsUpdated == 1) {
@@ -163,10 +137,6 @@ public class SiAssetMetaData {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update Public Use flag for uoi_id: " + getUoiid() + " " + e);
                 return false;
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-        
     }
 }

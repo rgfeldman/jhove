@@ -7,7 +7,6 @@ package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +35,6 @@ public class CDISActivityLog {
      
     public boolean insertActivity () {
         
-        PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
         String sql = "INSERT INTO cdis_activity_log ( " +
@@ -49,25 +47,20 @@ public class CDISActivityLog {
                         getCdisMapId() + ", " +
                         "'" + getCdisStatusCd() + "', " +
                         "SYSDATE)";
-        try {
-            logger.log(Level.FINER, "SQL: " + sql );
-            
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
+        logger.log(Level.FINER, "SQL: " + sql );
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
             rowsUpdated = pStmt.executeUpdate(sql); 
             
              if (rowsUpdated != 1) {
                 throw new Exception();
             }
             
-         } catch (Exception e) {
+        } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to insert CDIS_activity_log table", e );
                 return false;
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-        
         return true;
-        
     }
      
      

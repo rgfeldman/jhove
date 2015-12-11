@@ -5,34 +5,33 @@
  */
 package edu.si.CDIS.CIS;
 
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import edu.si.CDIS.CDIS;
+import edu.si.CDIS.CIS.Database.CDISTable;
+
 import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.LinkedHashMap;
-import org.apache.commons.io.IOUtils;
 
+import org.apache.commons.io.IOUtils;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IMOperation;
 
-import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.CDISTable;
 
 
 public class Thumbnail {
 
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    private String damsImageNameLocation;
-    private String uoiid;
-    private String renditionNumber;
-    private int fileSize;
     private byte[] bytes;
+    private String damsImageNameLocation;
+    private int fileSize;
+    private String uoiid;
     
     private LinkedHashMap <Integer,String> thumbnailsToSync;  
     
@@ -47,18 +46,13 @@ public class Thumbnail {
     */
     private boolean getDamsNameLocation () {
         
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-      
         String sql = "select o.object_name_location from uois u, object_stacks o" +
         " where u.uoi_id = '" + this.uoiid + "'" +
         " and u.screen_res_obj_id = o.object_id ";
            
         logger.log(Level.FINEST,"SQL! " + sql);
-        
-        try {
-            stmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = stmt.executeQuery();
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
         
             if(rs.next()) {
                 this.damsImageNameLocation = rs.getString(1);
@@ -70,11 +64,7 @@ public class Thumbnail {
         } catch(Exception e) {
 		e.printStackTrace();
                 return false;
-	} finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        
+	}     
         return true;
         
     }
@@ -87,8 +77,6 @@ public class Thumbnail {
     public boolean generate(String uoiid, Integer renditionId) {
         
         this.uoiid = uoiid;
-        
-        InputStream is = null;
         String imageFile = null;
         this.fileSize = 0;
         this.bytes = null;
@@ -134,9 +122,7 @@ public class Thumbnail {
         }
        
         //Capture the image as a binary stream
-        try {
-           
-            is = new BufferedInputStream(new FileInputStream(thumbImageName));
+        try (InputStream is = new BufferedInputStream(new FileInputStream(thumbImageName)) ) {
             
             bytes = IOUtils.toByteArray(is);
             
@@ -149,8 +135,6 @@ public class Thumbnail {
             
 	} finally {
             try {
-                // We dont need input stream or temporary file any more, remove them.
-                is.close();
                 File thumbFile = new File (thumbImageName);
                 thumbFile.delete();
                 
@@ -168,14 +152,12 @@ public class Thumbnail {
                 CDISTable cdisTbl = new CDISTable();
                 cdisTbl.setRenditionId(renditionId);
                 cdisTbl.updateThumbnailSyncDate();
-            }
-            
+            }  
         }
         else {
             logger.log(Level.FINER, "Error: Unable to detect thumbnail image, not updating: " + renditionId);
             return false;
-        }
-        
+        } 
         return true;
     }    
     
@@ -185,20 +167,16 @@ public class Thumbnail {
         RFeldman 3/2015
     */
     private boolean update(Integer renditionID) {
-        
-        PreparedStatement stmt = null;
-        
+       
         //Input the binary stream into the update statement for the table...and execute
-        try {
-											
-            stmt = CDIS.getCisConn().prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
-                " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionID =  ? ) ");
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
+                " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionID =  ? ) ") ) {									   
 			
-            stmt.setBytes(1, this.bytes);
-            stmt.setInt(2, this.fileSize);
-            stmt.setInt(3, renditionID);
+            pStmt.setBytes(1, this.bytes);
+            pStmt.setInt(2, this.fileSize);
+            pStmt.setInt(3, renditionID);
         
-            int recordsUpdated = stmt.executeUpdate();
+            int recordsUpdated = pStmt.executeUpdate();
             
             if ((recordsUpdated) != 1 ) {
                 logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + renditionID);
@@ -212,10 +190,8 @@ public class Thumbnail {
                 logger.log(Level.FINER, "ERROR: Thumbnail creation has failed for renditionID: " + renditionID);
 		e.printStackTrace();
                 return false;
-        }
-        
-        return true;
-                                                            
+        }       
+        return true;                                                  
     }
     
     /*  Method :        populateRenditionsToUpdate
@@ -224,9 +200,6 @@ public class Thumbnail {
         RFeldman 3/2015
     */
     private void populateRenditionsToUpdate () {
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        String owning_unit_unique_name = null;
         String sqlTypeArr[] = null;
         String sql = null;
         
@@ -241,11 +214,9 @@ public class Thumbnail {
             }
         }
                 
-        try {
-            
-            stmt = CDIS.getCisConn().prepareStatement(sql);                                
-            rs = stmt.executeQuery();
-        
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql); 
+             ResultSet rs = pStmt.executeQuery() ) {
+           
             // For each record in the sql query, add it to the unlinked rendition List
             while (rs.next()) {   
                 addthumbnailsToSync(rs.getInt("RenditionID"), rs.getString("uoiid"));
@@ -257,13 +228,8 @@ public class Thumbnail {
             
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        
-        return;
-        
+        }    
+        return;  
     }
     
     /*  Method :        sync

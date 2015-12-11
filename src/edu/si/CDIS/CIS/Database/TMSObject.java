@@ -9,7 +9,6 @@ import edu.si.CDIS.CDIS;
 import edu.si.CDIS.utilties.Transform;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
         
@@ -46,8 +45,7 @@ public class TMSObject {
         RFeldman 2/2015
     */
     public boolean mapFileNameToBarcode (String barcode) {
-    
-        
+      
         //Strip all characters in the barcode after the underscore to look up the label
         if (barcode.contains("_")) {
            barcode = barcode.substring(0,barcode.indexOf("_")); 
@@ -60,35 +58,25 @@ public class TMSObject {
               "and bcl.TableID = 94 " +
               "and bcl.LabelUUID = '" + barcode + "'";
         
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
-		stmt = CDIS.getCisConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
-              
-                if (rs.next()) {
-                    setObjectID (rs.getInt(1));
-                }        
-                else {
-                    logger.log(Level.FINEST, "Unable to find Object from Barcode:{0}", barcode);
-                    return false;
-                }
+        logger.log(Level.FINEST, "SQL: {0}", sql); 
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (rs.next()) {
+                setObjectID (rs.getInt(1));
+            }        
+            else {
+                logger.log(Level.FINEST, "Unable to find Object from Barcode:{0}", barcode);
+                return false;
+            }
 	}
             
-	catch(SQLException sqlex) {
-		sqlex.printStackTrace();
-                return false;
-	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+	catch(Exception e) {
+            e.printStackTrace();
+            return false;
 	}
         
         return true;
-         
     }
     
     /*  Method :        mapFileNameToObjectID
@@ -99,8 +87,6 @@ public class TMSObject {
     */
     public boolean mapFileNameToObjectID(String extensionlessFileName) {
         
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
         Integer objID;
         
         try {
@@ -108,8 +94,8 @@ public class TMSObject {
             objID = Integer.parseInt(extensionlessFileName.substring(0, extensionlessFileName.indexOf("_")));
             
         } catch(Exception e) {
-                logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", extensionlessFileName);
-                return false;
+            logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", extensionlessFileName);
+            return false;
 	}
 
         //Confirm that the objectID exists before we set it in the object
@@ -119,10 +105,9 @@ public class TMSObject {
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
-        try {
-            stmt = CDIS.getCisConn().prepareStatement(sql);
-            rs = stmt.executeQuery();
-            
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql); 
+             ResultSet rs = pStmt.executeQuery() ) {
+           
             if (rs.next()) {
                     setObjectID (objID);
                 }        
@@ -131,16 +116,10 @@ public class TMSObject {
                 return false;
             }
         }
-            
-	catch(SQLException sqlex) {
-		sqlex.printStackTrace();
-                return false;
-	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
-        
+	catch(Exception e) {
+            e.printStackTrace();
+            return false;
+	}     
         return true;
     }
 
@@ -201,18 +180,14 @@ public class TMSObject {
         logger.log(Level.FINER,"NEW TMS ObjectNumber: " + getObjectNumber());
     
         // Obtain the ObjectID based on the ObjectName that was determined above. 
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
         String sql =    "select ObjectID " +
                         "from Objects " +
                         "where ObjectNumber = '" + getObjectNumber() + "'";
                     
-                logger.log(Level.FINEST,"SQL! " + sql);
+        logger.log(Level.FINEST,"SQL! " + sql);
         
-        try {
-            stmt = CDIS.getCisConn().prepareStatement(sql);                                
-            rs = stmt.executeQuery();
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
             
             if (rs.next()) {
                 setObjectID(rs.getInt(1));
@@ -226,11 +201,8 @@ public class TMSObject {
                 }
             }
         } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-        }finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            e.printStackTrace();
+            return false;
         }
         
         return true;
@@ -245,9 +217,6 @@ public class TMSObject {
     */
     public void populateObjectIDByRenditionId (Integer renditionId) {
         
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
         String sql =    "select a.ObjectID " +
                         "from Objects a, " +
                         "MediaXrefs b, " +
@@ -261,22 +230,16 @@ public class TMSObject {
         
         logger.log(Level.FINEST,"SQL! " + sql);
         
-        try {
-            stmt = CDIS.getCisConn().prepareStatement(sql);                                
-            rs = stmt.executeQuery();
-            
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+   
             if (rs.next()) {
                 logger.log(Level.FINER,"Located ObjectID: " + rs.getInt(1) + " For RenditionID: " + renditionId);
                 setObjectID(rs.getInt(1));
             }
         } catch (Exception e) {
-                e.printStackTrace();
-        
-        }finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            e.printStackTrace();
         }
-        
     }
     
      /*  Method :        locateObjectIDLetterComponent
@@ -290,10 +253,7 @@ public class TMSObject {
     */
     private void locateObjectIDLetterComponent() {
 
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
         char lastChar;
-        
         logger.log(Level.FINEST,"Attempting to locate object by letter component");
         
         // only continue if the ObjectNumber we were expecting ends in a letter.
@@ -321,22 +281,15 @@ public class TMSObject {
                     
         logger.log(Level.FINEST,"SQL! " + sql);
         
-        try {
-            stmt = CDIS.getCisConn().prepareStatement(sql);                                
-            rs = stmt.executeQuery();
-            
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql); 
+             ResultSet rs = pStmt.executeQuery() )  {
+
             if (rs.next()) {
                 setObjectID(rs.getInt(1));
             }            
         } catch (Exception e) {
-                e.printStackTrace();
-        }finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-        
-    }
-    
-    
+            e.printStackTrace();
+        } 
+    } 
 }
 

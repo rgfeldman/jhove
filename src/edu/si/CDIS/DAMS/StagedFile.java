@@ -9,7 +9,6 @@ import edu.si.CDIS.CDIS;
 import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
@@ -19,8 +18,7 @@ import org.apache.commons.io.FileUtils;
  * @author rfeldman
  */
 public class StagedFile {
-    
-
+   
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private String fileName;
@@ -53,21 +51,18 @@ public class StagedFile {
     }
     
     public boolean populateNamePathFromId (Integer vfcuMediaFileId) {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-        
-        try {
-            String sql = "SELECT b.media_file_name, a.base_path_staging, a.file_path_ending " +
-                         "FROM  vfcu_md5_file a, " +
-                         "      vfcu_media_file b " +
-                         "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
-                         "AND   b.vfcu_media_file_id = " + vfcuMediaFileId;
+ 
+        String sql = "SELECT b.media_file_name, a.base_path_staging, a.file_path_ending " +
+                     "FROM  vfcu_md5_file a, " +
+                     "      vfcu_media_file b " +
+                     "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
+                     "AND   b.vfcu_media_file_id = " + vfcuMediaFileId;
                    
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 
+             ResultSet  rs = pStmt.executeQuery() ) {    
+
             if (rs.next()) {
                 setFileName(rs.getString(1));
                 setBasePath(rs.getString(2));
@@ -79,40 +74,31 @@ public class StagedFile {
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
-                return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+                return false; 
         }
-        
         return true;
     }
     
     public String retrieveSubFileId (String vfcuMasterMediaId) {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-        
+
         String childMediaId = null;
-        
-        try {
-            String sql = "SELECT  aa.vfcu_media_file_id, " + 
-                         "aa.media_file_name " +
-                         "FROM  vfcu_media_file a, " +       
-                         "  vfcu_md5_file b, " +
-                         "  vfcu_media_file aa, " +
-                         "  vfcu_md5_file bb " +
-                         "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
-                         "AND   aa.vfcu_md5_file_id = bb.vfcu_md5_file_id " +
-                         "AND   bb.master_md5_file_id != bb.VFCU_MD5_FILE_ID " +
-                         "AND   SUBSTR(a.media_file_name, 0, INSTR(a.media_file_name, '.')-1) = " + " SUBSTR(aa.media_file_name, 0, INSTR(aa.media_file_name, '.')-1) " +
-                         "AND   a.vfcu_media_file_id = " + vfcuMasterMediaId; 
+        String sql = "SELECT  aa.vfcu_media_file_id, " + 
+                     "aa.media_file_name " +
+                     "FROM  vfcu_media_file a, " +       
+                     "  vfcu_md5_file b, " +
+                     "  vfcu_media_file aa, " +
+                     "  vfcu_md5_file bb " +
+                     "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
+                     "AND   aa.vfcu_md5_file_id = bb.vfcu_md5_file_id " +
+                     "AND   bb.master_md5_file_id != bb.VFCU_MD5_FILE_ID " +
+                     "AND   SUBSTR(a.media_file_name, 0, INSTR(a.media_file_name, '.')-1) = " + " SUBSTR(aa.media_file_name, 0, INSTR(aa.media_file_name, '.')-1) " +
+                     "AND   a.vfcu_media_file_id = " + vfcuMasterMediaId; 
                    
-            logger.log(Level.FINEST,"SQL! " + sql); 
+         logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
+         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+    
             if (rs.next()) {
                 childMediaId = (rs.getString(1));
                 setFileName(rs.getString(2));
@@ -120,11 +106,8 @@ public class StagedFile {
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to check for child media ID in DB", e );
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-        
+         
         return childMediaId;
     }
     
@@ -185,8 +168,7 @@ public class StagedFile {
         String hotFolderDestStr = destination + "\\" + "SUBFILES";
         File hotFolderDest = new File (hotFolderDestStr);
        
-        try {
-            
+        try {      
             FileUtils.copyFileToDirectory(stagedFile, hotFolderDest, false);
             
             logger.log(Level.FINER,"File copied from staging location: " + fileNamewithPath );
@@ -199,8 +181,5 @@ public class StagedFile {
                                  
         return true;
     }
-    
-
-    
 }
     

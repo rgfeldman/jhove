@@ -5,6 +5,14 @@
  */
 package edu.si.CDIS;
 
+import com.lowagie.text.*;
+import com.lowagie.text.rtf.RtfWriter2;
+import com.lowagie.text.rtf.style.RtfFont;
+
+import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.Database.CDISErrorCodeR;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -15,7 +23,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import javax.activation.DataHandler;
@@ -29,14 +36,6 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import com.lowagie.text.*;
-import com.lowagie.text.rtf.RtfWriter2;
-import com.lowagie.text.rtf.style.RtfFont;
-
-import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.Database.CDISErrorCodeR;
-
 
 public class Report {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
@@ -65,31 +64,19 @@ public class Report {
                         "ORDER BY a.file_name";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
-                
-		stmt = CDIS.getDamsConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+              ResultSet rs = pStmt.executeQuery() ) {
                     
-                while (rs.next()) {
-                   metaSyncedIds.add(rs.getInt(1));
-                }        
+            while (rs.next()) {
+                metaSyncedIds.add(rs.getInt(1));
+            }        
         }
             
 	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain MetaData synced Rows, returning", e);
-                return false;
-	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
-        
+            logger.log(Level.SEVERE, "Error: Unable to Obtain MetaData synced Rows, returning", e);
+            return false;
+	} 
         return true;
-        
     }
      
     private boolean genInProgressIdList () {
@@ -110,31 +97,19 @@ public class Report {
                         "WHERE a.cdis_map_id = e.cdis_map_id ) " +
                      "ORDER BY a.file_name";
   
-        
         logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
-                
-		stmt = CDIS.getDamsConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
-                    
-                while (rs.next()) {
-                   inProgressIds.add(rs.getInt(1));
-                }        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ){
+                       
+            while (rs.next()) {
+                inProgressIds.add(rs.getInt(1));
+            }        
         }
             
 	catch(Exception e) {
 		logger.log(Level.SEVERE, "Error: Unable to Obtain In Progress Rows, returning", e);
                 return false;
 	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
-        
         return true;
     }
      
@@ -150,31 +125,19 @@ public class Report {
                         "ORDER BY a.file_name";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ){
                 
-		stmt = CDIS.getDamsConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
-                    
-                while (rs.next()) {
-                   completedIds.add(rs.getInt(1));
-                }        
+            while (rs.next()) {
+                completedIds.add(rs.getInt(1));
+            }        
         }
-            
 	catch(Exception e) {
 		logger.log(Level.SEVERE, "Error: Unable to Obtain Linked Rows, returning", e);
                 return false;
 	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
         
         return true;
-        
     }
     
     private boolean genErrorIdList () {
@@ -201,27 +164,18 @@ public class Report {
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
-		stmt = CDIS.getDamsConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
-                    
-                while (rs.next()) {
-                    failedIds.add(rs.getInt(1));            
-                }        
+        try ( PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 
+              ResultSet rs = pStmt.executeQuery() ){
+                   
+            while (rs.next()) {
+                failedIds.add(rs.getInt(1));            
+            }        
         }
             
 	catch(Exception e) {
 		logger.log(Level.SEVERE, "Error: Unable to Obtain Errored Rows, returning", e);
                 return false;
 	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-	}
-        
         return true;
     }
     
@@ -242,9 +196,9 @@ public class Report {
         
         this.document = new Document();
          
-        try {
+        try (FileOutputStream fis = new FileOutputStream(rptFile)){
             
-            RtfWriter2.getInstance(document,new FileOutputStream(rptFile));
+            RtfWriter2.getInstance(document,fis);
        
             document.open();
             

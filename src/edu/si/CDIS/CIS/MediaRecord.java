@@ -5,8 +5,6 @@
  */
 package edu.si.CDIS.CIS;
 
-import java.util.logging.Level;
-import java.text.SimpleDateFormat;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Database.MediaMaster;
@@ -14,10 +12,12 @@ import edu.si.CDIS.CIS.Database.MediaFiles;
 import edu.si.CDIS.CIS.Database.MediaXrefs;
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import java.text.DateFormat;
-import java.util.Date;
-import java.util.logging.Logger;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *

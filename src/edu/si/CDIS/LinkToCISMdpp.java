@@ -6,17 +6,17 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.CDIS;
-import java.util.logging.Logger;
-import java.util.HashMap;
-import edu.si.CDIS.Database.CDISMap;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.SecurityPolicyUois;
+import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CdisLinkToCis;
+
+import java.util.logging.Logger;
+import java.util.HashMap;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.logging.Level;
 
 /**
  *
@@ -32,8 +32,6 @@ public class LinkToCISMdpp {
         //from the config file, get the cdis_map_id and the cisId for any records that need to be updated
         String sqlTypeArr[] = null;
         String sql = null;
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
         
         for (String key : CDIS.getXmlSelectHash().keySet()) {     
             
@@ -47,11 +45,9 @@ public class LinkToCISMdpp {
         
         HashMap<Integer, String> mapIdsToIntegrate = new HashMap<>();
         
-        try {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()) {
             logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
             
             while (rs.next()) {
                     logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
@@ -60,10 +56,7 @@ public class LinkToCISMdpp {
 
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
+        } 
         
         //  Update status and date in CDIS activity log.
         for (Integer key : mapIdsToIntegrate.keySet()) {
@@ -107,7 +100,6 @@ public class LinkToCISMdpp {
              
         }
 
-        
     }
     
 }

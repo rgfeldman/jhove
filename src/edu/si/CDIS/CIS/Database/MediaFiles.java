@@ -84,30 +84,21 @@ public class MediaFiles {
         String imageName = null;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
-        try {
-		stmt = CDIS.getDamsConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 
+              ResultSet rs = pStmt.executeQuery() ) {
               
-                if (rs.next()) {
-                    imageName = rs.getString(1);
+            if (rs.next()) {
+                imageName = rs.getString(1);
                    
-                    this.setPixelH(rs.getInt("bitmap_height"));
-                    this.setPixelW(rs.getInt("bitmap_width"));
-                }        
+                this.setPixelH(rs.getInt("bitmap_height"));
+                this.setPixelW(rs.getInt("bitmap_width"));
+            }        
 	}
             
 	catch(SQLException sqlex) {
 		sqlex.printStackTrace();
                 return "";
 	}
-        finally {
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
        
         return imageName;
     }   
@@ -121,8 +112,7 @@ public class MediaFiles {
         
         Statement stmt = null;
         ResultSet rs = null;
-        
-        
+         
          // Get variables from the properties list
         try {
             mediaFormatId = Integer.parseInt (CDIS.getProperty("mediaFormatID"));
@@ -142,7 +132,6 @@ public class MediaFiles {
                 return false;
         }
         
-       
         
         // From Anacostia
        String sql = "insert into MediaFiles " +
@@ -189,8 +178,6 @@ public class MediaFiles {
     public boolean updateFileNameAndPath () {
         
        int recordsUpdated = 0;
-       PreparedStatement pStmt = null;
-        
        String sql = "UPDATE mediaFiles " +
                     "SET pathid = " + getPathId() + " " +
                     "FileName = " + getFileName() + " " +
@@ -198,19 +185,14 @@ public class MediaFiles {
        
        logger.log(Level.FINER, "SQL: {0}", sql);
         
-      try {
-            
-            pStmt = CDIS.getCisConn().prepareStatement(sql);
+      try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql) ) {
             recordsUpdated = pStmt.executeUpdate(sql);
             
             logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
                 e.printStackTrace();
-        }finally {
-                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-      
         return true;
     }
 

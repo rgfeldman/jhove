@@ -8,7 +8,6 @@ package edu.si.CDIS.Database;
 import edu.si.CDIS.CDIS;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,22 +48,17 @@ public class CdisLinkToCis {
         this.siHoldingUnit = siHoldingUnit;
     }
     
-    
     public boolean populateSecPolicyId () {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-  
+        
         String sql = "SELECT sec_policy_id " + 
                     "FROM cdis_link_to_cis " +
                     "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
                     "AND si__holding_unit = '" + getSiHoldingUnit() + "'";
         
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()  ){
+ 
             if (rs != null && rs.next()) {
                 setSecurityPolicyId (rs.getInt(1));
             }   
@@ -72,13 +66,8 @@ public class CdisLinkToCis {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
                 return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         return true;
-        
     }
     
 }

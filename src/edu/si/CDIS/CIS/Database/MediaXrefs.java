@@ -52,10 +52,6 @@ public class MediaXrefs {
     */
     public void populateIsPrimary(Integer ObjectID) {
         //Now that we have the rank, need to set the primary flag
-        
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-        
         // set primary to 0 for default
         this.primary = 0; 
         int numRows = 0;
@@ -68,23 +64,16 @@ public class MediaXrefs {
                          " and PrimaryDisplay = 1" +
                          " and TableID = '108'";
             
-            logger.log(Level.FINEST, "SQL: {0}", sql);
-            
-             try {
-		stmt = CDIS.getCisConn().prepareStatement(sql);
-		rs = stmt.executeQuery();
-                
+            logger.log(Level.FINEST, "SQL: {0}", sql);  
+             try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+                  ResultSet rs = pStmt.executeQuery() ) {
+		
                 if (rs.next()) {
                     numRows = rs.getInt(1);
-                }
-                
+                }  
              }
              catch(SQLException sqlex) {
 		sqlex.printStackTrace();
-            }
-            finally {
-                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
             }
             
             // Set the primary to 1 if there were no prior existing primaries found
@@ -93,12 +82,10 @@ public class MediaXrefs {
                 this.setPrimary(1);
             }
         }    
-        
     }
     
     
     public void calculateRank(String extensionlessFileName) {
-        
         
         // Get the rank from the last number after the '_' 
         String charRank = null;

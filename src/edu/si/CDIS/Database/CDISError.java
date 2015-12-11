@@ -6,7 +6,6 @@
 package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,7 +21,6 @@ public class CDISError {
      
      public boolean insertError (Integer cdisMapId, String errorCd) {
         
-        PreparedStatement pStmt = null;
         int rowsUpdated = 0;
         
         String sql = "INSERT INTO cdis_error ( " +
@@ -35,26 +33,21 @@ public class CDISError {
                         cdisMapId + ", " +
                         "'" + errorCd + "'," +
                         "SYSDATE)";
-        try {
+       
+        logger.log(Level.FINER, "SQL: " + sql ); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
             
-            logger.log(Level.FINER, "SQL: " + sql );
-            
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             rowsUpdated = pStmt.executeUpdate(sql); 
             
             if (rowsUpdated != 1) {
                 throw new Exception();
             }
-                
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to insert into CDIS_ERROR table", e );
                 return false;
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
-        
         return true;
         
     }
-    
 }

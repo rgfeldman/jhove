@@ -30,6 +30,7 @@ public class MediaMaster {
     public boolean insertNewRecord() {
      
         Statement stmt = null;
+        ResultSet rs = null;
         
         String sql = "insert into MediaMaster " +  
                         "(DisplayRendID, " +
@@ -52,15 +53,16 @@ public class MediaMaster {
             stmt = CDIS.getCisConn().createStatement();
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
-            ResultSet rs = stmt.getGeneratedKeys();
+            rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 this.mediaMasterId = rs.getInt(1);
             }    
         } catch (Exception e) {
-                e.printStackTrace();
-                return false;
+            e.printStackTrace();
+            return false;
         }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
+            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
         return true;

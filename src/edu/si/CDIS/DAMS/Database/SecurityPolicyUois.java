@@ -7,9 +7,7 @@ package edu.si.CDIS.DAMS.Database;
 
 import edu.si.CDIS.CDIS;
 import java.util.logging.Logger;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.logging.Level;
 
 
@@ -22,7 +20,6 @@ public class SecurityPolicyUois {
      
     private String uoiid;
     private Integer secPolicyId;
-    
     
     
     public Integer getSecPolicyId() {
@@ -41,21 +38,17 @@ public class SecurityPolicyUois {
         this.uoiid = uoiid;
     }
         
-     
-     
-     public boolean updateSecPolicyId() {
-        PreparedStatement pStmt = null;
-        int rowsUpdated = 0;
+    
+    public boolean updateSecPolicyId() {
         
+        int rowsUpdated = 0;
         String sql =  "UPDATE towner.security_policy_uois " +
                       "SET sec_policy_id = " + getSecPolicyId() +
                       " WHERE uoi_id = '" + getUoiid() + "'";
         
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        
-        try {
-            
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
+        logger.log(Level.FINEST,"SQL! " + sql);         
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
+ 
             rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {
@@ -65,10 +58,7 @@ public class SecurityPolicyUois {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update security policy table with new security policy", e );
                 return false;
-        }finally {
-                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }   
-        
+        }    
         return true;
     }
     

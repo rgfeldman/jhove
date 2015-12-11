@@ -4,7 +4,6 @@ package edu.si.CDIS;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.HashMap;
@@ -21,8 +20,7 @@ import edu.si.CDIS.utilties.ErrorLog;
 public class MetaData {
 
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-
-    private String siUnit;
+    
     private String sqlUpdate;
     private HashMap <String,String> metaDataValuesForDams; 
     private ArrayList<String> damsUoiidsToSync;
@@ -41,9 +39,6 @@ public class MetaData {
         RFeldman 2/2015
     */
     public void sync() {
-        
-        //obtain properties values from the config file
-        this.siUnit = CDIS.getProperty("siUnit");
 
         // initialize uoiid list for sync
         damsUoiidsToSync = new ArrayList<>();
@@ -61,7 +56,6 @@ public class MetaData {
         if (!damsUoiidsToSync.isEmpty()) {
             processRenditionList(siAsst);
         }
-
     }
 
     /*  Method :        updateDamsData
@@ -72,20 +66,16 @@ public class MetaData {
     private int updateDamsData() {
 
         Integer recordsUpdated = 0;
-        PreparedStatement pStmt = null;
         
-        try {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(getSqlUpdate())) {
  
-            pStmt = CDIS.getDamsConn().prepareStatement(getSqlUpdate());
             recordsUpdated = pStmt.executeUpdate(getSqlUpdate());
             
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
                 e.printStackTrace();
-        } finally {
-                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
+        } 
         
         return recordsUpdated;
 
@@ -98,8 +88,6 @@ public class MetaData {
     */
     private void getNeverSyncedRendition() {
 
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
         String sqlTypeArr[] = null;
         String sql = null;
 
@@ -114,23 +102,19 @@ public class MetaData {
             }
         }
         
-        try {
-            logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet  rs = pStmt.executeQuery() ) {
             
+            logger.log(Level.FINEST,"SQL! " + sql); 
+                 
             while (rs.next()) {
-                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
-                    damsUoiidsToSync.add(rs.getString(1));
+                logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
+                damsUoiidsToSync.add(rs.getString(1));
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-                try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
+            logger.log(Level.ALL, "Error in generation list to sync: " + e);
+        } 
     }
     
     
@@ -194,7 +178,6 @@ public class MetaData {
                 errorLog.capture(cdisMap, "MDU", "Error, unable to update Dams with new Metadata " + cdisMap.getDamsUoiid());   
             }
         }
- 
     }
     
     
@@ -233,8 +216,7 @@ public class MetaData {
                     firstIteration = false;
                 }
                 
-                updateStatement = updateStatement + " " + column + " = '" + columnValue + "'";
-                
+                updateStatement = updateStatement + " " + column + " = '" + columnValue + "'";       
             }
 
             updateStatement = updateStatement +
@@ -264,12 +246,10 @@ public class MetaData {
     */
 
     private void mapData(CDISMap cdisMap) {
-        ResultSet rs = null;
         String sql;
         String sqlTypeArr[];
         String sqlType;
         String delimiter;
-        PreparedStatement pStmt = null;
         
         ScrubStringForDb scrub = new ScrubStringForDb();
 
@@ -284,16 +264,13 @@ public class MetaData {
             sqlType = sqlTypeArr[0];
             delimiter = sqlTypeArr[1];
             
-            try {
+            try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+                 ResultSet rs = pStmt.executeQuery() ) {
                 sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
 
                 logger.log(Level.ALL, "select Statement: " + sql);
             
                 // populate the metadata object with the values found from the database query
-            
-                pStmt = CDIS.getDamsConn().prepareStatement(sql);
-                rs = pStmt.executeQuery();
-            
                 this.metaDataValuesForDams = new HashMap <String, String>();
                 
                 while (rs.next()) {
@@ -339,12 +316,7 @@ public class MetaData {
             } catch (Exception e) {
                 logger.log(Level.ALL, "Error, exception raised in metadata for loop", e); 
                 continue;
-            } finally {
-                    try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                    try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            }
+            } 
         }
     }
-
- 
 }
