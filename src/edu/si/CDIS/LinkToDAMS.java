@@ -155,8 +155,22 @@ public class LinkToDAMS {
             
             boolean uoiidUpdated = cdisMap.updateUoiid();
             if (!uoiidUpdated) {
-                logger.log(Level.FINER, "ERROR: unable to update UOIID in DAMS for uoiid: " + uois.getUoiid() );
-                continue;
+                 ErrorLog errorLog = new ErrorLog ();
+                 errorLog.capture(cdisMap, "CUI", "ERROR: unable to update UOIID in CDIS for uoiid: " + uois.getUoiid()  );
+                 continue;
+            }
+            
+            // Create an EMu_ready.txt file in the EMu pick up directory.
+                
+            // Update the DAMS checksum information in preservation module
+            SiPreservationMetadata siPreservation = new SiPreservationMetadata();
+            siPreservation.setUoiid(cdisMap.getDamsUoiid()); 
+            siPreservation.setPreservationIdNumber(this.vendorChecksum);
+            boolean preservationInfoAdded = siPreservation.insertRow();
+            if (! preservationInfoAdded) {
+                 ErrorLog errorLog = new ErrorLog ();
+                 errorLog.capture(cdisMap, "PFI", "Error, unable to insert preservation data");
+                 continue;
             }
             
             // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)
@@ -171,14 +185,6 @@ public class LinkToDAMS {
                 activityLog.setCdisStatusCd("FME");
                 activityLog.insertActivity();
             }
-            
-            // Create an EMu_ready.txt file in the EMu pick up directory.
-                
-            // Update the DAMS checksum information in preservation module
-            SiPreservationMetadata siPreservation = new SiPreservationMetadata();
-            siPreservation.setUoiid(cdisMap.getDamsUoiid()); 
-            siPreservation.setPreservationIdNumber(this.vendorChecksum);
-            siPreservation.insertRow();
             
             activityLog.setCdisStatusCd("LDC");
             activityLog.insertActivity();
