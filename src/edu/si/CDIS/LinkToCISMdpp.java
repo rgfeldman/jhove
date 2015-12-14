@@ -11,6 +11,7 @@ import edu.si.CDIS.DAMS.Database.SecurityPolicyUois;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CdisLinkToCis;
+import edu.si.CDIS.utilties.ErrorLog;
 
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -66,7 +67,13 @@ public class LinkToCISMdpp {
             cdisMap.setCdisMapId(key);
             cdisMap.setCisUniqueMediaId(mapIdsToIntegrate.get(key));
             
-            cdisMap.updateCisUniqueMediaId();
+            boolean cisIdUpdate = cdisMap.updateCisUniqueMediaId();
+            if (!cisIdUpdate) {
+                 ErrorLog errorLog = new ErrorLog ();
+                 errorLog.capture(cdisMap, "CCI", "ERROR: unable to record cis_id in CDIS_MAP table ");
+                 continue;
+            }
+            
            
             //get the uoi_id (and filename)
             cdisMap.populateMapInfo();
@@ -84,7 +91,12 @@ public class LinkToCISMdpp {
                 
                 secPolicy.setSecPolicyId(cdisLinkTbl.getSecurityPolicyId());
                
-                secPolicy.updateSecPolicyId();          
+                boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
+                if (!secPolicyUpdated) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
+                    continue;
+                }
             }
             
             //  Set public_use = 'Y' 
