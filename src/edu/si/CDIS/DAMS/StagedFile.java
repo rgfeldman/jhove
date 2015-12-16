@@ -6,7 +6,6 @@
 package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +13,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -117,16 +115,13 @@ public class StagedFile {
     // Moves the staged file to the MASTER folder
     public boolean moveToEmu (String destination) {
 
-        String fileNamewithPath = null;
-        String emuPickupLocation = null;
+        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
+        String emuPickupLocation = destination + "\\" + getPathEnding() + "\\" + getFileName();
         
-        try {
-            fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-            emuPickupLocation = destination + "\\" + getPathEnding() + "\\" + getFileName();
-               
-            logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
-            logger.log(Level.FINER,"File moved to emuPickup location: " + emuPickupLocation );
-                    
+        logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
+        logger.log(Level.FINER,"File moved to emuPickup location: " + emuPickupLocation );
+            
+        try {            
             Path source      = Paths.get(fileNamewithPath);
             Path destWithFile = Paths.get(emuPickupLocation);
             
@@ -143,18 +138,18 @@ public class StagedFile {
     
     // Moves the staged file to the MASTER folder
     public boolean moveToMaster (String destination) {
+        
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        File stagedFile = new File (fileNamewithPath);
+        String hotFolderDestStr = destination + "\\" + "MASTER" + "\\" + getFileName();
         
-        String hotFolderDestStr = destination + "\\" + "MASTER";
-        File hotFolderDest = new File (hotFolderDestStr);
-        
-        try {
+        logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
+        logger.log(Level.FINER,"File moved to hotfolder location: " + hotFolderDestStr );
             
-            FileUtils.moveFileToDirectory(stagedFile, hotFolderDest, false);
-               
-            logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
-            logger.log(Level.FINER,"File moved to hotfolder location: " + hotFolderDestStr );
+        try {
+            Path source      = Paths.get(fileNamewithPath);
+            Path destWithFile = Paths.get(hotFolderDestStr);
+            
+            Files.move(source, destWithFile);
                     
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when moving to master directory",e);
@@ -164,19 +159,20 @@ public class StagedFile {
         return true;
     }
     
-    // Copies the staged file to the SUBFILE folder
+     // Copies the staged file to the SUBFILE folder
     public boolean copyToSubfile (String destination) {
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        File stagedFile = new File (fileNamewithPath);
-        
-        String hotFolderDestStr = destination + "\\" + "SUBFILES";
-        File hotFolderDest = new File (hotFolderDestStr);
+        String hotFolderDestStr = destination + "\\" + "SUBFILES" + "\\" + getFileName();
        
-        try {      
-            FileUtils.copyFileToDirectory(stagedFile, hotFolderDest, false);
+        logger.log(Level.FINER,"File copied from staging location: " + fileNamewithPath );
+        logger.log(Level.FINER,"File copied to hotfolder location: " + hotFolderDestStr );
             
-            logger.log(Level.FINER,"File copied from staging location: " + fileNamewithPath );
-            logger.log(Level.FINER,"File copied to hotfolder location: " + hotFolderDestStr );
+        try {      
+            
+            Path source      = Paths.get(fileNamewithPath);
+            Path destWithFile = Paths.get(hotFolderDestStr);
+            
+            Files.copy(source, destWithFile);
                
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when copying to subFolder directory",e);
