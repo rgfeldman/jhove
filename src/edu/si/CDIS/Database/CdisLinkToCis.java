@@ -53,7 +53,7 @@ public class CdisLinkToCis {
         String sql = "SELECT sec_policy_id " + 
                     "FROM cdis_link_to_cis " +
                     "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                    "AND si__holding_unit = '" + getSiHoldingUnit() + "'";
+                    "AND si_holding_unit = '" + getSiHoldingUnit() + "'";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);

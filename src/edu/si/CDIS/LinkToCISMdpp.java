@@ -87,7 +87,12 @@ public class LinkToCISMdpp {
                 CdisLinkToCis cdisLinkTbl = new CdisLinkToCis();
                 cdisLinkTbl.setCisUniqueMediaId(cdisMap.getCisUniqueMediaId());
                 cdisLinkTbl.setSiHoldingUnit(CDIS.getProperty("siHoldingUnit"));
-                cdisLinkTbl.populateSecPolicyId();
+                boolean secPolicyretrieved = cdisLinkTbl.populateSecPolicyId();
+                if (!secPolicyretrieved) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
+                    continue;
+                }
                 
                 secPolicy.setSecPolicyId(cdisLinkTbl.getSecurityPolicyId());
                

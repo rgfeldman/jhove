@@ -45,19 +45,19 @@ public class CDISError {
     
 
 
-    public boolean insertError (Integer cdisMapId, String errorCd) {
+    public boolean insertError (Integer cdisMapId, String cdisErrorCd) {
         
         int rowsUpdated = 0;
         
         String sql = "INSERT INTO cdis_error ( " +
                         "cdis_error_id, " +
                         "cdis_map_id, " +
-                        "error_cd, " +
+                        "cdis_error_cd, " +
                         "error_dt) " +
                     "values ( " + 
                         "cdis_error_id_seq.NextVal, " +
                         cdisMapId + ", " +
-                        "'" + errorCd + "'," +
+                        "'" + cdisErrorCd + "'," +
                         "SYSDATE)";
        
         logger.log(Level.FINER, "SQL: " + sql ); 
