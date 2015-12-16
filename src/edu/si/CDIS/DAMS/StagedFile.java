@@ -7,6 +7,9 @@ package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -114,25 +117,26 @@ public class StagedFile {
     // Moves the staged file to the MASTER folder
     public boolean moveToEmu (String destination) {
 
-        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        File stagedFile = new File (fileNamewithPath);
-        
-        String emuPickupLocation = destination + "\\" + getPathEnding();
-        File emuPickupDir = new File (emuPickupLocation);
+        String fileNamewithPath = null;
+        String emuPickupLocation = null;
         
         try {
-            
-            FileUtils.moveFileToDirectory(stagedFile, emuPickupDir, true);
+            fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
+            emuPickupLocation = destination + "\\" + getPathEnding() + "\\" + getFileName();
                
             logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
             logger.log(Level.FINER,"File moved to emuPickup location: " + emuPickupLocation );
                     
+            Path source      = Paths.get(fileNamewithPath);
+            Path destWithFile = Paths.get(emuPickupLocation);
+            
+            Files.move(source, destWithFile);
+            
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when moving to emuPickup directory",e);
             return false;
         }
         
-    
         return true;
     }
     
