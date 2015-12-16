@@ -7,17 +7,16 @@ package edu.si.CDIS.utilties;
 
 import edu.si.CDIS.CDIS;
 import java.io.File;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-        
 public class XmlSqlConfig {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
