@@ -118,7 +118,7 @@ public class SiAssetMetaData {
   
         int recordsUpdated;
         String sql = "UPDATE towner.si_asset_metadata " +
-                    "SET public_use = 'Y' " +
+                    "SET public_use = 'Yes' " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
         logger.log(Level.FINEST,"SQL! " + sql);    
