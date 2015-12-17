@@ -107,7 +107,13 @@ public class LinkToCISMdpp {
             //  Set public_use = 'Y' 
             SiAssetMetaData siAsst = new SiAssetMetaData();
             siAsst.setUoiid(cdisMap.getDamsUoiid());      
-            siAsst.updatePublicUse();
+            boolean publicUseUpdated = siAsst.updatePublicUse();
+            if (! publicUseUpdated) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "DPU", "ERROR: unable to Update public use flag in DAMS ");
+                continue;
+            }
+            
              
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             activityLog.setCdisStatusCd("LCC");

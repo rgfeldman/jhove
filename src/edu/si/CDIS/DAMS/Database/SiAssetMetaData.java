@@ -6,7 +6,6 @@
 package edu.si.CDIS.DAMS.Database;
 
 import edu.si.CDIS.CDIS;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,7 +51,7 @@ public class SiAssetMetaData {
     public int updateDAMSSourceSystemID (String uoiid, String sourceSystemId) {
         int recordsUpdated = 0;
 
-        String sql = "update SI_ASSET_METADATA set source_system_id = '" + sourceSystemId + "' " +
+        String sql = "update towner.SI_ASSET_METADATA set source_system_id = '" + sourceSystemId + "' " +
                     "where UOI_ID = '" + uoiid + "'";
 
         logger.log(Level.FINEST, "SQL! {0}", sql);
@@ -97,7 +96,7 @@ public class SiAssetMetaData {
     
     public boolean populateOwningUnitUniqueName () {
   
-        String sql = "SELECT owning_unit_unique_name FROM si_asset_metadata " +
+        String sql = "SELECT owning_unit_unique_name FROM towner.si_asset_metadata " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
@@ -118,7 +117,7 @@ public class SiAssetMetaData {
     public boolean updatePublicUse () {
   
         int recordsUpdated;
-        String sql = "UPDATE si_asset_metadata " +
+        String sql = "UPDATE towner.si_asset_metadata " +
                     "SET public_use = 'Y' " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
