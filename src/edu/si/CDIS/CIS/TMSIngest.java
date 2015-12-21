@@ -163,7 +163,7 @@ public class TMSIngest {
                         }
                          
                         // update the SourceSystemID in DAMS with the RenditionNumber
-                        rowsUpdated = siAsst.updateDAMSSourceSystemID(siAsst.getUoiid(), mediaRendition.getRenditionNumber() );
+                        rowsUpdated = siAsst.updateDAMSSourceSystemID(mediaRendition.getRenditionNumber() );
                         
                         if (rowsUpdated == 0) {    
                             logger.log(Level.FINER, "Failed in update to SourceSystemID");

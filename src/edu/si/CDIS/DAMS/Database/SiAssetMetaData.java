@@ -48,11 +48,11 @@ public class SiAssetMetaData {
         RFeldman 2/2015
     */
     
-    public int updateDAMSSourceSystemID (String uoiid, String sourceSystemId) {
+    public int updateDAMSSourceSystemID (String sourceSystemId) {
         int recordsUpdated = 0;
 
         String sql = "update towner.SI_ASSET_METADATA set source_system_id = '" + sourceSystemId + "' " +
-                    "where UOI_ID = '" + uoiid + "'";
+                    "where UOI_ID = '" + getUoiid() + "'";
 
         logger.log(Level.FINEST, "SQL! {0}", sql);
         
@@ -77,7 +77,7 @@ public class SiAssetMetaData {
                      "WHERE table_name = 'SI_ASSET_METADATA' " + 
                      "AND owner = 'TOWNER' " +
                      "AND data_type != 'DATE' " + 
-                     "AND column_name NOT IN ('PUBLIC_USE','UOI_ID','OWNING_UNIT_UNIQUE_NAME')";
+                     "AND column_name NOT IN ('UOI_ID','OWNING_UNIT_UNIQUE_NAME')";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);

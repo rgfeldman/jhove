@@ -327,15 +327,10 @@ public class CDIS {
                     sendToHotFolder.ingest();  
                     break;
                     
-                case "linkToCIS" :
-                    LinkCollections linkToCis = new LinkCollections();
-                    linkToCis.linkToCIS();
-                    break;
-                    
                 case "linkToCISMdpp" :
                     LinkToCISMdpp linkToCisMdpp = new LinkToCISMdpp();
                     linkToCisMdpp.link();
-                break;
+                    break;
                                     
                 case "linkToDAMS" :
                     LinkToDAMS linkToDams = new LinkToDAMS();
@@ -343,7 +338,7 @@ public class CDIS {
                     break;
 
                 case "metaDataSync" :    
-                    MetaData metaData = new MetaData();
+                    MetaDataSync metaData = new MetaDataSync();
                     metaData.sync();
                     break;
                     

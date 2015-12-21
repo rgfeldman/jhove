@@ -157,6 +157,29 @@ public class CDISMap {
         return true; 
     }
     
+    public boolean populateIdFromUoiid () {
+
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE dams_uoi_id = '" + getDamsUoiid() + "'";
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for uoiid", e );
+                return false;
+        }
+        return true;
+    }
     
     public boolean populateIdFromVfcuId () {
 

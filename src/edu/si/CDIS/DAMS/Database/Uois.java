@@ -78,7 +78,7 @@ public class Uois {
         PreparedStatement pStmt = null;
         
         // We have not met any of the above conditions, we should update for IDS
-        String sql = "UPDATE uois " +
+        String sql = "UPDATE towner.uois " +
                     "SET metadata_state_dt = SYSDATE, " +
                     "    metadata_state_user_id = '22246' " +
                     "WHERE uoi_id = '" + this.uoiid + "'";
