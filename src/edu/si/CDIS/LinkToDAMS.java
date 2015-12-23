@@ -17,10 +17,14 @@ import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.utilties.ErrorLog;
 
+
 import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +35,7 @@ public class LinkToDAMS {
     private String vendorChecksum;
     private String pathBase;
     private String pathEnding;
+    private Integer vfcuMd5FileId;
     
     private void logIngestFailedFile (String filename) {
         logger.log(Level.FINER, "FailedFileName found: " + filename);
@@ -116,6 +121,8 @@ public class LinkToDAMS {
         HashMap<Integer, String> unlinkedDamsRecords;
         unlinkedDamsRecords = new HashMap<> ();
         
+        Set md5IdSet = new HashSet();
+        
         unlinkedDamsRecords = cdisMap.returnUnlinkedMediaInDams();
                 
         checkForFailedFiles();
@@ -142,12 +149,19 @@ public class LinkToDAMS {
             }
             
             //with the vfcuId get the rest of the VFCU data including the paths and checksum info
-            retrieveVfcuData(cdisMap.getVfcuMediaFileId());
+            boolean vfcuInfoObtained = retrieveVfcuData(cdisMap.getVfcuMediaFileId());
+            if (!vfcuInfoObtained) {
+                logger.log(Level.FINER, "ERROR: Unable to obtain vfcu information for CDIS_MAP_ID: " + cdisMap.getCdisMapId());
+                continue;
+            } 
+            
+            //Add the md5Id to the set so we can check for completeness later
+            md5IdSet.add(this.vfcuMd5FileId);
             
             //Get the uoiid for the name and checksum
             boolean uoiidFound = uois.populateUoiidForNameChksum(vendorChecksum);
             if (!uoiidFound) {
-                logger.log(Level.FINER, "No matches in DAMS for filename/checksum " + uois.getName() );
+                logger.log(Level.FINER, "ERROR: No matches in DAMS for filename/checksum " + uois.getName() );
                 continue;
             }
             
@@ -160,7 +174,7 @@ public class LinkToDAMS {
                  continue;
             }
             
-            // Create an EMu_ready.txt file in the EMu pick up directory.
+            
                 
             // Update the DAMS checksum information in preservation module
             SiPreservationMetadata siPreservation = new SiPreservationMetadata();
@@ -173,8 +187,7 @@ public class LinkToDAMS {
                  continue;
             }
             
-            // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)
-            
+            // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)           
             if (cdisMap.getFileName().endsWith("tif")) {
                 StagedFile stagedFile = new StagedFile();
                 stagedFile.setBasePath(pathBase);
@@ -192,12 +205,47 @@ public class LinkToDAMS {
             try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
         }
+        
+        // Get the list of vendor directories that may have been processed in this batch
+        
+        Iterator md5Id = md5IdSet.iterator();
+        
+        while (md5Id.hasNext()) { 
+            int totalFilesDb = 0;
+            int totalFilesFileSystem = 0;
+            
+            //count the number of files in batch not yet completed
+            this.vfcuMd5FileId = (Integer) md5Id.next();
+            int numUnprocessedFiles = countUnprocessedFiles();
+            
+            //if the number of files in batch not yet completed > 1 then continue to next one
+            if (numUnprocessedFiles > 0 ) {
+                continue;
+            }
+                    
+            //count the number of files in batch total
+            totalFilesDb = countFilesVfcuBatchId();
+            
+            //getDirectory Name ending for this md5Id
+            setFilePathEndingForId();
+            String emuPickupLocation = CDIS.getProperty("emuPickupLocation") + "\\" + this.pathEnding;
+            
+            //count the number of files in vendor directory
+            totalFilesFileSystem = countEmuFiles(emuPickupLocation);
+            
+            //if number of files is the same then create emu ready file
+            if (totalFilesDb == totalFilesFileSystem) {
+                
+                createEmuReadyFile(emuPickupLocation);
+            }
+        }
+            
     }
 
     
     private boolean retrieveVfcuData(Integer vfcuMediaFileId) {
   
-        String sql = "SELECT    a.base_path_staging, a.file_path_ending, " +
+        String sql = "SELECT    a.vfcu_md5_file_id, a.base_path_staging, a.file_path_ending, " +
                     "           b.vendor_checksum " +
                     "FROM       vfcu_md5_file a, " +
                     "           vfcu_media_file b " +
@@ -210,9 +258,10 @@ public class LinkToDAMS {
             ResultSet rs = pStmt.executeQuery() ) {
             
             if (rs != null && rs.next()) {
-                this.pathBase = rs.getString(1);
-                this.pathEnding = rs.getString(2);
-                this.vendorChecksum = rs.getString(3);
+                this.vfcuMd5FileId = rs.getInt(1);
+                this.pathBase = rs.getString(2);
+                this.pathEnding = rs.getString(3);
+                this.vendorChecksum = rs.getString(4);
             }   
             else {
                 return false;
@@ -224,4 +273,137 @@ public class LinkToDAMS {
         }
         return true;
     }
+    
+    private void createEmuReadyFile (String emuPickupDirName) {
+    
+        String readyFilewithPath = null;
+        
+        try {
+                //Create the ready.txt file and put in the media location
+                readyFilewithPath = emuPickupDirName + "\\EMu_ready.txt";
+
+                logger.log(Level.FINER, "Creating EMu ReadyFile: " + readyFilewithPath);
+                
+                File readyFile = new File (readyFilewithPath);
+            
+                readyFile.createNewFile();
+  
+        } catch (Exception e) {
+            logger.log(Level.FINER,"ERROR encountered when trying to create EMu_ready.txt file",e);;
+        }
+    }   
+    
+    private int countUnprocessedFiles () {
+        
+        int count = 0;
+        
+        String sql =    "SELECT count (*) " +
+                        "FROM   vfcu_md5_file a, " +
+                        "       cdis_map b, " + 
+                        "WHERE  a.vfcu_media_file_id = b.vfcu_media_file_id " +
+                        "AND    a.vfcuMd5FileId = " + this.vfcuMd5FileId +
+                        " AND    NOT EXISTS ( " +
+                        "       SELECT 'X' " +
+                        "       FROM vfcu_activity_log c " +
+                        "       WHERE a.vfcu_media_file_id = c.vfcu_media_file_id " +
+                        "       AND c.vfcu_status_cd = 'LDC' ) ";
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain Count of unprocessed files", e );
+        }
+        
+        return count;
+    }
+    
+    private int countFilesVfcuBatchId () {
+        
+        int count = 0;
+        
+        String sql =    "SELECT count (*) " +
+                        "FROM   vfcu_md5_file a, " +
+                        "       cdis_map b, " + 
+                        "WHERE  a.vfcu_media_file_id = b.vfcu_media_file_id " +
+                        "AND    a.vfcuMd5FileId = " + this.vfcuMd5FileId;
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain Count of unprocessed files", e );
+        }
+        
+        return count;
+    }
+        
+    private int countEmuFiles (String emuLocation) {
+        int count = 0;
+        
+        File emuDirectory = new File(emuLocation);
+        
+        for (File file : emuDirectory.listFiles()) {
+            if (file.getName().endsWith("tif")) {
+                count++;
+            }
+        }
+
+        return count;
+        
+    }    
+    
+    private void setFilePathEndingForId () {
+        
+        String sql =    "SELECT file_path_ending " +
+                        "FROM   vfcu_md5_file " +
+                        "WHERE  vfcu_media_file_id = " + this.vfcuMd5FileId;
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                this.pathEnding = rs.getString(1);
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain Count of unprocessed files", e );
+        }
+        
+    }
+    
+    /*
+    public static int getFilesCount(Path dir) throws IOException, NotDirectoryException {
+    int c = 0;
+    if(Files.isDirectory(dir)) {
+        try(DirectoryStream<Path> files = Files.newDirectoryStream(dir)) {
+            for(Path file : files) {
+                if(Files.isRegularFile(file) || Files.isSymbolicLink(file)) {
+                    // symbolic link also looks like file
+                    c++;
+                }
+            }
+        }
+    }
+    else
+        throw new NotDirectoryException(dir + " is not directory");
+
+    return c;
+}
+    */
+    
 }

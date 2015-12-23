@@ -5,7 +5,6 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.CDIS;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import java.util.logging.Logger;
@@ -17,7 +16,6 @@ import java.util.logging.Level;
 import edu.si.CDIS.DAMS.StagedFile;
 import java.io.File;
 import java.util.Iterator;
-import java.lang.Thread;
 import org.apache.commons.io.FilenameUtils;
 import edu.si.CDIS.utilties.ErrorLog;
 
@@ -127,7 +125,6 @@ public class SendToHotFolder {
                 
                 continue;
             }
-            
         }
         
         //Obtain empty hot folder to put these files into
