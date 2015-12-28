@@ -386,24 +386,4 @@ public class LinkToDAMS {
         
     }
     
-    /*
-    public static int getFilesCount(Path dir) throws IOException, NotDirectoryException {
-    int c = 0;
-    if(Files.isDirectory(dir)) {
-        try(DirectoryStream<Path> files = Files.newDirectoryStream(dir)) {
-            for(Path file : files) {
-                if(Files.isRegularFile(file) || Files.isSymbolicLink(file)) {
-                    // symbolic link also looks like file
-                    c++;
-                }
-            }
-        }
-    }
-    else
-        throw new NotDirectoryException(dir + " is not directory");
-
-    return c;
-}
-    */
-    
 }
