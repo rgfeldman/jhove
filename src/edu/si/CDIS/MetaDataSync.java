@@ -279,7 +279,7 @@ public class MetaDataSync {
                  ResultSet rs = pStmt.executeQuery() ) {
                 
                 // populate the metadata object with the values found from the database query
-                this.metaDataValuesForDams = new HashMap <String, String>();
+                this.metaDataValuesForDams = new HashMap <>();
                 
                 while (rs.next()) {
                     
