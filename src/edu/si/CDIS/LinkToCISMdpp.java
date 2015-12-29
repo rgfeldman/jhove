@@ -5,7 +5,6 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.SecurityPolicyUois;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
@@ -102,18 +101,6 @@ public class LinkToCISMdpp {
                     continue;
                 }
             }
-            
-            //  Set public_use = 'Y' 
-            /* Commenting this part out, this is part of the metadata sync
-            SiAssetMetaData siAsst = new SiAssetMetaData();
-            siAsst.setUoiid(cdisMap.getDamsUoiid());      
-            boolean publicUseUpdated = siAsst.updatePublicUse();
-            if (! publicUseUpdated) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "DPU", "ERROR: unable to Update public use flag in DAMS ");
-                continue;
-            }
-            */
              
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             activityLog.setCdisStatusCd("LCC");
