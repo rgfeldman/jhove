@@ -275,12 +275,10 @@ public class LinkToDAMS {
     }
     
     private void createEmuReadyFile (String emuPickupDirName) {
-    
-        String readyFilewithPath = null;
         
         try {
                 //Create the ready.txt file and put in the media location
-                readyFilewithPath = emuPickupDirName + "\\EMu_ready.txt";
+                String readyFilewithPath = emuPickupDirName + "\\EMu_ready.txt";
 
                 logger.log(Level.FINER, "Creating EMu ReadyFile: " + readyFilewithPath);
                 
