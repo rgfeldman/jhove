@@ -83,7 +83,7 @@ public class CDIS {
             //decrypt the password, it is stored in ini in encypted fashion
             String damsPass = EncryptDecrypt.decryptString(CDIS.getProperty("damsPass"));
             
-            this.damsConn = DataProvider.establishConnection(CDIS.getProperty("damsDriver"), 
+            CDIS.damsConn = DataProvider.establishConnection(CDIS.getProperty("damsDriver"), 
 					CDIS.getProperty("damsConnString"), 
 					CDIS.getProperty("damsUser"), 
 					damsPass);
@@ -105,7 +105,7 @@ public class CDIS {
                     //decrypt the password, it is stored in ini in encypted fashion
                     String tmsPass = EncryptDecrypt.decryptString(CDIS.getProperty("cisPass"));
                 
-                    this.cisConn = DataProvider.establishConnection(CDIS.getProperty("cisDriver"), 
+                    CDIS.cisConn = DataProvider.establishConnection(CDIS.getProperty("cisDriver"), 
                     CDIS.getProperty("cisConnString"), 
                     CDIS.getProperty("cisUser"), 
                     tmsPass);
@@ -134,7 +134,7 @@ public class CDIS {
         Handler fh;
             
         try {
-		fh = new FileHandler("log\\CDISLog-" + this.operationType + this.batchNumber + ".txt");
+		fh = new FileHandler("log\\CDISLog-" + this.operationType + CDIS.batchNumber + ".txt");
 	
         } catch (Exception e) {
 		e.printStackTrace();
@@ -318,7 +318,7 @@ public class CDIS {
                 return;
             }
             
-            cdis.xmlSelectHash = new HashMap <String, String[]>(xml.getSelectStmtHash());
+            CDIS.xmlSelectHash = new HashMap <>(xml.getSelectStmtHash());
             
             switch (cdis.operationType) {
                 
@@ -371,10 +371,10 @@ public class CDIS {
         } catch (Exception e) {
                 e.printStackTrace();
         } finally {
-            try { if ( damsConn != null)  cdis.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.damsConn != null)  CDIS.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
             
-            try { if ( cisConn != null)  cdis.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
-            try { if ( damsConn != null)  cdis.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.cisConn != null)  CDIS.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.damsConn != null)  CDIS.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
     
     }
