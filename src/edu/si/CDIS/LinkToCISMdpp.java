@@ -100,6 +100,14 @@ public class LinkToCISMdpp {
                     errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
                     continue;
                 }
+                
+                //final validation of all four checksums
+                boolean checkSumVldt = validateAllChecksums(cdisMap.getCdisMapId());
+                if (! checkSumVldt) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "CVF", "ERROR: unable to Update secuirty Policy in DAMS ");
+                    continue;
+                }
             }
              
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
@@ -110,6 +118,40 @@ public class LinkToCISMdpp {
              
         }
 
+    }
+    
+    private boolean validateAllChecksums (Integer cdisMapId) {
+        
+        String sql =    "SELECT 'Vldt Passed' " +
+                        "FROM   vfcu_media_file a, " +
+                        "       cdis_map b, " +
+                        "       towner.checksum_view c, " +
+                        "       cdis_link_to_cis d " +
+                        "WHERE  a.vfcu_media_file_id = b.vfcu_media_file_id " +
+                        "AND    b.dams_uoi_id = c.uoi_id " +
+                        "AND    b.cis_unique_media_id  = d.cis_unique_media_id " +
+                        "AND    a.vfcu_checksum = a.vendor_checksum " +
+                        "AND    a.vendor_checksum = c.content_checksum " +
+                        "AND    a.vendor_checksum = d.cis_checksum " +
+                        "AND    c.content_checksum = d.cis_checksum " +
+                        "AND    b.cdis_map_id = " + cdisMapId;
+                
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                return true;
+            }   
+            else
+                return false;
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain Count of unprocessed files", e );
+                return false;
+        }
     }
     
 }
