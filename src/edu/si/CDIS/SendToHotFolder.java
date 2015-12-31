@@ -91,8 +91,7 @@ public class SendToHotFolder {
             
             StagedFile stagedFile = new StagedFile();
             // Get the child record
-            String childMediaId = null;
-            childMediaId = stagedFile.retrieveSubFileId(uniqueMediaId);
+            String childMediaId = stagedFile.retrieveSubFileId(uniqueMediaId);
 
             cdisMap = new CDISMap();
             String childFileName = FilenameUtils.getBaseName(masterMediaIds.get(uniqueMediaId)) + ".tif";
@@ -102,9 +101,10 @@ public class SendToHotFolder {
             // put the entry into the CDIS_MAP table
             mapEntryCreated = cdisMap.createRecord();
             
-             if (!mapEntryCreated) {
-                logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
-
+             if (!mapEntryCreated) { 
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CMI", "Could not create CDISMAP entry, retrieving next row");
+                    
                 //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
                 it.remove();
                 continue;
@@ -370,7 +370,7 @@ public class SendToHotFolder {
                                                                                        
         this.cisSourceDB = CDIS.getProperty("cisSourceDB"); 
   
-        this.masterMediaIds = new LinkedHashMap<String, String>();
+        this.masterMediaIds = new LinkedHashMap<>();
         
         // Get the list of new Media to add to DAMS
         Integer numCisRenditions = populateNewMediaList ();
@@ -385,12 +385,10 @@ public class SendToHotFolder {
      }
      
     private void createReadyFile (String hotDirectoryName) {
-    
-        String readyFilewithPath = null;
         
         try {
                 //Create the ready.txt file and put in the media location
-                readyFilewithPath = hotDirectoryName + "\\ready.txt";
+                String readyFilewithPath = hotDirectoryName + "\\ready.txt";
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 
