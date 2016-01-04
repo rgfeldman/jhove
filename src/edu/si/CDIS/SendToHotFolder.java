@@ -7,6 +7,7 @@ package edu.si.CDIS;
 
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.VFCUMediaFile;
 import java.util.logging.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -89,14 +90,23 @@ public class SendToHotFolder {
                 continue;
             }
             
-            StagedFile stagedFile = new StagedFile();
+            VFCUMediaFile vfcuMediafile = new VFCUMediaFile();
+            vfcuMediafile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
+            
             // Get the child record
-            String childMediaId = stagedFile.retrieveSubFileId(uniqueMediaId);
+            int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
+            if (! (childVfcuMediaFileId > 0 )) {
+                logger.log(Level.FINER, "Could not get child ID");
+                continue;
+            }
+            vfcuMediafile.setVfcuMediaFileId(childVfcuMediaFileId);
 
+            vfcuMediafile.populateMediaFileName();
+                    
             cdisMap = new CDISMap();
-            String childFileName = FilenameUtils.getBaseName(masterMediaIds.get(uniqueMediaId)) + ".tif";
-            cdisMap.setFileName(childFileName);
-            cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
+
+            cdisMap.setFileName(vfcuMediafile.getMediaFileName());
+            cdisMap.setVfcuMediaFileId(vfcuMediafile.getVfcuMediaFileId());
             
             // put the entry into the CDIS_MAP table
             mapEntryCreated = cdisMap.createRecord();
@@ -212,23 +222,28 @@ public class SendToHotFolder {
                 CDISMap cdisMap = new CDISMap();
                 cdisMap.setBatchNumber(CDIS.getBatchNumber());
                 StagedFile stagedFile = new StagedFile();
- 
-                String childMediaId = null;
             
                 try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 
-                //get the subFile ID and populate FileName from the masterID first
-                childMediaId = stagedFile.retrieveSubFileId(masterMediaId);
+                VFCUMediaFile vfcuMediafile = new VFCUMediaFile();
+                vfcuMediafile.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
+            
+                // Get the child record
+                int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
+                if (! (childVfcuMediaFileId > 0 )) {
+                    logger.log(Level.FINER, "Could not get child ID");
+                    continue;
+                }
                 
                 //Get the file path for the vfcu_id
-                boolean infoPopulated = stagedFile.populateNamePathFromId(Integer.parseInt(childMediaId));
+                boolean infoPopulated = stagedFile.populateNamePathFromId(childVfcuMediaFileId);
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "FCF", "Error, unable to populate name and path from database for subfile ");
                     continue;
                 }
                 
-                cdisMap.setVfcuMediaFileId(Integer.parseInt(childMediaId));
+                cdisMap.setVfcuMediaFileId(childVfcuMediaFileId);
                 cdisMap.populateIdFromVfcuId();
                  
                 //Find the image and move/copy to hotfolder

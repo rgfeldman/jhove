@@ -216,27 +216,40 @@ public class LinkToDAMS {
             
             //count the number of files in batch not yet completed
             this.vfcuMd5FileId = (Integer) md5Id.next();
+            //getDirectory Name ending for this md5Id
+            setFilePathEndingForId();
+            
+            if (! this.pathEnding.endsWith("tifs")) {
+                //we ignore the pickup location, only interested in tifs for delivery to emu
+                continue;
+            }
+            
+            String emuPickupLocation = CDIS.getProperty("emuPickupLocation") + "\\" + this.pathEnding;
+            
+            
             int numUnprocessedFiles = countUnprocessedFiles();
             
-            //if the number of files in batch not yet completed > 1 then continue to next one
+            //if the number of files in batch not yet completed > 1 then it is not yet ready, go grab the next one
             if (numUnprocessedFiles > 0 ) {
                 continue;
             }
                     
             //count the number of files in batch total
-            totalFilesDb = countFilesVfcuBatchId();
-            
-            //getDirectory Name ending for this md5Id
-            setFilePathEndingForId();
-            String emuPickupLocation = CDIS.getProperty("emuPickupLocation") + "\\" + this.pathEnding;
+            totalFilesDb = countFilesVfcuDBVendorDir();
             
             //count the number of files in vendor directory
             totalFilesFileSystem = countEmuFiles(emuPickupLocation);
             
+            logger.log(Level.FINEST,"Files In DB for VendorDir! " + totalFilesDb); 
+            logger.log(Level.FINEST,"FilesInEmuFileSystem! " + totalFilesFileSystem); 
+                
             //if number of files is the same then create emu ready file
-            if (totalFilesDb == totalFilesFileSystem) {
+            if ((totalFilesDb > 0 )&& (totalFilesDb == totalFilesFileSystem)) {
                 
                 createEmuReadyFile(emuPickupLocation);
+            }
+            else {
+                logger.log(Level.FINEST,"Need to wait, more files to process! "); 
             }
         }
             
@@ -295,16 +308,16 @@ public class LinkToDAMS {
         
         int count = 0;
         
-        String sql =    "SELECT count (*) " +
-                        "FROM   vfcu_md5_file a, " +
-                        "       cdis_map b, " + 
-                        "WHERE  a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                        "AND    a.vfcuMd5FileId = " + this.vfcuMd5FileId +
-                        " AND    NOT EXISTS ( " +
-                        "       SELECT 'X' " +
-                        "       FROM vfcu_activity_log c " +
-                        "       WHERE a.vfcu_media_file_id = c.vfcu_media_file_id " +
-                        "       AND c.vfcu_status_cd = 'LDC' ) ";
+        String sql =   "SELECT count (*) " + 
+                       "FROM   vfcu_media_file a " +
+                       "WHERE a.vfcu_md5_file_id = " + this.vfcuMd5FileId +
+                       " AND    NOT EXISTS ( " +
+                       "    SELECT  'X' " +
+                       "    FROM    cdis_map b, " +
+                       "            cdis_activity_log c " +
+                       "WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
+                       "AND  b.cdis_map_id = c.cdis_map_id " +
+                       "AND c.cdis_status_cd = 'LDC' )"; 
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         
@@ -322,15 +335,13 @@ public class LinkToDAMS {
         return count;
     }
     
-    private int countFilesVfcuBatchId () {
+    private int countFilesVfcuDBVendorDir () {
         
         int count = 0;
         
         String sql =    "SELECT count (*) " +
-                        "FROM   vfcu_md5_file a, " +
-                        "       cdis_map b, " + 
-                        "WHERE  a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                        "AND    a.vfcuMd5FileId = " + this.vfcuMd5FileId;
+                        "FROM   vfcu_media_file a " +
+                        "WHERE  a.vfcu_md5_file_id = " + this.vfcuMd5FileId;
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         
@@ -342,7 +353,7 @@ public class LinkToDAMS {
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain Count of unprocessed files", e );
+                logger.log(Level.FINER, "Error: unable to obtain Count in VFCU_batch_id", e );
         }
         
         return count;
@@ -367,7 +378,7 @@ public class LinkToDAMS {
         
         String sql =    "SELECT file_path_ending " +
                         "FROM   vfcu_md5_file " +
-                        "WHERE  vfcu_media_file_id = " + this.vfcuMd5FileId;
+                        "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         
@@ -379,7 +390,7 @@ public class LinkToDAMS {
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain Count of unprocessed files", e );
+                logger.log(Level.FINER, "Error: unable to obtain path ending", e );
         }
         
     }

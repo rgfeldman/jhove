@@ -27,6 +27,7 @@ public class LinkToCISMdpp {
     
     public void link () {
         //  The CDIS process will check CDIS for Ingest table for any entries with status RI. 
+        // note this will only pull the tifs because only the tifs are in the ingest table
         
         //from the config file, get the cdis_map_id and the cisId for any records that need to be updated
         String sqlTypeArr[] = null;
@@ -76,43 +77,62 @@ public class LinkToCISMdpp {
             //get the uoi_id (and filename)
             cdisMap.populateMapInfo();
             
-            
             //  Update the security policy 
-            if (cdisMap.getFileName().endsWith("tif") ) {
-                SecurityPolicyUois secPolicy = new SecurityPolicyUois();
-                secPolicy.setUoiid(cdisMap.getDamsUoiid());
+            SecurityPolicyUois secPolicy = new SecurityPolicyUois();
+            secPolicy.setUoiid(cdisMap.getDamsUoiid());
                 
-                CdisLinkToCis cdisLinkTbl = new CdisLinkToCis();
-                cdisLinkTbl.setCisUniqueMediaId(cdisMap.getCisUniqueMediaId());
-                cdisLinkTbl.setSiHoldingUnit(CDIS.getProperty("siHoldingUnit"));
-                boolean secPolicyretrieved = cdisLinkTbl.populateSecPolicyId();
-                if (!secPolicyretrieved) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
-                    continue;
-                }
+            CdisLinkToCis cdisLinkTbl = new CdisLinkToCis();
+            cdisLinkTbl.setCisUniqueMediaId(cdisMap.getCisUniqueMediaId());
+            cdisLinkTbl.setSiHoldingUnit(CDIS.getProperty("siHoldingUnit"));
+            boolean secPolicyretrieved = cdisLinkTbl.populateSecPolicyId();
+            if (!secPolicyretrieved) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
+                continue;
+            }
                 
-                secPolicy.setSecPolicyId(cdisLinkTbl.getSecurityPolicyId());
+            secPolicy.setSecPolicyId(cdisLinkTbl.getSecurityPolicyId());
                
-                boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
-                if (!secPolicyUpdated) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
-                    continue;
-                }
+            boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
+            if (!secPolicyUpdated) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
+                continue;
+            }
                 
-                //final validation of all four checksums
-                boolean checkSumVldt = validateAllChecksums(cdisMap.getCdisMapId());
-                if (! checkSumVldt) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CVF", "ERROR: unable to Update secuirty Policy in DAMS ");
-                    continue;
-                }
+            //final validation of all four checksums
+            boolean checkSumVldt = validateAllChecksums(cdisMap.getCdisMapId());
+            if (! checkSumVldt) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CVF", "ERROR: unable to Validate all checksums with each other");
+                continue;
             }
              
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             activityLog.setCdisStatusCd("LCC");
             activityLog.insertActivity();
+            
+            //now add the cis_unique_identifier to the master (iiq) also
+            int childMapId = cdisMap.getMasterIdFromChildId();
+            if (! (childMapId > 0)) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CCM", "ERROR: unable to Master record cis_id in CDIS_MAP table ");
+                continue;
+            }
+            //set the ID to the masterid
+            cdisMap.setCdisMapId(childMapId);
+            
+            cisIdUpdate = cdisMap.updateCisUniqueMediaId();
+            if (!cisIdUpdate) {
+                 ErrorLog errorLog = new ErrorLog ();
+                 errorLog.capture(cdisMap, "CCM", "ERROR: unable to record cis_id in CDIS_MAP table ");
+                 continue;
+            }
+            
+            activityLog.setCdisMapId(cdisMap.getCdisMapId());
+            activityLog.setCdisStatusCd("LCC");
+            activityLog.insertActivity();
+            
         
            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
              
@@ -149,7 +169,7 @@ public class LinkToCISMdpp {
                 return false;
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain Count of unprocessed files", e );
+                logger.log(Level.FINER, "Error: unable to validate checksums", e );
                 return false;
         }
     }

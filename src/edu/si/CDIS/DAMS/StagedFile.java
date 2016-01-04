@@ -80,38 +80,6 @@ public class StagedFile {
         return true;
     }
     
-    public String retrieveSubFileId (String vfcuMasterMediaId) {
-
-        String childMediaId = null;
-        String sql = "SELECT  aa.vfcu_media_file_id, " + 
-                     "aa.media_file_name " +
-                     "FROM  vfcu_media_file a, " +       
-                     "  vfcu_md5_file b, " +
-                     "  vfcu_media_file aa, " +
-                     "  vfcu_md5_file bb " +
-                     "WHERE a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
-                     "AND   aa.vfcu_md5_file_id = bb.vfcu_md5_file_id " +
-                     "AND   bb.master_md5_file_id != bb.VFCU_MD5_FILE_ID " +
-                     "AND   SUBSTR(a.media_file_name, 0, INSTR(a.media_file_name, '.')-1) = " + " SUBSTR(aa.media_file_name, 0, INSTR(aa.media_file_name, '.')-1) " +
-                     "AND   a.vfcu_media_file_id = " + vfcuMasterMediaId; 
-                   
-         logger.log(Level.FINEST,"SQL! " + sql); 
-             
-         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-    
-            if (rs.next()) {
-                childMediaId = (rs.getString(1));
-                setFileName(rs.getString(2));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to check for child media ID in DB", e );
-        }
-         
-        return childMediaId;
-    }
-    
     // Moves the staged file to the MASTER folder
     public boolean moveToEmu (String destination) {
 
