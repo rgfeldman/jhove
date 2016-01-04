@@ -213,6 +213,7 @@ public class CDIS {
                                     "damsUser",
                                     "damsPass",
                                     "cisSourceDB",
+                                    "collectionGroup",
                                     "xmlSQLFile"};
         
         for(int i = 0; i < requiredProps.length; i++) {
