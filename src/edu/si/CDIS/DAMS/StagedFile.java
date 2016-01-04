@@ -84,16 +84,21 @@ public class StagedFile {
     public boolean moveToEmu (String destination) {
 
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        String emuPickupLocation = destination + "\\" + getPathEnding() + "\\" + getFileName();
+        String emuPickupLocation = destination + "\\" + getPathEnding();
         
         logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
         logger.log(Level.FINER,"File moved to emuPickup location: " + emuPickupLocation );
             
         try {            
-            Path source      = Paths.get(fileNamewithPath);
-            Path destWithFile = Paths.get(emuPickupLocation);
+            Path sourceFile      = Paths.get(fileNamewithPath);
+            Path destPath = Paths.get(emuPickupLocation);
+            Path destWithFile = Paths.get(emuPickupLocation + "\\" + getFileName());
+
+            // create the directory if we need it
+            Files.createDirectories(destPath);
             
-            Files.move(source, destWithFile);
+            //move the files
+            Files.move(sourceFile, destWithFile);
             
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when moving to emuPickup directory",e);
