@@ -103,7 +103,7 @@ public class CDISMap {
           
         sql =  "INSERT INTO cdis_map (" +
                     "cdis_map_id, " +
-                    "si_holding_unit, " +
+                    "collection_group, " +
                     "file_name, " +
                     "batch_number, " +
                     "vfcu_media_file_id, " +
@@ -111,7 +111,7 @@ public class CDISMap {
                     "error_ind ) " +
                 "VALUES (" +
                     getCdisMapId() + ", " +
-                    "'" + CDIS.getProperty("siHoldingUnit") + "', " +
+                    "'" + CDIS.getProperty("collectionGroup") + "', " +
                     "'" + getFileName() + "', " +
                     CDIS.getBatchNumber() + ", " +
                     getVfcuMediaFileId() + ", " +
