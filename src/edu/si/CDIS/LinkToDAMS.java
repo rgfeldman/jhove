@@ -194,7 +194,13 @@ public class LinkToDAMS {
                 stagedFile.setPathEnding(pathEnding);
                 stagedFile.setFileName(cdisMap.getFileName());
             
-                stagedFile.moveToEmu(CDIS.getProperty("emuPickupLocation"));
+                boolean movedToEmu = stagedFile.moveToEmu(CDIS.getProperty("emuPickupLocation"));
+                if (! movedToEmu) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "STE", "Error, unable to move file to emu pickup location");
+                    continue;
+                }
+                
                 activityLog.setCdisStatusCd("FME");
                 activityLog.insertActivity();
             }
