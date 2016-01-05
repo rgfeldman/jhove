@@ -164,7 +164,7 @@ public class MediaRecord {
         }
         
         // Update mediaMaster with the renditionIds
-        updateCount = mediaMaster.setRenditionIds(mediaRendition.getRenditionId() );
+        updateCount = mediaMaster.updateRenditionIds(mediaRendition.getRenditionId() );
         if (updateCount != 1) {
             logger.log(Level.FINER, "ERROR: MediaMaster table not updated correctly, returning");
             return false;
@@ -178,7 +178,7 @@ public class MediaRecord {
         }
         
         //Update mediaRendition with the fileId
-        updateCount = mediaRendition.setFileId(mediaFiles.getFileId());
+        updateCount = mediaRendition.updateFileId(mediaFiles.getFileId());
         if (updateCount != 1) {
             logger.log(Level.FINER, "ERROR: MediaRendition table not updated correctly, returning");
             return false;

@@ -19,7 +19,6 @@ import edu.si.CDIS.utilties.DataProvider;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.logging.Handler;
-import edu.si.CDIS.CIS.TMSIngest;
 import edu.si.CDIS.CIS.Thumbnail;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
@@ -344,8 +343,8 @@ public class CDIS {
                     break;
                     
                 case "createCISmedia" :
-                    TMSIngest tmsIngest = new TMSIngest();
-                    tmsIngest.ingest();
+                    CreateCISmedia createCisMedia = new CreateCISmedia();
+                    createCisMedia.createMedia();
                     break;  
                 
                 case "tmsMediaPathSync" :

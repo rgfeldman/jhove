@@ -26,8 +26,6 @@ import java.util.logging.Logger;
 // This is the main entrypoint for syncing the image file and image file path in TMS
 public class ImageFilePath {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-	
-    private int successfulUpdateCount;
   
     private int idsPathId;
     private int pdfPathId;

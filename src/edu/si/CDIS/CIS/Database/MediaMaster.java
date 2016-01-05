@@ -68,7 +68,7 @@ public class MediaMaster {
         return true;
     }
     
-    public int setRenditionIds(Integer renditionId) {
+    public int updateRenditionIds(Integer renditionId) {
         
         int updateCount;
         

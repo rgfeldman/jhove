@@ -124,7 +124,7 @@ public class MediaRenditions {
     }
     
     
-    public int setFileId(Integer fileId) {
+    public int updateFileId(Integer fileId) {
         int updateCount;
         
         String sql = "update MediaRenditions " +
@@ -141,7 +141,7 @@ public class MediaRenditions {
         Description:    updates the isColor flag...which indicates the rendition is forDAMS
         RFeldman 2/2015
     */
-    public void setForDamsTrue() {
+    public void updateForDamsTrue() {
         
         int recordsUpdated = 0;
         Statement stmt = null;
