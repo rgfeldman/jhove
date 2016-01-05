@@ -394,10 +394,12 @@ public class CDISMap {
                     "           towner.uois c " +
                     "WHERE      a.cdis_map_id = b.cdis_map_id " +
                     "AND        a.file_name = c.name " +
-                    "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
-                    "AND        dams_uoi_id IS NULL " +
+                    "AND        a.dams_uoi_id IS NULL " +
                     "AND        a.error_ind = 'N' " +
-                    "AND        a.deleted_ind = 'N'";
+                    "AND        a.deleted_ind = 'N' " + 
+                    "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
+                    "AND        c.content_state = 'NORMAL' " +
+                    "AND        c.content_type != 'SHORTCUT' ";
                                 
         logger.log(Level.FINEST,"SQL! " + sql); 
         
