@@ -103,7 +103,7 @@ public class CDISMap {
           
         sql =  "INSERT INTO cdis_map (" +
                     "cdis_map_id, " +
-                    "collection_group, " +
+                    "collection_group_cd, " +
                     "file_name, " +
                     "batch_number, " +
                     "vfcu_media_file_id, " +
