@@ -10,7 +10,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 
 public class Uois {
@@ -37,19 +36,15 @@ public class Uois {
     }
     
     public boolean populateName () {
-        
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
   
         String sql = "SELECT name FROM uois " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
-        try {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery() ) {
+            
             logger.log(Level.FINEST,"SQL! " + sql); 
              
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
             if (rs != null && rs.next()) {
                 setName (rs.getString(1));
             }   
@@ -57,11 +52,8 @@ public class Uois {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain name from uois table", e );
                 return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
+        
         return true;
     }
     
@@ -75,7 +67,6 @@ public class Uois {
     public Integer updateMetaDataStateDate() {
         
         int recordsUpdated = 0;
-        PreparedStatement pStmt = null;
         
         // We have not met any of the above conditions, we should update for IDS
         String sql = "UPDATE towner.uois " +
@@ -85,18 +76,14 @@ public class Uois {
         
         logger.log(Level.ALL, "updateUOIIS Statment: " + sql);
         
-        try {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql) ) {
             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
             recordsUpdated = pStmt.executeUpdate(sql);
             
-        
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
-                e.printStackTrace();
-        }finally {
-                try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            logger.log(Level.FINER, "Error: unable to update UOIS table with new date", e );
         }
             
         return recordsUpdated;
@@ -104,9 +91,6 @@ public class Uois {
     }
     
     public boolean populateUoiidForNameChksum(String checksum) {
-        
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
   
         String sql = "SELECT    a.uoi_id " +
                     "FROM       towner.uois a, " +
@@ -117,11 +101,10 @@ public class Uois {
                     "AND        a.name = '" + getName() + "' " +
                     "AND        b.content_checksum = '" + checksum + "'";
         
-        try {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery() ) {
+            
             logger.log(Level.FINEST,"SQL! " + sql); 
-             
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
             
             if (rs != null && rs.next()) {
                 setUoiid (rs.getString(1));
@@ -135,9 +118,6 @@ public class Uois {
                 logger.log(Level.FINER, "Error: unable to obtain name from uois table", e );
                 return false;
         
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }      
+        }
     }
 }

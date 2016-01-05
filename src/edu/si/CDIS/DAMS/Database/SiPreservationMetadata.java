@@ -7,10 +7,8 @@ package edu.si.CDIS.DAMS.Database;
 
 import edu.si.CDIS.CDIS;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  *
@@ -50,10 +48,6 @@ public class SiPreservationMetadata {
     
     public boolean insertRow () {
         
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-        int rowsUpdated = 0;
-        
         String sql = "INSERT INTO towner.si_preservation_metadata (" +
                         "uoi_id, " +
                         "preservation_id_number, " +
@@ -65,9 +59,9 @@ public class SiPreservationMetadata {
         
         logger.log(Level.FINER, "!SQL: " + sql);
          
-        try {
-            pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            rowsUpdated = pStmt.executeUpdate(sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
+            
+            int rowsUpdated = pStmt.executeUpdate(sql);
             
             if (rowsUpdated != 1) {
                 throw new Exception();
@@ -76,11 +70,7 @@ public class SiPreservationMetadata {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to Insert Preservation data", e );
                 return false;
-        
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-        } 
+        }
         
         return true;
                         
