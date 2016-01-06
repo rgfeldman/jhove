@@ -10,12 +10,13 @@ import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.MediaRecord;
 import edu.si.CDIS.CIS.Thumbnail;
+import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.DAMS.Database.Uois;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -97,76 +98,45 @@ public class CreateCISmedia {
             mediaRendition.populateIdByRenditionNumber();
             logger.log(Level.FINER, "Media Creation complete, RenditionID for newly created media: " + mediaRendition.getRenditionNumber() );
                                 
-            /*
-            //Populate cdisTbl Object based on renditionNumber
-            cdisTbl.setRenditionNumber(mediaRendition.getRenditionNumber());
-            cdisTbl.setUOIID(siAsst.getUoiid());
-            cdisTbl.setUAN(siAsst.getOwningUnitUniqueName());
-            cdisTbl.setRenditionId(mediaRendition.getRenditionId());
-            cdisTbl.setObjectId (tmsObject.getObjectID());
-                        
-                        //Insert into cdisTbl
-                        boolean recordCreated = cdisTbl.createRecord (cdisTbl);
-
-                        if (! recordCreated) {
-                            logger.log(Level.FINER, "Insert to CDIS table failed");
-                            continue;
-                        }
-                        
-                        //Create the thumbnail image
-                        Thumbnail thumbnail = new Thumbnail();
-                        boolean thumbCreated = thumbnail.generate(siAsst.getUoiid(), mediaRendition.getRenditionId());
+            //Populate cdisMap Object based on renditionNumber
+            CDISMap cdisMap = new CDISMap();
+            cdisMap.setCisUniqueMediaId(Integer.toString(mediaRendition.getRenditionId()) );
+            cdisMap.setDamsUoiid(uoiId);
+            cdisMap.setFileName(uois.getName());
+            
+            boolean mapCreated = cdisMap.createRecord();
+            if (!mapCreated) {
+                logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
+                continue;
+            }
+            
+            //Insert into CDISObjectMap
+            CDISObjectMap cdisObjectMap = new CDISObjectMap();
+            cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
+            cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectID()) );
+            cdisObjectMap.createRecord();
+            
+            //Create the thumbnail image
+            Thumbnail thumbnail = new Thumbnail();
+            boolean thumbCreated = thumbnail.generate(uois.getUoiid(), mediaRendition.getRenditionId());
                             
-                        if (! thumbCreated) {
-                            logger.log(Level.FINER, "Thumbnail creation failed");
-                            continue; //Go to the next record in the for-sloop
-                        }
-                                             
-                        int rowsUpdated = cdisTbl.updateIDSSyncDate();
-                        
-                        if (rowsUpdated == 0) {    
-                            logger.log(Level.FINER, "IDS Sync date update failed");
-                            continue;
-                        }
-                        else if (rowsUpdated > 1) {
-                            logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
-                        }
-                         
-                        // update the SourceSystemID in DAMS with the RenditionNumber
-                        rowsUpdated = siAsst.updateDAMSSourceSystemID(mediaRendition.getRenditionNumber() );
-                        
-                        if (rowsUpdated == 0) {    
-                            logger.log(Level.FINER, "Failed in update to SourceSystemID");
-                            continue;
-                        }
-                        else if (rowsUpdated > 1) {
-                            logger.log(Level.FINER, "Warning: Multiple rows may have been IDS path Synced");
-                        }
-                        
-                        this.successCount++;
-                        
-                    }
-                    else {
-                        logger.log(Level.FINER, "Media Already exists: Media does not need to be created");
-                    }
+            if (! thumbCreated) {
+                logger.log(Level.FINER, "Thumbnail creation failed");
+                continue; //Go to the next record in the for-sloop
+            }
+                               
+            SiAssetMetaData siAsst = new SiAssetMetaData();
+            // update the SourceSystemID in DAMS with the RenditionNumber
+            boolean rowsUpdated = siAsst.updateDAMSSourceSystemID();
 
-                } catch (SQLException se) {
-                    logger.log(Level.SEVERE, "Fatal Error, check query XML file, CheckForExistingTMSRendition tag for syntax");
-                    se.printStackTrace();
-                    return;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } 
-            }              
-        }
-        else {
-            logger.log(Level.FINER, "ERROR: unable to check if TMS Media exists, supporting SQL not provided");
-        }*/
+            if (! rowsUpdated) {
+                logger.log(Level.FINER, "Error updating source_system_id in DAMS");
+            }
             
         }
     }
     
-    /*  Method :        ingest
+    /*  Method :        createMedia
         Arguments:      
         Description:    The main driver for the ingest to CIS process 
         RFeldman 2/2015

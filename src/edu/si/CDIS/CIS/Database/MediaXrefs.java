@@ -67,7 +67,7 @@ public class MediaXrefs {
         Description:    calculates and populates the isPrimary member variable
         RFeldman 3/2015
     */
-    public void populateIsPrimary(Integer ObjectID) {
+    public void populateIsPrimary() {
         //Now that we have the rank, need to set the primary flag
         // set primary to 0 for default
         this.primary = 0; 
@@ -77,7 +77,7 @@ public class MediaXrefs {
             //Check to make sure if we dont have a rank 1 for this object already
             
             String sql = "SELECT count(*) from MediaXrefs" + 
-                         " WHERE ID = " + ObjectID + 
+                         " WHERE ID = " + getObjectId() + 
                          " and PrimaryDisplay = 1" +
                          " and TableID = '108'";
             

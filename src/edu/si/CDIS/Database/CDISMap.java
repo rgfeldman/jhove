@@ -19,7 +19,7 @@ import java.util.HashMap;
 public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    private Integer CDISMapId;
+    private Integer cdisMapId;
     private Long batchNumber;
     private String fileName;
     private String damsUoiid;
@@ -32,7 +32,7 @@ public class CDISMap {
     }
        
     public Integer getCdisMapId () {
-        return this.CDISMapId;
+        return this.cdisMapId;
     }
     
     public String getCisUniqueMediaId () {
@@ -60,8 +60,8 @@ public class CDISMap {
         this.batchNumber = batchNumber;
     }
         
-    public void setCdisMapId (Integer CDISMapId) {
-        this.CDISMapId = CDISMapId;
+    public void setCdisMapId (Integer cdisMapId) {
+        this.cdisMapId = cdisMapId;
     }
     
     public void setErrorInd (char errorInd) {

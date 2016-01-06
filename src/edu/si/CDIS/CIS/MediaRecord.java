@@ -140,14 +140,11 @@ public class MediaRecord {
         }
         
         // Set the primaryRenditionFlag
-        mediaXrefs.populateIsPrimary(tmsObject.getObjectID());
-        
         logger.log(Level.FINER, "about to create TMS media Record:");
         logger.log(Level.FINER, "ObjectID: " + tmsObject.getObjectID());
         logger.log(Level.FINER, "RenditionNumber: {0}", mediaRenditions.getRenditionNumber());
         logger.log(Level.FINER, "Rank: " + mediaXrefs.getRank());
-        logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getPrimary());  
-      
+  
         // Insert into the MediaMaster table
         MediaMaster mediaMaster = new MediaMaster();
         returnVal = mediaMaster.insertNewRecord();
@@ -203,6 +200,8 @@ public class MediaRecord {
         // Insert into MediaXrefs
         mediaXrefs.setMediaMasterId(mediaMaster.getMediaMasterId());
         mediaXrefs.setObjectId(tmsObject.getObjectID());
+        mediaXrefs.populateIsPrimary();
+        logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getPrimary());
         returnVal = mediaXrefs.insertNewRecord();
         if (! returnVal) {
            logger.log(Level.FINER, "ERROR: MediaXref table creation failed, returning");

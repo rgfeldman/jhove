@@ -20,25 +20,33 @@ public class SiAssetMetaData {
     
     //class attributes
     private String owningUnitUniqueName;
+    private String sourceSystemId;
     private String uoiid;  
     
     public HashMap <String,Integer> metaDataDBLengths; 
       
     public String getOwningUnitUniqueName() {
-           return this.owningUnitUniqueName;
+        return this.owningUnitUniqueName;
     }
     
+    public String getSourceSystemId() {
+        return this.sourceSystemId;
+    }
+        
     public String getUoiid() {
-           return this.uoiid;
+        return this.uoiid;
     }
     
     public void setOwningUnitUniqueName(String owningUnitUniqueName) {
-           this.owningUnitUniqueName = owningUnitUniqueName;
+        this.owningUnitUniqueName = owningUnitUniqueName;
     }
     
+    public void setSourceSystemId(String sourceSystemId) {
+        this.sourceSystemId = sourceSystemId;
+    }
      
     public void setUoiid(String uoiid) {
-           this.uoiid = uoiid;
+        this.uoiid = uoiid;
     }
     
     
@@ -48,10 +56,10 @@ public class SiAssetMetaData {
         RFeldman 2/2015
     */
     
-    public int updateDAMSSourceSystemID (String sourceSystemId) {
+    public boolean updateDAMSSourceSystemID () {
         int recordsUpdated = 0;
 
-        String sql = "update towner.SI_ASSET_METADATA set source_system_id = '" + sourceSystemId + "' " +
+        String sql = "update towner.SI_ASSET_METADATA set source_system_id = '" + getSourceSystemId() + "' " +
                     "where UOI_ID = '" + getUoiid() + "'";
 
         logger.log(Level.FINEST, "SQL! {0}", sql);
@@ -62,11 +70,16 @@ public class SiAssetMetaData {
               
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
-        } catch (Exception e) {
-                e.printStackTrace();
-        }
+            if (recordsUpdated != 1) {
+                throw new Exception();
+            }
+            return true;
             
-        return recordsUpdated;    
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error updating source_system_id ", e);
+            return false;
+        }
+             
     }
     
     public boolean populateMetaDataDBLengths () {
