@@ -6,7 +6,7 @@
 package edu.si.CDIS.CIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.CDISTable;
+import edu.si.CDIS.Database.CDISActivityLog;
 
 import java.io.InputStream;
 import java.io.BufferedInputStream;
@@ -16,7 +16,7 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
 import org.im4java.core.ConvertCmd;
@@ -33,11 +33,7 @@ public class Thumbnail {
     private int fileSize;
     private String uoiid;
     
-    private LinkedHashMap <Integer,String> thumbnailsToSync;  
-    
-    private void addthumbnailsToSync (Integer renditionID, String UOIID) {
-        this.thumbnailsToSync.put(renditionID, UOIID); 
-    }
+    private ArrayList <Integer> mapIdsToSync;  
      
     /*  Method :        getDamsLocation
         Arguments:      
@@ -74,7 +70,7 @@ public class Thumbnail {
         Description:    Finds the physical image and generates the thumbnail sized image 
         RFeldman 3/2015
     */
-    public boolean generate(String uoiid, Integer renditionId) {
+    public boolean generate(Integer mapId) {
         
         this.uoiid = uoiid;
         String imageFile = null;
@@ -143,22 +139,20 @@ public class Thumbnail {
             } 
         }
         
-        if (fileSize > 1 && bytes != null) {
-            logger.log(Level.FINER, "Updating Thumbnail for RenditionID: " + renditionId);
-            boolean thumbUpdated = update(renditionId);
-            
-            if ( thumbUpdated ) {
-                //update the thumbnail sync date in the CDIS table
-                CDISTable cdisTbl = new CDISTable();
-                cdisTbl.setRenditionId(renditionId);
-                cdisTbl.updateThumbnailSyncDate();
-            }  
-        }
-        else {
-            logger.log(Level.FINER, "Error: Unable to detect thumbnail image, not updating: " + renditionId);
+        if (! (fileSize > 1 && bytes != null)) {
+            logger.log(Level.FINER, "Error: Unable to detect thumbnail image, not updating: " + mapId);
             return false;
-        } 
+        }
+        
+        logger.log(Level.FINER, "Updating Thumbnail for MapId: " + mapId);
+        //boolean thumbUpdated = update(renditionId);
+            
+        //if (! thumbUpdated ) {
+        //        return false;
+        //}  
+        
         return true;
+        
     }    
     
     /*  Method :        update
@@ -199,7 +193,7 @@ public class Thumbnail {
         Description:    Populate a list of thumnails that need to be generated/updated 
         RFeldman 3/2015
     */
-    private void populateRenditionsToUpdate () {
+    private void populateIdsToUpdate () {
         String sqlTypeArr[] = null;
         String sql = null;
         
@@ -218,13 +212,13 @@ public class Thumbnail {
              ResultSet rs = pStmt.executeQuery() ) {
            
             // For each record in the sql query, add it to the unlinked rendition List
-            while (rs.next()) {   
-                addthumbnailsToSync(rs.getInt("RenditionID"), rs.getString("uoiid"));
-                logger.log(Level.FINER,"Adding CIS renditionID for Thumbnail update: " + rs.getInt("RenditionID") );
-            }
-            int numRecords = this.thumbnailsToSync.size();
+            //while (rs.next()) {   
+            //    addthumbnailsToSync(rs.getInt("RenditionID"), rs.getString("uoiid"));
+            //    logger.log(Level.FINER,"Adding CIS renditionID for Thumbnail update: " + rs.getInt("RenditionID") );
+            //}
+            //int numRecords = this.thumbnailsToSync.size();
         
-            logger.log(Level.FINER,"Number of records in DAMS that are unsynced: {0}", numRecords);
+            //logger.log(Level.FINER,"Number of records in DAMS that are unsynced: {0}", numRecords);
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -239,14 +233,19 @@ public class Thumbnail {
     */
     public void sync () {
         
-        this.thumbnailsToSync = new LinkedHashMap <Integer, String>();
+        this.mapIdsToSync = new ArrayList <Integer>();
         
         //Get a list of RenditionIDs that require syncing from the sql XML file
-        populateRenditionsToUpdate ();
+        populateIdsToUpdate ();
         
         //create the thumbnail in TMS from those DAMS images 
-        for (Integer key : thumbnailsToSync.keySet()) {
-             boolean blobUpdated = generate (thumbnailsToSync.get(key), key);
+        for (Integer mapId : mapIdsToSync) {
+            
+             boolean blobUpdated = generate (mapId);
+             
+             if (blobUpdated) {
+                 //update the activityLog
+             }
         }
         
     }

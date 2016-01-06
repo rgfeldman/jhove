@@ -132,6 +132,30 @@ public class MediaRenditions {
         return true;         
     }
     
+
+    private void updateIsColor1() {
+        
+        int recordsUpdated = 0;
+        Statement stmt = null;
+        
+        String sql = "update mediaRenditions " +
+                    "set IsColor = 1 " +
+                    "where IsColor = 0 and RenditionID = " + getRenditionId();
+        
+         logger.log(Level.FINEST, "SQL! {0}", sql);
+         
+         try {
+            recordsUpdated = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
+                   
+            logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+                e.printStackTrace();
+        }finally {
+                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+        }
+        
+    }
     
     public int updateFileId() {
         int updateCount;

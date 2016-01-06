@@ -6,7 +6,7 @@
 package edu.si.CDIS.CIS;
 
 import edu.si.CDIS.CIS.Database.MediaRenditions;
-import edu.si.CDIS.CIS.Database.TMSObject;
+import edu.si.CDIS.CIS.Database.Objects;
 import edu.si.CDIS.CIS.Database.MediaMaster;
 import edu.si.CDIS.CIS.Database.MediaFiles;
 import edu.si.CDIS.CIS.Database.MediaXrefs;
@@ -49,7 +49,7 @@ public class MediaRecord {
         
     }
     
-    public boolean create (Uois uois, MediaRenditions mediaRenditions, TMSObject tmsObject) {
+    public boolean create (Uois uois, MediaRenditions mediaRenditions, Objects tmsObject) {
  
         boolean objectIdPopulated = false;
         boolean returnVal;

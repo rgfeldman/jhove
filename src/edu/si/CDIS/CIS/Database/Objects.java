@@ -12,7 +12,7 @@ import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
         
-public class TMSObject {
+public class Objects {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     

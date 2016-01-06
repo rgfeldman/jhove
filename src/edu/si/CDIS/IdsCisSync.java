@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.CDIS.CIS;
+package edu.si.CDIS;
 
 import edu.si.CDIS.utilties.DataProvider;
 
@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import edu.si.CDIS.CDIS;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.CIS.Database.MediaFiles;
@@ -24,7 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // This is the main entrypoint for syncing the image file and image file path in TMS
-public class ImageFilePath {
+public class IdsCisSync {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
   
     private int idsPathId;
@@ -33,7 +32,7 @@ public class ImageFilePath {
     private String uan;
     private ArrayList<String> RenditionIdToSyncList;
         
-    public void sync(CDIS cdis) {
+    public void sync() {
     	
     	logger.log(Level.FINER, "ImageFilePath.sync()");
         //assign the database connections for later use

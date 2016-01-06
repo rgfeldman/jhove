@@ -6,7 +6,6 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.utilties.XmlSqlConfig;
-import edu.si.CDIS.CIS.ImageFilePath;
 import java.io.FileInputStream;
 import java.util.Properties; 
 import java.sql.Connection;
@@ -327,6 +326,11 @@ public class CDIS {
                     sendToHotFolder.ingest();  
                     break;
                     
+                case "linkToDamsToCis" :
+                    LinkDamsToCIS linkDamsToCis = new LinkDamsToCIS();
+                    linkDamsToCis.link();
+                    break;
+                            
                 case "linkToCISMdpp" :
                     LinkToCISMdpp linkToCisMdpp = new LinkToCISMdpp();
                     linkToCisMdpp.link();
@@ -347,9 +351,9 @@ public class CDIS {
                     createCisMedia.createMedia();
                     break;  
                 
-                case "tmsMediaPathSync" :
-                    ImageFilePath imgPath = new ImageFilePath();
-                    imgPath.sync(cdis);
+                case "idsCisSync" :
+                    IdsCisSync idsCisSync = new IdsCisSync();
+                    idsCisSync.sync();
                     break;
                             
                 case "thumbnailSync" :    

@@ -6,14 +6,10 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.TMSObject;
+import edu.si.CDIS.CIS.Database.Objects;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.MediaRecord;
-import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.Database.CDISObjectMap;
-import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.DAMS.Database.Uois;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -83,7 +79,7 @@ public class CreateCISmedia {
             uois.setUoiid(uoiId);
             
             MediaRenditions mediaRendition = new MediaRenditions();
-            TMSObject tmsObject = new TMSObject();
+            Objects tmsObject = new Objects();
                         
             MediaRecord mediaRecord = new MediaRecord();
             
@@ -97,41 +93,9 @@ public class CreateCISmedia {
             // Set the renditionID for the rendition just created
             mediaRendition.populateIdByRenditionNumber();
             logger.log(Level.FINER, "Media Creation complete, RenditionID for newly created media: " + mediaRendition.getRenditionNumber() );
-                                
-            //Populate cdisMap Object based on renditionNumber
-            CDISMap cdisMap = new CDISMap();
-            cdisMap.setCisUniqueMediaId(Integer.toString(mediaRendition.getRenditionId()) );
-            cdisMap.setDamsUoiid(uoiId);
-            cdisMap.setFileName(uois.getName());
-            
-            boolean mapCreated = cdisMap.createRecord();
-            if (!mapCreated) {
-                logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
-                continue;
-            }
-            
-            //Insert into CDISObjectMap
-            CDISObjectMap cdisObjectMap = new CDISObjectMap();
-            cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
-            cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectID()) );
-            cdisObjectMap.createRecord();
-            
-            //Create the thumbnail image
-            Thumbnail thumbnail = new Thumbnail();
-            boolean thumbCreated = thumbnail.generate(uois.getUoiid(), mediaRendition.getRenditionId());
-                            
-            if (! thumbCreated) {
-                logger.log(Level.FINER, "Thumbnail creation failed");
-                continue; //Go to the next record in the for-sloop
-            }
-                               
-            SiAssetMetaData siAsst = new SiAssetMetaData();
-            // update the SourceSystemID in DAMS with the RenditionNumber
-            boolean rowsUpdated = siAsst.updateDAMSSourceSystemID();
 
-            if (! rowsUpdated) {
-                logger.log(Level.FINER, "Error updating source_system_id in DAMS");
-            }
+            LinkDamsToCIS linkDamsToCis = new LinkDamsToCIS();
+            linkDamsToCis.createNewLink(Integer.toString(mediaRendition.getRenditionId()), uoiId);
             
         }
     }
