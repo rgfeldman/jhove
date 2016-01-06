@@ -21,15 +21,25 @@ public class MediaXrefs {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    private int primary;
-    private int rank;
+    private Integer mediaMasterId;
+    private Integer objectId;
+    private Integer primary;
+    private Integer rank;
     private String charRank;
         
-    public int getPrimary() {
+    public Integer getMediaMasterId() {
+        return this.mediaMasterId;
+    }
+    
+    public Integer getObjectId() {
+        return this.objectId;
+    }
+            
+    public Integer getPrimary() {
         return this.primary;
     }
     
-    public int getRank() {
+    public Integer getRank() {
         return this.rank;
     }
     
@@ -37,11 +47,18 @@ public class MediaXrefs {
         return this.charRank;
     }
     
-    private void setPrimary(int primary) {
+    public void setMediaMasterId(Integer mediaMasterId) {
+        this.mediaMasterId = mediaMasterId;
+    }
+    public void setObjectId(Integer objectId) {
+        this.objectId = objectId;
+    }
+            
+    private void setPrimary(Integer primary) {
         this.primary = primary;
     }
       
-    private void setRank (int rank) {
+    private void setRank (Integer rank) {
         this.rank = rank;
     }
         
@@ -65,7 +82,7 @@ public class MediaXrefs {
                          " and TableID = '108'";
             
             logger.log(Level.FINEST, "SQL: {0}", sql);  
-             try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+            try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
                   ResultSet rs = pStmt.executeQuery() ) {
 		
                 if (rs.next()) {
@@ -126,7 +143,7 @@ public class MediaXrefs {
     
     }
     
-    public boolean insertNewRecord(Integer mediaMasterId, Integer objectId) {
+    public boolean insertNewRecord() {
      
         Boolean inserted;
         
@@ -139,8 +156,8 @@ public class MediaXrefs {
                         "Rank, " +
                         "PrimaryDisplay)" +
                     "values(" +
-                        mediaMasterId + ", " +
-                        objectId + ", " +  
+                        getMediaMasterId() + ", " +
+                        getObjectId() + ", " +  
                         "108, " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +

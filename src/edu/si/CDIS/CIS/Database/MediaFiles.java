@@ -20,10 +20,8 @@ public class MediaFiles {
  
     private int fileId;
     private String fileName;
-    private boolean isPrimary;
-    private int rank;
     private Integer pathId;
-    private String renditionId;
+    private Integer renditionId;
     
     private int pixelH;
     private int pixelW;
@@ -48,7 +46,7 @@ public class MediaFiles {
         return this.pixelW;
     }
     
-    public String getRenditionId () {
+    public Integer getRenditionId () {
         return this.renditionId;
     }
     
@@ -68,69 +66,14 @@ public class MediaFiles {
         this.pixelW = pixelW;
     }
     
-    public void setRenditionId (String renditionId) {
+    public void setRenditionId (Integer renditionId) {
         this.renditionId = renditionId;
     }
-        
     
-     /*  Method :        populateRenditionFromDamsInfo
-        Arguments:      
-        Description:    determines and populates the mediaFiles member variables from information in DAMS
-        RFeldman 3/2015
-    */
-    public String populateFromDams(String uoiid) {
-        
-        String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + uoiid + "'";
-        String imageName = null;
-        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 
-              ResultSet rs = pStmt.executeQuery() ) {
-              
-            if (rs.next()) {
-                imageName = rs.getString(1);
-                   
-                this.setPixelH(rs.getInt("bitmap_height"));
-                this.setPixelW(rs.getInt("bitmap_width"));
-            }        
-	}
-            
-	catch(SQLException sqlex) {
-		sqlex.printStackTrace();
-                return "";
-	}
-       
-        return imageName;
-    }   
-  
-    
-    public boolean insertNewRecord(String uan, Integer renditionId, String fileType) {
-        
-        Integer mediaFormatId = null;
-        Integer pathId = null;
-        String fileName = null;
+    public boolean insertNewRecord() {
         
         Statement stmt = null;
         ResultSet rs = null;
-         
-         // Get variables from the properties list
-        try {
-            mediaFormatId = Integer.parseInt (CDIS.getProperty("mediaFormatID"));
-            
-            if (fileType.equalsIgnoreCase("PDF")) {
-                pathId = Integer.parseInt (CDIS.getProperty("PDFPathId"));
-                fileName = uan + ".pdf";
-            }
-            else {
-                pathId = Integer.parseInt (CDIS.getProperty("IDSPathId"));
-                fileName = uan;
-            }
-             
-        } catch (Exception e) {
-                e.printStackTrace();
-                logger.log(Level.FINER, "Error: unexpected property values required for insert into MediaFiles table");
-                return false;
-        }
         
         
         // From Anacostia
@@ -144,14 +87,14 @@ public class MediaFiles {
                         "PixelH, " +
                         "PixelW) " +
                     " values ( " +
-                        renditionId + ", " + 
-                        pathId + "," +
-                        "'" + fileName + "', " +
+                        getRenditionId() + ", " + 
+                        getPathId() + "," +
+                        "'" + getFileName() + "', " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
-                        mediaFormatId + ", " +
+                        Integer.parseInt (CDIS.getProperty("mediaFormatID")) + ", " +
                         getPixelH() + ", " +
-                        getPixelW() + ")";
+                        getPixelW() + ")" ;
        
        logger.log(Level.FINER, "SQL: {0}", sql);
         

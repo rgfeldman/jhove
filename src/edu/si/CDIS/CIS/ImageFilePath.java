@@ -126,7 +126,8 @@ public class ImageFilePath {
                     uois.populateName();
                     
                     MediaFiles mediaFiles = new MediaFiles ();
-                    mediaFiles.setRenditionId (cdisMap.getCisUniqueMediaId());
+                    //to-do...commented out for now because of difference between filetypes
+                    //mediaFiles.setRenditionId (cdisMap.getCisUniqueMediaId());
                     
                     // check the filename extension
                     if (uois.getName().endsWith(".pdf")) {

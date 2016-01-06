@@ -21,7 +21,17 @@ public class MediaMaster {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
+    private Integer displayRendId;
     private Integer mediaMasterId;
+    private Integer primaryRendId;
+    
+    public void setDisplayRendId(Integer displayRendId) {
+        this.displayRendId = displayRendId;
+    }
+       
+    public void setPrimaryRendId(Integer primaryRendId) {
+        this.primaryRendId = primaryRendId;
+    }
     
     public Integer getMediaMasterId() {
         return mediaMasterId;
@@ -68,13 +78,13 @@ public class MediaMaster {
         return true;
     }
     
-    public int updateRenditionIds(Integer renditionId) {
+    public int updateRenditionIds() {
         
         int updateCount;
         
         String sql = "update MediaMaster " +
-                "set PrimaryRendID = " + renditionId + ", " +
-                "DisplayRendID = " + renditionId + " " +
+                "set PrimaryRendID = " + this.primaryRendId + ", " +
+                "DisplayRendID = " + this.displayRendId + " " +
                 "where mediaMasterId = " + getMediaMasterId() ;
         
          logger.log(Level.FINER, "SQL: {0}", sql);

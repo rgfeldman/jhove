@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 
 public class Uois {
@@ -18,6 +19,8 @@ public class Uois {
     
     private String uoiid;
     private String name;
+    private Integer bitmapHeight;
+    private Integer bitmapWidth; 
     
     public String getName () {
         return this.name;
@@ -57,6 +60,26 @@ public class Uois {
         return true;
     }
     
+    public boolean populateUoisData() {
+        
+        String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + getUoiid() + "'";
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 
+              ResultSet rs = pStmt.executeQuery() ) {
+              
+            if (rs.next()) {
+                setName(rs.getString("name"));
+                this.bitmapHeight = rs.getInt("bitmap_height");
+                this.bitmapWidth = rs.getInt("bitmap_width");
+            }        
+        } catch (Exception e) {
+                logger.log(Level.FINER, "unable to get uois information from database", e );
+                return false;
+        }
+       
+        return true;
+    }   
     
     /*  Method :        updateMetaDataStateDate
         Arguments:      

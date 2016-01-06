@@ -6,17 +6,17 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.CDISTable;
 import edu.si.CDIS.CIS.Database.TMSObject;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.MediaRecord;
 import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.DAMS.Database.Uois;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,12 +25,8 @@ public class CreateCISmedia {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    private LinkedHashMap <String,String> neverLinkedDamsRendtion;  
-    private int successCount;
+    private ArrayList <String> uoiidsToLink;  
     
-    private void addNeverLinkedDamsRendtion (String UOIID, String uan) {
-        this.neverLinkedDamsRendtion.put(UOIID, uan); 
-    }
     
     /*  Method :        populateNeverLinkedImages
         Arguments:      
@@ -58,11 +54,11 @@ public class CreateCISmedia {
                  ResultSet rs = pStmt.executeQuery()) {
                                                     
                 while (rs.next()) {           
-                    logger.log(Level.FINER, "Adding uoi_id to unsynced hash: " + rs.getString("UOI_ID") + " " + rs.getString("OWNING_UNIT_UNIQUE_NAME") );
-                    addNeverLinkedDamsRendtion(rs.getString("UOI_ID"), rs.getString("OWNING_UNIT_UNIQUE_NAME"));
+                    logger.log(Level.FINER, "Adding uoi_id to unsynced hash: " + rs.getString("UOI_ID"));
+                    uoiidsToLink.add(rs.getString("UOI_ID"));
                 }   
             } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.log(Level.FINER, "Error, unable to obtain list of UOI_IDs to integrate", e);
             }         
         }               
     }
@@ -73,62 +69,41 @@ public class CreateCISmedia {
         RFeldman 2/2015
     */
     private void processUAN () { 
-        // See if we can find if this uan already exists in TMS
-        String sql = null;
-        String sqlTypeArr[];
-        
-        for (String key : CDIS.getXmlSelectHash().keySet()) {
+
+        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
+        for (String uoiId : uoiidsToLink) {
+                
+            // See if we can find if this uan already exists in TMS
+            // TO DO
+                
+            logger.log(Level.FINEST, "UOI_ID to integrate:{0}", uoiId);
+                
+            Uois uois = new Uois();
+            uois.setUoiid(uoiId);
             
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            if (sqlTypeArr[0].equals("checkForExistingTMSRendition")) {   
-                sql = key;    
-              
-            }
-        }
-        
-        if ( sql != null) {           
-        
-            //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
-            for (String UOI_ID : neverLinkedDamsRendtion.keySet()) {
-                
-                SiAssetMetaData siAsst = new SiAssetMetaData();
-                siAsst.setOwningUnitUniqueName(neverLinkedDamsRendtion.get(UOI_ID));
-                siAsst.setUoiid(UOI_ID);
-                
-                logger.log(Level.FINEST, "UOI_ID {0}", UOI_ID);
-                
-                String currentIterationSql = sql.replaceAll("\\?owning_unit_unique_name\\?", siAsst.getOwningUnitUniqueName());
-                
-                logger.log(Level.FINEST, "SQL: {0}", currentIterationSql);
-                
-                try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(currentIterationSql);
-                     ResultSet rs = pStmt.executeQuery()) {
-                                                   
-                    if ( rs.next()) {   
-                        MediaRenditions mediaRendition = new MediaRenditions();
-                        TMSObject tmsObject = new TMSObject();
+            MediaRenditions mediaRendition = new MediaRenditions();
+            TMSObject tmsObject = new TMSObject();
                         
-                        MediaRecord mediaRecord = new MediaRecord();
-                        boolean mediaCreated = mediaRecord.create(siAsst, mediaRendition, tmsObject);
+            MediaRecord mediaRecord = new MediaRecord();
+            
+            boolean mediaCreated = mediaRecord.create(uois, mediaRendition, tmsObject);
                             
-                        if ( ! mediaCreated ) {
-                            logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
-                            continue; //Go to the next record in the for-sloop
-                        }
+            if ( ! mediaCreated ) {
+                logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
+                continue; //Go to the next record in the for-sloop
+            }
                         
-                        // Set the renditionID for the rendition just created
-                        mediaRendition.populateIdByRenditionNumber();
-                        logger.log(Level.FINER, "Media Creation complete, RenditionID for newly created media: " + mediaRendition.getRenditionNumber() );
+            // Set the renditionID for the rendition just created
+            mediaRendition.populateIdByRenditionNumber();
+            logger.log(Level.FINER, "Media Creation complete, RenditionID for newly created media: " + mediaRendition.getRenditionNumber() );
                                 
-                        // Create CDIS Object
-                        CDISTable cdisTbl = new CDISTable();
-                        
-                        //Populate cdisTbl Object based on renditionNumber
-                        cdisTbl.setRenditionNumber(mediaRendition.getRenditionNumber());
-                        cdisTbl.setUOIID(siAsst.getUoiid());
-                        cdisTbl.setUAN(siAsst.getOwningUnitUniqueName());
-                        cdisTbl.setRenditionId(mediaRendition.getRenditionId());
-                        cdisTbl.setObjectId (tmsObject.getObjectID());
+            /*
+            //Populate cdisTbl Object based on renditionNumber
+            cdisTbl.setRenditionNumber(mediaRendition.getRenditionNumber());
+            cdisTbl.setUOIID(siAsst.getUoiid());
+            cdisTbl.setUAN(siAsst.getOwningUnitUniqueName());
+            cdisTbl.setRenditionId(mediaRendition.getRenditionId());
+            cdisTbl.setObjectId (tmsObject.getObjectID());
                         
                         //Insert into cdisTbl
                         boolean recordCreated = cdisTbl.createRecord (cdisTbl);
@@ -182,10 +157,12 @@ public class CreateCISmedia {
                 } catch (Exception e) {
                     e.printStackTrace();
                 } 
-            }               
+            }              
         }
         else {
             logger.log(Level.FINER, "ERROR: unable to check if TMS Media exists, supporting SQL not provided");
+        }*/
+            
         }
     }
     
@@ -196,7 +173,7 @@ public class CreateCISmedia {
     */
     public void createMedia () {
         
-        this.neverLinkedDamsRendtion = new LinkedHashMap<String, String>();
+        this.uoiidsToLink = new ArrayList<>();
         
         // Get a list of Renditions from DAMS that may need to be brought to the collection system (CIS)
         populateNeverLinkedImages ();

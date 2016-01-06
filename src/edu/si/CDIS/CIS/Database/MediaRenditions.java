@@ -22,10 +22,15 @@ public class MediaRenditions {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    private int renditionId;
+    private Integer fileId;
+    private Integer renditionId;
     private String renditionNumber;
-            
-    public int getRenditionId () {
+        
+    public Integer getFileId () {
+        return this.fileId;
+    }
+        
+    public Integer getRenditionId () {
         return this.renditionId;
     }
     
@@ -34,7 +39,11 @@ public class MediaRenditions {
     }
     
     
-    public void setRenditionId (int renditionId) {
+    public void setFileId (Integer fileId) {
+        this.fileId = fileId; 
+    }
+        
+    public void setRenditionId (Integer renditionId) {
         this.renditionId = renditionId; 
     }
     
@@ -124,11 +133,11 @@ public class MediaRenditions {
     }
     
     
-    public int updateFileId(Integer fileId) {
+    public int updateFileId() {
         int updateCount;
         
         String sql = "update MediaRenditions " +
-                    "set PrimaryFileID = " + fileId + " " +
+                    "set PrimaryFileID = " + getFileId() + " " +
                     "where renditionID = " + getRenditionId() ;
                                
         updateCount = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
