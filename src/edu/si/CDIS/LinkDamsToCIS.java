@@ -17,10 +17,10 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 
 import edu.si.CDIS.DAMS.Database.Uois;
-import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
+import edu.si.CDIS.CIS.Thumbnail;
    
 public class LinkDamsToCIS {
     
@@ -94,6 +94,7 @@ public class LinkDamsToCIS {
         //Populate cdisMap Object based on renditionNumber
         CDISMap cdisMap = new CDISMap();
         cdisMap.setCisUniqueMediaId(cisIdentifier);
+        cdisMap.populateIdFromUoiid();
         cdisMap.setDamsUoiid(uoiId);
                 
         Uois uois = new Uois();
@@ -108,13 +109,14 @@ public class LinkDamsToCIS {
             
         linkObject(cdisMap.getCdisMapId(), cisIdentifier);
         
-        //Create the thumbnail image
+        //ALWAYS Create the thumbnail image if this was invoked by CreateCIS media
+        // ONLY sometimes create the thumbnail if this was invoked by LinkDAMSToCIS by itself
         Thumbnail thumbnail = new Thumbnail();
-        //boolean thumbCreated = thumbnail.generate(uoiId, Integer.parseInt(cisIdentifier));
+        boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
                             
-        //if (! thumbCreated) {
-        //    logger.log(Level.FINER, "Thumbnail creation failed");
-        //}
+        if (! thumbCreated) {
+            logger.log(Level.FINER, "CISThumbnailSync creation failed");
+        }
                                
         SiAssetMetaData siAsst = new SiAssetMetaData();
         // update the SourceSystemID in DAMS with the RenditionNumber

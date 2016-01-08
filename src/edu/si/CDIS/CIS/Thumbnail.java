@@ -6,65 +6,31 @@
 package edu.si.CDIS.CIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.Database.CDISActivityLog;
-
-import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.sql.ResultSet;
+import java.io.InputStream;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.ArrayList;
-
 import org.apache.commons.io.IOUtils;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IMOperation;
 
+import edu.si.CDIS.Database.CDISMap;
 
-
+/**
+ *
+ * @author rfeldman
+ */
 public class Thumbnail {
-
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    
-    private byte[] bytes;
-    private String damsImageNameLocation;
-    private int fileSize;
-    private String uoiid;
-    
-    private ArrayList <Integer> mapIdsToSync;  
-     
-    /*  Method :        getDamsLocation
-        Arguments:      
-        Description:    Obtains the location and name of the screen-size medium resoltion image from the DAMS databasae 
-        RFeldman 3/2015
-    */
-    private boolean getDamsNameLocation () {
-        
-        String sql = "select o.object_name_location from uois u, object_stacks o" +
-        " where u.uoi_id = '" + this.uoiid + "'" +
-        " and u.screen_res_obj_id = o.object_id ";
-           
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-        
-            if(rs.next()) {
-                this.damsImageNameLocation = rs.getString(1);
-            }
-            else {
-                logger.log(Level.FINEST,"Error: Unable to obtain image location for uoiid: " + this.uoiid);
-                return false;
-            }
-        } catch(Exception e) {
-		e.printStackTrace();
-                return false;
-	}     
-        return true;
-        
-    }
-    
+ 
+    private String damsLocation;
+    int fileSize;
+    byte[] bytes;
+ 
     /*  Method :        generate
         Arguments:      
         Description:    Finds the physical image and generates the thumbnail sized image 
@@ -72,18 +38,23 @@ public class Thumbnail {
     */
     public boolean generate(Integer mapId) {
         
-        this.uoiid = uoiid;
-        String imageFile = null;
-        this.fileSize = 0;
-        this.bytes = null;
+        fileSize = 0;
+        bytes = null;
         
-        boolean locationFound = getDamsNameLocation ();   
+        //Get uoiid from mapId
+        CDISMap cdisMap = new CDISMap();
+        cdisMap.setCdisMapId(mapId);
+        cdisMap.populateMapInfo();
+        
+        //Get RenditionID from mapId
+        
+        boolean locationFound = getDamsNameLocation (cdisMap.getDamsUoiid());   
         if (! locationFound) {
             logger.log(Level.FINER, "Not updating thumbnail, image could not be located from database");
             return false;
         }
  
-        imageFile = "\\\\smb.si-osmisilon1.si.edu\\prodartesiarepo\\" + this.damsImageNameLocation; 
+        String imageFile = "\\\\smb.si-osmisilon1.si.edu\\prodartesiarepo\\" + this.damsLocation; 
         
         logger.log(Level.FINER, "Need to Obtain imageLocation " + imageFile);
         
@@ -105,7 +76,7 @@ public class Thumbnail {
         opGenThumbnail.colorspace("RGB");
  
         //save the thumbnail with the new parameters
-        String thumbImageName = uoiid + ".jpg";
+        String thumbImageName = cdisMap.getDamsUoiid() + ".jpg";
         opGenThumbnail.addImage(thumbImageName);
         
         // Capture the image as a binary stream
@@ -117,12 +88,14 @@ public class Thumbnail {
                 e.printStackTrace();
         }
        
+
+        
         //Capture the image as a binary stream
         try (InputStream is = new BufferedInputStream(new FileInputStream(thumbImageName)) ) {
             
-            bytes = IOUtils.toByteArray(is);
+            this.bytes = IOUtils.toByteArray(is);
             
-            fileSize = bytes.length; 
+            this.fileSize = this.bytes.length; 
                     
             logger.log(Level.FINER, "Found DAMS file: " + thumbImageName + " Size: " + fileSize ); 
             
@@ -145,11 +118,11 @@ public class Thumbnail {
         }
         
         logger.log(Level.FINER, "Updating Thumbnail for MapId: " + mapId);
-        //boolean thumbUpdated = update(renditionId);
+        boolean thumbUpdated = update(Integer.parseInt(cdisMap.getCisUniqueMediaId()) );
             
-        //if (! thumbUpdated ) {
-        //        return false;
-        //}  
+        if (! thumbUpdated ) {
+            return false;
+        }  
         
         return true;
         
@@ -188,66 +161,33 @@ public class Thumbnail {
         return true;                                                  
     }
     
-    /*  Method :        populateRenditionsToUpdate
+    /*  Method :        getDamsLocation
         Arguments:      
-        Description:    Populate a list of thumnails that need to be generated/updated 
+        Description:    Obtains the location and name of the screen-size medium resoltion image from the DAMS databasae 
         RFeldman 3/2015
     */
-    private void populateIdsToUpdate () {
-        String sqlTypeArr[] = null;
-        String sql = null;
+    private boolean getDamsNameLocation (String uoiId) {
         
-        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
-            
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-            if (sqlTypeArr[0].equals("retrieveRenditionIds")) {   
-                sql = key;    
-                logger.log(Level.FINEST, "SQL: {0}", sql);
-            }
-        }
-                
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql); 
-             ResultSet rs = pStmt.executeQuery() ) {
+        String sql = "select o.object_name_location from uois u, object_stacks o" +
+        " where u.uoi_id = '" + uoiId + "'" +
+        " and u.screen_res_obj_id = o.object_id ";
            
-            // For each record in the sql query, add it to the unlinked rendition List
-            //while (rs.next()) {   
-            //    addthumbnailsToSync(rs.getInt("RenditionID"), rs.getString("uoiid"));
-            //    logger.log(Level.FINER,"Adding CIS renditionID for Thumbnail update: " + rs.getInt("RenditionID") );
-            //}
-            //int numRecords = this.thumbnailsToSync.size();
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
         
-            //logger.log(Level.FINER,"Number of records in DAMS that are unsynced: {0}", numRecords);
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }    
-        return;  
-    }
-    
-    /*  Method :        sync
-        Arguments:      
-        Description:    Thumbnail sync driver 
-        RFeldman 3/2015
-    */
-    public void sync () {
-        
-        this.mapIdsToSync = new ArrayList <Integer>();
-        
-        //Get a list of RenditionIDs that require syncing from the sql XML file
-        populateIdsToUpdate ();
-        
-        //create the thumbnail in TMS from those DAMS images 
-        for (Integer mapId : mapIdsToSync) {
-            
-             boolean blobUpdated = generate (mapId);
-             
-             if (blobUpdated) {
-                 //update the activityLog
-             }
-        }
+            if(rs.next()) {
+                this.damsLocation = rs.getString(1);
+            }
+            else {
+                logger.log(Level.FINEST,"Error: Unable to obtain image location for uoiid: " + uoiId);
+                return false;
+            }
+        } catch(Exception e) {
+		e.printStackTrace();
+                return false;
+	}     
+        return true;
         
     }
-    
 }

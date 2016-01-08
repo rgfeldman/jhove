@@ -18,7 +18,6 @@ import edu.si.CDIS.utilties.DataProvider;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.logging.Handler;
-import edu.si.CDIS.CIS.Thumbnail;
 import java.util.HashMap;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import java.io.File;
@@ -357,7 +356,7 @@ public class CDIS {
                     break;
                             
                 case "thumbnailSync" :    
-                    Thumbnail thumbnail = new Thumbnail();
+                    CISThumbnailSync thumbnail = new CISThumbnailSync();
                     thumbnail.sync();
                     break;
                     
