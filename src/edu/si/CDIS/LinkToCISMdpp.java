@@ -69,7 +69,7 @@ public class LinkToCISMdpp {
             boolean cisIdUpdate = cdisMap.updateCisUniqueMediaId();
             if (!cisIdUpdate) {
                  ErrorLog errorLog = new ErrorLog ();
-                 errorLog.capture(cdisMap, "CCI", "ERROR: unable to record cis_id in CDIS_MAP table ");
+                 errorLog.capture(cdisMap, "LKC-CCUF", "ERROR: unable to record cis_id in CDIS_MAP table ");
                  continue;
             }
             
@@ -87,7 +87,7 @@ public class LinkToCISMdpp {
             boolean secPolicyretrieved = cdisLinkTbl.populateSecPolicyId();
             if (!secPolicyretrieved) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
+                errorLog.capture(cdisMap, "LKC-DSPF", "ERROR: unable to Update secuirty Policy in DAMS ");
                 continue;
             }
                 
@@ -96,7 +96,7 @@ public class LinkToCISMdpp {
             boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
             if (!secPolicyUpdated) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "DSP", "ERROR: unable to Update secuirty Policy in DAMS ");
+                errorLog.capture(cdisMap, "LKC-DSPF", "ERROR: unable to Update secuirty Policy in DAMS ");
                 continue;
             }
                 
@@ -104,7 +104,7 @@ public class LinkToCISMdpp {
             boolean checkSumVldt = validateAllChecksums(cdisMap.getCdisMapId());
             if (! checkSumVldt) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CVF", "ERROR: unable to Validate all checksums with each other");
+                errorLog.capture(cdisMap, "LKC-FCVF", "ERROR: unable to Validate all checksums with each other");
                 continue;
             }
              
@@ -116,7 +116,7 @@ public class LinkToCISMdpp {
             int childMapId = cdisMap.getMasterIdFromChildId();
             if (! (childMapId > 0)) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CCM", "ERROR: unable to Master record cis_id in CDIS_MAP table ");
+                errorLog.capture(cdisMap, "LKC-CCUF", "ERROR: unable to Master record cis_id in CDIS_MAP table ");
                 continue;
             }
             //set the ID to the masterid
@@ -125,7 +125,7 @@ public class LinkToCISMdpp {
             cisIdUpdate = cdisMap.updateCisUniqueMediaId();
             if (!cisIdUpdate) {
                  ErrorLog errorLog = new ErrorLog ();
-                 errorLog.capture(cdisMap, "CCM", "ERROR: unable to record cis_id in CDIS_MAP table ");
+                 errorLog.capture(cdisMap, "LKC-CCUF", "ERROR: unable to record cis_id in CDIS_MAP table ");
                  continue;
             }
             

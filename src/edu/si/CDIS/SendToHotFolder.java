@@ -113,7 +113,7 @@ public class SendToHotFolder {
             
              if (!mapEntryCreated) { 
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CMI", "Could not create CDISMAP entry, retrieving next row");
+                errorLog.capture(cdisMap, "SDH-CMIF", "Could not create CDISMAP entry, retrieving next row");
                     
                 //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
                 it.remove();
@@ -239,7 +239,7 @@ public class SendToHotFolder {
                 boolean infoPopulated = stagedFile.populateNamePathFromId(childVfcuMediaFileId);
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FCF", "Error, unable to populate name and path from database for subfile ");
+                    errorLog.capture(cdisMap, "SDH-FCSF", "Error, unable to populate name and path from database for subfile ");
                     continue;
                 }
                 
@@ -250,7 +250,7 @@ public class SendToHotFolder {
                 boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName);   
                 if (! fileCopied) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FCF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
+                    errorLog.capture(cdisMap, "SDH-FCSF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
                     continue;
                 }
                 
@@ -268,7 +268,7 @@ public class SendToHotFolder {
                 infoPopulated = stagedFile.populateNamePathFromId(Integer.parseInt(masterMediaId));
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FMF", "Error, unable to populate name and path from database for master file ");
+                    errorLog.capture(cdisMap, "SDH-FMMF", "Error, unable to populate name and path from database for master file ");
                     continue;
                 }
                
@@ -278,7 +278,7 @@ public class SendToHotFolder {
                 boolean fileMoved = stagedFile.moveToMaster(hotFolderBaseName);  
                 if (! fileMoved) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "FMF", "Error, unable to move file to master: " + stagedFile.getFileName());
+                    errorLog.capture(cdisMap, "SDH-FMMF", "Error, unable to move file to master: " + stagedFile.getFileName());
                     continue;
                 }
                 
@@ -291,11 +291,7 @@ public class SendToHotFolder {
                     continue;
                 }
                 
-            } catch (Exception e) {
-                //ErrorLog errorLog = new ErrorLog ();
-                //errorLog.capture(cdisMap, "PLE", "File Copy Failure for FileName:" + mediaFileName  + " " + e, damsConn);   
-                
-            } finally {
+            }  finally {
                 
                 //make sure we commit the final time through the loop
                 try { if (CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
