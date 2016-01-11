@@ -20,6 +20,7 @@ public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private Integer cdisMapId;
+    private Integer cdisCisMediaTypeId;
     private Long batchNumber;
     private String fileName;
     private String damsUoiid;
@@ -27,12 +28,17 @@ public class CDISMap {
     private Integer vfcuMediaFileId;
     private char errorInd;
     
+    
     public Long getBatchNumber () {
         return this.batchNumber;
     }
        
     public Integer getCdisMapId () {
         return this.cdisMapId;
+    }
+    
+    public Integer getCdisCisMediaTypeId () {
+        return this.cdisCisMediaTypeId;
     }
     
     public String getCisUniqueMediaId () {
@@ -76,6 +82,10 @@ public class CDISMap {
         this.cisUniqueMediaId = cisUniqueMediaId;
     }
     
+    public void setCdisCisMediaTypeId (Integer cdisCisMediaTypeId) {
+        this.cdisCisMediaTypeId = cdisCisMediaTypeId;
+    }
+    
     public void setDamsUoiid (String damsUoiid) {
         this.damsUoiid = damsUoiid;
     }
@@ -107,16 +117,14 @@ public class CDISMap {
                     "file_name, " +
                     "batch_number, " +
                     "vfcu_media_file_id, " +
-                    "deleted_ind, " +
-                    "error_ind ) " +
+                    "cdis_cis_media_type_id) " +
                 "VALUES (" +
                     getCdisMapId() + ", " +
                     "'" + CDIS.getProperty("collectionGroup") + "', " +
                     "'" + getFileName() + "', " +
                     CDIS.getBatchNumber() + ", " +
                     getVfcuMediaFileId() + ", " +
-                    "'N' ," +
-                    "'N')";
+                    getCdisCisMediaTypeId() + ")";
                  
         logger.log(Level.FINEST,"SQL! " + sql);      
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
@@ -177,8 +185,7 @@ public class CDISMap {
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
                     "AND dams_uoi_id IS NULL " +
-                    "AND error_ind is 'N' " + 
-                    "AND deleted_ind is 'N' ";
+                    "AND to_history_dt IS NULL";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -360,30 +367,6 @@ public class CDISMap {
         return true;
     }
     
-    public boolean updateErrorInd () {
-        
-        int rowsUpdated = 0;
-        String sql =  "UPDATE cdis_map " +
-                      "SET error_ind = '" + getErrorInd() + "' " +
-                      "WHERE cdis_map_id = " + getCdisMapId();
-        
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);) {
-            
-            rowsUpdated = pStmt.executeUpdate(sql);
-            
-            if (rowsUpdated != 1) {
-                throw new Exception();
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_MAP table with Error indicator", e );
-                return false;
-        }
-        return true;
-    }
-    
     public HashMap<Integer, String> returnUnlinkedMediaInDams () {
         
         HashMap<Integer, String> unlinkedDamsRecords;
@@ -395,11 +378,15 @@ public class CDISMap {
                     "WHERE      a.cdis_map_id = b.cdis_map_id " +
                     "AND        a.file_name = c.name " +
                     "AND        a.dams_uoi_id IS NULL " +
-                    "AND        a.error_ind = 'N' " +
-                    "AND        a.deleted_ind = 'N' " + 
+                    "AND        a.to_history_dt IS NULL " + 
                     "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
                     "AND        c.content_state = 'NORMAL' " +
-                    "AND        c.content_type != 'SHORTCUT' ";
+                    "AND        c.content_type != 'SHORTCUT' " +
+                    "AND NOT EXISTS ( " + 
+                        "SELECT 'X' " +
+                        "FROM cdis_error d " +
+                        "WHERE a.cdis_map_id = d.CDIS_MAP_ID)" ;
+                
                                 
         logger.log(Level.FINEST,"SQL! " + sql); 
         

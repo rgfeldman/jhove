@@ -27,11 +27,7 @@ public class ErrorLog {
         CDISActivityLog cdisActivity = new CDISActivityLog();
         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
         cdisActivity.setCdisStatusCd("ERR");   
-        cdisActivity.insertActivity();
-        
-        cdisMap.setErrorInd('Y');
-        cdisMap.updateErrorInd();
-        
+        cdisActivity.insertActivity(); 
     }
     
 }
