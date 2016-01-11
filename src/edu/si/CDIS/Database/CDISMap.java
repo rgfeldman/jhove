@@ -379,6 +379,7 @@ public class CDISMap {
                     "AND        a.file_name = c.name " +
                     "AND        a.dams_uoi_id IS NULL " +
                     "AND        a.to_history_dt IS NULL " + 
+                    "AND        a.collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " + 
                     "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
                     "AND        c.content_state = 'NORMAL' " +
                     "AND        c.content_type != 'SHORTCUT' " +
