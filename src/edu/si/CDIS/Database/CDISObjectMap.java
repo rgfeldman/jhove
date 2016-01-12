@@ -7,6 +7,7 @@ package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,4 +65,26 @@ public class CDISObjectMap {
         
         return true;
     }
+    
+    public boolean populateCisUniqueObjectIdforCdisId () {
+  
+        String sql = "SELECT cis_unique_object_id " +
+                    "FROM cdis_object_map " +
+                    "WHERE cdis_map_id = " + getCdisMapId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs != null && rs.next()) {
+                setCisUniqueObjectId (rs.getString(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain cis_unique_object_id for cdis_map_id", e );
+                return false;
+        }
+        return true;
+    }
+    
 }

@@ -43,7 +43,11 @@ public class CDIS {
     }
     
     public static Connection getCisConn() {
-        return CDIS.cisConn;
+        if (CDIS.getProperty("cisSourceDB").equals("none")) {
+            return CDIS.damsConn;
+        }
+        else 
+            return CDIS.cisConn;
     }
     
     public static Connection getDamsConn() {

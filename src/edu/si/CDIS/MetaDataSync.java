@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.utilties.ScrubStringForDb;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISActivityLog;
@@ -23,7 +24,7 @@ public class MetaDataSync {
     
     private String sqlUpdate;
     private HashMap <String,String> metaDataValuesForDams; 
-    private ArrayList<String> damsUoiidsToSync;
+    private ArrayList<Integer> damsUoiidsToSync;
 
     private void setSqlUpdate(String sqlUpdate) {
         this.sqlUpdate = sqlUpdate;
@@ -47,13 +48,13 @@ public class MetaDataSync {
 
         SiAssetMetaData siAsst = new SiAssetMetaData ();        
         
-        //Populate column definitions and length array
-        siAsst.populateMetaDataDBLengths ();
-        
         //Grab all the records that have been synced in the past, but have been updated      
         //sourceUpdatedCDISIdLst = getCISUpdatedRendition();
 
         if (!damsUoiidsToSync.isEmpty()) {
+            //Populate column definitions and length array
+            siAsst.populateMetaDataDBLengths ();
+        
             processRenditionList(siAsst);
         }
     }
@@ -109,7 +110,7 @@ public class MetaDataSync {
                  
             while (rs.next()) {
                 logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
-                damsUoiidsToSync.add(rs.getString(1));
+                damsUoiidsToSync.add(rs.getInt("CDIS_MAP_ID"));
             }
 
         } catch (Exception e) {
@@ -127,14 +128,17 @@ public class MetaDataSync {
     private void processRenditionList(SiAssetMetaData siAsst) {
 
         // for each UOI_ID that was identified for sync
-        for (Iterator<String> iter = damsUoiidsToSync.iterator(); iter.hasNext();) {
+        for (Iterator<Integer> iter = damsUoiidsToSync.iterator(); iter.hasNext();) {
+            
+            //commit with each iteration
+            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
             CDISMap cdisMap = new CDISMap();
 
             try {
                 
-                cdisMap.setDamsUoiid(iter.next());
-                cdisMap.populateIdFromUoiid();
+                cdisMap.setCdisMapId(iter.next());
+                cdisMap.populateMapInfo();
                 siAsst.setUoiid (cdisMap.getDamsUoiid());
                 
                 // execute the SQL statment to obtain the metadata and populate variables.  They key value is RenditionID
@@ -173,6 +177,8 @@ public class MetaDataSync {
                     errorLog.capture(cdisMap, "MDS-CALF",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
                     continue;
                 }
+                
+                
                         
             } catch (Exception e) {
                 ErrorLog errorLog = new ErrorLog ();
@@ -256,6 +262,8 @@ public class MetaDataSync {
 
         logger.log(Level.ALL, "Mapping Data for metadata");
         
+        this.metaDataValuesForDams = new HashMap <>();
+        
         //for each select statement found in the xml 
         for (String key : CDIS.getXmlSelectHash().keySet()) {
 
@@ -269,17 +277,25 @@ public class MetaDataSync {
                 //get the next query, we are not interested in this one at this point
                 continue;
             }
-                        
+                      
             if (sql.contains("?UOI_ID?")) {
                 sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
             }
+            if (sql.contains("?MEDIA_ID?")) {
+                sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
+            }
+            if (sql.contains("?OBJECT_ID?")) {
+                CDISObjectMap objectMap = new CDISObjectMap();
+                objectMap.setCdisMapId(cdisMap.getCdisMapId());
+                objectMap.populateCisUniqueObjectIdforCdisId();
+           
+                sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
+            }
+                        
             logger.log(Level.ALL, "select Statement: " + sql);    
             
-            try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
                  ResultSet rs = pStmt.executeQuery() ) {
-                
-                // populate the metadata object with the values found from the database query
-                this.metaDataValuesForDams = new HashMap <>();
                 
                 while (rs.next()) {
                     
@@ -294,7 +310,7 @@ public class MetaDataSync {
                             logger.log(Level.ALL, "columnInfo: " + columnName + " " + columnValue);
                         
                             if (columnValue != null) {
-                                scrub.scrubString(columnValue);
+                                columnValue = scrub.scrubString(columnValue);
                             }
                     
                             //check if the column has already been populated
