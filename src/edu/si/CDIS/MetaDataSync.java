@@ -24,7 +24,7 @@ public class MetaDataSync {
     
     private String sqlUpdate;
     private HashMap <String,String> metaDataValuesForDams; 
-    private ArrayList<Integer> damsUoiidsToSync;
+    private ArrayList<Integer> cdisMapIdsToSync;
 
     private void setSqlUpdate(String sqlUpdate) {
         this.sqlUpdate = sqlUpdate;
@@ -42,16 +42,18 @@ public class MetaDataSync {
     public void sync() {
 
         // initialize uoiid list for sync
-        damsUoiidsToSync = new ArrayList<>();
+        cdisMapIdsToSync = new ArrayList<>();
         // Grab all the records that have NEVER EVER been synced by CDIS yet
         getNeverSyncedRendition();
 
         SiAssetMetaData siAsst = new SiAssetMetaData ();        
         
-        //Grab all the records that have been synced in the past, but have been updated      
-        //sourceUpdatedCDISIdLst = getCISUpdatedRendition();
+        if (! CDIS.getProperty("cisSourceDB").equals("none")) {
+            //Grab all the records that have been synced in the past, but may have updates      
+            getCISUpdatedRendition();
+        }
 
-        if (!damsUoiidsToSync.isEmpty()) {
+        if (!cdisMapIdsToSync.isEmpty()) {
             //Populate column definitions and length array
             siAsst.populateMetaDataDBLengths ();
         
@@ -87,6 +89,51 @@ public class MetaDataSync {
         Description:    get Renditions by CDIS_ID that have never been synced 
         RFeldman 2/2015
     */
+    private void getCISUpdatedRendition() {
+        String sqlTypeArr[] = null;
+        String sql = null;
+
+        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+            
+            sqlTypeArr =  CDIS.getXmlSelectHash().get(key);
+            
+            if (sqlTypeArr[0].equals("getRecordsForResync")) {   
+                sql = key;    
+                logger.log(Level.FINEST, "SQL: {0}", sql);
+            }
+        }
+        
+        if (sql.contains("?GT-DATE?")) {
+                sql = sql.replace("?GT-DATE?", "> GETDATE() - " + CDIS.getProperty("syncIncrement"));
+        }
+        
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+            ResultSet  rs = pStmt.executeQuery() ) {
+            
+            CDISMap cdisMap = new CDISMap();
+            
+            logger.log(Level.FINEST,"SQL! " + sql); 
+                 
+            while (rs.next()) {
+                logger.log(Level.ALL, "Adding RenditionID to re-sync list: " + rs.getString(1));
+                cdisMap.setCisUniqueMediaId(rs.getString(1));
+                cdisMap.populateIdFromCisMediaId();
+                cdisMapIdsToSync.add(cdisMap.getCdisMapId());
+            }
+
+        } catch (Exception e) {
+            logger.log(Level.ALL, "Error in generation list to sync: " + e);
+        } 
+        
+        
+    }
+    
+    /*  Method :       getNeverSyncedRendition
+        Arguments:      
+        Description:    get Renditions by CDIS_ID that have never been synced 
+        RFeldman 2/2015
+    */
     private void getNeverSyncedRendition() {
 
         String sqlTypeArr[] = null;
@@ -97,7 +144,7 @@ public class MetaDataSync {
             
             sqlTypeArr =  CDIS.getXmlSelectHash().get(key);
             
-            if (sqlTypeArr[0].equals("getUnsyncedRecords")) {   
+            if (sqlTypeArr[0].equals("getNeverSyncedRecords")) {   
                 sql = key;    
                 logger.log(Level.FINEST, "SQL: {0}", sql);
             }
@@ -110,7 +157,7 @@ public class MetaDataSync {
                  
             while (rs.next()) {
                 logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
-                damsUoiidsToSync.add(rs.getInt("CDIS_MAP_ID"));
+                cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
             }
 
         } catch (Exception e) {
@@ -128,7 +175,7 @@ public class MetaDataSync {
     private void processRenditionList(SiAssetMetaData siAsst) {
 
         // for each UOI_ID that was identified for sync
-        for (Iterator<Integer> iter = damsUoiidsToSync.iterator(); iter.hasNext();) {
+        for (Iterator<Integer> iter = cdisMapIdsToSync.iterator(); iter.hasNext();) {
             
             //commit with each iteration
             try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -167,17 +214,31 @@ public class MetaDataSync {
                     continue; 
                 }
                 
-                // Insert row into activity_log table
+                // see if there already is a row that in the activity_log that has been synced
                 CDISActivityLog cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                 cdisActivity.setCdisStatusCd("MDS");
-                boolean activityLogged = cdisActivity.insertActivity();
-                if (!activityLogged) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "MDS-CALF",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
-                    continue;
-                }
                 
+                boolean idFound = cdisActivity.populateIdFromMapIdStat();
+                if (! idFound ) {                               
+                    // Insert row into activity_log table
+                    boolean activityLogged = cdisActivity.insertActivity();
+                    if (!activityLogged) {
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "MDS-CALF",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                        continue;
+                    }
+                }
+                else {
+                    // Update the date in activity_log table on the existing row
+                    boolean activityLogged = cdisActivity.updateActivityDtCurrent();
+                    
+                    if (!activityLogged) {
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "MDS-CALF",  "Could not update CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                        continue;
+                    }
+                }
                 
                         
             } catch (Exception e) {

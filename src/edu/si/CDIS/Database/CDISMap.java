@@ -180,6 +180,32 @@ public class CDISMap {
  
     }
     
+     public boolean populateIdFromCisMediaId () {
+
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
+                    "AND collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " +
+                    "AND to_history_dt is NULL ";
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for cis ID", e );
+                return false;
+        }
+        return true;
+    }
+     
     public boolean populateIdForNameNullUoiid () {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
