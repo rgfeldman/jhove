@@ -6,7 +6,7 @@
 package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.utilties.DataProvider;
+import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.Statement;
@@ -39,7 +39,6 @@ public class MediaMaster {
     
     public boolean insertNewRecord() {
      
-        Statement stmt = null;
         ResultSet rs = null;
         
         String sql = "insert into MediaMaster " +  
@@ -59,26 +58,30 @@ public class MediaMaster {
         
         logger.log(Level.FINER, "SQL: {0}", sql);
         
-        try {
-            stmt = CDIS.getCisConn().createStatement();
+        try (Statement stmt = CDIS.getCisConn().createStatement() ) {
+            
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
             rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 this.mediaMasterId = rs.getInt(1);
             }    
+            else {
+                throw new Exception();
+            }
+            
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.FINER, "Error: unable to Insert into MediaMaster", e);
             return false;
+        
         }finally {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
         return true;
     }
     
-    public int updateRenditionIds() {
+    public boolean updateRenditionIds() {
         
         int updateCount;
         
@@ -89,10 +92,17 @@ public class MediaMaster {
         
          logger.log(Level.FINER, "SQL: {0}", sql);
         
-        updateCount = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
-
-        return updateCount;
-      
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
+            updateCount = pStmt.executeUpdate(sql);
+            
+            if (updateCount != 1) {
+                throw new Exception();
+            }
+        
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update FileId in mediaRenditions table", e );
+                return false;
+        }  
+       return true;
     }
-    
 }

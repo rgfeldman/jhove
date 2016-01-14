@@ -71,8 +71,7 @@ public class MediaFiles {
     }
     
     public boolean insertNewRecord() {
-        
-        Statement stmt = null;
+          
         ResultSet rs = null;
         
         
@@ -98,19 +97,22 @@ public class MediaFiles {
        
        logger.log(Level.FINER, "SQL: {0}", sql);
         
-        try {
-            stmt = CDIS.getCisConn().createStatement();
+        try (Statement stmt = CDIS.getCisConn().createStatement() ) {
+           
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
             rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 this.fileId = rs.getInt(1);
-            }    
+            } 
+            else {
+                 throw new Exception();
+            }
+            
         } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.FINER, "Error, unable to insert into Media Files table", e );
                 return false;
         }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
                 try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
@@ -134,7 +136,8 @@ public class MediaFiles {
             logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.FINER, "Error, unable to update Path and filename in mediaFiles table", e);
+                return false;
         }
         return true;
     }

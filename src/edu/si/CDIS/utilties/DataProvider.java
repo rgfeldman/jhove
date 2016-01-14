@@ -90,27 +90,5 @@ public class DataProvider {
 		return success;
 		
 	}
-	
-	public static int executeUpdate(Connection conn, String sql) {
-		
-		Statement stmt = null;
-		int rowCount;
-		
-		try {
-			stmt = conn.createStatement();
-			rowCount = stmt.executeUpdate(sql);
-		}
-		catch(SQLException sqlex) {
-			sqlex.printStackTrace();
-			return 0;
-		}
-		finally {
-			try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-		}
-		
-		
-		return rowCount;
-		
-	}
-	
+
 }

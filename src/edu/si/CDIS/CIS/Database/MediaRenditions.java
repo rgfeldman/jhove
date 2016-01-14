@@ -6,7 +6,6 @@
 package edu.si.CDIS.CIS.Database;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.utilties.DataProvider;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -57,7 +56,6 @@ public class MediaRenditions {
         
         Integer mediaTypeID = null;
         Integer mediaStatusID = null;
-        Statement stmt = null;
         ResultSet rs = null;
         
         // Get variables from the properties list
@@ -95,30 +93,32 @@ public class MediaRenditions {
         
         logger.log(Level.FINER, "SQL: {0}", sql);
         
-        try {
-            stmt = CDIS.getCisConn().createStatement();
+        try (Statement stmt = CDIS.getCisConn().createStatement() ) {
+
             stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
             rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 this.renditionId = rs.getInt(1);
             }    
+            else {
+                 throw new Exception();
+            }
+            
         } catch (Exception e) {
-            e.printStackTrace();
+           logger.log(Level.FINER, "Error, unable to insert into MediaRenditions table", e );
             return false;
         }finally {
             try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
         }
         
         return true;         
     }
     
 
-    private void updateIsColor1() {
+    private boolean updateIsColor1() {
         
-        int recordsUpdated = 0;
-        Statement stmt = null;
+        int updateCount = 0;
         
         String sql = "update mediaRenditions " +
                     "set IsColor = 1 " +
@@ -126,58 +126,44 @@ public class MediaRenditions {
         
          logger.log(Level.FINEST, "SQL! {0}", sql);
          
-         try {
-            recordsUpdated = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
-                   
-            logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
+         try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
             
+             updateCount = pStmt.executeUpdate(sql);
+             
+            if (updateCount != 1) {
+                throw new Exception();
+            }
+           
         } catch (Exception e) {
-                e.printStackTrace();
-        }finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+            logger.log(Level.FINER, "Error: unable to update isColor in mediaRenditions table", e );
+            return false;    
         }
+        
+        return true;
         
     }
     
-    public int updateFileId() {
+    public boolean updateFileId() {
         int updateCount;
         
         String sql = "update MediaRenditions " +
                     "set PrimaryFileID = " + getFileId() + " " +
                     "where renditionID = " + getRenditionId() ;
-                               
-        updateCount = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
         
-        return updateCount;
-    }
-     
-    /*  Method :        setForDamsFlag
-        Arguments:      
-        Description:    updates the isColor flag...which indicates the rendition is forDAMS
-        RFeldman 2/2015
-    */
-    public void updateForDamsTrue() {
-        
-        int recordsUpdated = 0;
-        Statement stmt = null;
-        
-        String sql = "update mediaRenditions " +
-                    "set IsColor = 1 " +
-                    "where IsColor = 0 and RenditionID = " + getRenditionId();
-        
-         logger.log(Level.FINEST, "SQL! {0}", sql);
-         
-         try {
-            recordsUpdated = DataProvider.executeUpdate(CDIS.getCisConn(), sql);
-                   
-            logger.log(Level.FINEST,"Rows ForDams flag Updated in CIS! {0}", recordsUpdated);
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
+            updateCount = pStmt.executeUpdate(sql);
             
+            if (updateCount != 1) {
+                throw new Exception();
+            }
+        
         } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR: Could not update the forDams flag in TMS",e);
-        }finally {
-            try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-        }
-          
+                logger.log(Level.FINER, "Error: unable to update FileId in mediaRenditions table", e );
+                return false;
+        }  
+        
+        return true;
+        
     }
     
 }
