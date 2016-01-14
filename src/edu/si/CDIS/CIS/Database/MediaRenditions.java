@@ -53,24 +53,6 @@ public class MediaRenditions {
     
     
     
-    public void populateIdByRenditionNumber () {
-        String sql = "Select max (RenditionID) " +
-                     "From MediaRenditions " +
-                     "Where RenditionNumber = '" + getRenditionNumber() + "'";
-        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
-                ResultSet rs = pStmt.executeQuery() ){
-		
-            if (rs.next()) {
-                setRenditionId(rs.getInt(1));
-            }        
-	}
-            
-	catch(Exception e) {
-		e.printStackTrace();
-	}
-    }
     public boolean insertNewRecord(Integer mediaMasterID ) {
         
         Integer mediaTypeID = null;

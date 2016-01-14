@@ -330,7 +330,7 @@ public class CDIS {
                     break;
                     
                 case "linkToDamsToCis" :
-                    LinkDamsToCIS linkDamsToCis = new LinkDamsToCIS();
+                    LinkDamsAndCIS linkDamsToCis = new LinkDamsAndCIS();
                     linkDamsToCis.link();
                     break;
                             
@@ -349,7 +349,7 @@ public class CDIS {
                     metaData.sync();
                     break;
                     
-                case "createCISmedia" :
+                case "createCISMedia" :
                     CreateCISmedia createCisMedia = new CreateCISmedia();
                     createCisMedia.createMedia();
                     break;  
@@ -378,8 +378,6 @@ public class CDIS {
         } catch (Exception e) {
                 e.printStackTrace();
         } finally {
-            try { if ( CDIS.damsConn != null)  CDIS.damsConn.commit(); } catch (Exception e) { e.printStackTrace(); }
-            
             try { if ( CDIS.cisConn != null)  CDIS.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( CDIS.damsConn != null)  CDIS.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         

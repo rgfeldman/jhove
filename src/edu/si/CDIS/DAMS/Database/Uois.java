@@ -10,7 +10,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 
 public class Uois {
@@ -40,7 +39,7 @@ public class Uois {
     
     public boolean populateName () {
   
-        String sql = "SELECT name FROM uois " +
+        String sql = "SELECT name FROM towner.uois " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -62,7 +61,9 @@ public class Uois {
     
     public boolean populateUoisData() {
         
-        String sql = "SELECT name, bitmap_height, bitmap_width from UOIS where UOI_ID = '" + getUoiid() + "'";
+        String sql = "SELECT name, bitmap_height, bitmap_width " +
+                    "FROM towner.uois " +
+                    "WHERE uoi_id = '" + getUoiid() + "'";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 

@@ -47,7 +47,7 @@ public class CDISObjectMap {
                     "VALUES (" +
                         "cdis_object_map_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
-                        "'" + getCisUniqueObjectId() + ")";
+                        "'" + getCisUniqueObjectId() + "')";
                  
         logger.log(Level.FINEST,"SQL! " + sql);      
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {

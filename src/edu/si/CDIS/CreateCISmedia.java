@@ -6,10 +6,15 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.Objects;
+import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
+import edu.si.CDIS.CIS.Database.Objects;
 import edu.si.CDIS.CIS.MediaRecord;
+import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.Database.Uois;
+import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.Database.CDISObjectMap;
+import edu.si.CDIS.utilties.ErrorLog;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -65,38 +70,69 @@ public class CreateCISmedia {
         Description:    prcoesses the DAMS uans one at a time from the list  
         RFeldman 2/2015
     */
-    private void processUAN () { 
+    private void processUOIIDList () { 
 
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
         for (String uoiId : uoiidsToLink) {
-                
-            // See if we can find if this uan already exists in TMS
-            // TO DO
-                
-            logger.log(Level.FINEST, "UOI_ID to integrate:{0}", uoiId);
-                
+              
+            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            
             Uois uois = new Uois();
             uois.setUoiid(uoiId);
+            uois.populateName(); 
+            
+            //Create CDISMap entry for the record
+            CDISMap cdisMap = new CDISMap();
+            cdisMap.setDamsUoiid(uoiId);
+            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")) );
+            cdisMap.setFileName(uois.getName());
+            
+            boolean mapCreated = cdisMap.createRecord();
+            if (!mapCreated) {
+                logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
+                continue;
+            }
+            
+            CDISActivityLog activityLog = new CDISActivityLog();
+            activityLog.setCdisMapId(cdisMap.getCdisMapId());
+            activityLog.setCdisStatusCd("MIC");
+            activityLog.insertActivity();
             
             MediaRenditions mediaRendition = new MediaRenditions();
             Objects tmsObject = new Objects();
-                        
             MediaRecord mediaRecord = new MediaRecord();
             
             boolean mediaCreated = mediaRecord.create(uois, mediaRendition, tmsObject);
                             
             if ( ! mediaCreated ) {
-                logger.log(Level.FINER, "ERROR: Media Creation Failed, no thumbnail to create...returning");
-                continue; //Go to the next record in the for-sloop
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CCM-CMCF", "ERROR: Media Creation Failed"); 
+                continue; //Go to the next record 
             }
                         
-            // Set the renditionID for the rendition just created
-            mediaRendition.populateIdByRenditionNumber();
-            logger.log(Level.FINER, "Media Creation complete, RenditionID for newly created media: " + mediaRendition.getRenditionNumber() );
+            logger.log(Level.FINER, "Media Creation complete, RenditionNumber for newly created media: " + mediaRendition.getRenditionNumber() );
 
-            LinkDamsToCIS linkDamsToCis = new LinkDamsToCIS();
-            linkDamsToCis.createNewLink(Integer.toString(mediaRendition.getRenditionId()), uoiId);
+            // Update the CDISMAP record with the cis_id 
+            cdisMap.setCisUniqueMediaId(Integer.toString (mediaRendition.getRenditionId()) );
+            cdisMap.updateCisUniqueMediaId() ;
             
+            Thumbnail thumbnail = new Thumbnail();
+            boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
+                            
+            if (! thumbCreated) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CCM-CTGF", "ERROR: CIS Thumbnail Generation Failed"); 
+                continue;
+            }
+            
+            CDISObjectMap cdisObjectMap = new CDISObjectMap ();
+            cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
+            cdisObjectMap.setCisUniqueObjectId(Integer.toString (tmsObject.getObjectID()) );
+            cdisObjectMap.createRecord();
+            
+            activityLog.setCdisStatusCd("LCC");
+            activityLog.insertActivity();
         }
     }
     
@@ -113,7 +149,10 @@ public class CreateCISmedia {
         populateNeverLinkedImages ();
         
         // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
-        processUAN ();  
+        processUOIIDList ();  
         
+        try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+         
     }
+     
 }

@@ -17,7 +17,6 @@ import java.util.logging.Level;
 import edu.si.CDIS.DAMS.StagedFile;
 import java.io.File;
 import java.util.Iterator;
-import org.apache.commons.io.FilenameUtils;
 import edu.si.CDIS.utilties.ErrorLog;
 
 /**

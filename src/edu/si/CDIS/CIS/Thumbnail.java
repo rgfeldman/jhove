@@ -168,9 +168,11 @@ public class Thumbnail {
     */
     private boolean getDamsNameLocation (String uoiId) {
         
-        String sql = "select o.object_name_location from uois u, object_stacks o" +
-        " where u.uoi_id = '" + uoiId + "'" +
-        " and u.screen_res_obj_id = o.object_id ";
+        String sql = "SELECT o.object_name_location " + 
+                     "FROM towner.uois u, " +
+                     "     towner.object_stacks o " +
+                     "WHERE u.uoi_id = '" + uoiId + "'" +
+                     "AND   u.screen_res_obj_id = o.object_id ";
            
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);

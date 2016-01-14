@@ -5,12 +5,13 @@
  */
 package edu.si.CDIS.CIS;
 
+import edu.si.CDIS.CDIS;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.Database.Objects;
 import edu.si.CDIS.CIS.Database.MediaMaster;
 import edu.si.CDIS.CIS.Database.MediaFiles;
 import edu.si.CDIS.CIS.Database.MediaXrefs;
-import edu.si.CDIS.CDIS;
+
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
 
@@ -28,43 +29,41 @@ public class MediaRecord {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    private boolean formatNewRenditionNumber ( String damsImageFileName, MediaRenditions mediaRendition) {
+    private String formatNewRenditionNumber ( String damsImageFileName) {
         
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
+        
+        String newRenditionNumber;
         
         String tmsDelimiter = CDIS.getProperty("tmsDelimiter");
         String damsDelimiter = CDIS.getProperty("damsDelimiter");
         
         // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
         if (tmsDelimiter.equals (damsDelimiter) ) {
-            mediaRendition.setRenditionNumber(damsImageFileName);
+            newRenditionNumber = damsImageFileName;
         }
         else {
-            mediaRendition.setRenditionNumber (damsImageFileName.replaceAll(damsDelimiter, tmsDelimiter));
+            newRenditionNumber = damsImageFileName.replaceAll(damsDelimiter, tmsDelimiter);
         }
+        logger.log(Level.FINER, "Formatted name: {0}", newRenditionNumber);
         
-        logger.log(Level.FINER, "Formatted name: {0}", mediaRendition.getRenditionNumber());
-        
-        return true;
-        
+        return newRenditionNumber;  
     }
     
     public boolean create (Uois uois, MediaRenditions mediaRenditions, Objects tmsObject) {
  
         boolean objectIdPopulated = false;
-        boolean returnVal;
+        boolean returnSuccess;
         int updateCount = 0;
         
         MediaXrefs mediaXrefs = new MediaXrefs();
         MediaFiles mediaFiles = new MediaFiles();
        
-        //Get the rendition name, and the dimensions
-        // if the barcode is set, use the name to get the barcode info,
-        //else use the name to get rendition name with the rendition  
-        boolean uoisInfoPopulated = uois.populateUoisData();
+        //Get some info from DAMS
+        returnSuccess = uois.populateUoisData();
         
-        if (! uoisInfoPopulated) {
-            logger.log(Level.FINER, "unable to retrieve media file, returning");
+        if (! returnSuccess) {
+            logger.log(Level.FINER, "unable to retrieve info from DAMS, returning");
             return false;
         }
         
@@ -81,13 +80,13 @@ public class MediaRecord {
         
         mediaXrefs.calculateRank(extensionlessFileName);
         
-        // If we are dealing with barcode logic, the name of the rendition that we are mapping to in TMS,
-        // and the objectID is populated by an alternate method
-        
         if (Integer.parseInt(CDIS.getProperty("assignToObjectID")) > 0) {
             tmsObject.setObjectID (Integer.parseInt(CDIS.getProperty("assignToObjectID")));
             objectIdPopulated = true;
-            formatNewRenditionNumber (extensionlessFileName, mediaRenditions);
+            
+            String newRenditionNumber = formatNewRenditionNumber (extensionlessFileName);
+            mediaRenditions.setRenditionNumber(newRenditionNumber);
+            
             logger.log(Level.FINER, "Set object to ObjectID");
         }
                 
@@ -114,7 +113,9 @@ public class MediaRecord {
             
                 objectIdPopulated = tmsObject.mapFileNameToObjectNumber(extensionlessFileName);
                 if (objectIdPopulated) {
-                    formatNewRenditionNumber (extensionlessFileName, mediaRenditions);
+                    
+                    String newRenditionNumber = formatNewRenditionNumber (extensionlessFileName);
+                    mediaRenditions.setRenditionNumber(newRenditionNumber);
                 }
  
             }
@@ -147,16 +148,16 @@ public class MediaRecord {
   
         // Insert into the MediaMaster table
         MediaMaster mediaMaster = new MediaMaster();
-        returnVal = mediaMaster.insertNewRecord();
+        returnSuccess = mediaMaster.insertNewRecord();
         
-        if (! returnVal) {
+        if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaMaster table creation failed, returning");
            return false;
         }
         
         // Insert into MediaRenditions
-        returnVal = mediaRenditions.insertNewRecord(mediaMaster.getMediaMasterId());
-        if (! returnVal) {
+        returnSuccess = mediaRenditions.insertNewRecord(mediaMaster.getMediaMasterId());
+        if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaRenditions table creation failed, returning");
            return false;
         }
@@ -183,8 +184,8 @@ public class MediaRecord {
             mediaFiles.setFileName(siAsst.getOwningUnitUniqueName());
         } 
         mediaFiles.setRenditionId(mediaRenditions.getRenditionId());
-        returnVal = mediaFiles.insertNewRecord();
-        if (! returnVal) {
+        returnSuccess = mediaFiles.insertNewRecord();
+        if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaFiles table creation failed, returning");
            return false;
         }
@@ -202,15 +203,14 @@ public class MediaRecord {
         mediaXrefs.setObjectId(tmsObject.getObjectID());
         mediaXrefs.populateIsPrimary();
         logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getPrimary());
-        returnVal = mediaXrefs.insertNewRecord();
-        if (! returnVal) {
+        returnSuccess = mediaXrefs.insertNewRecord();
+        if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaXref table creation failed, returning");
            return false;
         }
         
         logger.log(Level.FINER, "New Media Created Successfully!!");
         
-                   
         return true;
         
     }
