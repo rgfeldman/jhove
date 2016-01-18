@@ -28,7 +28,6 @@ public class LinkDamsAndCIS {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     ArrayList <String> neverLinkedDamsIds;   
-    ArrayList <String> objectIds;
     
     /*  Method :       linkToCIS
         Arguments:      The CDIS object, and the StatisticsReport object
@@ -50,29 +49,26 @@ public class LinkDamsAndCIS {
     
     private boolean linkObject (Integer cdisMapId, String cisIdentifier) {
         
-        //get ALL the objectIds on the current renditionID
-       
-        this.objectIds = new ArrayList<>();
-        
-        boolean objectIdsFound = getObjectIdsForCisId(cisIdentifier);
+        //get earliest objectId on the current renditionID 
+        boolean objectIdsFound = getObjectIdForCisId(cisIdentifier);
         if (!objectIdsFound ) {
             logger.log(Level.FINER, "Error: unable to obtain object_id list" );
             return false;
         } 
+              
+        //Insert into CDISObjectMap
+        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        cdisObjectMap.setCdisMapId(cdisMapId);
+ //       cdisObjectMap.setCisUniqueObjectId(objectId);
+        cdisObjectMap.createRecord();
         
-        for (String objectId : objectIds) {
-            //Insert into CDISObjectMap
-            CDISObjectMap cdisObjectMap = new CDISObjectMap();
-            cdisObjectMap.setCdisMapId(cdisMapId);
-            cdisObjectMap.setCisUniqueObjectId(objectId);
-            cdisObjectMap.createRecord();
-        }
         return true;
     }
     
-    private boolean getObjectIdsForCisId (String cisIdentifier) {
-        
-        String sql = "SELECT id " +
+    //MOVE THIS TO mediaXrefs table
+    private boolean getObjectIdForCisId (String cisIdentifier) {
+        /*
+        String sql = "SELECT min(id) " +
                     "FROM mediaXrefs a, " +
                     "     mediaMaster b, " +
                     "     mediaRenditions c " +
@@ -86,17 +82,18 @@ public class LinkDamsAndCIS {
              ResultSet rs = pStmt.executeQuery() ){
  
             while (rs != null && rs.next()) {
-                objectIds.add(rs.getString(1));
+                objectId.add(rs.getString(1));
             }   
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain object_ids for media", e );
                 return false;
         }
+        */
         return true; 
 
     }
-    
+
     public boolean createNewLink(String cisIdentifier, String uoiId) {
         
         ///THIS NEEDS SOME WORK.  CANT LINK TO UOIID IF IT IS NOT FOUND

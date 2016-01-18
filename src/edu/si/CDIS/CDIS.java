@@ -29,7 +29,7 @@ public class CDIS {
    
     private static Connection cisConn;
     private static Connection damsConn;
-    public String operationType;
+    public static String operationType;
     private static Properties properties;
     private static HashMap <String,String[]> xmlSelectHash;
     private static Long batchNumber;
@@ -56,6 +56,10 @@ public class CDIS {
         
     public static Long getBatchNumber() {
         return CDIS.batchNumber;
+    }
+    
+    public static String getOperationType() {
+        return CDIS.operationType;
     }
         
     public static Properties getProperties() {
@@ -314,7 +318,7 @@ public class CDIS {
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             
-            boolean xmlReturn = xml.read(cdis.operationType, CDIS.getProperty("xmlSQLFile"));
+            boolean xmlReturn = xml.read(CDIS.operationType, CDIS.getProperty("xmlSQLFile"));
             if (! xmlReturn) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
                 return;
@@ -322,16 +326,16 @@ public class CDIS {
             
             CDIS.xmlSelectHash = new HashMap <>(xml.getSelectStmtHash());
             
-            switch (cdis.operationType) {
+            switch (CDIS.operationType) {
                 
                 case "sendToHotFolder" :   
                     SendToHotFolder sendToHotFolder = new SendToHotFolder();
                     sendToHotFolder.ingest();  
                     break;
                     
-                case "linkToDamsToCis" :
-                    LinkDamsAndCIS linkDamsToCis = new LinkDamsAndCIS();
-                    linkDamsToCis.link();
+                case "linkToDAMSAndCIS" :
+                    LinkDamsAndCIS linkDamsAndCis = new LinkDamsAndCIS();
+                    linkDamsAndCis.link();
                     break;
                             
                 case "linkToCISMdpp" :

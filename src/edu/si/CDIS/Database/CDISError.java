@@ -53,12 +53,14 @@ public class CDISError {
                         "cdis_error_id, " +
                         "cdis_map_id, " +
                         "cdis_error_cd, " +
-                        "error_dt) " +
+                        "error_dt, " +
+                        "operation_type ) " +
                     "values ( " + 
                         "cdis_error_id_seq.NextVal, " +
                         cdisMapId + ", " +
                         "'" + cdisErrorCd + "'," +
-                        "SYSDATE)";
+                        "SYSDATE, " +
+                        "'" + CDIS.operationType + "')";
        
         logger.log(Level.FINER, "SQL: " + sql ); 
         
