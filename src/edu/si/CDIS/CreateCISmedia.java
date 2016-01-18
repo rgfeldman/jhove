@@ -100,14 +100,18 @@ public class CreateCISmedia {
             activityLog.insertActivity();
             
             MediaRenditions mediaRendition = new MediaRenditions();
-            Objects tmsObject = new Objects();
             MediaRecord mediaRecord = new MediaRecord();
             
-            boolean mediaCreated = mediaRecord.create(uois, mediaRendition, tmsObject);
+            Integer objectId = mediaRecord.create(uois, mediaRendition);
                             
-            if ( ! mediaCreated ) {
+            if ( objectId == 0 ) {
                 ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "CCM-CMCF", "ERROR: Media Creation Failed"); 
+                continue; //Go to the next record 
+            }
+            else if (objectId == -1 ) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CCM-TONF", "ERROR: Unable to obtain ObjectId from TMS"); 
                 continue; //Go to the next record 
             }
                         
@@ -128,8 +132,13 @@ public class CreateCISmedia {
             
             CDISObjectMap cdisObjectMap = new CDISObjectMap ();
             cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
-            cdisObjectMap.setCisUniqueObjectId(Integer.toString (tmsObject.getObjectID()) );
-            cdisObjectMap.createRecord();
+            cdisObjectMap.setCisUniqueObjectId(Integer.toString (objectId) );
+            boolean objectMapCreated = cdisObjectMap.createRecord();
+            if (! objectMapCreated) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CCM-OMCF", "ERROR: ObjectMap Creation Failed"); 
+                continue;
+            }
             
             activityLog.setCdisStatusCd("LCC");
             activityLog.insertActivity();

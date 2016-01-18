@@ -14,6 +14,7 @@ import edu.si.CDIS.CIS.Database.MediaXrefs;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
+import edu.si.CDIS.utilties.ErrorLog;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -50,11 +51,12 @@ public class MediaRecord {
         return newRenditionNumber;  
     }
     
-    public boolean create (Uois uois, MediaRenditions mediaRenditions, Objects tmsObject) {
+    public Integer create (Uois uois, MediaRenditions mediaRenditions) {
  
+        Objects tmsObject = new Objects();
+        
         boolean objectIdPopulated = false;
         boolean returnSuccess;
-        int updateCount = 0;
         
         MediaXrefs mediaXrefs = new MediaXrefs();
         MediaFiles mediaFiles = new MediaFiles();
@@ -64,12 +66,12 @@ public class MediaRecord {
         
         if (! returnSuccess) {
             logger.log(Level.FINER, "unable to retrieve info from DAMS, returning");
-            return false;
+            return 0;
         }
         
         if (! uois.getName().contains(".")) {
             logger.log(Level.FINER, "unable to determine filetype from filename, returning");
-            return false;
+            return 0;
         }
         
         String extensionlessFileName = uois.getName().substring(0, uois.getName().lastIndexOf("."));
@@ -137,7 +139,7 @@ public class MediaRecord {
                 //Set the RenditionNumber as the filename for reporting purposes
                 mediaRenditions.setRenditionNumber(extensionlessFileName);
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");
-                return false;
+                return -1;
         }
         
         // Set the primaryRenditionFlag
@@ -152,14 +154,14 @@ public class MediaRecord {
         
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaMaster table creation failed, returning");
-           return false;
+           return 0;
         }
         
         // Insert into MediaRenditions
         returnSuccess = mediaRenditions.insertNewRecord(mediaMaster.getMediaMasterId());
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaRenditions table creation failed, returning");
-           return false;
+           return 0;
         }
         
         // Update mediaMaster with the renditionIds
@@ -168,7 +170,7 @@ public class MediaRecord {
         returnSuccess = mediaMaster.updateRenditionIds();
         if (! returnSuccess) {
             logger.log(Level.FINER, "ERROR: MediaMaster table not updated correctly, returning");
-            return false;
+            return 0;
         }
         
         // Insert into MediaFiles
@@ -187,7 +189,7 @@ public class MediaRecord {
         returnSuccess = mediaFiles.insertNewRecord();
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaFiles table creation failed, returning");
-           return false;
+           return 0;
         }
         
         //Update mediaRendition with the fileId
@@ -195,7 +197,7 @@ public class MediaRecord {
         returnSuccess = mediaRenditions.updateFileId();
         if (! returnSuccess) {
             logger.log(Level.FINER, "ERROR: MediaRenditions table not updated correctly, returning");
-            return false;
+            return 0;
         }
                 
         // Insert into MediaXrefs
@@ -206,12 +208,12 @@ public class MediaRecord {
         returnSuccess = mediaXrefs.insertNewRecord();
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaXref table creation failed, returning");
-           return false;
+           return 0;
         }
         
         logger.log(Level.FINER, "New Media Created Successfully!!");
         
-        return true;
+        return tmsObject.getObjectID();
         
     }
     
