@@ -215,9 +215,9 @@ public class Objects {
         Description:    Finds, and sets the objectID based on the RenditionID 
         RFeldman 2/2015
     */
-    public void populateObjectIDByRenditionId (Integer renditionId) {
+    public boolean populateMinObjectIDByRenditionId (Integer renditionId) {
         
-        String sql =    "select a.ObjectID " +
+        String sql =    "select min(a.ObjectID) " +
                         "from Objects a, " +
                         "MediaXrefs b, " +
                         "MediaMaster c, " +
@@ -239,7 +239,9 @@ public class Objects {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
     
      /*  Method :        locateObjectIDLetterComponent
