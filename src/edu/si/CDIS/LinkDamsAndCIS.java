@@ -13,11 +13,12 @@ package edu.si.CDIS;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Logger;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 
+import edu.si.CDIS.CIS.Database.Objects;
+
 import edu.si.CDIS.DAMS.Database.Uois;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.CIS.Thumbnail;
@@ -27,7 +28,7 @@ public class LinkDamsAndCIS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    ArrayList <String> neverLinkedDamsIds;   
+    HashMap <String, String> neverLinkedDamsIds;   
     
     /*  Method :       linkToCIS
         Arguments:      The CDIS object, and the StatisticsReport object
@@ -37,7 +38,7 @@ public class LinkDamsAndCIS {
     public void link () {
         
         //Establish the hash to hold the unlinked DAMS rendition List
-        this.neverLinkedDamsIds = new ArrayList <>();
+        this.neverLinkedDamsIds = new HashMap <>();
         
         // Get a list of Renditions from DAMS that have no linkages in the Collections system
         populateNeverLinkedDamsIds ();
@@ -50,64 +51,29 @@ public class LinkDamsAndCIS {
     private boolean linkObject (Integer cdisMapId, String cisIdentifier) {
         
         //get earliest objectId on the current renditionID 
-        boolean objectIdsFound = getObjectIdForCisId(cisIdentifier);
+        Objects tmsObject= new Objects();
+        
+        boolean objectIdsFound = tmsObject.populateMinObjectIDByRenditionId(Integer.parseInt(cisIdentifier));
         if (!objectIdsFound ) {
-            logger.log(Level.FINER, "Error: unable to obtain object_id list" );
+            logger.log(Level.FINER, "Error: unable to obtain object_id" );
             return false;
         } 
-              
+        
         //Insert into CDISObjectMap
         CDISObjectMap cdisObjectMap = new CDISObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
- //       cdisObjectMap.setCisUniqueObjectId(objectId);
+        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectID()) );
         cdisObjectMap.createRecord();
         
         return true;
     }
-    
-    //MOVE THIS TO mediaXrefs table
-    private boolean getObjectIdForCisId (String cisIdentifier) {
-        /*
-        String sql = "SELECT min(id) " +
-                    "FROM mediaXrefs a, " +
-                    "     mediaMaster b, " +
-                    "     mediaRenditions c " +
-                    "WHERE a.mediaMasterId = b.mediaMasterId " +
-                    "AND   b.mediaMasterId = c.mediaMasterId " + 
-                    "AND   c.RenditionId = " + cisIdentifier +
-                    " AND TableId = 108";
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ){
- 
-            while (rs != null && rs.next()) {
-                objectId.add(rs.getString(1));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain object_ids for media", e );
-                return false;
-        }
-        */
-        return true; 
-
-    }
 
     public boolean createNewLink(String cisIdentifier, String uoiId) {
-        
-        ///THIS NEEDS SOME WORK.  CANT LINK TO UOIID IF IT IS NOT FOUND
         
         //Populate cdisMap Object based on renditionNumber
         CDISMap cdisMap = new CDISMap();
         cdisMap.setCisUniqueMediaId(cisIdentifier);     
         cdisMap.setDamsUoiid(uoiId);
-        boolean uoiidFound = cdisMap.populateIdFromUoiid();
-        
-        
-        if (! uoiidFound) {
-           
-        }
                 
         Uois uois = new Uois();
         uois.setUoiid(uoiId);
@@ -126,22 +92,15 @@ public class LinkDamsAndCIS {
             return false;
         }
         
-        // ONLY sometimes create the thumbnail
-        Thumbnail thumbnail = new Thumbnail();
-        boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
+        // ONLY refresh thumbnail IF the properties setting indicates we should
+        if (CDIS.getProperty("updateTMSThumbnail").equals("true") ) {
+            Thumbnail thumbnail = new Thumbnail();
+            boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
                             
-        if (! thumbCreated) {
-            logger.log(Level.FINER, "CISThumbnailSync creation failed");
-            return false;
-        }
-                               
-        SiAssetMetaData siAsst = new SiAssetMetaData();
-        // update the SourceSystemID in DAMS with the RenditionNumber
-        boolean rowsUpdated = siAsst.updateDAMSSourceSystemID();
-
-        if (! rowsUpdated) {
-            logger.log(Level.FINER, "Error updating source_system_id in DAMS");
-            return false;
+            if (! thumbCreated) {
+                logger.log(Level.FINER, "CISThumbnailSync creation failed");
+                return false;
+            }
         }
         
         return true;
@@ -160,20 +119,23 @@ public class LinkDamsAndCIS {
               
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
-            if (sqlTypeArr[0].equals("checkAgainstCIS")) {   
+            if (sqlTypeArr[0].equals("getCISIdentifier")) {   
                 sql = key;    
             }
         }
 
         //Iterate though hash...the key is the select statement itself
-        for (String uoiId : neverLinkedDamsIds) {
-
-            logger.log(Level.FINEST,"SQL " + currentIterationSql);
+        for (String uoiId : neverLinkedDamsIds.keySet()) {
             
-                              
+            logger.log(Level.FINEST,"SQL " + currentIterationSql);
+            if (sql.contains("?NAME?") ) {
+                sql = sql.replace("?NAME?",neverLinkedDamsIds.get(uoiId));
+            }
+            
             try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(currentIterationSql);
                 ResultSet rs = pStmt.executeQuery()   ) {   
-            
+                
+                //Get the CIS identifier for the field selected from above
                 String cisIdentifier = rs.getString(1);
                 
                 createNewLink(cisIdentifier, uoiId);
@@ -202,7 +164,7 @@ public class LinkDamsAndCIS {
             
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
-            if (sqlTypeArr[0].equals("retrieveDamsImages")) {   
+            if (sqlTypeArr[0].equals("retrieveDamsIds")) {   
                 sql = key;    
                 logger.log(Level.FINEST, "SQL: {0}", sql);
             }
@@ -213,8 +175,8 @@ public class LinkDamsAndCIS {
         
             // For each record in the sql query, add it to the unlinked rendition List
             while (rs.next()) {   
-                neverLinkedDamsIds.add(rs.getString("UOI_ID"));
-                logger.log(Level.FINER,"Adding DAMS asset to lookup in TMS: {0}", rs.getString("UOI_ID") );
+                neverLinkedDamsIds.put(rs.getString("UOI_ID"),rs.getString(2));
+                logger.log(Level.FINER,"Adding DAMS asset to lookup in CIS: {0}", rs.getString("UOI_ID") );
             }
 
         } catch (Exception e) {

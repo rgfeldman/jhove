@@ -29,7 +29,7 @@ public class CDIS {
    
     private static Connection cisConn;
     private static Connection damsConn;
-    public static String operationType;
+    private static String operationType;
     private static Properties properties;
     private static HashMap <String,String[]> xmlSelectHash;
     private static Long batchNumber;

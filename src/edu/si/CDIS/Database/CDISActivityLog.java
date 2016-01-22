@@ -52,11 +52,13 @@ public class CDISActivityLog {
                         "cdis_activity_log_id, " +
                         "cdis_map_id, " +
                         "cdis_status_cd, " +
+                        "operation_type, " +
                         "activity_dt) " +
                     "values ( " + 
                         "cdis_activity_log_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
                         "'" + getCdisStatusCd() + "', " +
+                        "'" + CDIS.getOperationType() + "', " +
                         "SYSDATE)";
         logger.log(Level.FINER, "SQL: " + sql );
         

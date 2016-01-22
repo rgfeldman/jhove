@@ -60,7 +60,7 @@ public class CDISError {
                         cdisMapId + ", " +
                         "'" + cdisErrorCd + "'," +
                         "SYSDATE, " +
-                        "'" + CDIS.operationType + "')";
+                        "'" + CDIS.getOperationType() + "')";
        
         logger.log(Level.FINER, "SQL: " + sql ); 
         
