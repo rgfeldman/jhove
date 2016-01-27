@@ -8,7 +8,6 @@ package edu.si.CDIS;
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.CIS.Database.MediaRenditions;
-import edu.si.CDIS.CIS.Database.Objects;
 import edu.si.CDIS.CIS.MediaRecord;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.Database.Uois;

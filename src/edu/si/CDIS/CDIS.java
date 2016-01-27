@@ -34,10 +34,6 @@ public class CDIS {
     private static HashMap <String,String[]> xmlSelectHash;
     private static Long batchNumber;
     
-    private void setOperationType (String operationType) {
-        this.operationType = operationType;
-    }
-    
     public static HashMap<String, String[]> getXmlSelectHash() {
         return CDIS.xmlSelectHash;
     }
@@ -139,7 +135,7 @@ public class CDIS {
         Handler fh;
             
         try {
-		fh = new FileHandler("log\\CDISLog-" + this.operationType + CDIS.batchNumber + ".txt");
+		fh = new FileHandler("log\\CDISLog-" + CDIS.operationType + CDIS.batchNumber + ".txt");
 	
         } catch (Exception e) {
 		e.printStackTrace();
@@ -275,7 +271,7 @@ public class CDIS {
             return;
 	}
 	else {
-            cdis.setOperationType(args[0]);
+            CDIS.operationType = args[0];
 	}
 
         try {
@@ -318,7 +314,7 @@ public class CDIS {
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             
-            boolean xmlReturn = xml.read(CDIS.operationType, CDIS.getProperty("xmlSQLFile"));
+            boolean xmlReturn = xml.read();
             if (! xmlReturn) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
                 return;
@@ -374,8 +370,7 @@ public class CDIS {
                     break;
                     
                 default:     
-                    logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");
-                    return;               
+                    logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");            
             }
             
  

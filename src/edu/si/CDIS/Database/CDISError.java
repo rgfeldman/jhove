@@ -23,9 +23,14 @@ import java.sql.ResultSet;
 public class CDISError {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    Integer cdisErrorId;
+    String cdisErrorCd;
     Integer cdisMapId;
+    Integer cdisErrorId;
      
+    
+    public String getCdisErrorCd() {
+        return this.cdisErrorCd;
+    }
     
     public Integer getCdisErrorId() {
         return this.cdisErrorId;
@@ -35,6 +40,10 @@ public class CDISError {
         return this.cdisMapId;
     }
         
+    public void setCdisErrorCd (String cdisErrorCd) {
+        this.cdisErrorCd = cdisErrorCd;
+    }
+    
     public void setCdisErrorId (Integer cdisErrorId) {
         this.cdisErrorId = cdisErrorId;
     }
@@ -45,7 +54,7 @@ public class CDISError {
     
 
 
-    public boolean insertError (Integer cdisMapId, String cdisErrorCd) {
+    public boolean insertError () {
         
         int rowsUpdated = 0;
         
@@ -57,8 +66,8 @@ public class CDISError {
                         "operation_type ) " +
                     "values ( " + 
                         "cdis_error_id_seq.NextVal, " +
-                        cdisMapId + ", " +
-                        "'" + cdisErrorCd + "'," +
+                        getCdisMapId() + ", " +
+                        "'" + getCdisErrorCd() + "'," +
                         "SYSDATE, " +
                         "'" + CDIS.getOperationType() + "')";
        
