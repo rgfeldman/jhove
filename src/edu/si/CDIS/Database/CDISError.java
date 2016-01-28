@@ -56,8 +56,6 @@ public class CDISError {
 
     public boolean insertError () {
         
-        int rowsUpdated = 0;
-        
         String sql = "INSERT INTO cdis_error ( " +
                         "cdis_error_id, " +
                         "cdis_map_id, " +
@@ -75,7 +73,7 @@ public class CDISError {
         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
             
-            rowsUpdated = pStmt.executeUpdate(sql); 
+            int rowsUpdated = pStmt.executeUpdate(); 
             
             if (rowsUpdated != 1) {
                 throw new Exception();
@@ -117,7 +115,7 @@ public class CDISError {
                      "FROM cdis_error_code_r a, " + 
                      "     cdis_error b " +
                      "WHERE a.cdis_error_cd = b.cdis_error_cd " +
-                     "AND b.vfcu_error_id = " + getCdisErrorId();
+                     "AND b.cdis_error_id = " + getCdisErrorId();
                      
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);

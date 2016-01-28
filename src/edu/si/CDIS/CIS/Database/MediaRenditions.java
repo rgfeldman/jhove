@@ -128,7 +128,7 @@ public class MediaRenditions {
          
          try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
             
-             updateCount = pStmt.executeUpdate(sql);
+             updateCount = pStmt.executeUpdate();
              
             if (updateCount != 1) {
                 throw new Exception();
@@ -151,7 +151,7 @@ public class MediaRenditions {
                     "where renditionID = " + getRenditionId() ;
         
         try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
-            updateCount = pStmt.executeUpdate(sql);
+            updateCount = pStmt.executeUpdate();
             
             if (updateCount != 1) {
                 throw new Exception();

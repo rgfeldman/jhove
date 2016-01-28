@@ -83,24 +83,22 @@ public class MediaMaster {
     
     public boolean updateRenditionIds() {
         
-        int updateCount;
-        
         String sql = "update MediaMaster " +
                 "set PrimaryRendID = " + this.primaryRendId + ", " +
                 "DisplayRendID = " + this.displayRendId + " " +
                 "where mediaMasterId = " + getMediaMasterId() ;
         
          logger.log(Level.FINER, "SQL: {0}", sql);
-        
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
-            updateCount = pStmt.executeUpdate(sql);
+             
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql) ) {
+            int updateCount = pStmt.executeUpdate();
             
             if (updateCount != 1) {
                 throw new Exception();
             }
         
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update FileId in mediaRenditions table", e );
+                logger.log(Level.FINER, "Error: unable to update RenditionIds in mediaMaster table", e );
                 return false;
         }  
        return true;

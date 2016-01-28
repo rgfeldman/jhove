@@ -49,7 +49,7 @@ public class SecurityPolicyUois {
         logger.log(Level.FINEST,"SQL! " + sql);         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
  
-            rowsUpdated = pStmt.executeUpdate(sql);
+            rowsUpdated = pStmt.executeUpdate();
             
             if (rowsUpdated != 1) {
                 throw new Exception();

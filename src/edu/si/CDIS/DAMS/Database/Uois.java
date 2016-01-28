@@ -102,7 +102,7 @@ public class Uois {
         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql) ) {
             
-            recordsUpdated = pStmt.executeUpdate(sql);
+            recordsUpdated = pStmt.executeUpdate();
             
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             

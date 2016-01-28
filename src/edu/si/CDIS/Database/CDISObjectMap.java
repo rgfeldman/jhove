@@ -52,7 +52,7 @@ public class CDISObjectMap {
         logger.log(Level.FINEST,"SQL! " + sql);      
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
         
-            int rowsUpdated = pStmt.executeUpdate(sql);
+            int rowsUpdated = pStmt.executeUpdate();
             
             if (rowsUpdated != 1) {
                 throw new Exception();

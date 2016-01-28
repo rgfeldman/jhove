@@ -66,7 +66,7 @@ public class SiAssetMetaData {
         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql) ) {
              
-            recordsUpdated = pStmt.executeUpdate(sql);
+            recordsUpdated = pStmt.executeUpdate();
               
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
@@ -137,7 +137,7 @@ public class SiAssetMetaData {
         logger.log(Level.FINEST,"SQL! " + sql);    
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
        
-            recordsUpdated = pStmt.executeUpdate(sql);
+            recordsUpdated = pStmt.executeUpdate();
             
             if (recordsUpdated == 1) {
                 return true;

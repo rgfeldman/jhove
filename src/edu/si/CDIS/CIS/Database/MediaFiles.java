@@ -131,7 +131,7 @@ public class MediaFiles {
        logger.log(Level.FINER, "SQL: {0}", sql);
         
       try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql) ) {
-            recordsUpdated = pStmt.executeUpdate(sql);
+            recordsUpdated = pStmt.executeUpdate();
             
             logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
             

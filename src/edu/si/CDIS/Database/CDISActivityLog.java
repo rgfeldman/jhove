@@ -63,7 +63,7 @@ public class CDISActivityLog {
         logger.log(Level.FINER, "SQL: " + sql );
         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
-            rowsUpdated = pStmt.executeUpdate(sql); 
+            rowsUpdated = pStmt.executeUpdate(); 
             
              if (rowsUpdated != 1) {
                 throw new Exception();
@@ -113,7 +113,7 @@ public class CDISActivityLog {
         logger.log(Level.FINER, "SQL: " + sql );
         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
-            rowsUpdated = pStmt.executeUpdate(sql); 
+            rowsUpdated = pStmt.executeUpdate(); 
             
              if (rowsUpdated != 1) {
                 throw new Exception();
