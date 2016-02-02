@@ -26,6 +26,7 @@ public class CDISError {
     String cdisErrorCd;
     Integer cdisMapId;
     Integer cdisErrorId;
+    String fileName;
      
     
     public String getCdisErrorCd() {
@@ -34,6 +35,10 @@ public class CDISError {
     
     public Integer getCdisErrorId() {
         return this.cdisErrorId;
+    }
+    
+    public String getFileName() {
+        return this.fileName;
     }
     
     public Integer getCdisMapId () {
@@ -52,6 +57,10 @@ public class CDISError {
         this.cdisMapId = cdisMapId;
     }
     
+    public void setFileName (String fileName) {
+        this.fileName = fileName;
+    }
+    
 
 
     public boolean insertError () {
@@ -59,12 +68,14 @@ public class CDISError {
         String sql = "INSERT INTO cdis_error ( " +
                         "cdis_error_id, " +
                         "cdis_map_id, " +
+                        "fileName, " +
                         "cdis_error_cd, " +
                         "error_dt, " +
                         "operation_type ) " +
                     "values ( " + 
                         "cdis_error_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
+                        "'" + getFileName() + "'," +
                         "'" + getCdisErrorCd() + "'," +
                         "SYSDATE, " +
                         "'" + CDIS.getOperationType() + "')";

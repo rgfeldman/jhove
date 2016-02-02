@@ -23,6 +23,7 @@ public class ErrorLog {
         
         CDISError cdisError = new CDISError();
         cdisError.setCdisMapId(cdisMap.getCdisMapId());
+        cdisError.setFileName(cdisMap.getFileName());
         cdisError.setCdisErrorCd(errorCode);
         cdisError.insertError();
         
