@@ -32,7 +32,7 @@ public class XmlSqlConfig {
         this.SelectStmtHash.put(SelectStmt, selectType);
     }
         
-    public boolean read(String operationType, String metaDataXmlFile) {
+    public boolean read() {
         
         //initialize the hashmap
         this.SelectStmtHash = new HashMap <String, String[]>();
@@ -40,7 +40,7 @@ public class XmlSqlConfig {
         try {
             
             //Locate the metaData xml file
-            File file = new File(metaDataXmlFile);
+            File file = new File(CDIS.getProperty("xmlSQLFile"));
         
             //Set up the doc which will hold the xml file
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -48,11 +48,11 @@ public class XmlSqlConfig {
             this.doc = db.parse(file);
             doc.getDocumentElement().normalize();
             
-            getElementByTag (operationType, "query");
+            getElementByTag (CDIS.getOperationType(), "query");
        
         } catch (Exception e) {
             e.printStackTrace();
-            logger.log(Level.FINE, "Error, unable to open or read XML file: {0}", metaDataXmlFile);
+            logger.log(Level.FINE, "Error, unable to open or read XML file: {0}", CDIS.getProperty("xmlSQLFile"));
             return false;
         }   
         return true;

@@ -22,7 +22,9 @@ public class ErrorLog {
         logger.log(Level.FINER, logMessage);
         
         CDISError cdisError = new CDISError();
-        cdisError.insertError(cdisMap.getCdisMapId(), errorCode);
+        cdisError.setCdisMapId(cdisMap.getCdisMapId());
+        cdisError.setCdisErrorCd(errorCode);
+        cdisError.insertError();
         
         CDISActivityLog cdisActivity = new CDISActivityLog();
         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());

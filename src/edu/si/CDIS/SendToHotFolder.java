@@ -142,74 +142,56 @@ public class SendToHotFolder {
         String hotFolderBaseName = null;
         File hotFolderBase;
         
-        boolean lastHotFolder = false;
-        int hotFolderIncrement = 1;
-        
         String fullMasterHotFolderNm = null;
         File fullHotFolder = null;
         
 
-        while (!lastHotFolder) {
+        for (int hotFolderIncrement = 1;; hotFolderIncrement ++) {
         
             hotFolderBaseName = CDIS.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
             hotFolderBase = new File (hotFolderBaseName);
             
+            if (hotFolderIncrement >  Integer.parseInt(CDIS.getProperty("maxHotFolderIncrement")) ) {
+                
+                try {
+                    Thread.sleep(100000);
+                    hotFolderIncrement = 1;
+                    continue;
+                } catch (Exception e) {
+                    logger.log(Level.FINER, "Exception in Thread.sleep: " + hotFolderBaseName);
+                }               
+            }
             
-            if (hotFolderBase.exists()) {
-                int numMasterFolderFiles = 0;
-                int numSubFolderFiles = 0;
+            if (! hotFolderBase.exists()) {
+                logger.log(Level.FINER, "Unable to locate Hot Folder Main Directory: " + hotFolderBaseName);
+                return;
+            }
         
-                //count files in hotfolder master area
-                fullMasterHotFolderNm = hotFolderBaseName + "\\MASTER";
-                fullHotFolder = new File(fullMasterHotFolderNm);
+            //count files in hotfolder master area
+            fullMasterHotFolderNm = hotFolderBaseName + "\\MASTER";
+            fullHotFolder = new File(fullMasterHotFolderNm);
                 
-                if (fullHotFolder.exists()) {
-                    numMasterFolderFiles = fullHotFolder.list().length;
-                }
-                else {
-                    logger.log(Level.FINER, "Error, Could not find MASTER hotfolder directory in: ", fullMasterHotFolderNm);
-                    break;
-                }
-                
-                //count files in hotfolder subfiles area
-                String fullSubFilesHotFolderNm = hotFolderBaseName + "\\SUBFILES";
-                File subFilesHotFolderNm = new File(fullSubFilesHotFolderNm);
-                
-                if (subFilesHotFolderNm.exists()) {
-                    numSubFolderFiles = subFilesHotFolderNm.list().length;
-                }
-                else {
-                    logger.log(Level.FINER, "Error, Could not find SUBFILES hotfolder directory in: ", subFilesHotFolderNm);
-                    break;
-                }
-                                
-                if (numMasterFolderFiles + numSubFolderFiles == 0 ) {
-                    //check the subfile too, just in case
-                    // We found an empty hotfolder, use this one
-                    break;
-                }
-                
+            if (! fullHotFolder.exists()) {
+                logger.log(Level.FINER, "Error, Could not find MASTER hotfolder directory in: ", fullMasterHotFolderNm);
+                return;
             }
-            else {
-                if (hotFolderIncrement > 1) {
-                    //we went trhough more than one hot folder, but this one is not found.
-                    // thus this is the last hotfolder in a series. 
-                    lastHotFolder = true;
-                    try {
-                        Thread.sleep(100000);
-                        hotFolderIncrement = 1;
-                    } catch (Exception e) {
-                        logger.log(Level.FINER, "Exception in Thread.sleep: " + hotFolderBaseName);
-                    }
-                    
-                }
-                else {
-                    logger.log(Level.FINER, "Unable to locate Hot Folder Main Directory: " + hotFolderBaseName);
-                }
-                        
-            }
+            int numMasterFolderFiles = fullHotFolder.list().length;
             
-            hotFolderIncrement ++;
+            //count files in hotfolder subfiles area
+            String fullSubFilesHotFolderNm = hotFolderBaseName + "\\SUBFILES";
+            File subFilesHotFolderNm = new File(fullSubFilesHotFolderNm);
+                
+            if (! subFilesHotFolderNm.exists()) {
+                logger.log(Level.FINER, "Error, Could not find SUBFILES hotfolder directory in: ", subFilesHotFolderNm);
+                return;
+            }
+            int numSubFolderFiles = subFilesHotFolderNm.list().length;
+                    
+            if (numMasterFolderFiles + numSubFolderFiles == 0 ) {
+                 // We found an empty hotfolder, use this one
+                break;
+            }
+                
         }
         
         logger.log(Level.FINER, "Will use current hotfolder: " + hotFolderBaseName);

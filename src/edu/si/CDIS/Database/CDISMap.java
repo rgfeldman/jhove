@@ -50,11 +50,11 @@ public class CDISMap {
     }
     
     public String getFileName () {
-        return this.fileName;
+        return this.fileName == null ? "" : this.fileName;
     }
     
     public String getDamsUoiid () {
-        return this.damsUoiid;
+         return this.damsUoiid == null ? "" : this.damsUoiid;
     }
     
     public Integer getVfcuMediaFileId () {
@@ -109,6 +109,10 @@ public class CDISMap {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to insert into CDIS_MAP table", e );
                 return false;
+        }
+         
+        if (getDamsUoiid() == null) {
+        
         }
           
         sql =  "INSERT INTO cdis_map (" +

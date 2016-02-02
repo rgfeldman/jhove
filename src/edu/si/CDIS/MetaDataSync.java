@@ -105,7 +105,7 @@ public class MetaDataSync {
         }
         
         if (sql.contains("?GT-DATE?")) {
-                sql = sql.replace("?GT-DATE?", "> GETDATE() - " + CDIS.getProperty("syncIncrement"));
+                sql = sql.replace("?GT-DATE?", "(> GETDATE() - " + CDIS.getProperty("syncIncrement") + ")");
         }
         
         try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
