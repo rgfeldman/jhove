@@ -38,7 +38,7 @@ public class CDISError {
     }
     
     public String getFileName() {
-        return this.fileName;
+        return this.fileName == null ? "" : this.fileName;
     }
     
     public Integer getCdisMapId () {
