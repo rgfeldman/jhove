@@ -17,10 +17,12 @@ import java.util.HashMap;
 import java.util.logging.Level;
 
 import edu.si.CDIS.CIS.Database.Objects;
+import edu.si.CDIS.CIS.MediaPath;
 
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
+import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.CIS.Thumbnail;
    
 public class LinkDamsAndCIS {
@@ -86,6 +88,15 @@ public class LinkDamsAndCIS {
             return false;
         }
             
+        CDISActivityLog cdisActivity = new CDISActivityLog();
+        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+        cdisActivity.setCdisStatusCd("MIC");    
+        boolean activityLogged = cdisActivity.insertActivity();
+        if (!activityLogged) {
+            logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+            return false;
+        }
+            
         boolean objectLinked = linkObject(cdisMap.getCdisMapId(), cisIdentifier);
         if (! objectLinked ) {
             logger.log(Level.FINER, "Error, unable to link objects to Media ");
@@ -99,6 +110,18 @@ public class LinkDamsAndCIS {
                             
             if (! thumbCreated) {
                 logger.log(Level.FINER, "CISThumbnailSync creation failed");
+                return false;
+            }
+        }
+        
+        // ONLY update the IDS path if the updateCisPathToIDS is true
+        if (CDIS.getProperty("updateCisPathToIDS").equals("true") ) {
+            MediaPath mediaPath = new MediaPath();
+            mediaPath.redirectCisMediaPath(cdisMap);
+            boolean idsSynced = mediaPath.redirectCisMediaPath(cdisMap);
+                            
+            if (! idsSynced) {
+                logger.log(Level.FINER, "CISPathSync failed");
                 return false;
             }
         }

@@ -5,19 +5,14 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.utilties.DataProvider;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.DAMS.Database.Uois;
-import edu.si.CDIS.CIS.Database.MediaFiles;
+import edu.si.CDIS.CIS.MediaPath;
 
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,48 +21,44 @@ import java.util.logging.Logger;
 public class IdsCisSync {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
   
-    private int idsPathId;
-    private int pdfPathId;
-    private String fileType;
-    private String uan;
-    private ArrayList<String> RenditionIdToSyncList;
+    private ArrayList<String> mapIdsToSync;
         
     public void sync() {
     	
-    	logger.log(Level.FINER, "ImageFilePath.sync()");
-        //assign the database connections for later use
-        this.idsPathId = Integer.parseInt(CDIS.getProperty("IDSPathId"));
-        this.pdfPathId = Integer.parseInt(CDIS.getProperty("PDFPathId"));
-        
-        ArrayList<Integer> RenditionIdToSyncList = new ArrayList<Integer>();
+        ArrayList<Integer> mapIdsToSync = new ArrayList<Integer>();
 
         //Get list of renditions to sync
         boolean receivedList = getNeverSyncedImagePath();
         
         if (receivedList) {
             //loop through the list, and update the pathname
-            processRenditionList ();
+            processListFromXmlConfig ();
         }
     }
     
     // Get list of images that require sync file path to be updated
     private boolean getNeverSyncedImagePath () {
+        String sqlTypeArr[] = null;
+        String sql = null; 
         
-        String sql = "SELECT RenditionID " +
-                     "FROM MediaFiles a, " +
-                     "MediaRenditions b " +
-                     "where a.RenditionID = b.RenditionID " +
-                     "and b.isColor = 1 " +
-                     "and a.PathID != " + this.idsPathId + " " + 
-                     "and a.PathID != " + this.pdfPathId;       
+        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+              
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
+            
+            if (sqlTypeArr[0].equals("getMapIds")) {   
+                sql = key;    
+            }
+        }     
         
-        logger.log(Level.FINEST, "IDS syncPath Select: " + sql);      
+        logger.log(Level.FINEST, "IDS syncPath Select: " + sql);   
+        
         try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
              ResultSet rs = pStmt.executeQuery()) {
             
             while (rs.next()) {
                 //We add all unlinked Renditions that are marked as 'For DAMS' to a list
-                RenditionIdToSyncList.add(rs.getString(1));
+                mapIdsToSync.add (rs.getString(1));
             }
 
         } catch (Exception e) {
@@ -77,78 +68,28 @@ public class IdsCisSync {
         return true;
     }
     
-   
     
     // That the list of renditions by CDIS_ID and loop through them one at a time, and perform synchronizations
-    private void processRenditionList() {
-        // For each Rendition Number in list, obtain information from CDIS table
-        //not sure if all resources are closed properly, this may need to be rewritten more concicively with try-with-resources block later
-        PreparedStatement pStmt = null;
+    private void processListFromXmlConfig() {
 
-        try {
-            // prepare the sql for obtaining info from CDIS
-            pStmt = CDIS.getCisConn().prepareStatement("SELECT dams_uoi_id "
-                    + "FROM cdis_map "
-                    + "WHERE RenditionID = ? "
-                    + "ORDER BY CDIS_ID");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        ResultSet rs = null;
-
-        // for each Rendition ID that was identified for sync
-        for (Iterator<String> iter = RenditionIdToSyncList.iterator(); iter.hasNext();) {
-
+        Iterator mapIds = mapIdsToSync.iterator();
+        
+        while (mapIds.hasNext()) {
             try {
-
                 // Reassign object with each loop
                 CDISMap cdisMap = new CDISMap();
                    
-                // store the current RenditionID in the object, and send to sql statement
-                cdisMap.setCisUniqueMediaId(iter.next());       
-                pStmt.setString(1, cdisMap.getCisUniqueMediaId());
-                   
-                rs = DataProvider.executeSelect(CDIS.getCisConn(), pStmt);
-
-                logger.log(Level.FINEST, "Getting information for CDIS_MAP_ID: " + cdisMap.getCisUniqueMediaId());
-
-                // Get the supplemental information for the current RenditionID that we are looping through
-                if (rs.next()) {
-                    SiAssetMetaData siAsst = new SiAssetMetaData();
-                    siAsst.setUoiid(rs.getString(1));
-                    siAsst.populateOwningUnitUniqueName();
+                // set the MapId in the CDIS_MAP object
+                cdisMap.setCdisMapId( (Integer) mapIds.next());
                 
-                    // FileName from DAMS
-                    Uois uois = new Uois();
-                    uois.setUoiid(siAsst.getUoiid());
-                    uois.populateName();
-                    
-                    MediaFiles mediaFiles = new MediaFiles ();
-                    //to-do...commented out for now because of difference between filetypes
-                    //mediaFiles.setRenditionId (cdisMap.getCisUniqueMediaId());
-                    
-                    // check the filename extension
-                    if (uois.getName().endsWith(".pdf")) {
-                        //Integer.parseInt (cdis.properties.getProperty("PDFPathId"))
-                        mediaFiles.setFileName(siAsst.getOwningUnitUniqueName() + ".pdf");
-                        mediaFiles.setPathId (this.pdfPathId);
-                    }
-                    else {
-                        mediaFiles.setFileName(siAsst.getOwningUnitUniqueName());
-                        mediaFiles.setPathId (this.idsPathId);
-                    }
-                    
-                    mediaFiles.updateFileNameAndPath();
-                            
-                }
+                // Obtain other values needed in CDIS_MAP object
+                cdisMap.populateMapInfo();
+                 
+                MediaPath mediaPath = new MediaPath();
+                mediaPath.redirectCisMediaPath(cdisMap);
                     
             } catch (Exception e) {
                     e.printStackTrace();
-            } finally {
-                    try { if (pStmt != null) pStmt.close(); } catch (SQLException se) { se.printStackTrace(); }
-                    try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                    
             }
         }
     }
