@@ -329,7 +329,7 @@ public class CDIS {
                     sendToHotFolder.ingest();  
                     break;
                     
-                case "linkToDAMSAndCIS" :
+                case "linkDAMSAndCIS" :
                     LinkDamsAndCIS linkDamsAndCis = new LinkDamsAndCIS();
                     linkDamsAndCis.link();
                     break;

@@ -42,7 +42,7 @@ public class CDISMap {
     }
     
     public String getCisUniqueMediaId () {
-        return this.cisUniqueMediaId;
+        return this.cisUniqueMediaId == null ? "" : this.cisUniqueMediaId;
     }
     
     public char getErrorInd () {
@@ -118,6 +118,7 @@ public class CDISMap {
         sql =  "INSERT INTO cdis_map (" +
                     "cdis_map_id, " +
                     "collection_group_cd, " +
+                    "cis_unique_media_id, " +
                     "dams_uoi_id, " +
                     "file_name, " +
                     "batch_number, " +
@@ -126,6 +127,7 @@ public class CDISMap {
                 "VALUES (" +
                     getCdisMapId() + ", " +
                     "'" + CDIS.getProperty("collectionGroup") + "', " +
+                    "'" + getCisUniqueMediaId() + "', " +
                     "'" + getDamsUoiid() + "', " +
                     "'" + getFileName() + "', " +
                     CDIS.getBatchNumber() + ", " +

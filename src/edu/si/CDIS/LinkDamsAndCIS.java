@@ -22,7 +22,6 @@ import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.CIS.Thumbnail;
-import edu.si.CDIS.utilties.ErrorLog;
    
 public class LinkDamsAndCIS {
     
@@ -74,6 +73,7 @@ public class LinkDamsAndCIS {
         CDISMap cdisMap = new CDISMap();
         cdisMap.setCisUniqueMediaId(cisIdentifier);     
         cdisMap.setDamsUoiid(uoiId);
+        cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")));
                 
         Uois uois = new Uois();
         uois.setUoiid(uoiId);
@@ -127,18 +127,24 @@ public class LinkDamsAndCIS {
         //Iterate though hash...the key is the select statement itself
         for (String uoiId : neverLinkedDamsIds.keySet()) {
             
-            logger.log(Level.FINEST,"SQL " + currentIterationSql);
-            if (sql.contains("?NAME?") ) {
-                sql = sql.replace("?NAME?",neverLinkedDamsIds.get(uoiId));
+            if (sql.contains("?BASE_NAME?") ) {
+                currentIterationSql = sql.replace("?BASE_NAME?",neverLinkedDamsIds.get(uoiId));
             }
+            else {
+                currentIterationSql = sql;
+            }
+            
+            logger.log(Level.FINEST,"SQL " + currentIterationSql);
             
             try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(currentIterationSql);
                 ResultSet rs = pStmt.executeQuery()   ) {   
                 
                 //Get the CIS identifier for the field selected from above
-                String cisIdentifier = rs.getString(1);
-                
-                createNewLink(cisIdentifier, uoiId);
+                if (rs.next()) {
+                    String cisIdentifier = rs.getString(1);
+                              
+                    createNewLink(cisIdentifier, uoiId);
+                }
                 
                 
             } catch (Exception e) {
