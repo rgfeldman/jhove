@@ -344,9 +344,9 @@ public class CDIS {
                     linkToDams.link();
                     break;
 
-                case "metaDataSync" :    
-                    MetaDataSync metaData = new MetaDataSync();
-                    metaData.sync();
+                case "metadataSync" :    
+                    MetaDataSync metadata = new MetaDataSync();
+                    metadata.sync();
                     break;
                     
                 case "createCISMedia" :

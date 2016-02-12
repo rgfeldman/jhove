@@ -68,7 +68,7 @@ public class CDISError {
         String sql = "INSERT INTO cdis_error ( " +
                         "cdis_error_id, " +
                         "cdis_map_id, " +
-                        "fileName, " +
+                        "file_name, " +
                         "cdis_error_cd, " +
                         "error_dt, " +
                         "operation_type ) " +

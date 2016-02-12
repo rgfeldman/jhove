@@ -189,7 +189,10 @@ public class MetaDataSync {
                 siAsst.setUoiid (cdisMap.getDamsUoiid());
                 
                 // execute the SQL statment to obtain the metadata and populate variables.  They key value is RenditionID
-                mapData(cdisMap);
+                boolean dataMappedFromCIS = mapData(cdisMap);
+                if (! dataMappedFromCIS) {
+                    throw new Exception ();
+                }
                 
                 //generate the update statement from the variables obtained in the mapData
                 generateUpdate(siAsst);
@@ -313,7 +316,7 @@ public class MetaDataSync {
         RFeldman 2/2015
     */
 
-    private void mapData(CDISMap cdisMap) {
+    private boolean mapData(CDISMap cdisMap) {
         String sql;
         String sqlTypeArr[];
         String sqlType;
@@ -334,7 +337,7 @@ public class MetaDataSync {
             sqlType = sqlTypeArr[0];
             delimiter = sqlTypeArr[1];
             
-            if (! ((sqlTypeArr[0].equals("singleResult")) || (sqlTypeArr[0].equals("singleResult")))  ){      
+            if (! ((sqlTypeArr[0].equals("singleResult")) || (sqlTypeArr[0].equals("cursorAppend")))  ){      
                 //get the next query, we are not interested in this one at this point
                 continue;
             }
@@ -395,13 +398,15 @@ public class MetaDataSync {
                         }  
                     } catch (Exception e) {
                         logger.log(Level.ALL, "Error, exception raised in metadata while loop", e); 
-                        continue;
+                        return false;
                     }
                 }
             } catch (Exception e) {
                 logger.log(Level.ALL, "Error, exception raised in metadata for loop", e); 
-                continue;
+                return false;
             } 
+            
         }
+        return true;
     }
 }

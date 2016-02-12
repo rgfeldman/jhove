@@ -114,18 +114,6 @@ public class LinkDamsAndCIS {
             }
         }
         
-        // ONLY update the IDS path if the updateCisPathToIDS is true
-        if (CDIS.getProperty("updateCisPathToIDS").equals("true") ) {
-            MediaPath mediaPath = new MediaPath();
-            mediaPath.redirectCisMediaPath(cdisMap);
-            boolean idsSynced = mediaPath.redirectCisMediaPath(cdisMap);
-                            
-            if (! idsSynced) {
-                logger.log(Level.FINER, "CISPathSync failed");
-                return false;
-            }
-        }
-        
         return true;
         
     }
