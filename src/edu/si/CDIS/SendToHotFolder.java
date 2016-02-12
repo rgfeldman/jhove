@@ -67,8 +67,9 @@ public class SendToHotFolder {
             boolean mapEntryCreated = cdisMap.createRecord();
                     
             if (!mapEntryCreated) {
-                logger.log(Level.FINER, "Could not create CDISMAP entry, retrieving next row");
-
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "SDH-CMIF", "Could not create CDISMAP entry, retrieving next row");
+                    
                 //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
                 it.remove();
                 continue;

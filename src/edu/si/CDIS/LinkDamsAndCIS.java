@@ -24,6 +24,7 @@ import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.CIS.Thumbnail;
+import edu.si.CDIS.utilties.ErrorLog;
    
 public class LinkDamsAndCIS {
     
@@ -83,8 +84,9 @@ public class LinkDamsAndCIS {
         cdisMap.setFileName(uois.getName());
         
         boolean mapCreated = cdisMap.createRecord();
-            if (!mapCreated) {
-            logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
+        if (!mapCreated) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "SDH-CMIF", "Could not create CDISMAP entry, retrieving next row");
             return false;
         }
             
