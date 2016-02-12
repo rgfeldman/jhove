@@ -21,11 +21,11 @@ import java.util.logging.Logger;
 public class IdsCisSync {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
   
-    private ArrayList<String> mapIdsToSync;
+    private ArrayList<Integer> mapIdsToSync;
         
     public void sync() {
     	
-        ArrayList<Integer> mapIdsToSync = new ArrayList<Integer>();
+        mapIdsToSync = new ArrayList<>();
 
         //Get list of renditions to sync
         boolean receivedList = getNeverSyncedImagePath();
@@ -49,20 +49,20 @@ public class IdsCisSync {
             if (sqlTypeArr[0].equals("getMapIds")) {   
                 sql = key;    
             }
-        }     
+        }      
         
-        logger.log(Level.FINEST, "IDS syncPath Select: " + sql);   
-        
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery()) {
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet  rs = pStmt.executeQuery() ) {
             
+            logger.log(Level.FINEST,"SQL! " + sql); 
+                 
             while (rs.next()) {
-                //We add all unlinked Renditions that are marked as 'For DAMS' to a list
-                mapIdsToSync.add (rs.getString(1));
+                logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
+                mapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
             }
 
         } catch (Exception e) {
-            logger.log(Level.FINEST, "Error obtaining list to sync mediaPath and Name: ");
+            logger.log(Level.FINEST, "Error obtaining list to sync mediaPath and Name ", e);
             return false;
         } 
         return true;
@@ -87,6 +87,8 @@ public class IdsCisSync {
                  
                 MediaPath mediaPath = new MediaPath();
                 mediaPath.redirectCisMediaPath(cdisMap);
+                
+                try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                     
             } catch (Exception e) {
                     e.printStackTrace();

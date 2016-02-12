@@ -59,7 +59,8 @@ public class MediaPath {
             return false;
         }
         
-        CDISActivityLog cdisActivity = new CDISActivityLog();    
+        CDISActivityLog cdisActivity = new CDISActivityLog(); 
+        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
         cdisActivity.setCdisStatusCd("CPS");    
         boolean activityLogged = cdisActivity.insertActivity();
         if (!activityLogged) {

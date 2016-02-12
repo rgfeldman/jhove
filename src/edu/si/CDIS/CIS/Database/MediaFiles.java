@@ -124,8 +124,8 @@ public class MediaFiles {
         
        int recordsUpdated = 0;
        String sql = "UPDATE mediaFiles " +
-                    "SET pathid = " + getPathId() + " " +
-                    "FileName = " + getFileName() + " " +
+                    "SET pathid = " + getPathId() + ", " +
+                    "FileName = '" + getFileName() + "' " +
                     "WHERE RenditionID = " + getRenditionId() ;
        
        logger.log(Level.FINER, "SQL: {0}", sql);

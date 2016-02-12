@@ -156,7 +156,7 @@ public class MetaDataSync {
             logger.log(Level.FINEST,"SQL! " + sql); 
                  
             while (rs.next()) {
-                logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
+                logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
                 cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
             }
 
