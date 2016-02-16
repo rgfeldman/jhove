@@ -114,8 +114,19 @@ public class MetaDataSync {
             while (rs.next()) {
                 logger.log(Level.ALL, "Adding RenditionID to re-sync list: " + rs.getString(1));
                 cdisMap.setCisUniqueMediaId(rs.getString(1));
-                cdisMap.populateIdFromCisMediaId();
-                cdisMapIdsToSync.add(cdisMap.getCdisMapId());
+                boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
+                
+                //check to make sure we were able to get the CDIS_MAP record
+                if (! cisMediaIdObtained) {
+                    logger.log(Level.FINEST,"Media not tracked by CDIS or errored.  CIS_MediaID: " + rs.getString(1));
+                    continue;
+                }
+
+                //Only add to the list if it is not already in the list. It could be there from never synced record list
+                if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
+                    cdisMapIdsToSync.add(cdisMap.getCdisMapId());
+                }
+
             }
 
         } catch (Exception e) {
