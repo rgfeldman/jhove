@@ -114,6 +114,11 @@ public class LinkDamsAndCIS {
                 logger.log(Level.FINER, "CISThumbnailSync creation failed");
                 return false;
             }
+            
+            cdisActivity = new CDISActivityLog();
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("CTS");    
+            
         }
         
         return true;
@@ -157,6 +162,9 @@ public class LinkDamsAndCIS {
                     String cisIdentifier = rs.getString(1);
                               
                     createNewLink(cisIdentifier, uoiId);
+                    
+                    try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+                    
                 }
                 
                 
