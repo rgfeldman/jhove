@@ -48,10 +48,8 @@ public class Report {
     private LinkedHashMap<Integer, String> failedIdName;
     private Document document;
     private String rptFile;
-    private String reportType;
-    private String rptVendorDir;
     
-    private boolean create (String siUnit) {
+    private boolean create () {
         
         String timeStamp;
         String timeStampWords;
@@ -63,12 +61,7 @@ public class Report {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
         
-        if (this.reportType.equals("vendorDir")) {
-            this.rptFile =  "rpt\\CDISRPT-" + siUnit + "-" + this.rptVendorDir + "-" + timeStamp + ".rtf";
-        }
-        else {
-            this.rptFile =  "rpt\\CDISRPT-" + siUnit + "-" + timeStamp + ".rtf";
-        }
+        this.rptFile =  "rpt\\CDISRPT-" + CDIS.getProperty("siHoldingUnit") + "-" + timeStamp + ".rtf";
         
         this.document = new Document();
          
@@ -80,17 +73,11 @@ public class Report {
             
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
             
-            if (this.reportType.equals("timeframe")) {
-                document.add(new Paragraph(timeStampWords + "\n" + 
-                              siUnit + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
-            }
-            else if (this.reportType.equals("vendorDir")) {
-                document.add(new Paragraph(siUnit + " CDIS Activity Report- Directory: " + this.rptVendorDir, title));
-            }
-            else throw new Exception();
-            
+            document.add(new Paragraph(timeStampWords + "\n" + 
+                CDIS.getProperty("siHoldingUnit") + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
+
         } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR, cannot create report, Report Type: " + this.reportType, e);
+            logger.log(Level.FINEST, "ERROR, cannot create report ");
         }  
         
         return true;
@@ -98,49 +85,29 @@ public class Report {
     
     
     public void generate () {
-
         
         try {
-            this.reportType = CDIS.getProperty("reportType");
+            this.rptHours = CDIS.getProperty("rptHours");
             
-        } catch (Exception e) {
-            logger.log(Level.FINEST, "Invalid report paramters, cannot generate report ", e);
-            return;
-        }   
-        
-        if (this.reportType.equals("timeframe")) {
-        
-            try {
-                this.rptHours = CDIS.getProperty("rptHours");
-            
-            } catch(Exception e) {
-                logger.log(Level.FINEST, "Unable to calculate timeframe of report, defaulting to last 24 hours");
-                this.rptHours = "24";
-            }
-        }
-        else if (this.reportType.equals("vendorDir")) {
-            this.rptVendorDir = CDIS.getProperty("rptVendorDir");
-        }
-        else {
-            logger.log(Level.FINEST, "Invalid report type, cannot generate report");
-            return;
+        } catch(Exception e) {
+            logger.log(Level.FINEST, "Unable to calculate timeframe of report, defaulting to last 24 hours");
+            this.rptHours = "24";
         }
         
-        create(CDIS.getProperty("siHoldingUnit"));
+        create();
         
         //Get list of completed records (UOI_IDs) from the past increment
         this.completedIdName = new LinkedHashMap<>();
-        genIdList ("completedList");
+        genCompletedIdList ();
      
         //Get the failed records from the past increment
         this.failedIdName = new LinkedHashMap<>();
-        genIdList ("failedList");
+        genFailedIdList ();
         
         statisticsWrite();
                 
         //failed list is to be displayed before successful list per Ken
         writeFailed();
-        
                 
         //now write successful completion list to file
         writeCompleted();
@@ -156,7 +123,7 @@ public class Report {
         }
     }
     
-    private boolean genIdList (String listType) {
+    private boolean genFailedIdList () {
         
         String sqlTypeArr[] = null;
         String sql = null;
@@ -165,16 +132,13 @@ public class Report {
             
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
-                if (sqlTypeArr[0].equals(listType)) {   
+                if (sqlTypeArr[0].equals("getFailedRecords")) {   
                     sql = key;    
             }
         }
         
-        if (sql.contains("?MASTERPATH?")) {
-            sql = sql.replace("?MASTERPATH?", CDIS.getProperty("rptVendorDir") + "\\raws" );
-        }
-        if (sql.contains("?SUBFILEPATH?")) {
-            sql = sql.replace("?SUBFILEPATH?", CDIS.getProperty("rptVendorDir") + "\\tifs" );
+        if (sql.contains("?RPT_HOURS?")) {
+            sql = sql.replace("?RPT_HOURS?", this.rptHours);
         }
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -182,16 +146,42 @@ public class Report {
              ResultSet rs = stmt.executeQuery() ) {
 
             while (rs.next()) {
-                switch (listType) {
-                    case "completedList" :
-                        this.completedIdName.put(rs.getInt(1), rs.getString(2));
-                        break;
-                    case "failedList" :
-                        this.failedIdName.put(rs.getInt(1), rs.getString(2));
-                        break;
-                    default:
-                        throw new Exception();
-                }               
+                this.failedIdName.put(rs.getInt(1), rs.getString(2));    
+            }        
+        }
+            
+	catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
+                return false;
+	}
+        
+        return true;
+    }
+    
+    private boolean genCompletedIdList () {
+        
+        String sqlTypeArr[] = null;
+        String sql = null;
+        
+        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+            
+            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
+            
+                if (sqlTypeArr[0].equals("getSuccessRecords")) {   
+                    sql = key;    
+            }
+        }
+        
+        if (sql.contains("?RPT_HOURS?")) {
+            sql = sql.replace("?RPT_HOURS?", this.rptHours);
+        }
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery() ) {
+
+            while (rs.next()) {
+                this.completedIdName.put(rs.getInt(1), rs.getString(2));    
             }        
         }
             
@@ -220,12 +210,8 @@ public class Report {
 	
             String emailContent = null;
             
-            if (this.reportType.equals("vendorDir")) {
-                message.setSubject(siUnit + ": CDIS Activity Report - " + this.rptVendorDir);  
-            }
-            else if (this.reportType.equals("timeframe")) {
-                 message.setSubject(siUnit + ": CDIS Activity Report - Past " + this.rptHours + " Hours" ); 
-            }
+            message.setSubject(siUnit + ": CDIS Activity Report - Past " + this.rptHours + " Hours" ); 
+            
             emailContent = "<br>Please see the attached CDIS Activity Report<br><br><br><br>" +
                     "If you have any questions regarding information contained in this report, please contact: <br>" + 
                     "Robert Feldman (FeldmanR@si.edu) or Isabel Meyer (MeyerI@si.edu) <br><br><br><br>" + 
@@ -326,7 +312,7 @@ public class Report {
                       
                 RtfFont listElementFont=new RtfFont("Courier",8);
                 
-                String listing = "File: " + cdisMap.getFileName() + "  Linked To UAN: " + siAsst.getOwningUnitUniqueName() + "eMu id: " + cdisMap.getCisUniqueMediaId() ;
+                String listing = "File: " + cdisMap.getFileName() + "  Linked To UAN: " + siAsst.getOwningUnitUniqueName() + " eMu id: " + cdisMap.getCisUniqueMediaId() ;
                                          
                 document.add(new Phrase("\n" + listing,listElementFont));
             
