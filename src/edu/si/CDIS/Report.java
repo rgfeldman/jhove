@@ -61,7 +61,9 @@ public class Report {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
         
-        this.rptFile =  "rpt\\CDISRPT-" + CDIS.getProperty("siHoldingUnit") + "-" + timeStamp + ".rtf";
+        if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+            this.rptFile =  "rpt\\CDISRPT-" + CDIS.getProperty("siHoldingUnit") + "-" + timeStamp + ".rtf";
+        }
         
         this.document = new Document();
          
@@ -73,8 +75,10 @@ public class Report {
             
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
             
-            document.add(new Paragraph(timeStampWords + "\n" + 
-                CDIS.getProperty("siHoldingUnit") + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
+            if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+                document.add(new Paragraph(timeStampWords + "\n" + 
+                    CDIS.getProperty("siHoldingUnit") + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
+            }
 
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR, cannot create report ");
@@ -86,12 +90,15 @@ public class Report {
     
     public void generate () {
         
-        try {
-            this.rptHours = CDIS.getProperty("rptHours");
+        if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+        
+            try {
+                this.rptHours = CDIS.getProperty("rptHours");
             
-        } catch(Exception e) {
-            logger.log(Level.FINEST, "Unable to calculate timeframe of report, defaulting to last 24 hours");
-            this.rptHours = "24";
+            } catch(Exception e) {
+                logger.log(Level.FINEST, "Unable to calculate timeframe of report, defaulting to last 24 hours");
+                this.rptHours = "24";
+            }
         }
         
         create();
@@ -106,12 +113,15 @@ public class Report {
         
         statisticsWrite();
                 
-        //failed list is to be displayed before successful list per Ken
-        writeFailed();
+        if (! CDIS.getProperty("rptStatsOnly").equals("true") ) {
+            //failed list is to be displayed before successful list per Ken
+            writeFailed();
                 
-        //now write successful completion list to file
-        writeCompleted();
+            //now write successful completion list to file
+            writeCompleted();
 
+        }
+        
         //close the Document
         document.close();
         
@@ -119,7 +129,7 @@ public class Report {
             //send email to list
             logger.log(Level.FINEST, "Need To send Email Report");
             
-            send(CDIS.getProperty("siHoldingUnit"), CDIS.getProperty("emailReportTo") );
+            send();
         }
     }
     
@@ -194,7 +204,7 @@ public class Report {
     }
     
     
-    public void send (String siUnit, String emailTo) {
+    public void send () {
         try {
             Properties mailProps = new Properties();
             String server = "smtp.si.edu";
@@ -203,14 +213,14 @@ public class Report {
 
             MimeMessage message = new MimeMessage( session );
             message.setFrom(new InternetAddress("no-reply@dams.si.edu"));
-            String[] toEmailAddrArray = emailTo.split(",");
+            String[] toEmailAddrArray = CDIS.getProperty("emailReportTo").split(",");
             for (int i = 0; i < toEmailAddrArray.length; i++) {
 		message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
             }
 	
             String emailContent = null;
             
-            message.setSubject(siUnit + ": CDIS Activity Report - Past " + this.rptHours + " Hours" ); 
+            message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS Activity Report - Past " + this.rptHours + " Hours" ); 
             
             emailContent = "<br>Please see the attached CDIS Activity Report<br><br><br><br>" +
                     "If you have any questions regarding information contained in this report, please contact: <br>" + 
