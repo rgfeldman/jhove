@@ -419,7 +419,7 @@ public class CDISMap {
                     "AND        c.content_type != 'SHORTCUT' " +
                     "AND NOT EXISTS ( " + 
                         "SELECT 'X' " +
-                        "FROM cdis_error d " +
+                        "FROM cdis_error_log d " +
                         "WHERE a.cdis_map_id = d.CDIS_MAP_ID)" ;
                 
                                 
