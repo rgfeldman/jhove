@@ -6,7 +6,7 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.Database.CDISError;
+import edu.si.CDIS.Database.CDISErrorLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.VFCUMd5File;
 import com.lowagie.text.*;
@@ -560,7 +560,7 @@ public class Report {
             
             try {
                 
-                CDISError cdisError = new CDISError();
+                CDISErrorLog cdisError = new CDISErrorLog();
                       
                 RtfFont listElementFont=new RtfFont("Arial",10);
             
