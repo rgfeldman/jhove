@@ -6,7 +6,7 @@
 package edu.si.CDIS.utilties;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.Database.CDISError;
+import edu.si.CDIS.Database.CDISErrorLog;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.CDIS.Database.CDISActivityLog;
@@ -21,7 +21,7 @@ public class ErrorLog {
         
         logger.log(Level.FINER, logMessage);
         
-        CDISError cdisError = new CDISError();
+        CDISErrorLog cdisError = new CDISErrorLog();
         cdisError.setCdisMapId(cdisMap.getCdisMapId());
         cdisError.setFileName(cdisMap.getFileName());
         cdisError.setCdisErrorCd(errorCode);
