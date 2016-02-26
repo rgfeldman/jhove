@@ -324,18 +324,7 @@ public class SendToHotFolder {
             logger.log(Level.FINER, "SQL: {0}", sql);
             
             try {
-                switch (cisSourceDB) {
-                    case "none" :
-                        stmt = CDIS.getDamsConn().prepareStatement(sql);
-                        break;
-                    case "TMSDB" :
-                        stmt = CDIS.getCisConn().prepareStatement(sql);
-                        break;
-                            
-                    default:     
-                        logger.log(Level.SEVERE, "Error: Invalid ingest source {0}, returning", cisSourceDB );
-                        return numCisRenditionsFound;
-                }
+                stmt = CDIS.getDamsConn().prepareStatement(sql);
                                                     
                 rs = stmt.executeQuery();
                      
