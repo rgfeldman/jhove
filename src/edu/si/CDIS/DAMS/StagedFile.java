@@ -81,7 +81,7 @@ public class StagedFile {
     }
     
     // Moves the staged file to the MASTER folder
-    public boolean moveToEmu (String destination) {
+    public boolean deliverSubFile (String destination) {
 
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
         String emuPickupLocation = destination + "\\" + getPathEnding();

@@ -188,14 +188,14 @@ public class LinkToDAMS {
             }
             
             // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)           
-            if (cdisMap.getFileName().endsWith("tif")) {
+            if ( (CDIS.getProperty("emuPickupLocation") != null) && (cdisMap.getFileName().endsWith("tif") ) ) {
                 StagedFile stagedFile = new StagedFile();
                 stagedFile.setBasePath(pathBase);
                 stagedFile.setPathEnding(pathEnding);
                 stagedFile.setFileName(cdisMap.getFileName());
             
-                boolean movedToEmu = stagedFile.moveToEmu(CDIS.getProperty("emuPickupLocation"));
-                if (! movedToEmu) {
+                boolean subFileDelivered = stagedFile.deliverSubFile(CDIS.getProperty("emuPickupLocation"));
+                if (! subFileDelivered) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "LKD-SEPF", "Error, unable to move file to emu pickup location");
                     continue;
