@@ -65,7 +65,7 @@ public class CDISErrorLog {
 
     public boolean insertError () {
         
-        String sql = "INSERT INTO cdis_error ( " +
+        String sql = "INSERT INTO cdis_error_log ( " +
                         "cdis_error_log_id, " +
                         "cdis_map_id, " +
                         "collection_group_cd, " +
