@@ -155,9 +155,9 @@ public class SendToHotFolder {
             if (hotFolderIncrement >  Integer.parseInt(CDIS.getProperty("maxHotFolderIncrement")) ) {
                 
                 try {
-                    Thread.sleep(300000);  //sleep 5 minutes
-                    hotFolderIncrement = 1;
                     logger.log(Level.FINER, "Sleeping, waiting for available hot folder...");
+                    Thread.sleep(300000);  //sleep 5 minutes
+                    hotFolderIncrement = 0;
                     continue;
                 } catch (Exception e) {
                     logger.log(Level.FINER, "Exception in Thread.sleep: " + hotFolderBaseName);

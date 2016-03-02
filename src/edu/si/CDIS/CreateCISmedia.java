@@ -84,14 +84,23 @@ public class CreateCISmedia {
             //Create CDISMap entry for the record
             CDISMap cdisMap = new CDISMap();
             cdisMap.setDamsUoiid(uoiId);
-            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")) );
             cdisMap.setFileName(uois.getName());
             
-            boolean mapCreated = cdisMap.createRecord();
-            if (!mapCreated) {
-                logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
-                continue;
-            }
+            //Find existing CDISMAP record, and store the cdis_map_id in object by using the uoiid
+            //  If CDIS sent it to DAMS initially, there should be a record there already.
+            boolean mapRecordExists = cdisMap.populateIdFromUoiid();
+            
+            if (!mapRecordExists) {    
+                //  In the cases where media was put into DAMS by something other than CDIS, there will be no existing map entry there
+                //      and we will need to add it  
+                cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")) );
+                
+                boolean mapCreated = cdisMap.createRecord();
+                if (!mapCreated) {
+                    logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
+                    continue;
+                }
+            } 
             
             CDISActivityLog activityLog = new CDISActivityLog();
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
