@@ -365,8 +365,16 @@ public class CDIS {
                     break;
                     
                 case "genReport" :
-                    Report report = new Report();
-                    report.generate();
+                    switch (args[1]) {
+                        case "vfcuDir" :
+                        case "timeframe" :
+                            Report report = new Report();
+                            report.generate(args[1]);
+                            break;
+                        default :
+                            logger.log(Level.SEVERE, "Fatal Error: Invalid Report Type, exiting");
+                    }
+                    
                     break;
                     
                 default:     

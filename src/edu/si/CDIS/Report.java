@@ -52,6 +52,7 @@ public class Report {
     private String rptVendorDir;
     private Integer masterMd5Id;
     private Integer childMd5Id;
+    private String rptType;
     
     private boolean create () {
         
@@ -77,11 +78,11 @@ public class Report {
             
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
             
-            if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+            if ( this.rptType.equals("timeframe") ) {
                 document.add(new Paragraph(timeStampWords + "\n" + 
                     CDIS.getProperty("siHoldingUnit") + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
             }
-            else if ( CDIS.getProperty("rptType").equals("vfcuDir") ) {
+            else if ( this.rptType.equals("vfcuDir") ) {
                 document.add(new Paragraph(timeStampWords + "\n" + 
                         CDIS.getProperty("siHoldingUnit") + " CDIS Activity Report- " + this.rptVendorDir, title));
             }
@@ -220,9 +221,11 @@ public class Report {
     }
     
     
-    public void generate () {
+    public void generate (String reportType) {
         
-        if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+        this.rptType = reportType;
+        
+        if ( this.rptType.equals("timeframe") ) {
         
             try {
                 this.rptHours = CDIS.getProperty("rptHours");
@@ -232,7 +235,7 @@ public class Report {
                 this.rptHours = "24";
             }
         } 
-        else if ( CDIS.getProperty("rptType").equals("vfcuDir") ) {
+        else if ( this.rptType.equals("vfcuDir") ) {
             //get masterMd5FileId to run report for (FROM XML)
             boolean md5FileIdFound = populateMasterMd5FileId();
    
@@ -290,7 +293,7 @@ public class Report {
             
             send();
         }
-        if ( CDIS.getProperty("rptType").equals("vfcuDir") ) {
+        if ( this.rptType.equals("vfcuDir") ) {
             //set the report generated flag to indicate report was generated
             VFCUMd5File vfcuMd5File = new VFCUMd5File();
             vfcuMd5File.setVfcuMd5FileId(this.masterMd5Id);
@@ -317,12 +320,12 @@ public class Report {
             }
         }
         
-        if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+        if ( this.rptType.equals("timeframe") ) {
             if (sql.contains("?RPT_HOURS?")) {
                 sql = sql.replace("?RPT_HOURS?", this.rptHours);
             }
         }
-        else if ( CDIS.getProperty("rptType").equals("vfcuDir") ) {
+        else if ( this.rptType.equals("vfcuDir") ) {
             if (sql.contains("?MD5_MASTER_ID?")) {
                 sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.masterMd5Id)) ;
             }
@@ -357,17 +360,24 @@ public class Report {
             
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
-                if (sqlTypeArr[0].equals("getSuccessRecords")) {   
-                    sql = key;    
+            if ( this.rptType.equals("timeframe") ) {
+                if (sqlTypeArr[0].equals("getSuccessTimeFrameRecords")) {   
+                    sql = key;  
+                }        
+            }
+            else if (this.rptType.equals("vfcuDir") ) {
+                if (sqlTypeArr[0].equals("getSuccessVfcuDirRecords")) {   
+                    sql = key;  
+                } 
             }
         }
         
-        if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+        if ( this.rptType.equals("timeframe") ) {
             if (sql.contains("?RPT_HOURS?")) {
                 sql = sql.replace("?RPT_HOURS?", this.rptHours);
             }
         }
-        else if ( CDIS.getProperty("rptType").equals("vfcuDir") ) {
+        else if ( this.rptType.equals("vfcuDir") ) {
             if (sql.contains("?MD5_MASTER_ID?")) {
                 sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.masterMd5Id)) ;
             }
@@ -410,10 +420,10 @@ public class Report {
 	
             String emailContent = null;
             
-            if ( CDIS.getProperty("rptType").equals("timeframe") ) {
+            if ( this.rptType.equals("timeframe") ) {
                 message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS Activity Report - Past " + this.rptHours + " Hours" ); 
             }
-            else if ( CDIS.getProperty("rptType").equals("vfcuDir") ) {
+            else if ( this.rptType.equals("vfcuDir") ) {
                 message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS Activity Report - " + this.rptVendorDir);
             }
             
