@@ -188,6 +188,30 @@ public class CDISMap {
  
     }
     
+    public boolean populateCdisCisMediaTypeId() {
+        String sql = "SELECT cdis_cis_media_type_id FROM cdis_map " +
+                      "WHERE cdis_map_id = " + getCdisMapId();
+
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                setCdisCisMediaTypeId (rs.getInt(1));
+            }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain cdisMediaType ", e );
+                return false;
+        }
+        return true;
+        
+    }
+    
      public boolean populateIdFromCisMediaId () {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
@@ -218,6 +242,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
+                    "AND collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " +
                     "AND dams_uoi_id IS NULL " +
                     "AND to_history_dt IS NULL";
         

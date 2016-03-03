@@ -14,6 +14,7 @@ import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.CDIS.Database.CDISCisMediaType;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -87,7 +88,8 @@ public class CreateCISmedia {
             cdisMap.setFileName(uois.getName());
             
             //Find existing CDISMAP record, and store the cdis_map_id in object by using the uoiid
-            //  If CDIS sent it to DAMS initially, there should be a record there already.
+            //  If CDIS sent it to DAMS with the sendToHotfolder tool initially, there should be a record there already....so in that case
+            //  We do not want an additional cdis_map record
             boolean mapRecordExists = cdisMap.populateIdFromUoiid();
             
             if (!mapRecordExists) {    
@@ -100,12 +102,16 @@ public class CreateCISmedia {
                     logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
                     continue;
                 }
-            } 
+           
+                CDISActivityLog activityLog = new CDISActivityLog();
+                activityLog.setCdisMapId(cdisMap.getCdisMapId());
+                activityLog.setCdisStatusCd("MIC");
+                activityLog.insertActivity();
             
-            CDISActivityLog activityLog = new CDISActivityLog();
-            activityLog.setCdisMapId(cdisMap.getCdisMapId());
-            activityLog.setCdisStatusCd("MIC");
-            activityLog.insertActivity();
+            } 
+            else {
+                cdisMap.populateCdisCisMediaTypeId();
+            }
             
             MediaRenditions mediaRendition = new MediaRenditions();
             MediaRecord mediaRecord = new MediaRecord();
@@ -129,6 +135,7 @@ public class CreateCISmedia {
             cdisMap.setCisUniqueMediaId(Integer.toString (mediaRendition.getRenditionId()) );
             cdisMap.updateCisUniqueMediaId() ;
             
+            // Create the thumbnail in the CIS
             Thumbnail thumbnail = new Thumbnail();
             boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
                             
@@ -148,6 +155,7 @@ public class CreateCISmedia {
                 continue;
             }
             
+            CDISActivityLog activityLog = new CDISActivityLog();
             activityLog.setCdisStatusCd("LCC");
             activityLog.insertActivity();
         }
