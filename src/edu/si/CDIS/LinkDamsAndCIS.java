@@ -17,12 +17,12 @@ import java.util.HashMap;
 import java.util.logging.Level;
 
 import edu.si.CDIS.CIS.Database.Objects;
-import edu.si.CDIS.CIS.MediaPath;
 
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.CDISCisMediaType;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.utilties.ErrorLog;
    
@@ -105,20 +105,28 @@ public class LinkDamsAndCIS {
             return false;
         }
         
-        // ONLY refresh thumbnail IF the properties setting indicates we should
+        // ONLY refresh thumbnail IF the properties setting indicates we should.
         if (CDIS.getProperty("updateTMSThumbnail").equals("true") ) {
-            Thumbnail thumbnail = new Thumbnail();
-            boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
+            
+            //..and only refresh thumbnail if the media type is indicated to be in the CIS
+            cdisMap.populateCdisCisMediaTypeId();   
+            CDISCisMediaType cdisMediaType = new CDISCisMediaType();
+            
+            cdisMediaType.populateInCis();
+            if (cdisMediaType.getInCisInd() == 'Y') {
+            
+                Thumbnail thumbnail = new Thumbnail();
+                boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
                             
-            if (! thumbCreated) {
-                logger.log(Level.FINER, "CISThumbnailSync creation failed");
-                return false;
+                if (! thumbCreated) {
+                    logger.log(Level.FINER, "CISThumbnailSync creation failed");
+                    return false;
+                }
+            
+                cdisActivity = new CDISActivityLog();
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd("CTS");    
             }
-            
-            cdisActivity = new CDISActivityLog();
-            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("CTS");    
-            
         }
         
         return true;

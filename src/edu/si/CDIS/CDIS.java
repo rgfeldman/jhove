@@ -364,18 +364,15 @@ public class CDIS {
                     thumbnail.sync();
                     break;
                     
-                case "genReport" :
-                    switch (args[1]) {
-                        case "vfcuDir" :
-                        case "timeframe" :
-                            Report report = new Report();
-                            report.generate(args[1]);
-                            break;
-                        default :
-                            logger.log(Level.SEVERE, "Fatal Error: Invalid Report Type, exiting");
-                    }
-                    
+                case "genVfcuDirReport" :
+                    GenVfcuDirReport vfcuReport = new GenVfcuDirReport();
+                    vfcuReport.generate();
                     break;
+                    
+                case "genTimeframeReport" :
+                    GenTimeframeReport timeFrameReport = new GenTimeframeReport();
+                    timeFrameReport.generate();
+                    break;    
                     
                 default:     
                     logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");            
