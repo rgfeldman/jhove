@@ -185,11 +185,16 @@ public class GenVfcuDirReport {
                      "FROM   vfcu_media_file a " +
                      "WHERE  a.vfcu_md5_file_id in (" + this.masterMd5Id + ", " + this.childMd5Id + ") " +
                      "AND  NOT EXISTS ( " +
-                     "    SELECT 'X' " +
-                     "    FROM   cdis_map b, " +
-                     "           cdis_activity_log c " +
-                     "    WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                     "    AND   c.cdis_status_cd in ('LDC','ERR'))";
+                     "  SELECT 'X' " +
+                     "  FROM   cdis_map b, " +
+                     "         cdis_activity_log c " +
+                     "  WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
+                     "  AND   c.cdis_status_cd in ('LDC','ERR')) " +
+                     "AND  NOT EXISTS ( " +  
+                     "  SELECT 'X'     " +
+                     "  FROM   vfcu_activity_log d " +     
+                     "  WHERE a.vfcu_media_file_id = d.vfcu_media_file_id " +   
+                     "  AND   d.vfcu_status_cd in ('ER','OH')) ";
         
         try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
              ResultSet rs = stmt.executeQuery() ) {
@@ -478,7 +483,7 @@ public class GenVfcuDirReport {
                 if (completedIdName.get(mapId).equals("emuLinkComplete") ) {
                     listing = "File: " + cdisMap.getFileName() + " Linked UAN: " + siAsst.getOwningUnitUniqueName() + " IRN: " + cdisMap.getCisUniqueMediaId() ;
                 }
-                else if (completedIdName.get(mapId).equals("DAMSIngestComplete") ) {
+                else  {
                     listing = "File: " + cdisMap.getFileName() + " Ingested UAN: " + siAsst.getOwningUnitUniqueName();
                 }
                                          

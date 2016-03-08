@@ -156,6 +156,7 @@ public class CreateCISmedia {
             }
             
             CDISActivityLog activityLog = new CDISActivityLog();
+            activityLog.setCdisMapId(cdisMap.getCdisMapId());
             activityLog.setCdisStatusCd("LCC");
             activityLog.insertActivity();
         }
