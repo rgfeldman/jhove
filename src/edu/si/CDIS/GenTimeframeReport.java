@@ -269,7 +269,7 @@ public class GenTimeframeReport {
 
             MimeMessage message = new MimeMessage( session );
             message.setFrom(new InternetAddress("no-reply@dams.si.edu"));
-            String[] toEmailAddrArray = CDIS.getProperty("emailReportTo").split(",");
+            String[] toEmailAddrArray = CDIS.getProperty("timeFrameEmailList").split(",");
             for (int i = 0; i < toEmailAddrArray.length; i++) {
 		message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
             }
