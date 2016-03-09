@@ -6,9 +6,10 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.Database.CDISErrorLog;
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.Database.VFCUMd5File;
+import edu.si.CDIS.Database.CDISObjectMap;
+import edu.si.CDIS.Database.CDISErrorLog;
+import edu.si.CDIS.CIS.Database.Objects;
 import com.lowagie.text.*;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
@@ -18,9 +19,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.activation.DataHandler;
@@ -45,12 +47,13 @@ public class GenTimeframeReport {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
    
     private String rptHours;
-    private LinkedHashMap<Integer, String> completedIdName;
-    private LinkedHashMap<Integer, String> failedIdName;
-    private LinkedHashMap<Integer, String> metadataSynced;
+    private LinkedHashMap <Integer, String> failedIdName;  
+    private ArrayList <Integer> ldcMapIds;  
+    private ArrayList <Integer> mdsMapIds;
+    private ArrayList <Integer> lccMapIds;
     private Document document;
     private String rptFile;
-    private String rptVendorDir;
+    private String completedStepSql;
     private Integer masterMd5Id;
     private Integer childMd5Id;
     
@@ -85,96 +88,6 @@ public class GenTimeframeReport {
             logger.log(Level.FINEST, "ERROR, cannot create report ");
             return false;
         }  
-        
-        return true;
-    }
-    
-    private boolean populateRptVendorDir() {
-        String sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
-                     "FROM vfcu_md5_file " +
-                     "WHERE vfcu_md5_file_id = " + this.masterMd5Id;
-                
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            if (rs.next()) {
-                //Add the records to the masterMd5Id list 
-                 this.rptVendorDir = rs.getString(1);
-            }        
-            else {
-                throw new Exception();
-            }
-        }
-            
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain vendor dir for report", e);
-                return false;
-	}
-        
-        return true;
-        
-    }
-    
-    private boolean populateMasterMd5FileId () {
-        
-        String sqlTypeArr[] = null;
-        String sql = null;
-        
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
-            
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-                if (sqlTypeArr[0].equals("getMasterMd5Id")) {   
-                    sql = key;    
-            }
-        }
-        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            if (rs.next()) {
-                //Add the records to the masterMd5Id list 
-                 this.masterMd5Id = rs.getInt(1);
-            }        
-            else {
-                throw new Exception();
-            }
-        }
-            
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for report, returning", e);
-                return false;
-	}
-        
-        return true;
-    }
-    
-    private boolean populateChildMd5FileId () {
-        
-        String sql = "SELECT vfcu_md5_file_id " +
-                    "FROM vfcu_md5_file " +
-                    "WHERE master_md5_file_id = " + this.masterMd5Id +
-                    " AND master_md5_file_id != vfcu_md5_file_id ";
-                
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            if (rs.next()) {
-                //Add the records to the masterMd5Id list 
-                 this.childMd5Id = rs.getInt(1);
-            }        
-            else {
-                throw new Exception();
-            }
-        }
-            
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for report, returning", e);
-                return false;
-	}
         
         return true;
     }
@@ -218,17 +131,15 @@ public class GenTimeframeReport {
         create();
         
         //Get list of completed records (UOI_IDs) from the past increment
-        this.completedIdName = new LinkedHashMap<>();
-        genCompletedIdList ();
-     
+        this.lccMapIds = new ArrayList();
+        this.ldcMapIds = new ArrayList();
+        this.mdsMapIds = new ArrayList();
+         
+        genStepCompletedList ();   
+        
         //Get the failed records from the past increment
         this.failedIdName = new LinkedHashMap<>();
         genFailedIdList ();
-        
-        //Get the metaDataSynced records from the past increment
-        this.metadataSynced = new LinkedHashMap<>();
-        genMetadataSyncList ();
-        
         
         statisticsWrite();
                 
@@ -236,59 +147,33 @@ public class GenTimeframeReport {
             //failed list is to be displayed before successful list per Ken
             writeFailed();
                 
-            //now write successful completion list to file
-            writeCompleted();
+            if (completedStepSql.contains("'LCC'")) {
+                //now write successful completion list to file
+                writeStepCompleted(lccMapIds, "LCC");
+            }
             
-            writeSynced();
+            if (completedStepSql.contains("'LDC'")) {
+                //now write successful completion list to file
+                writeStepCompleted(ldcMapIds, "LDC");
+            }
+            
+            if (completedStepSql.contains("'MDS'")) {
+                //now write successful completion list to file
+                writeStepCompleted(mdsMapIds, "MDS");
+            }
+            
             
         }
         
         //close the Document
         document.close();
         
-        if (CDIS.getProperty("emailReportTo") != null) { 
+        if (CDIS.getProperty("timeFrameEmailList") != null) { 
             //send email to list
             logger.log(Level.FINEST, "Need To send Email Report");
             
             send();
         }
-    }
-    
-    
-    private boolean genMetadataSyncList () {
-        
-        String sqlTypeArr[] = null;
-        String sql = null;
-        
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
-            
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-                if (sqlTypeArr[0].equals("getSyncedRecords")) {   
-                    sql = key;    
-            }
-        }
-        
-        if (sql.contains("?RPT_HOURS?")) {
-            sql = sql.replace("?RPT_HOURS?", this.rptHours);
-        }
-        
-        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            while (rs.next()) {
-                this.metadataSynced.put(rs.getInt(1), rs.getString(2));    
-            }        
-        }
-            
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
-                return false;
-	}
-        
-        return true;
     }
     
     private boolean genFailedIdList () {
@@ -326,30 +211,43 @@ public class GenTimeframeReport {
         return true;
     }
     
-    private boolean genCompletedIdList () {
+    
+    private boolean genStepCompletedList () {
         
         String sqlTypeArr[] = null;
-        String sql = null;
         
         for (String key : CDIS.getXmlSelectHash().keySet()) {     
             
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
-            if (sqlTypeArr[0].equals("getSuccessRecords")) {   
-                sql = key;  
+            if (sqlTypeArr[0].equals("getStepCompleteRecords")) {   
+                completedStepSql = key;  
             }        
         }
         
-        if (sql.contains("?RPT_HOURS?")) {
-            sql = sql.replace("?RPT_HOURS?", this.rptHours);
+        if (completedStepSql.contains("?RPT_HOURS?")) {
+            completedStepSql = completedStepSql.replace("?RPT_HOURS?", this.rptHours);
         }
         
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+        logger.log(Level.FINEST, "SQL: {0}", completedStepSql);
+        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(completedStepSql);
              ResultSet rs = stmt.executeQuery() ) {
 
             while (rs.next()) {
-                this.completedIdName.put(rs.getInt(1), rs.getString(2));    
+
+                switch (rs.getString(2)) {
+                    case "LCC":
+                        this.lccMapIds.add(rs.getInt(1));
+                        break;
+                    case "LDC" :
+                        this.ldcMapIds.add(rs.getInt(1));
+                        break;    
+                    case "MDS" :
+                        this.mdsMapIds.add(rs.getInt(1));
+                        break;   
+                    default :
+                        logger.log(Level.SEVERE, "Error: Encountered status type that is not reported");
+                }  
             }        
         }
             
@@ -378,7 +276,7 @@ public class GenTimeframeReport {
 	
             String emailContent = null;
             
-            message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS Activity Report - Past " + this.rptHours + " Hours" ); 
+            message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS 3.0 Activity Report - Past " + this.rptHours + " Hours" ); 
             
             emailContent = "<br>Please see the attached CDIS Activity Report<br><br><br><br>" +
                     "If you have any questions regarding information contained in this report, please contact: <br>" + 
@@ -421,26 +319,42 @@ public class GenTimeframeReport {
         try {
             RtfFont stats=new RtfFont("Times New Roman",12);
             
-            if (completedIdName.size() > 0) {
-                document.add(new Paragraph("\nNumber of Succesfully Integrated Media Records : " + this.completedIdName.size(), stats));
+            if (this.failedIdName.size() > 0) {
+                document.add(new Paragraph("\nNumber of Failed Records: " + this.failedIdName.size(), stats));
             }
             else {
-                document.add(new Paragraph("\nNumber of Succesfully Integrated Media Records : 0", stats));
+                document.add(new Paragraph("\nNumber of Failed Records: 0", stats));
+            }
+                        
+            // Only put out the header information for applicable statuses.
+            // We check because sometimes we have zero rows for statuses we are looking for, but we would want to put on the report zero rows
+            if (completedStepSql.contains("'LCC'")) {
+                if (this.lccMapIds.size() > 0) {
+                    document.add(new Paragraph("Number of media records linked back to the CIS : " + this.lccMapIds.size(), stats));
+                }
+                else {
+                    document.add(new Paragraph("Number of media records linked back to the CIS : 0", stats));
+                }
             }
             
-            if (failedIdName.size() > 0) {
-                document.add(new Paragraph("Number of Failed Records: " + this.failedIdName.size(), stats));
-            }
-            else {
-                document.add(new Paragraph("Number of Failed Records: 0", stats));
+            if (completedStepSql.contains("'LDC'")) {
+                if (this.ldcMapIds.size() > 0) {
+                    document.add(new Paragraph("Number of media records linked to DAMS: " + this.ldcMapIds.size(), stats));
+                }
+                else {
+                    document.add(new Paragraph("Number of media records linked to DAMS: 0", stats));
+                }
             }
             
-            if (this.metadataSynced.size() > 0) {
-                document.add(new Paragraph("Number of metaDataSynced Records: " + this.metadataSynced.size(), stats));
-            }
-            else {
-                document.add(new Paragraph("Number of metaDataSynced Records: 0", stats));
-            }
+            if (completedStepSql.contains("'MDS'")) {
+                if (this.mdsMapIds.size() > 0) {
+                    document.add(new Paragraph("Number of media records metadata synced: " + this.mdsMapIds.size(), stats));
+                }
+                else {
+                    document.add(new Paragraph("Number of media records metadata synced: 0", stats));
+                }
+            }    
+            
 
             
         } catch(Exception e) {
@@ -448,20 +362,32 @@ public class GenTimeframeReport {
         }  
     }
     
-    private void writeSynced() {
+    private void writeStepCompleted(ArrayList<Integer> completedStep, String stepType) {
         try {
             RtfFont secHeaderFont=new RtfFont("Times New Roman",12,Font.BOLD);
             
             String sectionHeader = null;
             
-            sectionHeader = "\n\nThe Following Media Successfully metadata Synced: ";
-                          
+            switch (stepType) {
+                case "LCC" :
+                    sectionHeader = "\n\nThe Following Media has been linked back to the CIS: ";
+                    break;
+                case "LDC" :
+                    sectionHeader = "\n\nThe Following Media has been linked to DAMS: ";
+                    break;
+                 case "MDS" :
+                    sectionHeader = "\n\nThe Following Media has been metadata synced: ";
+                    break;
+                default:
+                    logger.log(Level.FINEST, "Invalid stepType");
+            }
+            
             document.add(new Paragraph(sectionHeader,secHeaderFont));
             document.add(new Phrase("-------------------------------------------------------------------------",secHeaderFont));
 
-            if (! (metadataSynced.size() > 0)) {
+            if (! (completedStep.size() > 0)) {
                 RtfFont listElementFont=new RtfFont("Courier",8);
-                String listing = "There have been no metadata sync records";
+                String listing = "There are no records during this timeframe period";
                 document.add(new Phrase("\n" + listing,listElementFont));
                 return;
                 
@@ -471,81 +397,42 @@ public class GenTimeframeReport {
             logger.log(Level.FINEST, "ERROR",e);
         } 
         
-        for (Integer mapId :metadataSynced.keySet()) {     
+        for (Integer mapId : completedStep ) {     
             try {
                 
                 String listing = null;
                 
                 CDISMap cdisMap = new CDISMap();
                 SiAssetMetaData siAsst = new SiAssetMetaData();
+                CDISObjectMap cdisObjectMap = new CDISObjectMap();
+                Objects objects = new Objects();
                 
                 cdisMap.setCdisMapId(mapId);
                 cdisMap.populateMapInfo();
+                
+                cdisObjectMap.setCdisMapId(mapId);
+                cdisObjectMap.populateCisUniqueObjectIdforCdisId();
+                
+                objects.setObjectID(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
+                objects.populateObjectNumberForObjectID();
                 
                 siAsst.setUoiid(cdisMap.getDamsUoiid());
                 siAsst.populateOwningUnitUniqueName();
                       
                 RtfFont listElementFont=new RtfFont("Courier",8);
                 
-                listing = "File: " + cdisMap.getFileName() + " Synced From: RenditionID: " + cdisMap.getCisUniqueMediaId() ;
-                                         
-                document.add(new Phrase("\n" + listing,listElementFont));
-            
-            } catch(Exception e) {
-                logger.log(Level.FINEST, "ERROR",e);
-            }
-                        
-        }
-        
-        
-        
-    }
-    
-    private void writeCompleted() {
-        try {
-            RtfFont secHeaderFont=new RtfFont("Times New Roman",12,Font.BOLD);
-            
-            String sectionHeader = null;
-            
-            sectionHeader = "\n\nThe Following Media Successfully Processed: ";
-                          
-            document.add(new Paragraph(sectionHeader,secHeaderFont));
-            document.add(new Phrase("-------------------------------------------------------------------------",secHeaderFont));
-
-            if (! (completedIdName.size() > 0)) {
-                RtfFont listElementFont=new RtfFont("Courier",8);
-                String listing = "There have been no successful media copies";
-                document.add(new Phrase("\n" + listing,listElementFont));
-                return;
-                
-            }
-            
-        } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR",e);
-        } 
-        
-        for (Integer mapId :completedIdName.keySet()) {     
-            try {
-                
-                String listing = null;
-                
-                CDISMap cdisMap = new CDISMap();
-                SiAssetMetaData siAsst = new SiAssetMetaData();
-                
-                cdisMap.setCdisMapId(mapId);
-                cdisMap.populateMapInfo();
-                
-                siAsst.setUoiid(cdisMap.getDamsUoiid());
-                siAsst.populateOwningUnitUniqueName();
-                      
-                RtfFont listElementFont=new RtfFont("Courier",8);
-                
-                if (completedIdName.get(mapId).equals("emuLinkComplete") ) {
-                    listing = "File: " + cdisMap.getFileName() + " Linked UAN: " + siAsst.getOwningUnitUniqueName() + " IRN: " + cdisMap.getCisUniqueMediaId() ;
+                switch (stepType) {
+                    case "LCC" :
+                         listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To Object: " + objects.getObjectNumber() ;
+                         break;
+                    case "LDC" :
+                         listing = "File: " + cdisMap.getFileName() + " linked to DAMS UAN: " + siAsst.getOwningUnitUniqueName();
+                         break;
+                    case "MDS" :   
+                        listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with object: " + objects.getObjectNumber();
+                        break;
                 }
-                else if (completedIdName.get(mapId).equals("DAMSIngestComplete") ) {
-                    listing = "File: " + cdisMap.getFileName() + " Ingested UAN: " + siAsst.getOwningUnitUniqueName();
-                }
+                    
                                          
                 document.add(new Phrase("\n" + listing,listElementFont));
             
@@ -556,8 +443,55 @@ public class GenTimeframeReport {
         }
         
     }
+    private void writeFailed() {
+        try {
+            RtfFont secHeaderFont=new RtfFont("Times New Roman",12,Font.BOLD);
+            
+            String sectionHeader = null;
+            
+            sectionHeader = "\n\nThe Following Media has failed: ";
+  
+            
+            document.add(new Paragraph(sectionHeader,secHeaderFont));
+            document.add(new Phrase("-------------------------------------------------------------------------",secHeaderFont));
+
+            if (! (this.failedIdName.size() > 0)) {
+                RtfFont listElementFont=new RtfFont("Courier",8);
+                String listing = "There are no Failed records during this timeframe period";
+                document.add(new Phrase("\n" + listing,listElementFont));
+                return;
+                
+            }
+            
+        } catch(Exception e) {
+            logger.log(Level.FINEST, "ERROR",e);
+        } 
+        
+        for (Integer errorId : failedIdName.keySet()) {    
+            try {
+                
+                String listing = null;
+                
+                CDISErrorLog cdisErrorLog = new CDISErrorLog();
+                
+                cdisErrorLog.setCdisErrorId(errorId);
+                String errorDescription = cdisErrorLog.returnDescription();
+                      
+                RtfFont listElementFont=new RtfFont("Courier",8);
+                
+                listing = "File: " + failedIdName.get(errorId) + " Error: " + errorDescription;
+                                          
+                document.add(new Phrase("\n" + listing,listElementFont));
+            
+            } catch(Exception e) {
+                logger.log(Level.FINEST, "ERROR",e);
+            }
+                        
+        }
+        
+    }
     
-    
+    /*
     private void writeFailed() {
         try {
             RtfFont secHeaderFont=new RtfFont("Times New Roman",12,Font.BOLD);
@@ -602,5 +536,6 @@ public class GenTimeframeReport {
             }
             
         }     
-    }
+    }*/
+    
 }

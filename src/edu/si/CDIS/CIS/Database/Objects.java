@@ -293,5 +293,25 @@ public class Objects {
             e.printStackTrace();
         } 
     } 
+    
+    public boolean populateObjectNumberForObjectID() {
+        String sql = "SELECT ObjectNumber " +
+                    "FROM objects " +
+                    "WHERE objectID = " + getObjectID();
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs != null && rs.next()) {
+                setObjectNumber(rs.getString(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain ObjectNumber for objectID", e );
+                return false;
+        }
+        return true;
+    }
 }
 

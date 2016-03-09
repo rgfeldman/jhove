@@ -266,7 +266,7 @@ public class GenVfcuDirReport {
         //close the Document
         document.close();
         
-        if (CDIS.getProperty("emailReportTo") != null) { 
+        if (CDIS.getProperty("vfcuDirEmailList") != null) { 
             //send email to list
             logger.log(Level.FINEST, "Need To send Email Report");
             
