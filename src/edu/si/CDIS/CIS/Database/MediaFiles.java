@@ -58,11 +58,11 @@ public class MediaFiles {
         this.pathId = pathId;
     }
       
-    private void setPixelH (int pixelH) {
+    public void setPixelH (int pixelH) {
         this.pixelH = pixelH;
     }
     
-    private void setPixelW (int pixelW) {
+    public void setPixelW (int pixelW) {
         this.pixelW = pixelW;
     }
     

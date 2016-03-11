@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-
 public class Uois {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
@@ -21,17 +20,28 @@ public class Uois {
     private Integer bitmapHeight;
     private Integer bitmapWidth; 
     
+    
+    public Integer getBitmapHeight () {
+        return this.bitmapHeight;
+    }
+    
+    public Integer getBitmapWidth () {
+        return this.bitmapWidth;
+    }
+        
     public String getName () {
         return this.name;
+    }
+    
+    public String getUoiid () {
+        return this.uoiid;
     }
     
     public void setName (String name) {
         this.name = name;
     }
     
-    public String getUoiid () {
-        return this.uoiid;
-    }
+
     
     public void setUoiid (String uoiid) {
         this.uoiid = uoiid;
