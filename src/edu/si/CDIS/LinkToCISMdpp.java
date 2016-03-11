@@ -112,28 +112,6 @@ public class LinkToCISMdpp {
             activityLog.setCdisStatusCd("LCC");
             activityLog.insertActivity();
             
-            //now add the cis_unique_identifier to the master (iiq) also
-            int childMapId = cdisMap.getMasterIdFromChildId();
-            if (! (childMapId > 0)) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "LKC-CCUF", "ERROR: unable to Master record cis_id in CDIS_MAP table ");
-                continue;
-            }
-            //set the ID to the masterid
-            cdisMap.setCdisMapId(childMapId);
-            
-            cisIdUpdate = cdisMap.updateCisUniqueMediaId();
-            if (!cisIdUpdate) {
-                 ErrorLog errorLog = new ErrorLog ();
-                 errorLog.capture(cdisMap, "LKC-CCUF", "ERROR: unable to record cis_id in CDIS_MAP table ");
-                 continue;
-            }
-            
-            activityLog.setCdisMapId(cdisMap.getCdisMapId());
-            activityLog.setCdisStatusCd("LCC");
-            activityLog.insertActivity();
-            
-        
            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
              
         }
