@@ -74,6 +74,9 @@ public class MediaRecord {
             return 0;
         }
         
+        mediaFiles.setPixelH(uois.getBitmapHeight());
+        mediaFiles.setPixelW(uois.getBitmapWidth());
+        
         String extensionlessFileName = uois.getName().substring(0, uois.getName().lastIndexOf("."));
         String fileType = uois.getName().substring(uois.getName().lastIndexOf(".")+1, uois.getName().length()).toLowerCase();
         
