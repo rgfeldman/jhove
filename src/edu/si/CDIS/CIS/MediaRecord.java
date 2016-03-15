@@ -14,7 +14,6 @@ import edu.si.CDIS.CIS.Database.MediaXrefs;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
-import edu.si.CDIS.utilties.ErrorLog;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -60,7 +59,11 @@ public class MediaRecord {
         
         MediaXrefs mediaXrefs = new MediaXrefs();
         MediaFiles mediaFiles = new MediaFiles();
-       
+        SiAssetMetaData siAsst = new SiAssetMetaData();
+        
+        siAsst.setUoiid(uois.getUoiid());
+        
+        
         //Get some info from DAMS
         returnSuccess = uois.populateUoisData();
         
@@ -153,6 +156,19 @@ public class MediaRecord {
   
         // Insert into the MediaMaster table
         MediaMaster mediaMaster = new MediaMaster();
+
+        //get the correct publicAccess value based on the is_restricted value in DAMS
+        siAsst.populateIsRestricted();
+        switch (siAsst.getIsRestricted()) {
+            case "Yes" :
+                mediaMaster.setPublicAccess(1);
+                break;
+            default:
+                mediaMaster.setPublicAccess(1);
+                break;
+          
+        }
+        
         returnSuccess = mediaMaster.insertNewRecord();
         
         if (! returnSuccess) {
@@ -177,8 +193,6 @@ public class MediaRecord {
         }
         
         // Insert into MediaFiles
-        SiAssetMetaData siAsst = new SiAssetMetaData();
-        siAsst.setUoiid(uois.getUoiid());
         siAsst.populateOwningUnitUniqueName();
         if (fileType.equalsIgnoreCase("PDF")) {
                 mediaFiles.setPathId(Integer.parseInt (CDIS.getProperty("PDFPathId")));

@@ -6,15 +6,15 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.Database.CDISActivityLog;
+
 import edu.si.CDIS.CIS.Database.MediaRenditions;
 import edu.si.CDIS.CIS.MediaRecord;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.DAMS.Database.Uois;
+import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.utilties.ErrorLog;
-import edu.si.CDIS.Database.CDISCisMediaType;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

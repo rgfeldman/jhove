@@ -433,15 +433,18 @@ public class CDISMap {
         String sql = "SELECT    a.cdis_map_id, a.file_name " +
                     "FROM       cdis_map a, " +
                     "           cdis_activity_log b, " +
-                    "           towner.uois c " +
+                    "           towner.uois c, "  +
+                    "           towner.si_asset_metadata d " +
                     "WHERE      a.cdis_map_id = b.cdis_map_id " +
                     "AND        a.file_name = c.name " +
+                    "AND        c.uoi_id = d.uoi_id " +
                     "AND        a.dams_uoi_id IS NULL " +
                     "AND        a.to_history_dt IS NULL " + 
                     "AND        a.collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " + 
                     "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
                     "AND        c.content_state = 'NORMAL' " +
                     "AND        c.content_type != 'SHORTCUT' " +
+                    "AND        d.owning_unit_unique_name like '" + CDIS.getProperty("siHoldingUnit") + "%' " + 
                     "AND NOT EXISTS ( " + 
                         "SELECT 'X' " +
                         "FROM cdis_error_log d " +

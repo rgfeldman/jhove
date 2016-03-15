@@ -24,6 +24,7 @@ public class MediaMaster {
     private Integer displayRendId;
     private Integer mediaMasterId;
     private Integer primaryRendId;
+    private Integer publicAccess;
     
     public void setDisplayRendId(Integer displayRendId) {
         this.displayRendId = displayRendId;
@@ -33,9 +34,18 @@ public class MediaMaster {
         this.primaryRendId = primaryRendId;
     }
     
+    public void setPublicAccess(Integer publicAccess) {
+        this.publicAccess = publicAccess;
+    }
+    
     public Integer getMediaMasterId() {
         return mediaMasterId;
     }
+    
+    public Integer getPublicAccess() {
+        return publicAccess;
+    }
+    
     
     public boolean insertNewRecord() {
      
@@ -51,7 +61,7 @@ public class MediaMaster {
                     "values " +
                         "(-1, " +
                         "-1, " +
-                        "1 , " +
+                        getPublicAccess() + ", " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
                         "0)";
