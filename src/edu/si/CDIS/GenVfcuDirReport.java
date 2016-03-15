@@ -44,14 +44,15 @@ import javax.mail.Transport;
 public class GenVfcuDirReport {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
    
-    private String rptHours;
+    private Integer childMd5Id;
     private LinkedHashMap<Integer, String> completedIdName;
-    private LinkedHashMap<Integer, String> failedIdName;
+    private String completedStepSql;
     private Document document;
+    private Integer masterMd5Id;
+    private LinkedHashMap<Integer, String> failedIdName;
     private String rptFile;
     private String rptVendorDir;
-    private Integer masterMd5Id;
-    private Integer childMd5Id;
+    private String statsHeader;
     
     private boolean create () {
         
@@ -253,9 +254,17 @@ public class GenVfcuDirReport {
         this.failedIdName = new LinkedHashMap<>();
         genFailedIdList ();
         
-        statisticsWrite();
+        statisticsGenerate();
+        
+        try {
+            RtfFont stats=new RtfFont("Times New Roman",12);
+            document.add(new Paragraph(this.statsHeader, stats));
+        }    
+        catch(Exception e) {
+            logger.log(Level.FINEST, "Unable to Obtain Header information");
+	}
                 
-        if (! CDIS.getProperty("rptVfcuDirStatsOnly").equals("true") ) {
+        if (CDIS.getProperty("rptVfcudirListFiles").equals("true") ||  (this.failedIdName.size() > 0) ) {
             //failed list is to be displayed before successful list per Ken
             writeFailed();
                 
@@ -326,26 +335,25 @@ public class GenVfcuDirReport {
     private boolean genCompletedIdList () {
         
         String sqlTypeArr[] = null;
-        String sql = null;
         
         for (String key : CDIS.getXmlSelectHash().keySet()) {     
             
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);   
             
             if (sqlTypeArr[0].equals("getSuccessRecords")) {   
-                sql = key;   
+                this.completedStepSql = key;   
             }
         }
        
-        if (sql.contains("?MD5_MASTER_ID?")) {
-            sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.masterMd5Id)) ;
+        if (completedStepSql.contains("?MD5_MASTER_ID?")) {
+            completedStepSql = completedStepSql.replace("?MD5_MASTER_ID?", Integer.toString(this.masterMd5Id)) ;
         }
-        if (sql.contains("?MD5_CHILD_ID?")) {
-            sql = sql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));
+        if (completedStepSql.contains("?MD5_CHILD_ID?")) {
+            completedStepSql = completedStepSql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));
         }
         
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+        logger.log(Level.FINEST, "SQL: {0}", completedStepSql);
+        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(completedStepSql);
              ResultSet rs = stmt.executeQuery() ) {
 
             while (rs.next()) {
@@ -375,13 +383,16 @@ public class GenVfcuDirReport {
             for (int i = 0; i < toEmailAddrArray.length; i++) {
 		message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
             }
-	
-            String emailContent = null;
             
             message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS Activity Report - " + this.rptVendorDir);
             
-            emailContent = "<br>Please see the attached CDIS Activity Report<br><br><br><br>" +
-                    "If you have any questions regarding information contained in this report, please contact: <br>" + 
+            String emailContent = this.statsHeader.replace("\n","<br>");
+            
+            if (CDIS.getProperty("rptVfcudirListFiles").equals("true") || (this.failedIdName.size() > 0) ) { 
+                 emailContent = emailContent + "<br>Please see the attached CDIS Activity Report <br>";
+            }     
+            
+            emailContent = emailContent + "<br><br><br>If you have any questions regarding information contained in this report, please contact: <br>" + 
                     "Robert Feldman (FeldmanR@si.edu) or Isabel Meyer (MeyerI@si.edu) <br><br><br><br>" + 
                     "Please let us know if someone else in your organization requires this information, or if you would like for us to discontinue delivery of this report to you.<br>" +
                     "Thanks! The DAMS team";
@@ -395,15 +406,17 @@ public class GenVfcuDirReport {
             bodyPart.setContent(emailContent,"text/html");
             parts.addBodyPart(bodyPart);
 		
-            //add the attachment
-            File reportFile = new File (this.rptFile);
+            if (CDIS.getProperty("rptVfcudirListFiles").equals("true") || (this.failedIdName.size() > 0)) { 
+                //add the attachment
+                File reportFile = new File (this.rptFile);
              
-            MimeBodyPart attachmentPart = new MimeBodyPart();
-	    DataSource source = new FileDataSource(reportFile);
-	    attachmentPart.setDataHandler(new DataHandler(source));
-	    attachmentPart.setFileName(reportFile.getName());
-	    parts.addBodyPart(attachmentPart);
-
+                MimeBodyPart attachmentPart = new MimeBodyPart();
+                DataSource source = new FileDataSource(reportFile);
+                attachmentPart.setDataHandler(new DataHandler(source));
+                attachmentPart.setFileName(reportFile.getName());
+                parts.addBodyPart(attachmentPart);
+            }
+            
             // add the Multipart to the message
             message.setContent(parts);
             Transport.send(message);
@@ -416,29 +429,31 @@ public class GenVfcuDirReport {
     }
     
     
-    private void statisticsWrite () {
-        
-        try {
-            RtfFont stats=new RtfFont("Times New Roman",12);
+    private void statisticsGenerate () {
             
+        if (completedStepSql.contains("'LCC'")) {
             if (completedIdName.size() > 0) {
-                document.add(new Paragraph("\nNumber of Succesfully Integrated Media Records : " + this.completedIdName.size(), stats));
+                statsHeader = "\nNumber of Media Records Integrated with CIS : " + this.completedIdName.size();
             }
             else {
-                document.add(new Paragraph("\nNumber of Succesfully Integrated Media Records : 0", stats));
+                statsHeader = "\nNumber of Media Records Integrated with CIS : 0" ;
             }
-            
-            if (failedIdName.size() > 0) {
-                document.add(new Paragraph("Number of Failed Records: " + this.failedIdName.size(), stats));
+        }
+        else if (completedStepSql.contains("'LDC'")) {
+            if (completedIdName.size() > 0) {
+                statsHeader = "\nNumber of Media Records Ingested/linked in DAMS : " + this.completedIdName.size();
             }
             else {
-                document.add(new Paragraph("Number of Failed Records: 0", stats));
+                statsHeader = "\nNumber of Media Records Ingested/linked in DAMS : 0";
             }
-
+        }
             
-        } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR",e);
-        }  
+        if (failedIdName.size() > 0) {
+            statsHeader = statsHeader + "\nNumber of Failed Records: " + this.failedIdName.size();
+        }
+        else {
+            statsHeader = statsHeader +  "\nNumber of Failed Records: 0";
+        }
     }
     
     private void writeCompleted() {
@@ -447,14 +462,19 @@ public class GenVfcuDirReport {
             
             String sectionHeader = null;
             
-            sectionHeader = "\n\nThe Following Media Successfully Processed: ";
-                          
+            if (completedStepSql.contains("'LCC'")) {
+                sectionHeader = "\n\nThe Following Media Successfully Integerated with CIS: ";
+            }
+            else if (completedStepSql.contains("'LDC'")) {
+                sectionHeader = "\n\nThe Following Media Successfully Ingested / Linked with DAMS: ";
+            }
+            
             document.add(new Paragraph(sectionHeader,secHeaderFont));
             document.add(new Phrase("-------------------------------------------------------------------------",secHeaderFont));
 
             if (! (completedIdName.size() > 0)) {
                 RtfFont listElementFont=new RtfFont("Courier",8);
-                String listing = "There have been no successful media copies";
+                String listing = "There have been no successful media";
                 document.add(new Phrase("\n" + listing,listElementFont));
                 return;
                 
@@ -481,10 +501,10 @@ public class GenVfcuDirReport {
                 RtfFont listElementFont=new RtfFont("Courier",8);
                 
                 if (completedIdName.get(mapId).equals("emuLinkComplete") ) {
-                    listing = "File: " + cdisMap.getFileName() + " Linked UAN: " + siAsst.getOwningUnitUniqueName() + " IRN: " + cdisMap.getCisUniqueMediaId() ;
+                    listing = "File: " + cdisMap.getFileName() + " UAN: " + siAsst.getOwningUnitUniqueName() + " IRN: " + cdisMap.getCisUniqueMediaId() ;
                 }
                 else  {
-                    listing = "File: " + cdisMap.getFileName() + " Ingested UAN: " + siAsst.getOwningUnitUniqueName();
+                    listing = "File: " + cdisMap.getFileName() + " UAN: " + siAsst.getOwningUnitUniqueName();
                 }
                                          
                 document.add(new Phrase("\n" + listing,listElementFont));
