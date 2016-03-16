@@ -235,7 +235,7 @@ public class MetaDataSync {
                     boolean activityLogged = cdisActivity.insertActivity();
                     if (!activityLogged) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "MDS-CALF",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                        errorLog.capture(cdisMap, "UPDAMD",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
                         continue;
                     }
                 }
@@ -245,7 +245,7 @@ public class MetaDataSync {
                     
                     if (!activityLogged) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "MDS-CALF",  "Could not update CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                        errorLog.capture(cdisMap, "CRACTL",  "Could not update CDIS Activity entry: " + cdisMap.getDamsUoiid());   
                         continue;
                     }
                 }
@@ -253,7 +253,7 @@ public class MetaDataSync {
                         
             } catch (Exception e) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "MDS-DMDF", "Error, unable to update Dams with new Metadata " + cdisMap.getDamsUoiid());   
+                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update Dams with new Metadata " + cdisMap.getDamsUoiid());   
             }
         }
     }

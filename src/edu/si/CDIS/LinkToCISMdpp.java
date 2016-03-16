@@ -69,7 +69,7 @@ public class LinkToCISMdpp {
             boolean cisIdUpdate = cdisMap.updateCisUniqueMediaId();
             if (!cisIdUpdate) {
                  ErrorLog errorLog = new ErrorLog ();
-                 errorLog.capture(cdisMap, "LKC-CCUF", "ERROR: unable to record cis_id in CDIS_MAP table ");
+                 errorLog.capture(cdisMap, "UPCISM", "ERROR: unable to record cis_id in CDIS_MAP table ");
                  continue;
             }
             
@@ -87,7 +87,7 @@ public class LinkToCISMdpp {
             boolean secPolicyretrieved = cdisLinkTbl.populateSecPolicyId();
             if (!secPolicyretrieved) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "LKC-DSPF", "ERROR: unable to Update secuirty Policy in DAMS ");
+                errorLog.capture(cdisMap, "UPDAMS", "ERROR: unable to Update secuirty Policy in DAMS ");
                 continue;
             }
                 
@@ -96,7 +96,7 @@ public class LinkToCISMdpp {
             boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
             if (!secPolicyUpdated) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "LKC-DSPF", "ERROR: unable to Update secuirty Policy in DAMS ");
+                errorLog.capture(cdisMap, "UPDAMS", "ERROR: unable to Update secuirty Policy in DAMS ");
                 continue;
             }
                 
@@ -104,7 +104,7 @@ public class LinkToCISMdpp {
             boolean checkSumVldt = validateAllChecksums(cdisMap.getCdisMapId());
             if (! checkSumVldt) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "LKC-FCVF", "ERROR: unable to Validate all checksums with each other");
+                errorLog.capture(cdisMap, "CHKSUM", "ERROR: unable to Validate all checksums with each other");
                 continue;
             }
              

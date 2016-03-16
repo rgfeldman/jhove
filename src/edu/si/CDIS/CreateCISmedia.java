@@ -120,12 +120,12 @@ public class CreateCISmedia {
                             
             if ( objectId == 0 ) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CCM-CMCF", "ERROR: Media Creation Failed"); 
+                errorLog.capture(cdisMap, "CRCISM", "ERROR: Media Creation Failed"); 
                 continue; //Go to the next record 
             }
             else if (objectId == -1 ) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CCM-TONF", "ERROR: Unable to obtain ObjectId from TMS"); 
+                errorLog.capture(cdisMap, "UNLCIS", "ERROR: Unable to obtain ObjectId from TMS"); 
                 continue; //Go to the next record 
             }
                         
@@ -141,7 +141,7 @@ public class CreateCISmedia {
                             
             if (! thumbCreated) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CCM-CTGF", "ERROR: CIS Thumbnail Generation Failed"); 
+                errorLog.capture(cdisMap, "CRCIST", "ERROR: CIS Thumbnail Generation Failed"); 
                 continue;
             }
             
@@ -151,7 +151,7 @@ public class CreateCISmedia {
             boolean objectMapCreated = cdisObjectMap.createRecord();
             if (! objectMapCreated) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CCM-OMCF", "ERROR: ObjectMap Creation Failed"); 
+                errorLog.capture(cdisMap, "CRCDOB", "ERROR: ObjectMap Creation Failed"); 
                 continue;
             }
             

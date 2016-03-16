@@ -86,7 +86,7 @@ public class LinkDamsAndCIS {
         boolean mapCreated = cdisMap.createRecord();
         if (!mapCreated) {
             ErrorLog errorLog = new ErrorLog ();
-            errorLog.capture(cdisMap, "SDH-CMIF", "Could not create CDISMAP entry, retrieving next row");
+            errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
             return false;
         }
             
