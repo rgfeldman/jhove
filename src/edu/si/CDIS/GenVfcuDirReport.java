@@ -384,7 +384,7 @@ public class GenVfcuDirReport {
 		message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
             }
             
-            message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS Activity Report - " + this.rptVendorDir);
+            message.setSubject(CDIS.getProperty("siHoldingUnit") + ": Batch Hot Folder Import Activity Report - " + this.rptVendorDir);
             
             String emailContent = this.statsHeader.replace("\n","<br>");
             
