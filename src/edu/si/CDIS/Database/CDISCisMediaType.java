@@ -40,7 +40,7 @@ public class CDISCisMediaType {
     public boolean populateInCis () {
   
         String sql = "SELECT in_cis_ind " +
-                    "FROM cdis_cis_media_type_id " +
+                    "FROM cdis_cis_media_type_r " +
                     "WHERE cdis_cis_media_type_id = " + getCdisCisMediaTypeId();
         
         logger.log(Level.FINEST,"SQL! " + sql); 
