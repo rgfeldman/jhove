@@ -112,6 +112,8 @@ public class LinkDamsAndCIS {
             cdisMap.populateCdisCisMediaTypeId();   
             CDISCisMediaType cdisMediaType = new CDISCisMediaType();
             
+            cdisMediaType.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
+            
             cdisMediaType.populateInCis();
             if (cdisMediaType.getInCisInd() == 'Y') {
             
