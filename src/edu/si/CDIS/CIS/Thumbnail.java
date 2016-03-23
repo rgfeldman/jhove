@@ -150,7 +150,7 @@ public class Thumbnail {
                 return false;
             }
             else {
-                logger.log(Level.FINER, "Thumbnail successfully updated for renditionID: " + renditionID);
+                logger.log(Level.FINER, "Thumbnail successfully updated for renditionID: " + renditionID);  
             }
                     
         }catch(Exception e) {

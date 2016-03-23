@@ -39,19 +39,19 @@ public class CISThumbnailSync {
             
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
-            if (sqlTypeArr[0].equals("retrieveRenditionIds")) {   
+            if (sqlTypeArr[0].equals("retrieveMapIds")) {   
                 sql = key;    
                 logger.log(Level.FINEST, "SQL: {0}", sql);
             }
         }
                 
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql); 
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 
              ResultSet rs = pStmt.executeQuery() ) {
            
             // For each record in the sql query, add it to the unlinked rendition List
             while (rs.next()) {   
                 mapIdsToSync.add(rs.getInt("cdis_map_id"));
-                logger.log(Level.FINER,"Adding CIS renditionID for CISThumbnailSync update: " + rs.getInt("RenditionID") );
+                logger.log(Level.FINER,"Adding CIS renditionID for CISThumbnailSync update: " + rs.getInt("cdis_map_id") );
             }
             
         } catch (Exception e) {
@@ -83,6 +83,9 @@ public class CISThumbnailSync {
                 cdisActivity.setCdisMapId(mapId);
                 cdisActivity.setCdisStatusCd("CTS");    
                 cdisActivity.insertActivity();
+                
+                try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+                try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 
             }
         }
