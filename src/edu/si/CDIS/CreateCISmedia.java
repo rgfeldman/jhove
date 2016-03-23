@@ -155,9 +155,22 @@ public class CreateCISmedia {
                 continue;
             }
             
+            // Add activity record indicating Media Has been created
             CDISActivityLog activityLog = new CDISActivityLog();
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
+            activityLog.setCdisStatusCd("CMC");
+            activityLog.insertActivity();
+            
+            // Add activity record indicating Media Has been Linked
+            activityLog = new CDISActivityLog();
+            activityLog.setCdisMapId(cdisMap.getCdisMapId());
             activityLog.setCdisStatusCd("LCC");
+            activityLog.insertActivity();
+            
+            // Add activity record indicating Media Has been Thumbnail Synced
+            activityLog = new CDISActivityLog();
+            activityLog.setCdisMapId(cdisMap.getCdisMapId());
+            activityLog.setCdisStatusCd("CTS");
             activityLog.insertActivity();
         }
     }
