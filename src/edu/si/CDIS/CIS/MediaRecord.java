@@ -159,14 +159,14 @@ public class MediaRecord {
 
         //get the correct publicAccess value based on the is_restricted value in DAMS
         siAsst.populateIsRestricted();
-        switch (siAsst.getIsRestricted()) {
-            case "Yes" :
-                mediaMaster.setPublicAccess(1);
-                break;
-            default:
-                mediaMaster.setPublicAccess(1);
-                break;
-          
+        if (siAsst.getIsRestricted() == null ) {
+            mediaMaster.setPublicAccess(0);
+        }
+        else if (siAsst.getIsRestricted() == "No" ) {
+             mediaMaster.setPublicAccess(1);
+        }
+        else  {
+           mediaMaster.setPublicAccess(0);    
         }
         
         returnSuccess = mediaMaster.insertNewRecord();

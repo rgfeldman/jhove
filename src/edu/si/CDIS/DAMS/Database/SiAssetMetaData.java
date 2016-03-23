@@ -27,7 +27,7 @@ public class SiAssetMetaData {
     public HashMap <String,Integer> metaDataDBLengths; 
       
     public String getIsRestricted() {
-        return this.isRestricted;
+        return this.isRestricted == null ? "" : this.isRestricted;
     }
      
     public String getOwningUnitUniqueName() {
