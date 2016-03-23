@@ -158,15 +158,17 @@ public class MediaRecord {
         MediaMaster mediaMaster = new MediaMaster();
 
         //get the correct publicAccess value based on the is_restricted value in DAMS
+        // The only time the public access should not be set in TMS, is when the restricted flag in DAMS is set to "YES"
+        // The default behavior in DAMS IS PUBLIC
         siAsst.populateIsRestricted();
         if (siAsst.getIsRestricted() == null ) {
-            mediaMaster.setPublicAccess(0);
+            mediaMaster.setPublicAccess(1);
         }
-        else if (siAsst.getIsRestricted() == "No" ) {
-             mediaMaster.setPublicAccess(1);
+        else if (siAsst.getIsRestricted() == "Yes" ) {
+             mediaMaster.setPublicAccess(0);
         }
         else  {
-           mediaMaster.setPublicAccess(0);    
+           mediaMaster.setPublicAccess(1);    
         }
         
         returnSuccess = mediaMaster.insertNewRecord();
