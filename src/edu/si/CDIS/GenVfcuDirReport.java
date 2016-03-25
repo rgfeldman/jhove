@@ -190,7 +190,8 @@ public class GenVfcuDirReport {
                      "  FROM   cdis_map b, " +
                      "         cdis_activity_log c " +
                      "  WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                     "  AND   c.cdis_status_cd in ('LDC','ERR')) " +
+                     "  AND b.cdis_map_id = c.cdis_map_id " +
+                     "  AND   c.cdis_status_cd in ('" + CDIS.getProperty("rptStatus") + "','ERR')) " +
                      "AND  NOT EXISTS ( " +  
                      "  SELECT 'X'     " +
                      "  FROM   vfcu_activity_log d " +     
@@ -384,7 +385,12 @@ public class GenVfcuDirReport {
 		message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
             }
             
-            message.setSubject(CDIS.getProperty("siHoldingUnit") + ": Batch Hot Folder Import Activity Report - " + this.rptVendorDir);
+            if (CDIS.getProperty("rptStatus").equals("LDC")) {
+                message.setSubject(CDIS.getProperty("siHoldingUnit") + ": Batch Hot Folder Import Activity Report - " + this.rptVendorDir);
+            }
+            else {
+                message.setSubject(CDIS.getProperty("siHoldingUnit") + ": Batch Hot Folder Integration Activity Report - " + this.rptVendorDir);
+            }
             
             String emailContent = this.statsHeader.replace("\n","<br>");
             
