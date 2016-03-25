@@ -9,14 +9,13 @@ import edu.si.CDIS.Database.CDISActivityLog;
 
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.ArrayList;
+import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.CDIS.Database.CDISMap;
 
 import edu.si.CDIS.CIS.Thumbnail;
-
-
-
 
 
 public class CISThumbnailSync {
@@ -55,7 +54,7 @@ public class CISThumbnailSync {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+           logger.log(Level.FINER,"Error, unable to get list of records to thumbnail sync: ", e );
         }    
         return;  
     }
@@ -74,22 +73,35 @@ public class CISThumbnailSync {
         
         //create the thumbnail in TMS from those DAMS images 
         for (Integer mapId : mapIdsToSync) {
+            CDISMap cdisMap = new CDISMap();
+            cdisMap.setCdisMapId(mapId);
+            cdisMap.populateMapInfo();
             
             Thumbnail thumbnail = new Thumbnail();
             boolean blobUpdated = thumbnail.generate (mapId);
-             
-            if (blobUpdated) {
-                CDISActivityLog cdisActivity = new CDISActivityLog();
-                cdisActivity.setCdisMapId(mapId);
-                cdisActivity.setCdisStatusCd("CTS");    
-                cdisActivity.insertActivity();
-                
-                try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-                try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-                
+            
+            if (! blobUpdated) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CRCIST", "ERROR: CIS Thumbnail Generation Failed"); 
+                continue;
             }
+            
+            // we have successfully updated the Blob if we got to this point, mark it as success in the db
+            CDISActivityLog cdisActivity = new CDISActivityLog();
+            cdisActivity.setCdisMapId(mapId);
+            cdisActivity.setCdisStatusCd("CTS");    
+            cdisActivity.insertActivity();
+                
+            try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+                
         }
         
+        //commit anything not committed yet
+        try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+        try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+        
     }
+    
     
 }

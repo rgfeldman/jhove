@@ -85,11 +85,10 @@ public class Thumbnail {
             cmd.run(opGenThumbnail);  
             
         } catch(Exception e) {
-                e.printStackTrace();
+            logger.log(Level.FINER, "Error, could not obtain thumbnail from DAMS ", e ); 
+            return false;
         }
        
-
-        
         //Capture the image as a binary stream
         try (InputStream is = new BufferedInputStream(new FileInputStream(thumbImageName)) ) {
             
@@ -100,7 +99,8 @@ public class Thumbnail {
             logger.log(Level.FINER, "Found DAMS file: " + thumbImageName + " Size: " + fileSize ); 
             
         } catch(Exception e) {
-            e.printStackTrace();
+            logger.log(Level.FINER, "Error, could not obtain thumbnail from binary stream ", e ); 
+            return false;
             
 	} finally {
             try {
