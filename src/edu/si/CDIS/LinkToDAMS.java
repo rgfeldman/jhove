@@ -48,7 +48,7 @@ public class LinkToDAMS {
         cdisMap.populateIdForNameNullUoiid();
                 
         ErrorLog errorLog = new ErrorLog ();
-        errorLog.capture(cdisMap, "LKD-DIPF", "Error, Record failed upon ingest");
+        errorLog.capture(cdisMap, "INGDAM", "Error, Record failed upon ingest");
     }
     
     private void checkForFailedFiles () {
@@ -170,7 +170,7 @@ public class LinkToDAMS {
             boolean uoiidUpdated = cdisMap.updateUoiid();
             if (!uoiidUpdated) {
                  ErrorLog errorLog = new ErrorLog ();
-                 errorLog.capture(cdisMap, "LKD-CUIF", "ERROR: unable to update UOIID in CDIS for uoiid: " + uois.getUoiid()  );
+                 errorLog.capture(cdisMap, "UPDAMI", "ERROR: unable to update UOIID in CDIS for uoiid: " + uois.getUoiid()  );
                  continue;
             }
                 
@@ -183,7 +183,7 @@ public class LinkToDAMS {
             boolean preservationInfoAdded = siPreservation.insertRow();
             if (! preservationInfoAdded) {
                  ErrorLog errorLog = new ErrorLog ();
-                 errorLog.capture(cdisMap, "LKD-DPUF", "Error, unable to insert preservation data");
+                 errorLog.capture(cdisMap, "UPDAMP", "Error, unable to insert preservation data");
                  continue;
             }
             
@@ -197,7 +197,7 @@ public class LinkToDAMS {
                 boolean subFileDelivered = stagedFile.deliverSubFile(CDIS.getProperty("emuPickupLocation"));
                 if (! subFileDelivered) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "LKD-SEPF", "Error, unable to move file to emu pickup location");
+                    errorLog.capture(cdisMap, "CPEMUP", "Error, unable to move file to emu pickup location");
                     continue;
                 }
                 
