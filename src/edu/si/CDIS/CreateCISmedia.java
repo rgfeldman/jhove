@@ -99,7 +99,8 @@ public class CreateCISmedia {
                 
                 boolean mapCreated = cdisMap.createRecord();
                 if (!mapCreated) {
-                    logger.log(Level.FINER, "Error, unable to create CDIS_MAP record ");
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "CRCDMP", "Error, Unable to create CDISMAP entry");  
                     continue;
                 }
            

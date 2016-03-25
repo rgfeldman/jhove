@@ -220,7 +220,7 @@ public class MetaDataSync {
                 updateCount = uois.updateMetaDataStateDate();
                 if (updateCount < 1) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "MDS-DMDF", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
+                    errorLog.capture(cdisMap, "UPDAMD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
                     continue; 
                 }
                 
@@ -235,7 +235,7 @@ public class MetaDataSync {
                     boolean activityLogged = cdisActivity.insertActivity();
                     if (!activityLogged) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "UPDAMD",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                        errorLog.capture(cdisMap, "CRACTL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
                         continue;
                     }
                 }
