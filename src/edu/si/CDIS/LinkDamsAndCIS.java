@@ -23,6 +23,7 @@ import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISCisMediaType;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.utilties.ErrorLog;
    
@@ -157,6 +158,12 @@ public class LinkDamsAndCIS {
             
             if (sql.contains("?BASE_NAME?") ) {
                 currentIterationSql = sql.replace("?BASE_NAME?",neverLinkedDamsIds.get(uoiId));
+            }
+            else if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?") ) {
+                SiAssetMetaData siAsst = new SiAssetMetaData();
+                siAsst.setUoiid(uoiId);
+                siAsst.getOwningUnitUniqueName();
+                currentIterationSql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?",siAsst.getOwningUnitUniqueName());
             }
             else {
                 currentIterationSql = sql;
