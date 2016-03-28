@@ -55,20 +55,20 @@ public class LinkToDAMS {
         
         // look in all hot folder failed folders to check if there are files there, if there are, record them in error log
         boolean lastHotFolder = false;
-        int hotFolderIncrement = 1;
+        int failedFolderIncrement = 1;
         
         while (!lastHotFolder) {
         
-            String hotFolderBaseName = CDIS.getProperty("failedFolderArea") + "_" + hotFolderIncrement;
-            File hotFolderBase = new File (hotFolderBaseName);
+            String failedFolderBaseName = CDIS.getProperty("failedFolderArea") + "_" + failedFolderIncrement;
+            File failedFolderBase = new File (failedFolderBaseName);
          
-            logger.log(Level.FINER, "hotFolderBaseName: " +  hotFolderBaseName);
+            logger.log(Level.FINER, "hotFolderBaseName: " +  failedFolderBaseName);
             
-            if (hotFolderBase.exists()) {
+            if (failedFolderBase.exists()) {
                 int numFailedFiles = 0;
 
                 //count files in failed folder master area
-                String failedFolderNm = hotFolderBaseName + "\\FAILED";
+                String failedFolderNm = failedFolderBaseName + "\\FAILED";
                 File failedHotFolder = new File(failedFolderNm);
                 
                 logger.log(Level.FINER, "FailedDir: " + failedFolderNm);
@@ -101,7 +101,7 @@ public class LinkToDAMS {
                 }
                 
                 //increment to the next hot folder in the series
-                hotFolderIncrement ++;
+                failedFolderIncrement ++;
                 
             }
             else {
