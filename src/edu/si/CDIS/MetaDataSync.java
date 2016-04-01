@@ -10,13 +10,15 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
-import edu.si.CDIS.utilties.ScrubStringForDb;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
+import edu.si.CDIS.DAMS.Database.TeamsLinks;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.CDIS.utilties.ScrubStringForDb;
 
 public class MetaDataSync {
 
@@ -172,6 +174,66 @@ public class MetaDataSync {
         } 
     }
     
+    private boolean performUpdates (SiAssetMetaData siAsst, CDISMap cdisMap, boolean managedByCIS) {
+        
+        //generate the update statement from the variables obtained in the mapData
+        generateUpdate(siAsst, managedByCIS);
+ 
+        // Perform the update to the Dams Data
+        int updateCount = updateDamsData();
+                
+        // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
+        if (updateCount < 1) {
+            return false;
+        }
+        else if (updateCount > 1) {
+            logger.log(Level.ALL, "Warning, updated multiple rows of metadata for uoi_id: " + siAsst.getUoiid());
+        }
+                
+        Uois uois = new Uois();
+        uois.setUoiid(siAsst.getUoiid());
+        updateCount = uois.updateMetaDataStateDate();
+        if (updateCount < 1) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "UPDAMD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
+            return false; 
+        }
+                
+        // see if there already is a row that in the activity_log that has been synced
+        CDISActivityLog cdisActivity = new CDISActivityLog();
+        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+        if (managedByCIS) {
+            cdisActivity.setCdisStatusCd("MDS");
+        }
+        else {
+            cdisActivity.setCdisStatusCd("MDP");
+        }
+        
+        boolean idFound = cdisActivity.populateIdFromMapIdStat();
+        if (! idFound ) {                               
+            // Insert row into activity_log table
+            boolean activityLogged = cdisActivity.insertActivity();
+            if (!activityLogged) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CRACTL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                return false;
+            }
+        }
+        else {
+            // Update the date in activity_log table on the existing row
+            boolean activityLogged = cdisActivity.updateActivityDtCurrent();
+                    
+            if (!activityLogged) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CRACTL",  "Could not update CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                return false;
+            }    
+        }
+        
+        return true;
+        
+    }
+    
     
     /*  Method :       processRenditionList
         Arguments:      
@@ -201,59 +263,37 @@ public class MetaDataSync {
                     throw new Exception ();
                 }
                 
-                //generate the update statement from the variables obtained in the mapData
-                generateUpdate(siAsst);
- 
-                // Perform the update to the Dams Data
-                int updateCount = updateDamsData();
+                performUpdates(siAsst, cdisMap, true);
                 
-                // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
-                if (updateCount < 1) {
-                    throw new Exception (); 
-                }
-                else if (updateCount > 1) {
-                    logger.log(Level.ALL, "Warning, updated multiple rows of metadata for uoi_id: " + cdisMap.getDamsUoiid());
-                }
                 
-                Uois uois = new Uois();
-                uois.setUoiid(cdisMap.getDamsUoiid());
-                updateCount = uois.updateMetaDataStateDate();
-                if (updateCount < 1) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPDAMD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
-                    continue; 
+                // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
+                // by CDIS or not.  We get only the direct parent for now...later we may want to add more functionality
+                TeamsLinks teamsLinks = new TeamsLinks();
+                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
+                teamsLinks.setLinkType("CHILD");
+                boolean parentRetrieved = teamsLinks.populateDestValue();
+                
+                //Only update a parent record if we found one, or else just skip this step.
+                if (! parentRetrieved) {
+                    logger.log(Level.ALL, "Error: unable to obtain parent id to sync");
+                    continue;
+                }
+                if (teamsLinks.getDestValue() == null) {
+                     logger.log(Level.ALL, "No parent id to sync");
+                     continue;
                 }
                 
-                // see if there already is a row that in the activity_log that has been synced
-                CDISActivityLog cdisActivity = new CDISActivityLog();
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("MDS");
+                // set the current uoiid to what we obtained in the teams_links table for update
+                siAsst.setUoiid (teamsLinks.getDestValue());
                 
-                boolean idFound = cdisActivity.populateIdFromMapIdStat();
-                if (! idFound ) {                               
-                    // Insert row into activity_log table
-                    boolean activityLogged = cdisActivity.insertActivity();
-                    if (!activityLogged) {
-                        ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "CRACTL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
-                        continue;
-                    }
-                }
-                else {
-                    // Update the date in activity_log table on the existing row
-                    boolean activityLogged = cdisActivity.updateActivityDtCurrent();
-                    
-                    if (!activityLogged) {
-                        ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "CRACTL",  "Could not update CDIS Activity entry: " + cdisMap.getDamsUoiid());   
-                        continue;
-                    }
-                }
+                //For each parent or child, generate update statement.  should be the same, except certain fields we do not update
+                //for parent/children.  These include public_use, max_ids_size, is_restricted
+                performUpdates(siAsst, cdisMap, false);
                 
                         
             } catch (Exception e) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update Dams with new Metadata " + cdisMap.getDamsUoiid());   
+                errorLog.capture(cdisMap, "UPDAMMP", "Error, unable to update Dams with new parent Metadata " + cdisMap.getDamsUoiid());   
             }
         }
     }
@@ -265,7 +305,7 @@ public class MetaDataSync {
         Description:    generates the update sql for updating metadata in the DAMS SI_ASSET_METADATA table
         RFeldman 2/2015
     */
-    private boolean generateUpdate(SiAssetMetaData siAsst) {
+    private boolean generateUpdate(SiAssetMetaData siAsst, boolean managedByCIS) {
 
         // Go through the list and 
         try {
@@ -286,7 +326,18 @@ public class MetaDataSync {
                             columnValue = columnValue.substring(0,maxColumnLength);
                     }  
                 } 
-                        
+                
+                //Skip certain fields in metadata update if this is only based on parent record
+                if (! managedByCIS) {
+                    switch (column) {     
+                        case "PUBLIC_USE" :
+                        case "MAX_IDS_SIZE" :
+                        case "IS_RESTRICTED" :
+                        case "ADMIN_CONTENT_TYPE" :    
+                            continue;
+                    }
+                }
+                
                 if (! firstIteration) {
                     updateStatement = updateStatement + ", ";
                 }
