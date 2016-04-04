@@ -162,7 +162,7 @@ public class LinkDamsAndCIS {
             else if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?") ) {
                 SiAssetMetaData siAsst = new SiAssetMetaData();
                 siAsst.setUoiid(uoiId);
-                siAsst.getOwningUnitUniqueName();
+                siAsst.populateOwningUnitUniqueName();
                 currentIterationSql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?",siAsst.getOwningUnitUniqueName());
             }
             else {
