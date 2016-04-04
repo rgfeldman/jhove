@@ -54,8 +54,6 @@ public class GenTimeframeReport {
     private Document document;
     private String rptFile;
     private String completedStepSql;
-    private Integer masterMd5Id;
-    private Integer childMd5Id;
     
     private boolean create () {
         
@@ -91,38 +89,6 @@ public class GenTimeframeReport {
         
         return true;
     }
-    
-    int countPendingRecords () {
-        int numPendingRecords = 0;
-        
-        String sql = "SELECT COUNT(*) " +
-                     "FROM   vfcu_media_file a " +
-                     "WHERE  a.vfcu_md5_file_id in (" + this.masterMd5Id + ", " + this.childMd5Id + ") " +
-                     "AND  NOT EXISTS ( " +
-                     "    SELECT 'X' " +
-                     "    FROM   cdis_map b, " +
-                     "           cdis_activity_log c " +
-                     "    WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                     "    AND   c.cdis_status_cd in ('LDC','ER'))";
-        
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-            
-            logger.log(Level.FINEST, "SQL: {0}", sql);
-            
-            if (rs.next()) {
-                numPendingRecords = rs.getInt(1);
-            }
-            
-        }
-        catch(Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to count list of pending records", e);
-            numPendingRecords = -1;
-	}
-        
-        return numPendingRecords;
-    }
-    
     
     public void generate () {
         
