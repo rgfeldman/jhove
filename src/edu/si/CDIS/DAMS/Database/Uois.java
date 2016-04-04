@@ -15,11 +15,11 @@ public class Uois {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
-    private String uoiid;
-    private String name;
     private Integer bitmapHeight;
     private Integer bitmapWidth; 
-    
+    private String masterObjMimeType; 
+    private String name;
+    private String uoiid;
     
     public Integer getBitmapHeight () {
         return this.bitmapHeight;
@@ -27,6 +27,10 @@ public class Uois {
     
     public Integer getBitmapWidth () {
         return this.bitmapWidth;
+    }
+    
+    public String getMasterObjMimeType () {
+        return this.masterObjMimeType;
     }
         
     public String getName () {
@@ -71,7 +75,7 @@ public class Uois {
     
     public boolean populateUoisData() {
         
-        String sql = "SELECT name, bitmap_height, bitmap_width " +
+        String sql = "SELECT name, bitmap_height, bitmap_width, master_obj_mime_type " +
                     "FROM towner.uois " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
@@ -83,6 +87,7 @@ public class Uois {
                 setName(rs.getString("name"));
                 this.bitmapHeight = rs.getInt("bitmap_height");
                 this.bitmapWidth = rs.getInt("bitmap_width");
+                this.bitmapWidth = rs.getInt("master_obj_mime_type");
             }        
         } catch (Exception e) {
                 logger.log(Level.FINER, "unable to get uois information from database", e );

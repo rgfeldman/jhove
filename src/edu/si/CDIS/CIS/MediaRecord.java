@@ -79,12 +79,10 @@ public class MediaRecord {
         
         mediaFiles.setPixelH(uois.getBitmapHeight());
         mediaFiles.setPixelW(uois.getBitmapWidth());
+        mediaFiles.setMediaFormatId(Integer.parseInt(CDIS.getProperty("mediaFormatID")));
         
         String extensionlessFileName = uois.getName().substring(0, uois.getName().lastIndexOf("."));
-        String fileType = uois.getName().substring(uois.getName().lastIndexOf(".")+1, uois.getName().length()).toLowerCase();
-        
         logger.log(Level.FINER, "extensionlessFileName: " + extensionlessFileName );
-        logger.log(Level.FINER, "FileType: " + fileType );
         
         mediaXrefs.calculateRank(extensionlessFileName);
         
@@ -196,7 +194,7 @@ public class MediaRecord {
         
         // Insert into MediaFiles
         siAsst.populateOwningUnitUniqueName();
-        if (fileType.equalsIgnoreCase("PDF")) {
+        if (uois.getMasterObjMimeType().equals("application/pdf")) {
                 mediaFiles.setPathId(Integer.parseInt (CDIS.getProperty("PDFPathId")));
                 mediaFiles.setFileName (siAsst.getOwningUnitUniqueName() +  ".pdf");
         }
