@@ -263,9 +263,17 @@ public class MetaDataSync {
                     throw new Exception ();
                 }
                 
-                performUpdates(siAsst, cdisMap, true);
+                boolean rowUpdated = performUpdates(siAsst, cdisMap, true);
                 
+                if (! rowUpdated) {
+                    //go to the next record, no need to sync children records, error should already be recorded
+                    continue;
+                } 
                 
+                if (CDIS.getProperty("syncDamsChildren").equals("false") || CDIS.getProperty("syncDamsChildren") == null )  {
+                    //skip next steps, they are only for syncing children records
+                    continue;
+                }
                 // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
                 // by CDIS or not.  We get only the direct parent for now...later we may want to add more functionality
                 TeamsLinks teamsLinks = new TeamsLinks();
