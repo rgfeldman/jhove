@@ -179,7 +179,7 @@ public class GenVfcuDirReport {
         return true;
     }
     
-    int countPendingRecords () {
+    int countPendingRecordsLDC () {
         int numPendingRecords = 0;
         
         String sql = "SELECT COUNT(*) " +
@@ -192,6 +192,43 @@ public class GenVfcuDirReport {
                      "  WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
                      "  AND b.cdis_map_id = c.cdis_map_id " +
                      "  AND   c.cdis_status_cd in ('" + CDIS.getProperty("rptStatus") + "','ERR')) " +
+                     "AND  NOT EXISTS ( " +  
+                     "  SELECT 'X'     " +
+                     "  FROM   vfcu_activity_log d " +     
+                     "  WHERE a.vfcu_media_file_id = d.vfcu_media_file_id " +   
+                     "  AND   d.vfcu_status_cd in ('ER','OH')) ";
+        
+        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery() ) {
+            
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+            if (rs.next()) {
+                numPendingRecords = rs.getInt(1);
+            }
+            
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to count list of pending records", e);
+            numPendingRecords = -1;
+	}
+        
+        return numPendingRecords;
+    }
+    
+    int countPendingRecordsLCC () {
+        int numPendingRecords = 0;
+        
+        String sql = "SELECT COUNT(*) " +
+                     "FROM   vfcu_media_file a " +
+                     "WHERE  a.vfcu_md5_file_id in (" + this.childMd5Id + ") " +
+                     "AND  NOT EXISTS ( " +
+                     "  SELECT 'X' " +
+                     "  FROM   cdis_map b, " +
+                     "         cdis_activity_log c " +
+                     "  WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
+                     "  AND b.cdis_map_id = c.cdis_map_id " +
+                     "  AND   c.cdis_status_cd in ('LCC','ERR')) " +
                      "AND  NOT EXISTS ( " +  
                      "  SELECT 'X'     " +
                      "  FROM   vfcu_activity_log d " +     
@@ -234,8 +271,15 @@ public class GenVfcuDirReport {
             return;
         }
         
-        //check for completion/errors (counts) of md5 file
-        int numPendingRecords = countPendingRecords();
+        int numPendingRecords = 0;
+        
+        if (CDIS.getProperty("rptStatus").equals("LCC")) {
+            //check for completion/errors (counts) of md5 file
+            numPendingRecords = countPendingRecordsLCC();
+        }
+        else {
+            numPendingRecords = countPendingRecordsLDC();
+        }
         
         if (! (numPendingRecords == 0)) {
             logger.log(Level.FINEST, "Some records are in pending state...holding off for report generation.");
