@@ -250,59 +250,54 @@ public class MetaDataSync {
             try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
             CDISMap cdisMap = new CDISMap();
-
-            try {
                 
-                cdisMap.setCdisMapId(iter.next());
-                cdisMap.populateMapInfo();
-                siAsst.setUoiid (cdisMap.getDamsUoiid());
+            cdisMap.setCdisMapId(iter.next());
+            cdisMap.populateMapInfo();
+            siAsst.setUoiid (cdisMap.getDamsUoiid());
                 
-                // execute the SQL statment to obtain the metadata and populate variables.  They key value is RenditionID
-                boolean dataMappedFromCIS = mapData(cdisMap);
-                if (! dataMappedFromCIS) {
-                    throw new Exception ();
-                }
-                
-                boolean rowUpdated = performUpdates(siAsst, cdisMap, true);
-                
-                if (! rowUpdated) {
-                    //go to the next record, no need to sync children records, error should already be recorded
-                    continue;
-                } 
-                
-                if (CDIS.getProperty("syncDamsChildren").equals("false") || CDIS.getProperty("syncDamsChildren") == null )  {
-                    //skip next steps, they are only for syncing children records
-                    continue;
-                }
-                // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
-                // by CDIS or not.  We get only the direct parent for now...later we may want to add more functionality
-                TeamsLinks teamsLinks = new TeamsLinks();
-                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
-                teamsLinks.setLinkType("CHILD");
-                boolean parentRetrieved = teamsLinks.populateDestValue();
-                
-                //Only update a parent record if we found one, or else just skip this step.
-                if (! parentRetrieved) {
-                    logger.log(Level.ALL, "Error: unable to obtain parent id to sync");
-                    continue;
-                }
-                if (teamsLinks.getDestValue() == null) {
-                     logger.log(Level.ALL, "No parent id to sync");
-                     continue;
-                }
-                
-                // set the current uoiid to what we obtained in the teams_links table for update
-                siAsst.setUoiid (teamsLinks.getDestValue());
-                
-                //For each parent or child, generate update statement.  should be the same, except certain fields we do not update
-                //for parent/children.  These include public_use, max_ids_size, is_restricted
-                performUpdates(siAsst, cdisMap, false);
-                
-                        
-            } catch (Exception e) {
+             // execute the SQL statment to obtain the metadata and populate variables.  They key value is RenditionID
+            boolean dataMappedFromCIS = mapData(cdisMap);
+            if (! dataMappedFromCIS) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPDAMMP", "Error, unable to update Dams with new parent Metadata " + cdisMap.getDamsUoiid());   
+                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
+                continue; 
             }
+                
+            boolean rowUpdated = performUpdates(siAsst, cdisMap, true);
+                
+            if (! rowUpdated) {
+                //go to the next record, no need to sync children records, error should already be recorded
+                continue;
+            } 
+                
+            if (CDIS.getProperty("syncDamsChildren") == null  || CDIS.getProperty("syncDamsChildren").equals("false") ) {
+                //skip next steps, they are only for syncing children records
+                continue;
+            }
+            
+            // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
+            // by CDIS or not.  We get only the direct parent for now...later we may want to add more functionality
+            TeamsLinks teamsLinks = new TeamsLinks();
+            teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
+            teamsLinks.setLinkType("CHILD");
+            boolean parentRetrieved = teamsLinks.populateDestValue();
+                
+            //Only update a parent record if we found one, or else just skip this step.
+            if (! parentRetrieved) {
+                logger.log(Level.ALL, "Error: unable to obtain parent id to sync");
+                continue;
+            }
+            if (teamsLinks.getDestValue() == null) {
+                logger.log(Level.ALL, "No parent id to sync");
+                continue;
+            }
+                
+            // set the current uoiid to what we obtained in the teams_links table for update
+            siAsst.setUoiid (teamsLinks.getDestValue());
+                
+            //For each parent or child, generate update statement.  should be the same, except certain fields we do not update
+            //for parent/children.  These include public_use, max_ids_size, is_restricted
+            performUpdates(siAsst, cdisMap, false);
         }
     }
     

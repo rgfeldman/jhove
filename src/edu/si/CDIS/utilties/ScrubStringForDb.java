@@ -16,9 +16,17 @@ public class ScrubStringForDb {
         String newString;
         
         // remove & for easy insert into db
-        newString = inputString.replaceAll("&", "and");
-		
-	//escape any single quotes
+        //newString = inputString.replaceAll("&", "and");
+	
+        //substitute any 'right' apostrophes to a pair of single quotes
+        newString = inputString.replaceAll("\u2019", "'");
+        
+        //substitute 'em dash' for regular dash 
+        newString = newString.replaceAll("\u2012", "-");
+        
+        newString = newString.replaceAll("\u2013", "-");
+        
+	//double any single quotes
 	newString = newString.replaceAll("'", "''");
         
         // remove leading and trailing spaces
