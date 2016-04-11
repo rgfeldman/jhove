@@ -87,7 +87,7 @@ public class Uois {
                 setName(rs.getString("name"));
                 this.bitmapHeight = rs.getInt("bitmap_height");
                 this.bitmapWidth = rs.getInt("bitmap_width");
-                this.bitmapWidth = rs.getInt("master_obj_mime_type");
+                this.masterObjMimeType = rs.getString("master_obj_mime_type");
             }        
         } catch (Exception e) {
                 logger.log(Level.FINER, "unable to get uois information from database", e );
