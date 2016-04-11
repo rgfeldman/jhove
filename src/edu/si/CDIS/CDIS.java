@@ -262,8 +262,8 @@ public class CDIS {
         CDIS cdis = new CDIS();
         
         // Delete old log and report files
-        cdis.deleteLogs("rpt","CDISRPT-",14);
-        cdis.deleteLogs("log","CDISLog-",14);
+        cdis.deleteLogs("rpt","CDISRPT-",21);
+        cdis.deleteLogs("log","CDISLog-",21);
         
         // Check if the required number of arguments are inputted
         if(args.length < 1) {
