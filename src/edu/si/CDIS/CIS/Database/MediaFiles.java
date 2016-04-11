@@ -21,17 +21,21 @@ public class MediaFiles {
     private int fileId;
     private String fileName;
     private Integer pathId;
-    private Integer renditionId;
-    
+    private int mediaFormatId;
     private int pixelH;
     private int pixelW;
-    
+    private Integer renditionId;
+       
     public int getFileId () {
         return this.fileId;
     }
     
     public String getFileName () {
         return this.fileName;
+    }
+    
+    public int getMediaFormatId () {
+        return this.mediaFormatId;
     }
     
     public int getPathId () {
@@ -52,6 +56,10 @@ public class MediaFiles {
     
     public void setFileName (String fileName) {
         this.fileName = fileName;
+    }
+    
+    public void setMediaFormatId (int mediaFormatId) {
+        this.mediaFormatId = mediaFormatId;
     }
     
     public void setPathId (Integer pathId) {
@@ -91,7 +99,7 @@ public class MediaFiles {
                         "'" + getFileName() + "', " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
-                        Integer.parseInt (CDIS.getProperty("mediaFormatID")) + ", " +
+                        getMediaFormatId() + ", " +
                         getPixelH() + ", " +
                         getPixelW() + ")" ;
        
