@@ -299,6 +299,12 @@ public class GenVfcuDirReport {
         this.failedIdName = new LinkedHashMap<>();
         genFailedIdList ();
         
+        //only continue if the completedList and FailedList have reoords
+        if (this.completedIdName.isEmpty() && this.failedIdName.isEmpty() ) {
+            logger.log(Level.FINEST, "No Rows to report, exiting");
+            return;
+        }
+        
         statisticsGenerate();
         
         try {
@@ -319,7 +325,7 @@ public class GenVfcuDirReport {
         
         //close the Document
         document.close();
-        
+ 
         if (CDIS.getProperty("vfcuDirEmailList") != null) { 
             //send email to list
             logger.log(Level.FINEST, "Need To send Email Report");
