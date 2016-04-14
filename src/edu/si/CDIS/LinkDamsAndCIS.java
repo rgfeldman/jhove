@@ -77,7 +77,7 @@ public class LinkDamsAndCIS {
         CDISMap cdisMap = new CDISMap();
         cdisMap.setCisUniqueMediaId(cisIdentifier);     
         cdisMap.setDamsUoiid(uoiId);
-        cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")));
+        cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("linkedMediaTypeId")));
                 
         Uois uois = new Uois();
         uois.setUoiid(uoiId);

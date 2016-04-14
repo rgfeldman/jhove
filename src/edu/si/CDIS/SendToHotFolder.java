@@ -26,7 +26,6 @@ import edu.si.CDIS.utilties.ErrorLog;
 public class SendToHotFolder {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    private String cisSourceDB;
     
     LinkedHashMap <String,String> masterMediaIds; 
     
@@ -41,9 +40,6 @@ public class SendToHotFolder {
                         we check DAMS for an already existing image before we choose to create a new one.
         RFeldman 3/2015
     */
-    
-    
-    
     private void processList () {
                
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
@@ -61,7 +57,7 @@ public class SendToHotFolder {
             CDISMap cdisMap = new CDISMap();                           
             cdisMap.setFileName(masterMediaIds.get(uniqueMediaId));
             cdisMap.setVfcuMediaFileId(Integer.parseInt(uniqueMediaId));
-            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisRawCisMediaTypeId")));
+            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("masterCisMediaTypeId")));
             
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
             boolean mapEntryCreated = cdisMap.createRecord();
@@ -91,51 +87,54 @@ public class SendToHotFolder {
                 continue;
             }
             
-            VFCUMediaFile vfcuMediafile = new VFCUMediaFile();
-            vfcuMediafile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
+            if (CDIS.getProperty("useMasterSubPairs").equals("true") ) {
+                
+                VFCUMediaFile vfcuMediafile = new VFCUMediaFile();
+                vfcuMediafile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
             
-            // Get the child record
-            int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
-            if (! (childVfcuMediaFileId > 0 )) {
-                logger.log(Level.FINER, "Could not get child ID");
-                continue;
-            }
-            vfcuMediafile.setVfcuMediaFileId(childVfcuMediaFileId);
+                // Get the child record
+                int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
+                if (! (childVfcuMediaFileId > 0 )) {
+                    logger.log(Level.FINER, "Could not get child ID");
+                    continue;
+                }
+                vfcuMediafile.setVfcuMediaFileId(childVfcuMediaFileId);
 
-            vfcuMediafile.populateMediaFileName();
+                vfcuMediafile.populateMediaFileName();
                     
-            cdisMap = new CDISMap();
+                cdisMap = new CDISMap();
 
-            cdisMap.setFileName(vfcuMediafile.getMediaFileName());
-            cdisMap.setVfcuMediaFileId(vfcuMediafile.getVfcuMediaFileId());
-            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisLinkedCisMediaTypeId")));
+                cdisMap.setFileName(vfcuMediafile.getMediaFileName());
+                cdisMap.setVfcuMediaFileId(vfcuMediafile.getVfcuMediaFileId());
+                cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisLinkedCisMediaTypeId")));
             
-            // put the entry into the CDIS_MAP table
-            mapEntryCreated = cdisMap.createRecord();
+                // put the entry into the CDIS_MAP table
+                mapEntryCreated = cdisMap.createRecord();
             
-             if (!mapEntryCreated) { 
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
+                if (!mapEntryCreated) { 
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
                     
-                //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
-                it.remove();
-                continue;
-            }
+                    //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
+                    it.remove();
+                        continue;
+                }
+             
+                //Log into the activity table
+                cdisActivity = new CDISActivityLog();
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd("MIC");    
+                activityLogged = cdisActivity.insertActivity();
+                if (!activityLogged) {
+                    logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                    //Remove from the list of renditions to ingest, we dont want to bring this file over without an activity_log entry
+                    it.remove();
                 
-            //Log into the activity table
-            cdisActivity = new CDISActivityLog();
-            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("MIC");    
-            activityLogged = cdisActivity.insertActivity();
-            if (!activityLogged) {
-                logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
-                 //Remove from the list of renditions to ingest, we dont want to bring this file over without an activity_log entry
-                it.remove();
+                    //rollback the database to remove the map Entry
+                    try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().rollback(); } catch (Exception e) { e.printStackTrace(); }
                 
-                //rollback the database to remove the map Entry
-                try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().rollback(); } catch (Exception e) { e.printStackTrace(); }
-                
-                continue;
+                    continue;
+                }
             }
         }
         
@@ -213,44 +212,45 @@ public class SendToHotFolder {
                 VFCUMediaFile vfcuMediafile = new VFCUMediaFile();
                 vfcuMediafile.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
             
-                // Get the child record
-                int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
-                if (! (childVfcuMediaFileId > 0 )) {
-                    logger.log(Level.FINER, "Could not get child ID");
-                    continue;
-                }
+                if (CDIS.getProperty("useMasterSubPairs").equals("true") ) {
+                    // Get the child record
+                    int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
+                    if (! (childVfcuMediaFileId > 0 )) {
+                        logger.log(Level.FINER, "Could not get child ID");
+                        continue;
+                    }
                 
-                //Get the file path for the vfcu_id
-                boolean infoPopulated = stagedFile.populateNamePathFromId(childVfcuMediaFileId);
-                if (! infoPopulated) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CPHOTF", "Error, unable to populate name and path from database for subfile ");
-                    continue;
-                }
+                    //Get the file path for the vfcu_id
+                    boolean infoPopulated = stagedFile.populateNamePathFromId(childVfcuMediaFileId);
+                    if (! infoPopulated) {
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "CPHOTF", "Error, unable to populate name and path from database for subfile ");
+                        continue;
+                    }
                 
-                cdisMap.setVfcuMediaFileId(childVfcuMediaFileId);
-                cdisMap.populateIdFromVfcuId();
+                    cdisMap.setVfcuMediaFileId(childVfcuMediaFileId);
+                    cdisMap.populateIdFromVfcuId();
                  
-                //Find the image and move/copy to hotfolder
-                boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName);   
-                if (! fileCopied) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CPHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
-                    continue;
-                }
+                    //Find the image and move/copy to hotfolder
+                    boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName);   
+                    if (! fileCopied) {
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "CPHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
+                        continue;
+                    }
                 
-                CDISActivityLog cdisActivity = new CDISActivityLog();
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("FCS");
-                boolean activityLogged = cdisActivity.insertActivity();
-                if (!activityLogged) {
-                    logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
-                    continue;
+                    CDISActivityLog cdisActivity = new CDISActivityLog();
+                    cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisActivity.setCdisStatusCd("FCS");
+                    boolean activityLogged = cdisActivity.insertActivity();
+                    if (!activityLogged) {
+                        logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
+                        continue;
+                    }
                 }
-                
                 
                 //now send the master file to the hotfolder
-                infoPopulated = stagedFile.populateNamePathFromId(Integer.parseInt(masterMediaId));
+                boolean infoPopulated = stagedFile.populateNamePathFromId(Integer.parseInt(masterMediaId));
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "MVHOTF", "Error, unable to populate name and path from database for master file ");
@@ -267,10 +267,10 @@ public class SendToHotFolder {
                     continue;
                 }
                 
-                cdisActivity = new CDISActivityLog();
+                CDISActivityLog cdisActivity = new CDISActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());   
                 cdisActivity.setCdisStatusCd("FMM");
-                activityLogged = cdisActivity.insertActivity();
+                boolean activityLogged = cdisActivity.insertActivity();
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
@@ -352,8 +352,6 @@ public class SendToHotFolder {
         RFeldman 3/2015
     */
      public void ingest () {
-                                                                                       
-        this.cisSourceDB = CDIS.getProperty("cisSourceDB"); 
   
         this.masterMediaIds = new LinkedHashMap<>();
         
