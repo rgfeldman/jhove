@@ -238,6 +238,30 @@ public class CDISMap {
         return true;
     }
      
+    public boolean populateIdForNameNullUoiidNullCisId () {
+
+        String sql = "SELECT cdis_map_id FROM cdis_map " +
+                    "WHERE file_name = '" + getFileName() + "' " +
+                    "AND collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " +
+                    "AND dams_uoi_id IS NULL " +
+                    "AND cis_unique_media_id IS NULL " +
+                    "AND to_history_dt IS NULL";
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ){
+ 
+            if (rs != null && rs.next()) {
+                setCdisMapId (rs.getInt(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for file/null uoiid", e );
+                return false;
+        }
+        return true; 
+    }
+    
     public boolean populateIdForNameNullUoiid () {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +

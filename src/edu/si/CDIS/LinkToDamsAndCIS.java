@@ -71,10 +71,9 @@ public class LinkToDamsAndCIS {
         return true;
     }
 
-    public boolean createNewLink(String cisIdentifier, String uoiId) {
+    public boolean createNewLink(CDISMap cdisMap, String cisIdentifier, String uoiId) {
         
         //Populate cdisMap Object based on renditionNumber
-        CDISMap cdisMap = new CDISMap();
         cdisMap.setCisUniqueMediaId(cisIdentifier);     
         cdisMap.setDamsUoiid(uoiId);
         cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("linkedMediaTypeId")));
@@ -84,58 +83,60 @@ public class LinkToDamsAndCIS {
         uois.populateName();        
         cdisMap.setFileName(uois.getName());
         
-        boolean mapCreated = cdisMap.createRecord();
-        if (!mapCreated) {
-            ErrorLog errorLog = new ErrorLog ();
-            errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
-            return false;
+        //We have two conditions: Create a cdis_map entry where it does not exist...
+        //OR link an cdis_map row (where we add BOTH rhe DAMS_UOIID and the CIS_UNIQUE identifier
+        
+        //Check if the map record exists already with null cisID and null dams_uoiid 
+        boolean mapRecordExists = cdisMap.populateIdForNameNullUoiidNullCisId();
+        if (mapRecordExists) {
+            cdisMap.updateCisUniqueMediaId();
+            cdisMap.updateUoiid();
         }
-            
-        CDISActivityLog cdisActivity = new CDISActivityLog();
-        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-        cdisActivity.setCdisStatusCd("MIC");    
-        boolean activityLogged = cdisActivity.insertActivity();
-        if (!activityLogged) {
-            logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
-            return false;
+        else {
+            //if we need to create the map record, then create the new record
+            boolean mapCreated = cdisMap.createRecord();
+            if (!mapCreated) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
+                return false;
+            }
+               
+            CDISActivityLog cdisActivity = new CDISActivityLog();
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("MIC");    
+            boolean activityLogged = cdisActivity.insertActivity();
+            if (!activityLogged) {
+                logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+                return false;
+            }
         }
-            
-        boolean objectLinked = linkObject(cdisMap.getCdisMapId(), cisIdentifier);
-        if (! objectLinked ) {
-            logger.log(Level.FINER, "Error, unable to link objects to Media ");
-            return false;
+         
+        if (CDIS.getProperty("recordObject").equals("true") ) {
+         
+            boolean objectLinked = linkObject(cdisMap.getCdisMapId(), cisIdentifier);
+            if (! objectLinked ) {
+                logger.log(Level.FINER, "Error, unable to link objects to Media ");
+                return false;
+            }
         }
         
         // ONLY refresh thumbnail IF the properties setting indicates we should.
         if (CDIS.getProperty("updateTMSThumbnail").equals("true") ) {
-            
-            //..and only refresh thumbnail if the media type is indicated to be in the CIS
-            cdisMap.populateCdisCisMediaTypeId();   
-            CDISCisMediaType cdisMediaType = new CDISCisMediaType();
-            
-            cdisMediaType.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
-            
-            cdisMediaType.populateInCis();
-            if (cdisMediaType.getInCisInd() == 'Y') {
-            
-                Thumbnail thumbnail = new Thumbnail();
-                boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
+           
+            Thumbnail thumbnail = new Thumbnail();
+            boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
                             
-                if (! thumbCreated) {
-                    logger.log(Level.FINER, "CISThumbnailSync creation failed");
-                    return false;
-                }
-            
-                cdisActivity = new CDISActivityLog();
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("CTS");    
+            if (! thumbCreated) {
+                logger.log(Level.FINER, "CISThumbnailSync creation failed");
+                return false;
             }
+            
+            CDISActivityLog cdisActivity = new CDISActivityLog();
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("CTS");    
         }
-        
         return true;
-        
     }
-    
     
     private void processNeverLinkedList() {
       
@@ -179,7 +180,20 @@ public class LinkToDamsAndCIS {
                     String cisIdentifier = rs.getString(1);
                       
                     logger.log(Level.FINER, "Will create link for uoiid/CIS id: " + uoiId + " " + cisIdentifier);
-                    //createNewLink(cisIdentifier, uoiId);
+                    CDISMap cdisMap = new CDISMap();
+                    boolean linkCreated = createNewLink(cdisMap, cisIdentifier, uoiId);
+                    
+                    if (linkCreated) {
+                        
+                        CDISActivityLog cdisActivity = new CDISActivityLog();
+                        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                        cdisActivity.setCdisStatusCd("LDC");   
+                        
+                        cdisActivity = new CDISActivityLog();
+                        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                        cdisActivity.setCdisStatusCd("LCC"); 
+                        
+                    }
                     
                     try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                     
