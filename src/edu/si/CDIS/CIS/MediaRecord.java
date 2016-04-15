@@ -6,11 +6,11 @@
 package edu.si.CDIS.CIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.MediaRenditions;
-import edu.si.CDIS.CIS.Database.Objects;
-import edu.si.CDIS.CIS.Database.MediaMaster;
-import edu.si.CDIS.CIS.Database.MediaFiles;
-import edu.si.CDIS.CIS.Database.MediaXrefs;
+import edu.si.CDIS.CIS.TMS.Database.MediaRenditions;
+import edu.si.CDIS.CIS.TMS.Database.Objects;
+import edu.si.CDIS.CIS.TMS.Database.MediaMaster;
+import edu.si.CDIS.CIS.TMS.Database.MediaFiles;
+import edu.si.CDIS.CIS.TMS.Database.MediaXrefs;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;

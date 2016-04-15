@@ -6,7 +6,7 @@
 package edu.si.CDIS.CIS;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.CIS.Database.MediaFiles;
+import edu.si.CDIS.CIS.TMS.Database.MediaFiles;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.Database.CDISMap;
 import java.util.logging.Level;
