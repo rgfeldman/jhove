@@ -79,7 +79,8 @@ public class MetaDataSync {
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
-                e.printStackTrace();
+            logger.log(Level.FINEST,"Error updating DAMS data");
+            return -1;    
         } 
         
         return recordsUpdated;
@@ -184,6 +185,8 @@ public class MetaDataSync {
                 
         // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
         if (updateCount < 1) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " + cdisMap.getDamsUoiid());    
             return false;
         }
         else if (updateCount > 1) {
