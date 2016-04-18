@@ -22,7 +22,7 @@ import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISActivityLog;
-import edu.si.CDIS.CIS.AAA.Database.TblCollection;
+import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.utilties.ErrorLog;
@@ -74,11 +74,11 @@ public class LinkToDamsAndCIS {
     private boolean linkObjectAAA (Integer cdisMapId, String cisIdentifier) {
         
         //get earliest objectId on the current renditionID 
-        TblCollection tblCollection= new TblCollection();
+        TblDigitalResource tblDigitalResource= new TblDigitalResource();
         
-        tblCollection.setDigitalResourceId(Integer.parseInt(cisIdentifier));
+        tblDigitalResource.setDigitalResourceId(Integer.parseInt(cisIdentifier));
         
-        boolean collectionIdFound = tblCollection.populateCollectionIdByCisId();
+        boolean collectionIdFound = tblDigitalResource.populateCollectionId();
         if (!collectionIdFound ) {
             logger.log(Level.FINER, "Error: unable to obtain object_id" );
             return false;
@@ -87,7 +87,7 @@ public class LinkToDamsAndCIS {
         //Insert into CDISObjectMap
         CDISObjectMap cdisObjectMap = new CDISObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
-        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblCollection.getCollectionId()) );
+        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblDigitalResource.getCollectionId()) );
         cdisObjectMap.createRecord();
         
         return true;
@@ -143,8 +143,10 @@ public class LinkToDamsAndCIS {
             
         } else if (CDIS.getProperty("cisSourceDB").equals("AAA")) {
             boolean objectLinked = linkObjectAAA(cdisMap.getCdisMapId(), cisIdentifier);
-            logger.log(Level.FINER, "Error, unable to link objects to Media for AAA ");
+            if (! objectLinked ) {
+                logger.log(Level.FINER, "Error, unable to link objects to Media for AAA ");
                 return false;
+            }
         }
         
         // ONLY refresh thumbnail IF the properties setting indicates we should.
