@@ -15,34 +15,33 @@ import java.util.logging.Logger;
  *
  * @author rfeldman
  */
-public class TblDigitalResource {
+public class TblCollection {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
-    
+     
     private Integer collectionId;
-    private Integer digitalResourceId;
+    private String collcode;
     
-    
+    public String getCollcode () {
+        return this.collcode;
+    }
+        
     public Integer getCollectionId () {
         return this.collectionId;
     }
-    
-    public Integer getDigitalResourceId () {
-        return this.digitalResourceId;
+        
+    public void setCollcode (String collcode) {
+        this.collcode = collcode;
     }
         
     public void setCollectionId (Integer collectionId) {
         this.collectionId = collectionId;
     }
-      
-    public void setDigitalResourceId (Integer digitalResourceId) {
-        this.digitalResourceId = digitalResourceId;
-    }
     
-    public boolean populateCollectionId () {
+    public boolean populateCollcode () {
         
-        String sql =    "SELECT fkCollectionDigResId " +
-                        "FROM  dbo.tblDigitalResource " +
-                        "WHERE fkDigitalResourceID = " + getDigitalResourceId();
+        String sql =    "SELECT Collcode " +
+                        "FROM  dbo.tblCollection " +
+                        "WHERE collectionId = " + getCollectionId();
         
         logger.log(Level.FINEST,"SQL! " + sql);
         
@@ -50,14 +49,15 @@ public class TblDigitalResource {
                 ResultSet rs = pStmt.executeQuery() ) {
             
             if (rs != null && rs.next()) {
-                setCollectionId(rs.getInt(1));
+                setCollcode(rs.getString(1));
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain CollectionID for digResource", e );
+                logger.log(Level.FINER, "Error: unable to obtain collcode for CollectionID", e );
                 return false;
         }
         return true;
     }
+       
     
 }

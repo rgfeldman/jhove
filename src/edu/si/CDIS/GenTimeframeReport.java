@@ -10,6 +10,8 @@ import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISErrorLog;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
+import edu.si.CDIS.CIS.AAA.Database.TblCollection;
+import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import com.lowagie.text.*;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
@@ -371,16 +373,26 @@ public class GenTimeframeReport {
                 CDISMap cdisMap = new CDISMap();
                 SiAssetMetaData siAsst = new SiAssetMetaData();
                 CDISObjectMap cdisObjectMap = new CDISObjectMap();
-                Objects objects = new Objects();
-                
+               
                 cdisMap.setCdisMapId(mapId);
                 cdisMap.populateMapInfo();
-                
+                   
                 cdisObjectMap.setCdisMapId(mapId);
                 cdisObjectMap.populateCisUniqueObjectIdforCdisId();
                 
-                objects.setObjectID(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
-                objects.populateObjectNumberForObjectID();
+                String objectIdentifier = null;
+                if (CDIS.getProperty("cisSourceDB").equals("TMS")) {
+                    Objects objects = new Objects();
+                    objects.setObjectID(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
+                    objects.populateObjectNumberForObjectID();
+                    objectIdentifier = "object: " + objects.getObjectNumber();
+                }
+                else if (CDIS.getProperty("cisSourceDB").equals("AAA")) {
+                    TblCollection tblCollection = new TblCollection();
+                    tblCollection.setCollectionId(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
+                    tblCollection.populateCollcode();
+                    objectIdentifier = "collection: " + tblCollection.getCollcode();
+                }
                 
                 siAsst.setUoiid(cdisMap.getDamsUoiid());
                 siAsst.populateOwningUnitUniqueName();
@@ -389,13 +401,13 @@ public class GenTimeframeReport {
                 
                 switch (stepType) {
                     case "LCC" :
-                         listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To Object: " + objects.getObjectNumber() ;
+                         listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To Object: " + objectIdentifier ;
                          break;
                     case "LDC" :
-                         listing = "File: " + cdisMap.getFileName() + " linked to DAMS UAN: " + siAsst.getOwningUnitUniqueName();
+                         listing = "File: " + cdisMap.getFileName() + " linked to DAMS UAN: " + objectIdentifier;
                          break;
                     case "MDS" :   
-                        listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with object: " + objects.getObjectNumber();
+                        listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + objectIdentifier;
                         break;
                 }
                     
