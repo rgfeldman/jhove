@@ -16,6 +16,7 @@ import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.Database.TeamsLinks;
+import edu.si.CDIS.DAMS.Database.SiRestrictionsDtls;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.utilties.ScrubStringForDb;
@@ -304,6 +305,26 @@ public class MetaDataSync {
         }
     }
     
+    private void handleRestrictions (String uoiId, String restrictionList) {
+        //This is not in siAssetMetadata and needs to be handled differently
+        SiRestrictionsDtls siRestictionsDtls = new SiRestrictionsDtls();
+        
+        siRestictionsDtls.setUoiId(uoiId);
+        
+        // delete restrictions if they exist we will put new ones in.  if they dont exist this is fine too.
+        siRestictionsDtls.deleteRestrictions();
+        
+        if (restrictionList != null ) {
+            //Loop through list and insert new restriction
+            String[] restrictionArray = restrictionList.split(",");
+         
+            for (int i = 0; i < restrictionArray.length; i++) {
+            siRestictionsDtls.setRestrictions(restrictionArray[i]);
+            siRestictionsDtls.insertRestrictions();
+            }
+        }
+    }
+    
     
     /*  Method :        generateUpdate
         Arguments:      
@@ -318,11 +339,16 @@ public class MetaDataSync {
             boolean firstIteration = true;
              
             String updateStatement = "UPDATE towner.SI_ASSET_METADATA SET ";
-                                             
+            
             for (String column : metaDataValuesForDams.keySet()) {
                 
                 String columnValue = metaDataValuesForDams.get(column);
-            
+                
+                if (column.equals("RESTRICTIONS") ) {
+                    handleRestrictions(siAsst.getUoiid(), metaDataValuesForDams.get(column));
+                    continue;
+                }
+                                
                 if (columnValue != null) {
                 
                     //Integer maxColumnLength = siAsst.metaDataDBLengths.get(column);
