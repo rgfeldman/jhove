@@ -11,7 +11,6 @@ import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISErrorLog;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.CIS.AAA.Database.TblCollection;
-import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import com.lowagie.text.*;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
@@ -383,7 +382,7 @@ public class GenTimeframeReport {
                 String objectIdentifier = null;
                 if (CDIS.getProperty("cisSourceDB").equals("TMS")) {
                     Objects objects = new Objects();
-                    objects.setObjectID(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
+                    objects.setObjectId(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
                     objects.populateObjectNumberForObjectID();
                     objectIdentifier = "object: " + objects.getObjectNumber();
                 }
@@ -401,7 +400,7 @@ public class GenTimeframeReport {
                 
                 switch (stepType) {
                     case "LCC" :
-                         listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To Object: " + objectIdentifier ;
+                         listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To : " + objectIdentifier ;
                          break;
                     case "LDC" :
                          listing = "File: " + cdisMap.getFileName() + " linked to DAMS UAN: " + objectIdentifier;
