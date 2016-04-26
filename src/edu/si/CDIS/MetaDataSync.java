@@ -468,11 +468,12 @@ public class MetaDataSync {
                             }
                     
                             //check if the column has already been populated
-                            String columnExisting = metaDataValuesForDams.get(columnName);
+                            String columnExisting = metaDataValuesForDams.get(columnName.toUpperCase());
+                             
                             if (columnExisting != null) {
                                 if (sqlType.equals("cursorAppend")) {
                                     //append to existing column
-                                    metaDataValuesForDams.put(columnName.toLowerCase(), columnExisting + delimiter + ' ' + columnValue);
+                                    metaDataValuesForDams.put(columnName.toUpperCase(), columnExisting + delimiter + ' ' + columnValue);
                                 }
                                 else {
                                     //put out error
