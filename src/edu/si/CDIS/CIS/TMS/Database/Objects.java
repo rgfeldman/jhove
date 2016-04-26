@@ -20,7 +20,7 @@ public class Objects {
     private String objectNumber;
     
     
-    public int getObjectID () {
+    public int getObjectId () {
         return this.objectID;
     }
     
@@ -29,7 +29,7 @@ public class Objects {
     }
     
    
-    public void setObjectID (int objectID) {
+    public void setObjectId (int objectID) {
         this.objectID = objectID;
     }
     
@@ -63,7 +63,7 @@ public class Objects {
              ResultSet rs = pStmt.executeQuery() ) {
 
             if (rs.next()) {
-                setObjectID (rs.getInt(1));
+                setObjectId (rs.getInt(1));
             }        
             else {
                 logger.log(Level.FINEST, "Unable to find Object from Barcode:{0}", barcode);
@@ -109,7 +109,7 @@ public class Objects {
              ResultSet rs = pStmt.executeQuery() ) {
            
             if (rs.next()) {
-                    setObjectID (objID);
+                    setObjectId (objID);
                 }        
             else {
                 logger.log(Level.FINEST, "Unable to find Object from ObjectID:{0}", objID);
@@ -134,14 +134,12 @@ public class Objects {
 
         String damsDelimiter;
         String tmsDelimiter;
-        String locateByLetterRange;
         int imageObjectTrunc;
         
         try {
             // populate ObjectNumber using various formats specified in the config file
             damsDelimiter = CDIS.getProperty("damsDelimiter");
             tmsDelimiter = CDIS.getProperty("tmsDelimiter");
-            locateByLetterRange = CDIS.getProperty("locateByLetterRange");
             imageObjectTrunc = Integer.parseInt(CDIS.getProperty("imageObjectTrunc"));
         } catch (Exception e) {
                 e.printStackTrace();
@@ -180,28 +178,50 @@ public class Objects {
         logger.log(Level.FINER,"NEW TMS ObjectNumber: " + getObjectNumber());
     
         // Obtain the ObjectID based on the ObjectName that was determined above. 
-        String sql =    "select ObjectID " +
-                        "from Objects " +
-                        "where ObjectNumber = '" + getObjectNumber() + "'";
-                    
-        logger.log(Level.FINEST,"SQL! " + sql);
+        boolean objectNumPopulated = populateIdForObjectNumber();
+        if (! objectNumPopulated) {
+            return false;
+        }
         
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
-            ResultSet rs = pStmt.executeQuery() ) {
-            
+        return true;
+        
+    }
+    
+    public boolean mapAltColumnToObject(String uoiId) {
+        
+        String[] tableAndColumn = CDIS.getProperty("altObjTabCol").split(",");
+        
+        String table = tableAndColumn[0];
+        String column = tableAndColumn[1];
+        
+        String obNumsql =    "SELECT " + column +
+                        " FROM " + table +
+                        " WHERE uoi_id = '" + uoiId + "'";
+        
+        logger.log(Level.FINER,"sql: " + obNumsql);
+        
+         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(obNumsql); 
+             ResultSet rs = pStmt.executeQuery() ) {
+           
             if (rs.next()) {
-                setObjectID(rs.getInt(1));
-            }
+                    setObjectNumber (rs.getString(1));
+                }        
+            
             else {
-                if (locateByLetterRange.equals("true")) {
-                    locateObjectIDLetterComponent();
-                }
-                if (getObjectID() == 0) {
-                    return false;
-                }
+                logger.log(Level.FINEST, "Unable to find Object from table:", obNumsql);
+                return false;
             }
-        } catch (Exception e) {
+        }
+	catch(Exception e) {
             e.printStackTrace();
+            return false;
+	}     
+         
+        logger.log(Level.FINER,"TMS ObjectNumber: " + getObjectNumber());
+    
+        // Obtain the ObjectID based on the ObjectName that was determined above. 
+        boolean objectNumPopulated = populateIdForObjectNumber();
+        if (! objectNumPopulated) {
             return false;
         }
         
@@ -235,7 +255,7 @@ public class Objects {
    
             if (rs.next()) {
                 logger.log(Level.FINER,"Located ObjectID: " + rs.getInt(1) + " For RenditionID: " + renditionId);
-                setObjectID(rs.getInt(1));
+                setObjectId(rs.getInt(1));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -244,60 +264,10 @@ public class Objects {
         return true;
     }
     
-     /*  Method :        locateObjectIDLetterComponent
-        Arguments:      
-        Returns:      
-        Description:    Finds the objectID when the normal method fails,
-                        ObjectID will be looked up by dropping final letter from the expected ObjectNumber 
-                        and finding the object based on a letter range
-                        (ex 2013_201_3c_001 -> 2013_201_3a-c OR 2013_201_3ac )
-        RFeldman 2/2015
-    */
-    private void locateObjectIDLetterComponent() {
-
-        char lastChar;
-        logger.log(Level.FINEST,"Attempting to locate object by letter component");
-        
-        // only continue if the ObjectNumber we were expecting ends in a letter.
-        if (! getObjectNumber().isEmpty() ) {          
-            lastChar = getObjectNumber().charAt(getObjectNumber().length() -1);
-            
-            if (! Character.isLetter(lastChar)) {
-                // The last character is not a letter....
-                logger.log(Level.FINEST,"Last character not a letter, returning");
-                return;
-            }
-        }      
-        
-        //Remove the last character from the objectNumber...and add an 'a'
-        setObjectNumber(getObjectNumber().substring(0, getObjectNumber().length()-1) + "a");
-    
-        //look for the object number with like 
-        String sql =    "select ObjectID " +
-                        "from Objects " +
-                        "where ObjectNumber like '" + getObjectNumber() + "[b-z]' " +
-                        "union " +
-                        "select ObjectID " +
-                        "from Objects " +
-                        "where ObjectNumber like '" + getObjectNumber() + "-[b-z]' ";
-                    
-        logger.log(Level.FINEST,"SQL! " + sql);
-        
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql); 
-             ResultSet rs = pStmt.executeQuery() )  {
-
-            if (rs.next()) {
-                setObjectID(rs.getInt(1));
-            }            
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-    } 
-    
     public boolean populateObjectNumberForObjectID() {
         String sql = "SELECT ObjectNumber " +
                     "FROM objects " +
-                    "WHERE objectID = " + getObjectID();
+                    "WHERE objectID = " + getObjectId();
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
@@ -312,6 +282,26 @@ public class Objects {
                 return false;
         }
         return true;
+    }
+    
+    public boolean populateIdForObjectNumber() {
+        String sql = "SELECT ObjectId " +
+                    "FROM objects " +
+                    "WHERE objectNumber = '" + getObjectNumber() + "'";
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs != null && rs.next()) {
+                setObjectId(rs.getInt(1));
+                return true;
+            }  
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain ObjectNumber for objectID", e );
+        }
+        return false;
     }
 }
 

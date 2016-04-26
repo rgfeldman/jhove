@@ -38,11 +38,11 @@ public class TblDigitalResource {
         this.digitalResourceId = digitalResourceId;
     }
     
-    public boolean populateCollectionId () {
+    public boolean populateCollectionId  () {
         
         String sql =    "SELECT fkCollectionDigResId " +
                         "FROM  dbo.tblDigitalResource " +
-                        "WHERE fkDigitalResourceID = " + getDigitalResourceId();
+                        "WHERE digitalResourceID = " + getDigitalResourceId();
         
         logger.log(Level.FINEST,"SQL! " + sql);
         

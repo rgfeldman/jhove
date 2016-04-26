@@ -254,6 +254,9 @@ public class CDISMap {
             if (rs != null && rs.next()) {
                 setCdisMapId (rs.getInt(1));
             }   
+            else {
+                return false;
+            }
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain map_id for file/null uoiid", e );

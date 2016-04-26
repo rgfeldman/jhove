@@ -70,111 +70,105 @@ public class CreateCISmedia {
         Description:    prcoesses the DAMS uans one at a time from the list  
         RFeldman 2/2015
     */
-    private void processUOIIDList () { 
+    private void processUoiid (String uoiId) { 
 
-        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
-        for (String uoiId : uoiidsToLink) {
-              
-            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-            try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+        Uois uois = new Uois();
+        uois.setUoiid(uoiId);
+        uois.populateName(); 
             
-            Uois uois = new Uois();
-            uois.setUoiid(uoiId);
-            uois.populateName(); 
+        //Create CDISMap entry for the record
+        CDISMap cdisMap = new CDISMap();
+        cdisMap.setDamsUoiid(uoiId);
+        cdisMap.setFileName(uois.getName());
             
-            //Create CDISMap entry for the record
-            CDISMap cdisMap = new CDISMap();
-            cdisMap.setDamsUoiid(uoiId);
-            cdisMap.setFileName(uois.getName());
-            
-            //Find existing CDISMAP record, and store the cdis_map_id in object by using the uoiid
-            //  If CDIS sent it to DAMS with the sendToHotfolder tool initially, there should be a record there already....so in that case
-            //  We do not want an additional cdis_map record
-            boolean mapRecordExists = cdisMap.populateIdFromUoiid();
-            
-            if (!mapRecordExists) {    
-                //  In the cases where media was put into DAMS by something other than CDIS, there will be no existing map entry there
-                //      and we will need to add it  
-                cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")) );
-                
-                boolean mapCreated = cdisMap.createRecord();
-                if (!mapCreated) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CRCDMP", "Error, Unable to create CDISMAP entry");  
-                    continue;
-                }
+        //Find existing CDISMAP record, and store the cdis_map_id in object by using the uoiid
+        //  If CDIS sent it to DAMS with the sendToHotfolder tool initially, there should be a record there already....so in that case
+        //  We do not want an additional cdis_map record
+        boolean mapRecordExists = cdisMap.populateIdFromUoiid();
            
-                CDISActivityLog activityLog = new CDISActivityLog();
-                activityLog.setCdisMapId(cdisMap.getCdisMapId());
-                activityLog.setCdisStatusCd("MIC");
-                activityLog.insertActivity();
-            
-            } 
-            else {
-                cdisMap.populateCdisCisMediaTypeId();
-            }
-            
-            MediaRenditions mediaRendition = new MediaRenditions();
-            MediaRecord mediaRecord = new MediaRecord();
-            
-            Integer objectId = mediaRecord.create(uois, mediaRendition);
-                            
-            if ( objectId == 0 ) {
+        if (!mapRecordExists) {    
+            //  In the cases where media was put into DAMS by something other than CDIS, there will be no existing map entry there
+            //      and we will need to add it  
+            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")) );
+                
+            boolean mapCreated = cdisMap.createRecord();
+            if (!mapCreated) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CRCISM", "ERROR: Media Creation Failed"); 
-                continue; //Go to the next record 
+                errorLog.capture(cdisMap, "CRCDMP", "Error, Unable to create CDISMAP entry");  
+                return;
             }
-            else if (objectId == -1 ) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UNLCIS", "ERROR: Unable to obtain ObjectId from TMS"); 
-                continue; //Go to the next record 
-            }
-                        
-            logger.log(Level.FINER, "Media Creation complete, RenditionNumber for newly created media: " + mediaRendition.getRenditionNumber() );
-
-            // Update the CDISMAP record with the cis_id 
-            cdisMap.setCisUniqueMediaId(Integer.toString (mediaRendition.getRenditionId()) );
-            cdisMap.updateCisUniqueMediaId() ;
-            
-            // Create the thumbnail in the CIS
-            Thumbnail thumbnail = new Thumbnail();
-            boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
-                            
-            if (! thumbCreated) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CRCIST", "ERROR: CIS Thumbnail Generation Failed"); 
-                continue;
-            }
-            
-            CDISObjectMap cdisObjectMap = new CDISObjectMap ();
-            cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
-            cdisObjectMap.setCisUniqueObjectId(Integer.toString (objectId) );
-            boolean objectMapCreated = cdisObjectMap.createRecord();
-            if (! objectMapCreated) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CRCDOB", "ERROR: ObjectMap Creation Failed"); 
-                continue;
-            }
-            
-            // Add activity record indicating Media Has been created
+           
             CDISActivityLog activityLog = new CDISActivityLog();
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
-            activityLog.setCdisStatusCd("CMC");
+            activityLog.setCdisStatusCd("MIC");
             activityLog.insertActivity();
             
-            // Add activity record indicating Media Has been Linked
-            activityLog = new CDISActivityLog();
-            activityLog.setCdisMapId(cdisMap.getCdisMapId());
-            activityLog.setCdisStatusCd("LCC");
-            activityLog.insertActivity();
-            
-            // Add activity record indicating Media Has been Thumbnail Synced
-            activityLog = new CDISActivityLog();
-            activityLog.setCdisMapId(cdisMap.getCdisMapId());
-            activityLog.setCdisStatusCd("CTS");
-            activityLog.insertActivity();
+        } 
+        else {
+            cdisMap.populateCdisCisMediaTypeId();
         }
+            
+        MediaRenditions mediaRendition = new MediaRenditions();
+        MediaRecord mediaRecord = new MediaRecord();
+            
+        Integer objectId = mediaRecord.create(uois, mediaRendition);
+                            
+        if ( objectId == 0 ) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "CRCISM", "ERROR: Media Creation Failed"); 
+             return; //Go to the next record 
+        }
+        else if (objectId == -1 ) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "UNLCIS", "ERROR: Unable to obtain ObjectId from TMS"); 
+            return; //Go to the next record 
+        }
+                        
+        logger.log(Level.FINER, "Media Creation complete, RenditionNumber for newly created media: " + mediaRendition.getRenditionNumber() );
+
+        // Update the CDISMAP record with the cis_id 
+        cdisMap.setCisUniqueMediaId(Integer.toString (mediaRendition.getRenditionId()) );
+        cdisMap.updateCisUniqueMediaId() ;
+            
+        // Create the thumbnail in the CIS
+        Thumbnail thumbnail = new Thumbnail();
+        boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
+                            
+        if (! thumbCreated) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "CRCIST", "ERROR: CIS Thumbnail Generation Failed"); 
+            return;
+        }
+            
+        CDISObjectMap cdisObjectMap = new CDISObjectMap ();
+        cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
+        cdisObjectMap.setCisUniqueObjectId(Integer.toString (objectId) );
+        boolean objectMapCreated = cdisObjectMap.createRecord();
+        if (! objectMapCreated) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "CRCDOB", "ERROR: ObjectMap Creation Failed"); 
+            return;
+        }
+            
+        // Add activity record indicating Media Has been created
+        CDISActivityLog activityLog = new CDISActivityLog();
+        activityLog.setCdisMapId(cdisMap.getCdisMapId());
+        activityLog.setCdisStatusCd("CMC");
+        activityLog.insertActivity();
+          
+        // Add activity record indicating Media Has been Linked
+        activityLog = new CDISActivityLog();
+        activityLog.setCdisMapId(cdisMap.getCdisMapId());
+        activityLog.setCdisStatusCd("LCC");
+        activityLog.insertActivity();
+            
+        // Add activity record indicating Media Has been Thumbnail Synced
+        activityLog = new CDISActivityLog();
+        activityLog.setCdisMapId(cdisMap.getCdisMapId());
+        activityLog.setCdisStatusCd("CTS");
+        activityLog.insertActivity();
     }
+    
     
     /*  Method :        createMedia
         Arguments:      
@@ -188,8 +182,16 @@ public class CreateCISmedia {
         // Get a list of Renditions from DAMS that may need to be brought to the collection system (CIS)
         populateNeverLinkedImages ();
         
-        // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
-        processUOIIDList ();  
+        //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
+        for (String uoiId : uoiidsToLink) {
+            
+            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            
+            // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
+            processUoiid (uoiId);  
+        
+        }
         
         try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
          

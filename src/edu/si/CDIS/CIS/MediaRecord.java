@@ -87,7 +87,7 @@ public class MediaRecord {
         mediaXrefs.calculateRank(extensionlessFileName);
         
         if (Integer.parseInt(CDIS.getProperty("assignToObjectID")) > 0) {
-            tmsObject.setObjectID (Integer.parseInt(CDIS.getProperty("assignToObjectID")));
+            tmsObject.setObjectId (Integer.parseInt(CDIS.getProperty("assignToObjectID")));
             objectIdPopulated = true;
             
             String newRenditionNumber = formatNewRenditionNumber (extensionlessFileName);
@@ -105,11 +105,11 @@ public class MediaRecord {
                     // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
                     if (CDIS.getProperty("appendTimeToNumber").equals("true"))  {
                         DateFormat df = new SimpleDateFormat("kkmmss");
-                        mediaRenditions.setRenditionNumber(tmsObject.getObjectID() + "_" + String.format("%03d", mediaXrefs.getRank()) + "_" + df.format(new Date()));
+                        mediaRenditions.setRenditionNumber(tmsObject.getObjectId() + "_" + String.format("%03d", mediaXrefs.getRank()) + "_" + df.format(new Date()));
                     }
                     else {
                         // For barcode objects, the renditionNumber is the objectID plus the rank
-                        mediaRenditions.setRenditionNumber(tmsObject.getObjectID() + "_" + mediaXrefs.getRank() );
+                        mediaRenditions.setRenditionNumber(tmsObject.getObjectId() + "_" + mediaXrefs.getRank() );
                     }
                 }
             }
@@ -138,6 +138,18 @@ public class MediaRecord {
         }
         
         if (! objectIdPopulated) {
+            if (CDIS.getProperty("mapAltColumnToObject").equals("true")) {
+                objectIdPopulated = tmsObject.mapAltColumnToObject(uois.getUoiid());
+                
+                if (objectIdPopulated) {
+                    String newRenditionNumber = formatNewRenditionNumber (extensionlessFileName);
+                    mediaRenditions.setRenditionNumber(newRenditionNumber);  
+                }
+
+            }
+        }
+        
+        if (! objectIdPopulated) {
                 // we were unable to populate the object, return with a failure indicator
 
                 //Set the RenditionNumber as the filename for reporting purposes
@@ -148,7 +160,7 @@ public class MediaRecord {
         
         // Set the primaryRenditionFlag
         logger.log(Level.FINER, "about to create TMS media Record:");
-        logger.log(Level.FINER, "ObjectID: " + tmsObject.getObjectID());
+        logger.log(Level.FINER, "ObjectId: " + tmsObject.getObjectId());
         logger.log(Level.FINER, "RenditionNumber: {0}", mediaRenditions.getRenditionNumber());
         logger.log(Level.FINER, "Rank: " + mediaXrefs.getRank());
   
@@ -219,7 +231,7 @@ public class MediaRecord {
                 
         // Insert into MediaXrefs
         mediaXrefs.setMediaMasterId(mediaMaster.getMediaMasterId());
-        mediaXrefs.setObjectId(tmsObject.getObjectID());
+        mediaXrefs.setObjectId(tmsObject.getObjectId());
         mediaXrefs.populateIsPrimary();
         logger.log(Level.FINER, "IsPrimary: " + mediaXrefs.getPrimary());
         returnSuccess = mediaXrefs.insertNewRecord();
@@ -230,7 +242,7 @@ public class MediaRecord {
         
         logger.log(Level.FINER, "New Media Created Successfully!!");
         
-        return tmsObject.getObjectID();
+        return tmsObject.getObjectId();
         
     }
     

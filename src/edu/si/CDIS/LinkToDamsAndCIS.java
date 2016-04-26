@@ -65,7 +65,7 @@ public class LinkToDamsAndCIS {
         //Insert into CDISObjectMap
         CDISObjectMap cdisObjectMap = new CDISObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
-        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectID()) );
+        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectId()) );
         cdisObjectMap.createRecord();
         
         return true;
@@ -162,7 +162,8 @@ public class LinkToDamsAndCIS {
             
             CDISActivityLog cdisActivity = new CDISActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("CTS");    
+            cdisActivity.setCdisStatusCd("CTS");
+            cdisActivity.insertActivity();
         }
         return true;
     }
@@ -216,11 +217,13 @@ public class LinkToDamsAndCIS {
                         
                         CDISActivityLog cdisActivity = new CDISActivityLog();
                         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                        cdisActivity.setCdisStatusCd("LDC");   
+                        cdisActivity.setCdisStatusCd("LDC");
+                        cdisActivity.insertActivity();
                         
                         cdisActivity = new CDISActivityLog();
                         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                         cdisActivity.setCdisStatusCd("LCC"); 
+                        cdisActivity.insertActivity();
                         
                     }
                     
