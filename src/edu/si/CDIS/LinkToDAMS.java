@@ -251,8 +251,9 @@ public class LinkToDAMS {
                 
                 //if number of files is the same then create emu ready file
                 if ((totalFilesDb > 0 )&& (totalFilesDb == totalFilesFileSystem)) {
-                
-                    createEmuReadyFile(emuPickupLocation);
+                    
+                    //commenting out for now until permission issue is determined
+                    //createEmuReadyFile(emuPickupLocation);
                 }
                 else {
                     logger.log(Level.FINEST,"Need to wait, more files to process! "); 

@@ -16,13 +16,14 @@ import java.util.logging.Logger;
 import java.util.HashMap;
 import java.util.logging.Level;
 
-import edu.si.CDIS.CIS.TMS.Database.Objects;
 
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
+import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
+import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.CIS.Thumbnail;
 import edu.si.CDIS.utilties.ErrorLog;
@@ -51,25 +52,6 @@ public class LinkToDamsAndCIS {
         
     }
     
-    private boolean linkObjectTMS (Integer cdisMapId, String cisIdentifier) {
-        
-        //get earliest objectId on the current renditionID 
-        Objects tmsObject= new Objects();
-        
-        boolean objectIdsFound = tmsObject.populateMinObjectIDByRenditionId(Integer.parseInt(cisIdentifier));
-        if (!objectIdsFound ) {
-            logger.log(Level.FINER, "Error: unable to obtain object_id" );
-            return false;
-        } 
-        
-        //Insert into CDISObjectMap
-        CDISObjectMap cdisObjectMap = new CDISObjectMap();
-        cdisObjectMap.setCdisMapId(cdisMapId);
-        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectId()) );
-        cdisObjectMap.createRecord();
-        
-        return true;
-    }
     
     private boolean linkObjectAAA (Integer cdisMapId, String cisIdentifier) {
         
@@ -88,6 +70,47 @@ public class LinkToDamsAndCIS {
         CDISObjectMap cdisObjectMap = new CDISObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
         cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblDigitalResource.getCollectionId()) );
+        cdisObjectMap.createRecord();
+        
+        return true;
+    }
+    
+    private boolean linkObjectIris (Integer cdisMapId, String cisIdentifier) {
+        
+        //get earliest objectId on the current renditionID 
+        SI_IrisDAMSMetaCore irisObject= new SI_IrisDAMSMetaCore();
+        irisObject.setImageLibId(cisIdentifier);
+        
+        boolean objectIdsFound = irisObject.populateItemAccnoFull();
+        if (!objectIdsFound ) {
+            logger.log(Level.FINER, "Error: unable to obtain object_id" );
+            return false;
+        } 
+        
+        //Insert into CDISObjectMap
+        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        cdisObjectMap.setCdisMapId(cdisMapId);
+        cdisObjectMap.setCisUniqueObjectId(irisObject.getItemAccnoFull() );
+        cdisObjectMap.createRecord();
+        
+        return true;
+    }
+        
+    private boolean linkObjectTMS (Integer cdisMapId, String cisIdentifier) {
+        
+        //get earliest objectId on the current renditionID 
+        Objects tmsObject= new Objects();
+        
+        boolean objectIdsFound = tmsObject.populateMinObjectIDByRenditionId(Integer.parseInt(cisIdentifier));
+        if (!objectIdsFound ) {
+            logger.log(Level.FINER, "Error: unable to obtain object_id" );
+            return false;
+        } 
+        
+        //Insert into CDISObjectMap
+        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        cdisObjectMap.setCdisMapId(cdisMapId);
+        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectId()) );
         cdisObjectMap.createRecord();
         
         return true;
@@ -133,21 +156,22 @@ public class LinkToDamsAndCIS {
             }
         }
          
-        if (CDIS.getProperty("cisSourceDB").equals("TMS") ) {
-         
-            boolean objectLinked = linkObjectTMS(cdisMap.getCdisMapId(), cisIdentifier);
-            if (! objectLinked ) {
-                logger.log(Level.FINER, "Error, unable to link objects to Media for TMS ");
-                return false;
-            }
-            
-        } else if (CDIS.getProperty("cisSourceDB").equals("AAA")) {
-            boolean objectLinked = linkObjectAAA(cdisMap.getCdisMapId(), cisIdentifier);
-            if (! objectLinked ) {
-                logger.log(Level.FINER, "Error, unable to link objects to Media for AAA ");
-                return false;
-            }
-        }
+        boolean objectLinked = false;
+        switch (CDIS.getProperty("cisSourceDB")) {
+            case "AAA" :
+                objectLinked = linkObjectAAA(cdisMap.getCdisMapId(), cisIdentifier);
+                break;
+            case "IRIS" :
+                objectLinked = linkObjectIris(cdisMap.getCdisMapId(), cisIdentifier);
+                break;
+            case "TMS" :
+                objectLinked = linkObjectTMS(cdisMap.getCdisMapId(), cisIdentifier);
+        } 
+        if (! objectLinked ) {
+            logger.log(Level.FINER, "Error, unable to link objects to Media for AAA ");
+            return false;
+        } 
+        
         
         // ONLY refresh thumbnail IF the properties setting indicates we should.
         if (CDIS.getProperty("updateTMSThumbnail").equals("true") ) {
