@@ -9,8 +9,9 @@ import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISErrorLog;
-import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.CIS.AAA.Database.TblCollection;
+import edu.si.CDIS.CIS.TMS.Database.Objects;
+
 import com.lowagie.text.*;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
@@ -380,17 +381,22 @@ public class GenTimeframeReport {
                 cdisObjectMap.populateCisUniqueObjectIdforCdisId();
                 
                 String objectIdentifier = null;
-                if (CDIS.getProperty("cisSourceDB").equals("TMS")) {
-                    Objects objects = new Objects();
-                    objects.setObjectId(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
-                    objects.populateObjectNumberForObjectID();
-                    objectIdentifier = "object: " + objects.getObjectNumber();
-                }
-                else if (CDIS.getProperty("cisSourceDB").equals("AAA")) {
-                    TblCollection tblCollection = new TblCollection();
-                    tblCollection.setCollectionId(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
-                    tblCollection.populateCollcode();
-                    objectIdentifier = "collection: " + tblCollection.getCollcode();
+                switch (CDIS.getProperty("cisSourceDB")) {
+                    case "AAA" :
+                        TblCollection tblCollection = new TblCollection();
+                        tblCollection.setCollectionId(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
+                        tblCollection.populateCollcode();
+                        objectIdentifier = "collection: " + tblCollection.getCollcode();
+                        break;
+                    case "IRIS" :
+                        objectIdentifier = "Accno: " + cdisObjectMap.getCisUniqueObjectId();
+                        break;
+                    case "TMS" :
+                        Objects objects = new Objects();
+                        objects.setObjectId(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
+                        objects.populateObjectNumberForObjectID();
+                        objectIdentifier = "object: " + objects.getObjectNumber();
+                        break;
                 }
                 
                 siAsst.setUoiid(cdisMap.getDamsUoiid());
@@ -400,7 +406,7 @@ public class GenTimeframeReport {
                 
                 switch (stepType) {
                     case "LCC" :
-                         listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To : " + objectIdentifier ;
+                         listing = "UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To: " + objectIdentifier ;
                          break;
                     case "LDC" :
                          listing = "File: " + cdisMap.getFileName() + " linked to DAMS UAN: " + objectIdentifier;
