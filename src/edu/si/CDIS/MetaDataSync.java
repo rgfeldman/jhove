@@ -80,7 +80,7 @@ public class MetaDataSync {
             logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
             
         } catch (Exception e) {
-            logger.log(Level.FINEST,"Error updating DAMS data");
+            logger.log(Level.FINEST,"Error updating DAMS data", e);
             return -1;    
         } 
         
@@ -351,7 +351,6 @@ public class MetaDataSync {
                                 
                 if (columnValue != null) {
                 
-                    //Integer maxColumnLength = siAsst.metaDataDBLengths.get(column);
                     Integer maxColumnLength = siAsst.metaDataDBLengths.get(column);
                 
                     if (columnValue.length() > siAsst.metaDataDBLengths.get(column)) { 
