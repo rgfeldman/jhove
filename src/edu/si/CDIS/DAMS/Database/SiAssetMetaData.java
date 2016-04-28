@@ -99,7 +99,13 @@ public class SiAssetMetaData {
                      "WHERE table_name = 'SI_ASSET_METADATA' " + 
                      "AND owner = 'TOWNER' " +
                      "AND data_type != 'DATE' " + 
-                     "AND column_name NOT IN ('UOI_ID','OWNING_UNIT_UNIQUE_NAME')";
+                     "AND column_name NOT IN ('UOI_ID','OWNING_UNIT_UNIQUE_NAME')" +
+                     "UNION " +
+                     "SELECT column_name, 16 " +
+                     "FROM all_tab_columns " +
+                     "WHERE table_name = 'SI_ASSET_METADATA' " + 
+                     "AND owner = 'TOWNER' " +
+                     "AND data_type = 'DATE' ";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
