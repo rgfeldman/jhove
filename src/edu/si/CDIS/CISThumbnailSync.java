@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.Database.CDISMap;
 
-import edu.si.CDIS.CIS.Thumbnail;
+import edu.si.CDIS.CIS.TMS.Thumbnail;
 
 
 public class CISThumbnailSync {

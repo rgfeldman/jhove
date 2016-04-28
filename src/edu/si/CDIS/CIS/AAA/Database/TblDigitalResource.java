@@ -29,7 +29,7 @@ public class TblDigitalResource {
     public Integer getDigitalResourceId () {
         return this.digitalResourceId;
     }
-        
+    
     public void setCollectionId (Integer collectionId) {
         this.collectionId = collectionId;
     }

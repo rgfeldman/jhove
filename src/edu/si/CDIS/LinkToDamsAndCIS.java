@@ -25,7 +25,7 @@ import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.CIS.Thumbnail;
+import edu.si.CDIS.CIS.TMS.Thumbnail;
 import edu.si.CDIS.utilties.ErrorLog;
    
 public class LinkToDamsAndCIS {

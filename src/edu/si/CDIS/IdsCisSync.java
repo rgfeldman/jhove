@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.CIS.MediaPath;
+import edu.si.CDIS.CIS.TMS.MediaPath;
 
 
 import java.util.logging.Level;
