@@ -230,6 +230,7 @@ public class SendToHotFolder {
                 
                     cdisMap.setVfcuMediaFileId(childVfcuMediaFileId);
                     cdisMap.populateIdFromVfcuId();
+                    cdisMap.setFileName(stagedFile.getFileName());
                  
                     //Find the image and move/copy to hotfolder
                     boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName);   
