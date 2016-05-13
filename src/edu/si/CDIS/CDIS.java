@@ -326,7 +326,7 @@ public class CDIS {
                 
                 case "sendToHotFolder" :   
                     SendToHotFolder sendToHotFolder = new SendToHotFolder();
-                    sendToHotFolder.ingest();  
+                    sendToHotFolder.sendForingest();  
                     break;
                     
                 case "linkToDamsAndCis" :
