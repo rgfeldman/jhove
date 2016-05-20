@@ -21,10 +21,13 @@ public class ScrubStringForDb {
         //substitute any 'right' apostrophes to a pair of single quotes
         newString = inputString.replaceAll("\u2019", "'");
         
-        //substitute 'em dash' for regular dash 
+        //substitute 'em and en dash' for regular dash 
         newString = newString.replaceAll("\u2012", "-");
-        
         newString = newString.replaceAll("\u2013", "-");
+        
+        //substitute curly double quotes for regular double quotes
+        newString = newString.replaceAll("\u201c", "\"");
+        newString = newString.replaceAll("\u201d", "\"");
         
 	//double any single quotes
 	newString = newString.replaceAll("'", "''");
