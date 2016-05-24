@@ -19,7 +19,6 @@ public class CdisLinkToCis {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private String cisUniqueMediaId;
-    private String siHoldingUnit;
     private Integer securityPolicyId;
     
     
@@ -31,10 +30,6 @@ public class CdisLinkToCis {
         return this.securityPolicyId;
     }
         
-    public String getSiHoldingUnit () {
-        return this.siHoldingUnit;
-    }
-        
     
     public void setCisUniqueMediaId (String cisUniqueMediaId) {
         this.cisUniqueMediaId = cisUniqueMediaId;
@@ -44,16 +39,12 @@ public class CdisLinkToCis {
         this.securityPolicyId = securityPolicyId;
     }
     
-    public void setSiHoldingUnit (String siHoldingUnit) {
-        this.siHoldingUnit = siHoldingUnit;
-    }
-    
     public boolean populateSecPolicyId () {
         
         String sql = "SELECT sec_policy_id " + 
                     "FROM cdis_link_to_cis " +
                     "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                    "AND si_holding_unit = '" + getSiHoldingUnit() + "'";
+                    "AND si_holding_unit = '" + CDIS.getSiHoldingUnit() + "'";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);

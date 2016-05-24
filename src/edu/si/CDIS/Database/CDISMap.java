@@ -216,7 +216,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                    "AND collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " +
+                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND to_history_dt is NULL ";
         
         logger.log(Level.FINEST,"SQL! " + sql);
@@ -242,7 +242,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
-                    "AND collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " +
+                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND dams_uoi_id IS NULL " +
                     "AND cis_unique_media_id IS NULL " +
                     "AND to_history_dt IS NULL";
@@ -269,7 +269,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
-                    "AND collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " +
+                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND dams_uoi_id IS NULL " +
                     "AND to_history_dt IS NULL";
         
@@ -467,11 +467,11 @@ public class CDISMap {
                     "AND        c.uoi_id = d.uoi_id " +
                     "AND        a.dams_uoi_id IS NULL " +
                     "AND        a.to_history_dt IS NULL " + 
-                    "AND        a.collection_group_cd = '" + CDIS.getProperty("collectionGroup") + "' " + 
+                    "AND        a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " + 
                     "AND        b.cdis_status_cd IN ('FCS', 'FMM') " +
                     "AND        c.content_state = 'NORMAL' " +
                     "AND        c.content_type != 'SHORTCUT' " +
-                    "AND        d.owning_unit_unique_name like '" + CDIS.getProperty("siHoldingUnit") + "%' " + 
+                    "AND        d.owning_unit_unique_name like '" + CDIS.getSiHoldingUnit() + "%' " + 
                     "AND NOT EXISTS ( " + 
                         "SELECT 'X' " +
                         "FROM cdis_error_log d " +

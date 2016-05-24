@@ -83,7 +83,6 @@ public class LinkToCISMdpp {
                 
             CdisLinkToCis cdisLinkTbl = new CdisLinkToCis();
             cdisLinkTbl.setCisUniqueMediaId(cdisMap.getCisUniqueMediaId());
-            cdisLinkTbl.setSiHoldingUnit(CDIS.getProperty("siHoldingUnit"));
             boolean secPolicyretrieved = cdisLinkTbl.populateSecPolicyId();
             if (!secPolicyretrieved) {
                 ErrorLog errorLog = new ErrorLog ();

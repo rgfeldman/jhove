@@ -39,9 +39,9 @@ public class XmlSqlConfig {
     
         try {
             
-            //Locate the metaData xml file
-            File file = new File(CDIS.getProperty("xmlSQLFile"));
-        
+            //Locate the xml file
+            File file = new File(CDIS.getCollectionGroup() + "\\conf\\cdisSql.xml");
+
             //Set up the doc which will hold the xml file
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -52,7 +52,7 @@ public class XmlSqlConfig {
        
         } catch (Exception e) {
             e.printStackTrace();
-            logger.log(Level.FINE, "Error, unable to open or read XML file: {0}", CDIS.getProperty("xmlSQLFile"));
+            logger.log(Level.FINE, "Error, unable to open or read XML file: {0}", CDIS.getCollectionGroup() + "\\conf\\cdisSql.xml");
             return false;
         }   
         return true;

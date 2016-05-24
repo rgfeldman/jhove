@@ -6,6 +6,7 @@
 package edu.si.CDIS;
 
 import edu.si.CDIS.utilties.XmlSqlConfig;
+import edu.si.CDIS.Database.CollectionGroupR;
 import java.io.FileInputStream;
 import java.util.Properties; 
 import java.sql.Connection;
@@ -27,15 +28,21 @@ public class CDIS {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
    
+    private static Long batchNumber;
     private static Connection cisConn;
+    private static String collectionGroup;
     private static Connection damsConn;
     private static String operationType;
     private static Properties properties;
+    private static String siHoldingUnit;
     private static HashMap <String,String[]> xmlSelectHash;
-    private static Long batchNumber;
-    
+   
     public static HashMap<String, String[]> getXmlSelectHash() {
         return CDIS.xmlSelectHash;
+    }
+    
+    public static String getCollectionGroup() {
+        return CDIS.collectionGroup;
     }
     
     public static Connection getCisConn() {
@@ -64,6 +71,10 @@ public class CDIS {
     
     public static String getProperty (String property) {
         return CDIS.properties.getProperty(property);
+    }
+    
+    public static String getSiHoldingUnit() {
+        return CDIS.siHoldingUnit;
     }
 
     private void setBatchNumber (Long batchNumber) {
@@ -135,7 +146,7 @@ public class CDIS {
         Handler fh;
             
         try {
-		fh = new FileHandler("log\\CDISLog-" + CDIS.operationType + CDIS.batchNumber + ".txt");
+		fh = new FileHandler( CDIS.getCollectionGroup() + "\\log\\CDISLog-" + CDIS.operationType + CDIS.batchNumber + ".txt");
 	
         } catch (Exception e) {
 		e.printStackTrace();
@@ -159,7 +170,7 @@ public class CDIS {
     */
     private boolean readIni () {
         
-        String iniFile = "conf\\cdis.ini";
+        String iniFile =  CDIS.getCollectionGroup() + "\\conf\\cdis.ini";
         
         logger.log(Level.FINER, "Loading ini file: " + iniFile);
                 
@@ -208,13 +219,11 @@ public class CDIS {
     private boolean verifyProps () {
         
         //verify global properties exist in config file
-            String[] requiredProps = {"siHoldingUnit",
-                                    "damsDriver",
+            String[] requiredProps = {"damsDriver",
                                     "damsConnString",
                                     "damsUser",
                                     "damsPass",
                                     "cisSourceDB",
-                                    "collectionGroup",
                                     "xmlSQLFile"};
         
         for(int i = 0; i < requiredProps.length; i++) {
@@ -233,8 +242,8 @@ public class CDIS {
         RFeldman 2/2015
     */
     public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
-            
-        File folderDir = new File(folder);
+                
+        File folderDir = new File(CDIS.getCollectionGroup() + "\\" + folder);
         File[] logs = folderDir.listFiles();
 	
         if (logs != null) {
@@ -261,26 +270,20 @@ public class CDIS {
        
         CDIS cdis = new CDIS();
         
+        CDIS.operationType = args[0];
+        CDIS.collectionGroup = args[1];
+        
         // Delete old log and report files
         cdis.deleteLogs("rpt","CDISRPT-",21);
         cdis.deleteLogs("log","CDISLog-",21);
         
-        // Check if the required number of arguments are inputted
-        if(args.length < 1) {
-            System.out.println("Missing parameter: <operationType>");
-            return;
-	}
-	else {
-            CDIS.operationType = args[0];
-	}
-
         try {
         
             CDIS.properties = new Properties();
               
             boolean batchNumberSet = cdis.calcBatchNumber();
             if (! batchNumberSet) {
-                 System.out.println("Fatal Error: Batch number could not be generated");
+                System.out.println("Fatal Error: Batch number could not be generated");
                 return;
             }
             
@@ -310,7 +313,14 @@ public class CDIS {
                 return;
             }
             
-
+            // Get the holding unit from the collectionGroup
+            CollectionGroupR collectionGrp = new CollectionGroupR();
+            boolean unitFound = collectionGrp.populateSiHoldingUnit();
+            if (! unitFound) {
+                logger.log(Level.SEVERE, "Fatal Error: Unable to get holding unit");
+                return;
+            }
+            CDIS.siHoldingUnit = collectionGrp.getSiHoldingUnit(); 
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             

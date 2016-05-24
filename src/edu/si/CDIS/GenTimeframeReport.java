@@ -69,7 +69,7 @@ public class GenTimeframeReport {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
 
-        this.rptFile =  "rpt\\CDISRPT-" + CDIS.getProperty("siHoldingUnit") + "-" + timeStamp + ".rtf";
+        this.rptFile =  CDIS.getCollectionGroup() + "\\rpt\\CDISRPT-" + CDIS.getSiHoldingUnit() + "-" + timeStamp + ".rtf";
         
         this.document = new Document();
          
@@ -82,7 +82,7 @@ public class GenTimeframeReport {
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
             
             document.add(new Paragraph(timeStampWords + "\n" + 
-                    CDIS.getProperty("siHoldingUnit") + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
+                    CDIS.getSiHoldingUnit() + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
 
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR, cannot create report ");
@@ -244,7 +244,7 @@ public class GenTimeframeReport {
 	
             String emailContent = null;
             
-            message.setSubject(CDIS.getProperty("siHoldingUnit") + ": CDIS 3.0 Activity Report - Past " + this.rptHours + " Hours" ); 
+            message.setSubject(CDIS.getSiHoldingUnit() + ": CDIS 3.0 Activity Report - Past " + this.rptHours + " Hours" ); 
             
             emailContent = "<br>Please see the attached CDIS Activity Report<br><br><br><br>" +
                     "If you have any questions regarding information contained in this report, please contact: <br>" + 
