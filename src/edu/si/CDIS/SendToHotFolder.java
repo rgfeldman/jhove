@@ -194,7 +194,7 @@ public class SendToHotFolder {
                 rs = stmt.executeQuery();
                      
                 while (rs.next()) {           
-                    masterMediaIds(rs.getString("uniqueMediaId"), rs.getString("mediafileName"));
+                    masterMediaIds.put(rs.getString("uniqueMediaId"), rs.getString("mediaFileName"));
                 }   
 
             } catch (Exception e) {
@@ -279,7 +279,7 @@ public class SendToHotFolder {
         
         // Get the list of new Media to add to DAMS
         boolean masterListGenerated = populateNewMasterMediaList ();
-        if  (! masterListGenerated) {
+        if  (! masterListGenerated || masterMediaIds.isEmpty()) {
              logger.log(Level.FINER, "No Media Found to process in this batch.  Exiting");
              return;
         }
