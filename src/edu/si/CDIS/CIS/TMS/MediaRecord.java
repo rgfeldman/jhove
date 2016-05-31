@@ -179,12 +179,14 @@ public class MediaRecord {
         int existingFileId = mediaFiles.returnIDForFileName();
         if (existingFileId > 0) {
             //mark as error
+            return 0;
         }
         
         //check if a record with the renditionNumber to create already exists before we create the new media
         int existingRenditionId = mediaRenditions.returnIDForRenditionNumber();
         if (existingRenditionId > 0) {
             //mark as error
+            return 0;
         }
         
         // Insert into the MediaMaster table
