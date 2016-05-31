@@ -126,7 +126,7 @@ public class CDISMap {
                     "cdis_cis_media_type_id) " +
                 "VALUES (" +
                     getCdisMapId() + ", " +
-                    "'" + CDIS.getProperty("collectionGroup") + "', " +
+                    "'" + CDIS.getCollectionGroup() + "', " +
                     "'" + getCisUniqueMediaId() + "', " +
                     "'" + getDamsUoiid() + "', " +
                     "'" + getFileName() + "', " +

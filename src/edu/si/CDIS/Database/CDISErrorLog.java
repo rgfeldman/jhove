@@ -76,7 +76,7 @@ public class CDISErrorLog {
                     "values ( " + 
                         "cdis_error_log_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
-                        "'" + CDIS.getProperty("collectionGroup")+ "', " +
+                        "'" + CDIS.getCollectionGroup()+ "', " +
                         "'" + getFileName() + "', " +
                         "'" + getCdisErrorCd() + "', " +
                         "SYSDATE, " +
