@@ -128,6 +128,29 @@ public class MediaFiles {
 
     }
     
+    public int returnIDForFileName () {
+        
+        int id = 0;
+        
+        String sql = "SELECT FileId " +
+                     "FROM mediaFiles " + 
+                     "WHERE FileName = '" + getFileName() + "'";
+                     
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            if (rs.next()) {
+                id = rs.getInt(1);
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
+        }
+        return id;
+        
+    }
+    
     public boolean updateFileNameAndPath () {
         
        int recordsUpdated = 0;

@@ -223,8 +223,7 @@ public class CDIS {
                                     "damsConnString",
                                     "damsUser",
                                     "damsPass",
-                                    "cisSourceDB",
-                                    "xmlSQLFile"};
+                                    "cisSourceDB"};
         
         for(int i = 0; i < requiredProps.length; i++) {
             String reqProp = requiredProps[i];

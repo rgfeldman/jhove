@@ -164,6 +164,29 @@ public class MediaRecord {
         logger.log(Level.FINER, "RenditionNumber: {0}", mediaRenditions.getRenditionNumber());
         logger.log(Level.FINER, "Rank: " + mediaXrefs.getRank());
   
+        //get the uan and the filename, we will want to check that before we add the new media
+        siAsst.populateOwningUnitUniqueName();
+        if (uois.getMasterObjMimeType().equals("application/pdf")) {
+                mediaFiles.setPathId(Integer.parseInt (CDIS.getProperty("PDFPathId")));
+                mediaFiles.setFileName (siAsst.getOwningUnitUniqueName() +  ".pdf");
+        }
+        else {
+            mediaFiles.setPathId (Integer.parseInt (CDIS.getProperty("IDSPathId")));
+            mediaFiles.setFileName(siAsst.getOwningUnitUniqueName());
+        } 
+        
+        //check if a record with the filename as the UAN exists before we create new media
+        int existingFileId = mediaFiles.returnIDForFileName();
+        if (existingFileId > 0) {
+            //mark as error
+        }
+        
+        //check if a record with the renditionNumber to create already exists before we create the new media
+        int existingRenditionId = mediaRenditions.returnIDForRenditionNumber();
+        if (existingRenditionId > 0) {
+            //mark as error
+        }
+        
         // Insert into the MediaMaster table
         MediaMaster mediaMaster = new MediaMaster();
 
@@ -204,16 +227,7 @@ public class MediaRecord {
             return 0;
         }
         
-        // Insert into MediaFiles
-        siAsst.populateOwningUnitUniqueName();
-        if (uois.getMasterObjMimeType().equals("application/pdf")) {
-                mediaFiles.setPathId(Integer.parseInt (CDIS.getProperty("PDFPathId")));
-                mediaFiles.setFileName (siAsst.getOwningUnitUniqueName() +  ".pdf");
-        }
-        else {
-            mediaFiles.setPathId (Integer.parseInt (CDIS.getProperty("IDSPathId")));
-            mediaFiles.setFileName(siAsst.getOwningUnitUniqueName());
-        } 
+        // Insert into MediaFiles     
         mediaFiles.setRenditionId(mediaRenditions.getRenditionId());
         returnSuccess = mediaFiles.insertNewRecord();
         if (! returnSuccess) {

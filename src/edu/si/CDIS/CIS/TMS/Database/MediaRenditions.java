@@ -115,6 +115,28 @@ public class MediaRenditions {
         return true;         
     }
     
+    public int returnIDForRenditionNumber () {
+        
+        int id = 0;
+        
+        String sql = "SELECT RenditionId " +
+                     "FROM mediaRenditions " + 
+                     "WHERE RenditionNumber = '" + getRenditionNumber() + "'";
+                     
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            if (rs.next()) {
+                id = rs.getInt(1);
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
+        }
+        return id;
+       
+    }
 
     private boolean updateIsColor1() {
         
