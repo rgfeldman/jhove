@@ -35,9 +35,6 @@ public class SendToHotFolder {
     private String fullMasterHotFolderNm;
     private File fullMasterHotFolder;
     
-    private void masterMediaIds (String uniqueMediaId, String filename) {
-        this.masterMediaIds.put(uniqueMediaId, filename); 
-    }
     
     private void createReadyFile (String hotDirectoryName) {
         
@@ -212,13 +209,23 @@ public class SendToHotFolder {
     private boolean obtainHotFolderName() {
         //Obtain empty hot folder to put these files into
         File flHotFolderBase;
+        int totalNumHotFolders;
        
         for (int hotFolderIncrement = 1;; hotFolderIncrement ++) {
-        
-            hotFolderBaseName = CDIS.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
+
+            if (CDIS.getProperty("maxHotFolderIncrement").equals("0")) {
+                // There is no increment, we do not append any number to the hot folder name
+                hotFolderBaseName = CDIS.getProperty("hotFolderArea");
+                totalNumHotFolders = 1;
+                
+            } else {
+                hotFolderBaseName = CDIS.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
+                totalNumHotFolders = Integer.parseInt(CDIS.getProperty("maxHotFolderIncrement"));
+            }
+            
             flHotFolderBase = new File (hotFolderBaseName);
             
-            if (hotFolderIncrement >  Integer.parseInt(CDIS.getProperty("maxHotFolderIncrement")) ) {
+            if (hotFolderIncrement >  totalNumHotFolders ) {
                 
                 try {
                     logger.log(Level.FINER, "Sleeping, waiting for available hot folder...");
