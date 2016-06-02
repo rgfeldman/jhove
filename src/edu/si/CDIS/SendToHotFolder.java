@@ -219,6 +219,7 @@ public class SendToHotFolder {
                 totalNumHotFolders = 1;
                 
             } else {
+                // We use incremental hot folder names
                 hotFolderBaseName = CDIS.getProperty("hotFolderArea") + "_" + hotFolderIncrement;
                 totalNumHotFolders = Integer.parseInt(CDIS.getProperty("maxHotFolderIncrement"));
             }
