@@ -79,7 +79,21 @@ public class MediaRecord {
         
         mediaFiles.setPixelH(uois.getBitmapHeight());
         mediaFiles.setPixelW(uois.getBitmapWidth());
-        mediaFiles.setMediaFormatId(Integer.parseInt(CDIS.getProperty("mediaFormatID")));
+        
+        switch  (uois.getMasterObjMimeType()) {
+            case "image/jpeg" :
+                mediaFiles.setMediaFormatId(Integer.parseInt(CDIS.getProperty("jpgFormatId")));
+                break;
+            case "image/tiff" :
+                mediaFiles.setMediaFormatId(Integer.parseInt(CDIS.getProperty("tifFormatId")));
+                break;
+            case "application/pdf":
+                mediaFiles.setMediaFormatId(Integer.parseInt(CDIS.getProperty("pdfFormatId")));
+                break;
+            default :
+                logger.log(Level.FINER, "unable to get valid mimeType from DAMS: " + uois.getMasterObjMimeType() );
+                return 0;
+        }
         
         String extensionlessFileName = uois.getName().substring(0, uois.getName().lastIndexOf("."));
         logger.log(Level.FINER, "extensionlessFileName: " + extensionlessFileName );
