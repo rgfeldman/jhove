@@ -350,17 +350,24 @@ public class SendToHotFolder {
                     cdisMap.populateIdFromVfcuId();
                     cdisMap.setFileName(stagedFile.getFileName());
                  
+                    boolean fileXferred;
                     //Find the image and move/copy to hotfolder
-                    boolean fileCopied = stagedFile.copyToSubfile(hotFolderBaseName);   
-                    if (! fileCopied) {
+                    if (CDIS.getProperty("subHotFolderXferType").equals("move")) {
+                        fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "SUBFILES","move"); 
+                    }
+                    else {
+                        fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "SUBFILES","copy"); 
+                    }
+                      
+                    if (! fileXferred) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "CPHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
+                        errorLog.capture(cdisMap, "XFHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
                         continue;
                     }
                 
                     CDISActivityLog cdisActivity = new CDISActivityLog();
                     cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                    cdisActivity.setCdisStatusCd("FCS");
+                    cdisActivity.setCdisStatusCd("FXS");
                     boolean activityLogged = cdisActivity.insertActivity();
                     if (!activityLogged) {
                         logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
@@ -379,7 +386,7 @@ public class SendToHotFolder {
                 //Get the CDIS_ID 
                 cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
                 cdisMap.populateIdFromVfcuId();
-                boolean fileMoved = stagedFile.moveToMaster(hotFolderBaseName);  
+                boolean fileMoved = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "MASTER","move");  
                 if (! fileMoved) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "MVHOTF", "Error, unable to move file to master: " + stagedFile.getFileName());
