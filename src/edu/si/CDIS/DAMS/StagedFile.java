@@ -110,48 +110,29 @@ public class StagedFile {
     
     
     // Moves the staged file to the MASTER folder
-    public boolean moveToMaster (String destination) {
+    public boolean xferToHotFolder (String destination, String xFerType) {
         
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        String hotFolderDestStr = destination + "\\" + "MASTER" + "\\" + getFileName();
+        String hotFolderDestStr = destination + "\\" + getFileName();
         
-        logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
-        logger.log(Level.FINER,"File moved to hotfolder location: " + hotFolderDestStr );
+        logger.log(Level.FINER,"File xferred from staging location: " + fileNamewithPath );
+        logger.log(Level.FINER,"File xferred to hotfolder location: " + hotFolderDestStr );
             
         try {
             Path source      = Paths.get(fileNamewithPath);
             Path destWithFile = Paths.get(hotFolderDestStr);
             
-            Files.move(source, destWithFile);
-                    
+            if (xFerType.equals("move")) {
+                Files.move(source, destWithFile);
+            }
+            else {
+                Files.copy(source, destWithFile);
+            }
         } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR encountered when moving to master directory",e);
+            logger.log(Level.FINER,"ERROR encountered when xFerrring to hot folder",e);
             return false;
         }
         
-        return true;
-    }
-    
-     // Copies the staged file to the SUBFILE folder
-    public boolean copyToSubfile (String destination) {
-        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        String hotFolderDestStr = destination + "\\" + "SUBFILES" + "\\" + getFileName();
-       
-        logger.log(Level.FINER,"File copied from staging location: " + fileNamewithPath );
-        logger.log(Level.FINER,"File copied to hotfolder location: " + hotFolderDestStr );
-            
-        try {      
-            
-            Path source      = Paths.get(fileNamewithPath);
-            Path destWithFile = Paths.get(hotFolderDestStr);
-            
-            Files.copy(source, destWithFile);
-               
-        } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR encountered when copying to subFolder directory",e);
-            return false;
-        }
-                                 
         return true;
     }
 }
