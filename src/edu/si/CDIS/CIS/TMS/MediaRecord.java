@@ -11,6 +11,7 @@ import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.CIS.TMS.Database.MediaMaster;
 import edu.si.CDIS.CIS.TMS.Database.MediaFiles;
 import edu.si.CDIS.CIS.TMS.Database.MediaXrefs;
+import edu.si.CDIS.CIS.TMS.Database.MediaFormats;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
@@ -94,6 +95,18 @@ public class MediaRecord {
                 logger.log(Level.FINER, "unable to get valid mimeType from DAMS: " + uois.getMasterObjMimeType() );
                 return 0;
         }
+        
+        //now that we have the mediaFormatId, get the mediaTypeId
+        MediaFormats mediaFormats = new MediaFormats();
+        mediaFormats.setMediaFormatId(mediaFiles.getMediaFormatId());
+        boolean mediaTypeObtained = mediaFormats.populateMediaType();
+        
+        if (!mediaTypeObtained) {
+            logger.log(Level.FINER, "unable to get mediaTypeId from mediaFormatId");
+            return 0;
+        }
+        //put the mediaType we have just received into the mediaRenditions record
+        mediaRenditions.setMediaTypeId(mediaFormats.getMediaTypeId());
         
         String extensionlessFileName = uois.getName().substring(0, uois.getName().lastIndexOf("."));
         logger.log(Level.FINER, "extensionlessFileName: " + extensionlessFileName );

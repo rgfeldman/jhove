@@ -22,11 +22,16 @@ public class MediaRenditions {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private Integer fileId;
+    private Integer mediaTypeId;
     private Integer renditionId;
     private String renditionNumber;
         
     public Integer getFileId () {
         return this.fileId;
+    }
+    
+    public Integer getMediaTypeId () {
+        return this.mediaTypeId;
     }
         
     public Integer getRenditionId () {
@@ -41,6 +46,10 @@ public class MediaRenditions {
     public void setFileId (Integer fileId) {
         this.fileId = fileId; 
     }
+    
+    public void setMediaTypeId (Integer mediaTypeId) {
+        this.mediaTypeId = mediaTypeId; 
+    }
         
     public void setRenditionId (Integer renditionId) {
         this.renditionId = renditionId; 
@@ -54,13 +63,12 @@ public class MediaRenditions {
     
     public boolean insertNewRecord(Integer mediaMasterID ) {
         
-        Integer mediaTypeID = null;
         Integer mediaStatusID = null;
         ResultSet rs = null;
         
         // Get variables from the properties list
         try {
-            mediaTypeID = Integer.parseInt (CDIS.getProperty("mediaTypeID"));
+            setMediaTypeId(Integer.parseInt (CDIS.getProperty("mediaTypeID")) );
             mediaStatusID = Integer.parseInt (CDIS.getProperty("mediaStatusID"));
         } catch (Exception e) {
                 e.printStackTrace();
@@ -83,7 +91,7 @@ public class MediaRenditions {
                         "'" + getRenditionNumber() + "', " +
                         "-1, " +
                         "-1, " +
-                        mediaTypeID + ", " +
+                        getMediaTypeId() + ", " +
                         "1, " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
