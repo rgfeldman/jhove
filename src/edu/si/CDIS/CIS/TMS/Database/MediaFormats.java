@@ -41,10 +41,10 @@ public class MediaFormats {
     public boolean populateMediaType() {
          String sql = "SELECT mediaTypeId " +
                       "FROM mediaFormats " +
-                      "WHERE mediaFormatId = " + getMediaFormatId();
+                      "WHERE FormatId = " + getMediaFormatId();
          
         logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
                ResultSet rs = pStmt.executeQuery()) {
             
             if (rs.next()) {
