@@ -142,7 +142,7 @@ public class LinkToDAMS {
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             
             // populate the cdis vfcuId
-            boolean vfcuIdPopulated = cdisMap.populateVfcuId();
+            boolean vfcuIdPopulated = cdisMap.populateVfcuMediaFileId();
             if (! vfcuIdPopulated) {
                 logger.log(Level.FINER, "ERROR: unable to get vfcuId for map_id: " + cdisMap.getCdisMapId());
                 continue;

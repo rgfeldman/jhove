@@ -383,7 +383,7 @@ public class CDISMap {
         return true;
     }
     
-    public boolean populateVfcuId () {
+    public boolean populateVfcuMediaFileId () {
 
         String sql = "SELECT vfcu_media_file_id " + 
                     "FROM cdis_map " +

@@ -16,17 +16,19 @@ import java.util.logging.Logger;
 import java.util.HashMap;
 import java.util.logging.Level;
 
-
+import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
+import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
+import edu.si.CDIS.CIS.TMS.Database.Objects;
+import edu.si.CDIS.CIS.TMS.Thumbnail;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISActivityLog;
-import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
-import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
-import edu.si.CDIS.CIS.TMS.Database.Objects;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.CIS.TMS.Thumbnail;
+import edu.si.CDIS.Database.VFCUMediaFile;
 import edu.si.CDIS.utilties.ErrorLog;
+
    
 public class LinkToDamsAndCIS {
     
@@ -171,6 +173,27 @@ public class LinkToDamsAndCIS {
             logger.log(Level.FINER, "Error, unable to link objects to Media for AAA ");
             return false;
         } 
+        
+        // populate the cdis vfcuId if it exists
+        boolean vfcuIdPopulated = cdisMap.populateVfcuMediaFileId();
+        if (vfcuIdPopulated) {
+            
+            //Get the checksum for the mediaFileId
+            VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+            vfcuMediaFile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
+            vfcuMediaFile.populateVendorChecksum();
+            
+            // We have a vfcumedia id, so we should have a checksum value. Update the DAMS checksum information in preservation module
+            SiPreservationMetadata siPreservation = new SiPreservationMetadata();
+            siPreservation.setUoiid(cdisMap.getDamsUoiid()); 
+            siPreservation.setPreservationIdNumber(vfcuMediaFile.getVendorChecksum());
+            boolean preservationInfoAdded = siPreservation.insertRow();
+            if (! preservationInfoAdded) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "UPDAMP", "Error, unable to insert preservation data");
+                return false;
+            }
+        }
         
         
         // ONLY refresh thumbnail IF the properties setting indicates we should.

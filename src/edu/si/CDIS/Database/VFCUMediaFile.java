@@ -19,9 +19,14 @@ public class VFCUMediaFile {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     private Integer vfcuMediaFileId;
     private String  mediaFileName;
+    private String vendorChecksum;
     
     public String getMediaFileName () {
         return this.mediaFileName;
+    }
+    
+    public String getVendorChecksum () {
+        return this.vendorChecksum;
     }
         
     public Integer getVfcuMediaFileId () {
@@ -30,6 +35,10 @@ public class VFCUMediaFile {
     
     public void setMediaFileName (String mediaFileName) {
         this.mediaFileName = mediaFileName;
+    }
+    
+    public void setVendorChecksum (String vendorChecksum) {
+        this.vendorChecksum = vendorChecksum;
     }
     
     public void setVfcuMediaFileId (Integer vfcuMediaFileId) {
@@ -72,6 +81,28 @@ public class VFCUMediaFile {
         String sql = "SELECT  media_file_name " +
                      "FROM     vfcu_media_file " +
                      "WHERE    vfcu_media_file_id = " + getVfcuMediaFileId() + " ";
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);       
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (rs.next()) {
+                 setMediaFileName(rs.getString(1));
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable get vendor checksum value", e );
+                return false;
+        }
+         
+        return true;
+    }
+    
+    public boolean populateVendorChecksum () {
+    
+        String sql = "SELECT  vendor_checksum " +
+                     "FROM    vfcu_media_file " +
+                     "WHERE   vfcu_media_file_id = " + getVfcuMediaFileId() + " ";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);       
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
