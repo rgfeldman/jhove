@@ -244,7 +244,7 @@ public class GenTimeframeReport {
 	
             String emailContent = null;
             
-            message.setSubject(CDIS.getSiHoldingUnit() + " CDIS 3.0 Activity Report - Past " + this.rptHours + " Hours" ); 
+            message.setSubject("CDIS Activity Report for " + CDIS.getSiHoldingUnit() + "- Past " + this.rptHours + " Hours" ); 
             
             emailContent = "<br>Please see the attached CDIS Activity Report<br><br><br><br>" +
                     "If you have any questions regarding information contained in this report, please contact: <br>" + 
