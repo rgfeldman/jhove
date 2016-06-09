@@ -109,7 +109,7 @@ public class VFCUMediaFile {
              ResultSet rs = pStmt.executeQuery() ) {
 
             if (rs.next()) {
-                 setMediaFileName(rs.getString(1));
+                 setVendorChecksum(rs.getString(1));
             }
                 
         } catch (Exception e) {
