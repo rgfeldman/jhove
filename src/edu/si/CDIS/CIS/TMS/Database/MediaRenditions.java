@@ -146,7 +146,7 @@ public class MediaRenditions {
        
     }
 
-    private boolean updateIsColor1() {
+    public boolean updateIsColor1() {
         
         int updateCount = 0;
         

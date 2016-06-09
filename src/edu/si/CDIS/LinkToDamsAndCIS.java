@@ -20,6 +20,7 @@ import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.CIS.TMS.Thumbnail;
+import edu.si.CDIS.CIS.TMS.Database.MediaRenditions;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
@@ -168,6 +169,10 @@ public class LinkToDamsAndCIS {
                 break;
             case "TMS" :
                 objectLinked = linkObjectTMS(cdisMap.getCdisMapId(), cisIdentifier);
+                //update the isColor/Dams flag
+                MediaRenditions mediaRenditions = new MediaRenditions();
+                mediaRenditions.setRenditionId(Integer.parseInt(cisIdentifier) );
+                mediaRenditions.updateIsColor1();
         } 
         if (! objectLinked ) {
             logger.log(Level.FINER, "Error, unable to link objects to Media for AAA ");
