@@ -68,7 +68,6 @@ public class MediaRenditions {
         
         // Get variables from the properties list
         try {
-            setMediaTypeId(Integer.parseInt (CDIS.getProperty("mediaTypeID")) );
             mediaStatusID = Integer.parseInt (CDIS.getProperty("mediaStatusID"));
         } catch (Exception e) {
                 e.printStackTrace();
