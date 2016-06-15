@@ -192,12 +192,15 @@ public class LinkToDamsAndCIS {
             SiPreservationMetadata siPreservation = new SiPreservationMetadata();
             siPreservation.setUoiid(cdisMap.getDamsUoiid()); 
             siPreservation.setPreservationIdNumber(vfcuMediaFile.getVendorChecksum());
-            boolean preservationInfoAdded = siPreservation.insertRow();
-            if (! preservationInfoAdded) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPDAMP", "Error, unable to insert preservation data");
-                return false;
+            if ( siPreservation.getPreservationIdNumber() != null  && ! siPreservation.getPreservationIdNumber().isEmpty() ) {
+                boolean preservationInfoAdded = siPreservation.insertRow();
+                if (! preservationInfoAdded) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPDAMP", "Error, unable to insert preservation data");
+                    return false;
+                }
             }
+            
         }
         
         
