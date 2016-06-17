@@ -90,7 +90,12 @@ public class GenVfcuDirReport {
     }
     
     private boolean populateRptVendorDir() {
-        String sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
+        
+        
+        String sql = "SELECT CASE WHEN file_path_ending like '%\\%' THEN " +
+                        "SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
+                     "ELSE file_path_ending " +
+                     "END " +
                      "FROM vfcu_md5_file " +
                      "WHERE vfcu_md5_file_id = " + this.masterMd5Id;
                 
@@ -182,10 +187,18 @@ public class GenVfcuDirReport {
     int countPendingRecordsLDC () {
         int numPendingRecords = 0;
         
+        String queryParam = null;
+        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+            queryParam = "WHERE  a.vfcu_md5_file_id in (" + this.masterMd5Id + ", " + this.childMd5Id + ") ";
+        }
+        else {
+            queryParam = "WHERE  a.vfcu_md5_file_id = " + this.masterMd5Id;       
+        }
+        
         String sql = "SELECT COUNT(*) " +
                      "FROM   vfcu_media_file a " +
-                     "WHERE  a.vfcu_md5_file_id in (" + this.masterMd5Id + ", " + this.childMd5Id + ") " +
-                     "AND  NOT EXISTS ( " +
+                     queryParam +
+                     " AND  NOT EXISTS ( " +
                      "  SELECT 'X' " +
                      "  FROM   cdis_map b, " +
                      "         cdis_activity_log c " +
@@ -264,11 +277,13 @@ public class GenVfcuDirReport {
             return;
         }
         
-        //get childMd5FileId for the master XML
-        md5FileIdFound = populateChildMd5FileId ();
-        if (! md5FileIdFound) {
-            logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
-            return;
+        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+            //get childMd5FileId for the master XML
+            md5FileIdFound = populateChildMd5FileId ();
+            if (! md5FileIdFound) {
+                logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
+                return;
+            }
         }
         
         int numPendingRecords = 0;
@@ -338,8 +353,10 @@ public class GenVfcuDirReport {
         vfcuMd5File.setVfcuMd5FileId(this.masterMd5Id);
         vfcuMd5File.updateCdisRptDt();
         
-        vfcuMd5File.setVfcuMd5FileId(this.childMd5Id);
-         vfcuMd5File.updateCdisRptDt();
+        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+            vfcuMd5File.setVfcuMd5FileId(this.childMd5Id);
+            vfcuMd5File.updateCdisRptDt();
+        }
         
         try { if ( CDIS.getDamsConn()!= null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
     }
