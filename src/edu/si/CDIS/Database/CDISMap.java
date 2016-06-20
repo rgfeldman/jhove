@@ -395,13 +395,16 @@ public class CDISMap {
             
             if (rs != null && rs.next()) {
                 setVfcuMediaFileId (rs.getInt(1));
+                return true;
             }   
+            else {
+                return false;
+            }
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
                 return false;
         }
-        return true;
     }
     
     
