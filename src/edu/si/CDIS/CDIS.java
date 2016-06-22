@@ -343,9 +343,9 @@ public class CDIS {
                     linkDamsAndCis.link();
                     break;
                             
-                case "linkToCISMdpp" :
-                    LinkToCIS linkToCisMdpp = new LinkToCIS();
-                    linkToCisMdpp.link();
+                case "linkToCis" :
+                    LinkToCis linkToCis = new LinkToCis();
+                    linkToCis.link();
                     break;
                                     
                 case "linkToDAMS" :
