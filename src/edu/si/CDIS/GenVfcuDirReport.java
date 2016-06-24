@@ -66,7 +66,7 @@ public class GenVfcuDirReport {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
 
-        this.rptFile =  CDIS.getCollectionGroup() + "\\rpt\\CDISRPT-" + CDIS.getSiHoldingUnit() + "-" + timeStamp + ".rtf";
+        this.rptFile =  CDIS.getCollectionGroup() + "\\rpt\\CDISRPT-" + CDIS.getCollectionGroup() + "-" + timeStamp + ".rtf";
         
         this.document = new Document();
          
@@ -79,7 +79,7 @@ public class GenVfcuDirReport {
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
             
             document.add(new Paragraph(timeStampWords + "\n" + 
-                CDIS.getSiHoldingUnit() + " CDIS Activity Report- " + this.rptVendorDir, title));
+                CDIS.getCollectionGroup()+ " CDIS Activity Report- " + this.rptVendorDir, title));
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR, cannot create report ");
@@ -453,10 +453,10 @@ public class GenVfcuDirReport {
             }
             
             if (CDIS.getProperty("rptStatus").equals("LDC")) {
-                message.setSubject(CDIS.getSiHoldingUnit() + ": Batch Hot Folder Import Activity Report - " + this.rptVendorDir);
+                message.setSubject(CDIS.getCollectionGroup()+ ": Batch Hot Folder Import Activity Report - " + this.rptVendorDir);
             }
             else {
-                message.setSubject(CDIS.getSiHoldingUnit() + ": Batch Hot Folder Integration Activity Report - " + this.rptVendorDir);
+                message.setSubject(CDIS.getCollectionGroup()+ ": Batch Hot Folder Integration Activity Report - " + this.rptVendorDir);
             }
             
             String emailContent = this.statsHeader.replace("\n","<br>");
