@@ -56,6 +56,7 @@ public class GenTimeframeReport {
     private Document document;
     private String rptFile;
     private String completedStepSql;
+    private String statsHeader;
     
     private boolean create () {
         
@@ -69,7 +70,7 @@ public class GenTimeframeReport {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
 
-        this.rptFile =  CDIS.getCollectionGroup() + "\\rpt\\CDISRPT-" + CDIS.getSiHoldingUnit() + "-" + timeStamp + ".rtf";
+        this.rptFile =  CDIS.getCollectionGroup() + "\\rpt\\CDISRPT-" + CDIS.getCollectionGroup()+ "-" + timeStamp + ".rtf";
         
         this.document = new Document();
          
@@ -82,7 +83,7 @@ public class GenTimeframeReport {
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
             
             document.add(new Paragraph(timeStampWords + "\n" + 
-                    CDIS.getSiHoldingUnit() + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
+                    CDIS.getCollectionGroup()+ " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
 
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR, cannot create report ");
@@ -105,12 +106,12 @@ public class GenTimeframeReport {
          
         genStepCompletedList ();   
         
-        //Get the failed records from the past increment
+        //Get the failed records from tstatisticsWritehe past increment
         this.failedIdName = new LinkedHashMap<>();
         genFailedIdList ();
         
-        statisticsWrite();
-                
+        statisticsGenerate();
+         
         if (! CDIS.getProperty("rptTimeframeStatsOnly").equals("true") ) {
             //failed list is to be displayed before successful list per Ken
             writeFailed();
@@ -131,6 +132,14 @@ public class GenTimeframeReport {
             }
             
             
+        }
+        
+        try {
+            RtfFont stats=new RtfFont("Times New Roman",12);
+            document.add(new Paragraph(this.statsHeader, stats));
+        }    
+            catch(Exception e) {
+            logger.log(Level.FINEST, "Unable to Obtain Header information");
         }
         
         //close the Document
@@ -244,9 +253,9 @@ public class GenTimeframeReport {
 	
             String emailContent = null;
             
-            message.setSubject("CDIS Activity Report for " + CDIS.getSiHoldingUnit() + "- Past " + this.rptHours + " Hours" ); 
+            message.setSubject("CDIS Activity Report for " + CDIS.getCollectionGroup()+ "- Past " + this.rptHours + " Hours" ); 
             
-            emailContent = "<br>Please see the attached CDIS Activity Report<br><br><br><br>" +
+            emailContent = this.statsHeader.replace("\n","<br>") + "<br><br>Please see the attached CDIS Activity Report for details<br><br>" +
                     "If you have any questions regarding information contained in this report, please contact: <br>" + 
                     "Robert Feldman (FeldmanR@si.edu) or Isabel Meyer (MeyerI@si.edu) <br><br><br><br>" + 
                     "Please let us know if someone else in your organization requires this information, or if you would like for us to discontinue delivery of this report to you.<br>" +
@@ -282,48 +291,45 @@ public class GenTimeframeReport {
     }
     
     
-    private void statisticsWrite () {
+    private void statisticsGenerate () {
         
         try {
-            RtfFont stats=new RtfFont("Times New Roman",12);
             
             if (this.failedIdName.size() > 0) {
-                document.add(new Paragraph("\nNumber of Failed Records: " + this.failedIdName.size(), stats));
+                statsHeader = "\nNumber of failed records : " + this.failedIdName.size();
             }
             else {
-                document.add(new Paragraph("\nNumber of Failed Records: 0", stats));
+                statsHeader = "\nNumber of failed records : 0";
             }
                         
             // Only put out the header information for applicable statuses.
             // We check because sometimes we have zero rows for statuses we are looking for, but we would want to put on the report zero rows
             if (completedStepSql.contains("'LCC'")) {
                 if (this.lccMapIds.size() > 0) {
-                    document.add(new Paragraph("Number of media records linked back to the CIS : " + this.lccMapIds.size(), stats));
+                    statsHeader = statsHeader + "\nNumber of media records linked back to the CIS : : " + this.lccMapIds.size();
                 }
                 else {
-                    document.add(new Paragraph("Number of media records linked back to the CIS : 0", stats));
+                    statsHeader = statsHeader + "\nNumber of media records linked back to the CIS : 0";
                 }
             }
             
             if (completedStepSql.contains("'LDC'")) {
                 if (this.ldcMapIds.size() > 0) {
-                    document.add(new Paragraph("Number of media records linked to DAMS: " + this.ldcMapIds.size(), stats));
+                    statsHeader = statsHeader + "\nNumber of media records linked to DAMS : " + this.ldcMapIds.size();
                 }
                 else {
-                    document.add(new Paragraph("Number of media records linked to DAMS: 0", stats));
+                    statsHeader = statsHeader + "\nNumber of media records linked to DAMS : 0";
                 }
             }
             
             if (completedStepSql.contains("'MDS'")) {
                 if (this.mdsMapIds.size() > 0) {
-                    document.add(new Paragraph("Number of media records metadata synced: " + this.mdsMapIds.size(), stats));
+                    statsHeader = statsHeader + "\nNumber of media records metadata synced: " + this.mdsMapIds.size();
                 }
                 else {
-                    document.add(new Paragraph("Number of media records metadata synced: 0", stats));
+                    statsHeader = statsHeader + "\nNumber of media records metadata synced: 0";
                 }
             }    
-            
-
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR",e);
