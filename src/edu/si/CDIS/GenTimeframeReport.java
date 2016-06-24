@@ -306,7 +306,7 @@ public class GenTimeframeReport {
             // We check because sometimes we have zero rows for statuses we are looking for, but we would want to put on the report zero rows
             if (completedStepSql.contains("'LCC'")) {
                 if (this.lccMapIds.size() > 0) {
-                    statsHeader = statsHeader + "\nNumber of media records linked back to the CIS : : " + this.lccMapIds.size();
+                    statsHeader = statsHeader + "\nNumber of media records linked back to the CIS : " + this.lccMapIds.size();
                 }
                 else {
                     statsHeader = statsHeader + "\nNumber of media records linked back to the CIS : 0";
