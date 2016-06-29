@@ -111,6 +111,14 @@ public class GenTimeframeReport {
         genFailedIdList ();
         
         statisticsGenerate();
+        
+        try {
+            RtfFont stats=new RtfFont("Times New Roman",12);
+            document.add(new Paragraph(this.statsHeader, stats));
+        }    
+            catch(Exception e) {
+            logger.log(Level.FINEST, "Unable to Obtain Header information");
+        }
          
         if (! CDIS.getProperty("rptTimeframeStatsOnly").equals("true") ) {
             //failed list is to be displayed before successful list per Ken
@@ -132,14 +140,6 @@ public class GenTimeframeReport {
             }
             
             
-        }
-        
-        try {
-            RtfFont stats=new RtfFont("Times New Roman",12);
-            document.add(new Paragraph(this.statsHeader, stats));
-        }    
-            catch(Exception e) {
-            logger.log(Level.FINEST, "Unable to Obtain Header information");
         }
         
         //close the Document
