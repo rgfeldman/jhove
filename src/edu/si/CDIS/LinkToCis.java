@@ -38,7 +38,7 @@ public class LinkToCis {
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
             if (sqlTypeArr[0].equals("retrieveImagesToLink")) {   
-                sql = key;    
+                sql = key;
                 logger.log(Level.FINEST, "SQL: {0}", sql);
             }
         }
