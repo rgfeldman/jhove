@@ -38,6 +38,8 @@ public class IdsCisSync {
             //loop through the list, and update the pathname
             processListFromXmlConfig ();
         }
+        
+        try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
     }
     
     // Get list of images that require sync file path to be updated
@@ -96,6 +98,7 @@ public class IdsCisSync {
                     case "TMS" :
                         MediaPath mediaPath = new MediaPath();
                         pathUpdated = mediaPath.redirectCisMediaPath(cdisMap);
+                        break;
                         
                     case "AAA" :
                         TblDigitalResource tblDigitalResource = new TblDigitalResource();
@@ -109,6 +112,7 @@ public class IdsCisSync {
                         tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
                         tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
                         pathUpdated = tblDigitalResource.updateDamsUAN();
+                        break;
                         
                     default :
                         logger.log(Level.FINER, "Error: Invalid CIS Type indicated in config file");  
@@ -117,6 +121,7 @@ public class IdsCisSync {
                 if (! pathUpdated) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "UPCISU", "Error: unable to update media Path");
+                    continue;
                 }
                 
                 CDISActivityLog cdisActivity = new CDISActivityLog(); 

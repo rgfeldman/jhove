@@ -73,7 +73,7 @@ public class TblDigitalResource {
         
        int recordsUpdated = 0;
        String sql = "UPDATE dbo.tblDigitalResource " +
-                    "SET damsUAN = " + getDamsUan() + ", " +
+                    "SET damsUAN = '" + getDamsUan() + "', " +
                     "damsUANadddate = GETDATE() " +
                     "WHERE digitalResourceID = " + getDigitalResourceId() ;
        
