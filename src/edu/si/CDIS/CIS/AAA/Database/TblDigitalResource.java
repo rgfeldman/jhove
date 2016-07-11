@@ -20,10 +20,15 @@ public class TblDigitalResource {
     
     private Integer collectionId;
     private Integer digitalResourceId;
+    private String damsUan;
     
     
     public Integer getCollectionId () {
         return this.collectionId;
+    }
+    
+    public String getDamsUan () {
+        return this.damsUan;
     }
     
     public Integer getDigitalResourceId () {
@@ -32,6 +37,10 @@ public class TblDigitalResource {
     
     public void setCollectionId (Integer collectionId) {
         this.collectionId = collectionId;
+    }
+    
+    public void setDamsUan (String damsUan) {
+        this.damsUan = damsUan;
     }
       
     public void setDigitalResourceId (Integer digitalResourceId) {
@@ -55,6 +64,28 @@ public class TblDigitalResource {
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain CollectionID for digResource", e );
+                return false;
+        }
+        return true;
+    }
+    
+     public boolean updateDamsUAN () {
+        
+       int recordsUpdated = 0;
+       String sql = "UPDATE dbo.tblDigitalResource " +
+                    "SET damsUAN = " + getDamsUan() + ", " +
+                    "damsUANadddate = GETDATE() " +
+                    "WHERE digitalResourceID = " + getDigitalResourceId() ;
+       
+       logger.log(Level.FINER, "SQL: {0}", sql);
+        
+      try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql) ) {
+            recordsUpdated = pStmt.executeUpdate();
+            
+            logger.log(Level.FINEST,"Rows Updated in AAA CIS! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error, unable to update DamsUAN in AAA CIS", e);
                 return false;
         }
         return true;

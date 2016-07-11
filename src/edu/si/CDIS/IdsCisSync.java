@@ -12,6 +12,10 @@ import java.util.Iterator;
 
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.CIS.TMS.MediaPath;
+import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
+import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.utilties.ErrorLog;
 
 
 import java.util.logging.Level;
@@ -84,9 +88,44 @@ public class IdsCisSync {
                 
                 // Obtain other values needed in CDIS_MAP object
                 cdisMap.populateMapInfo();
+                
+                //reset the indicator that shows if the path was reset successfully
+                boolean pathUpdated = false;
                  
-                MediaPath mediaPath = new MediaPath();
-                mediaPath.redirectCisMediaPath(cdisMap);
+                switch (CDIS.getProperty("cisSourceDB")) {
+                    case "TMS" :
+                        MediaPath mediaPath = new MediaPath();
+                        pathUpdated = mediaPath.redirectCisMediaPath(cdisMap);
+                        
+                    case "AAA" :
+                        TblDigitalResource tblDigitalResource = new TblDigitalResource();
+                        SiAssetMetaData siAsst = new SiAssetMetaData();
+
+                        //Get the uan 
+                        siAsst.setUoiid(cdisMap.getDamsUoiid());
+                        siAsst.populateOwningUnitUniqueName();
+                        
+                        //assign the uan and digital resourceID
+                        tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
+                        tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
+                        pathUpdated = tblDigitalResource.updateDamsUAN();
+                        
+                    default :
+                        logger.log(Level.FINER, "Error: Invalid CIS Type indicated in config file");  
+                }
+                
+                if (! pathUpdated) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPCISU", "Error: unable to update media Path");
+                }
+                
+                CDISActivityLog cdisActivity = new CDISActivityLog(); 
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd("CPS");    
+                boolean activityLogged = cdisActivity.insertActivity();
+                if (!activityLogged) {
+                    logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+                }
                 
                 try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                     
