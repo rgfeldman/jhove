@@ -18,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -44,11 +45,12 @@ import javax.mail.Transport;
 public class GenVfcuDirReport {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
    
+    private Integer currentMasterMd5FileId;
     private Integer childMd5Id;
     private LinkedHashMap<Integer, String> completedIdName;
     private String completedStepSql;
     private Document document;
-    private Integer masterMd5Id;
+    private ArrayList<Integer> masterMd5Ids;
     private LinkedHashMap<Integer, String> failedIdName;
     private String rptFile;
     private String rptVendorDir;
@@ -91,21 +93,32 @@ public class GenVfcuDirReport {
     
     private boolean populateRptVendorDir() {
         
+        String sql = null;
         
-        String sql = "SELECT CASE WHEN file_path_ending like '%\\%' THEN " +
-                        "SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
-                     "ELSE file_path_ending " +
-                     "END " +
-                     "FROM vfcu_md5_file " +
-                     "WHERE vfcu_md5_file_id = " + this.masterMd5Id;
+        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+        sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
+                    "FROM vfcu_md5_file " +
+                    "WHERE vfcu_md5_file_id = " + this.currentMasterMd5FileId;
+        } 
+        else {
+            sql = "SELECT file_path_ending " +
+                    "FROM vfcu_md5_file " +
+                    "WHERE vfcu_md5_file_id = " + this.currentMasterMd5FileId;
+        }
                 
         logger.log(Level.FINEST, "SQL: {0}", sql);
         try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
              ResultSet rs = stmt.executeQuery() ) {
 
             if (rs.next()) {
+                String strFilePathEnding = rs.getString(1);
                 //Add the records to the masterMd5Id list 
-                 this.rptVendorDir = rs.getString(1);
+                if (strFilePathEnding.contains("\\")) {
+                      this.rptVendorDir = strFilePathEnding.replace("\\", "-");
+                }
+                else {
+                      this.rptVendorDir = strFilePathEnding;
+                } 
             }        
             else {
                 throw new Exception();
@@ -121,7 +134,7 @@ public class GenVfcuDirReport {
         
     }
     
-    private boolean populateMasterMd5FileId () {
+    private boolean populateMasterMd5FileIds () {
         
         String sqlTypeArr[] = null;
         String sql = null;
@@ -130,50 +143,19 @@ public class GenVfcuDirReport {
             
             sqlTypeArr = CDIS.getXmlSelectHash().get(key);
             
-                if (sqlTypeArr[0].equals("getMasterMd5Id")) {   
+                if (sqlTypeArr[0].equals("getMasterMd5Ids")) {   
                     sql = key;    
             }
         }
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
+            ResultSet rs = stmt.executeQuery() ) {
 
-            if (rs.next()) {
+            while (rs.next()) {
                 //Add the records to the masterMd5Id list 
-                 this.masterMd5Id = rs.getInt(1);
-            }        
-            else {
-                throw new Exception();
-            }
-        }
-            
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for report, returning", e);
-                return false;
-	}
-        
-        return true;
-    }
-    
-    private boolean populateChildMd5FileId () {
-        
-        String sql = "SELECT vfcu_md5_file_id " +
-                    "FROM vfcu_md5_file " +
-                    "WHERE master_md5_file_id = " + this.masterMd5Id +
-                    " AND master_md5_file_id != vfcu_md5_file_id ";
-                
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            if (rs.next()) {
-                //Add the records to the masterMd5Id list 
-                 this.childMd5Id = rs.getInt(1);
-            }        
-            else {
-                throw new Exception();
-            }
+                 masterMd5Ids.add(rs.getInt(1));
+            }       
         }
             
 	catch(Exception e) {
@@ -189,10 +171,10 @@ public class GenVfcuDirReport {
         
         String queryParam = null;
         if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
-            queryParam = "WHERE  a.vfcu_md5_file_id in (" + this.masterMd5Id + ", " + this.childMd5Id + ") ";
+            queryParam = "WHERE  a.vfcu_md5_file_id in (" + this.currentMasterMd5FileId + ", " + this.childMd5Id + ") ";
         }
         else {
-            queryParam = "WHERE  a.vfcu_md5_file_id = " + this.masterMd5Id;       
+            queryParam = "WHERE  a.vfcu_md5_file_id = " + this.currentMasterMd5FileId;       
         }
         
         String sql = "SELECT COUNT(*) " +
@@ -269,93 +251,105 @@ public class GenVfcuDirReport {
     
     public void generate () {
         
+        VFCUMd5File vfcuMd5File = new VFCUMd5File();
+        masterMd5Ids = new ArrayList<> () ;
+        
         //get masterMd5FileId to run report for (FROM XML)
-        boolean md5FileIdFound = populateMasterMd5FileId();
+        populateMasterMd5FileIds();
    
-        if (! md5FileIdFound) {
+        if (masterMd5Ids.isEmpty() ) {
             logger.log(Level.FINEST, "No md5 file obtained, or none to report meeting condition...cannot generate report.");
             return;
         }
         
-        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+        // NEED TO LOOP THROUGH MD5 IDs one at a time
+        for (Integer masterMd5Id : masterMd5Ids) {
+            
+            vfcuMd5File.setMasterMd5FileId(masterMd5Id);
+            currentMasterMd5FileId = masterMd5Id;
+            this.childMd5Id = null;
+            
+            if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
             //get childMd5FileId for the master XML
-            md5FileIdFound = populateChildMd5FileId ();
-            if (! md5FileIdFound) {
-                logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
+            
+                this.childMd5Id = vfcuMd5File.returnSubFileMd5Id(childMd5Id);
+                if (this.childMd5Id == null) {
+                    logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
+                    continue;
+                }
+            }
+        
+            int numPendingRecords = 0;
+        
+            if (CDIS.getProperty("rptStatus").equals("LCC")) {
+                //check for completion/errors (counts) of md5 file
+                numPendingRecords = countPendingRecordsLCC();
+            }
+            else {
+                numPendingRecords = countPendingRecordsLDC();
+            }
+        
+            if (! (numPendingRecords == 0)) {
+                logger.log(Level.FINEST, "Some records are in pending state...holding off for report generation.");
+                continue;
+            }
+        
+            //get the vendordir name for the report
+            populateRptVendorDir();
+                
+            //if both master and child md5 file are complete, generate the detailed lists. 
+            create();
+        
+            //Get list of completed records (UOI_IDs) from the past increment
+            this.completedIdName = new LinkedHashMap<>();
+            genCompletedIdList ();
+     
+            //Get the failed records from the past increment
+            this.failedIdName = new LinkedHashMap<>();
+            genFailedIdList ();
+        
+            //only continue if the completedList and FailedList have reoords
+            if (this.completedIdName.isEmpty() && this.failedIdName.isEmpty() ) {
+                logger.log(Level.FINEST, "No Rows to report, exiting");
                 return;
             }
-        }
         
-        int numPendingRecords = 0;
+            statisticsGenerate();
         
-        if (CDIS.getProperty("rptStatus").equals("LCC")) {
-            //check for completion/errors (counts) of md5 file
-            numPendingRecords = countPendingRecordsLCC();
-        }
-        else {
-            numPendingRecords = countPendingRecordsLDC();
-        }
-        
-        if (! (numPendingRecords == 0)) {
-            logger.log(Level.FINEST, "Some records are in pending state...holding off for report generation.");
-            return;
-        }
-        
-        //get the vendordir name for the report
-        populateRptVendorDir();
+            try {
+                RtfFont stats=new RtfFont("Times New Roman",12);
+                document.add(new Paragraph(this.statsHeader, stats));
+            }    
+            catch(Exception e) {
+                logger.log(Level.FINEST, "Unable to Obtain Header information");
+            }
                 
-        create();
-        
-        //Get list of completed records (UOI_IDs) from the past increment
-        this.completedIdName = new LinkedHashMap<>();
-        genCompletedIdList ();
-     
-        //Get the failed records from the past increment
-        this.failedIdName = new LinkedHashMap<>();
-        genFailedIdList ();
-        
-        //only continue if the completedList and FailedList have reoords
-        if (this.completedIdName.isEmpty() && this.failedIdName.isEmpty() ) {
-            logger.log(Level.FINEST, "No Rows to report, exiting");
-            return;
-        }
-        
-        statisticsGenerate();
-        
-        try {
-            RtfFont stats=new RtfFont("Times New Roman",12);
-            document.add(new Paragraph(this.statsHeader, stats));
-        }    
-        catch(Exception e) {
-            logger.log(Level.FINEST, "Unable to Obtain Header information");
-	}
+            if (CDIS.getProperty("rptVfcudirListFiles").equals("true") ||  (this.failedIdName.size() > 0) ) {
+                //failed list is to be displayed before successful list per Ken
+                writeFailed();
                 
-        if (CDIS.getProperty("rptVfcudirListFiles").equals("true") ||  (this.failedIdName.size() > 0) ) {
-            //failed list is to be displayed before successful list per Ken
-            writeFailed();
-                
-            //now write successful completion list to file
-            writeCompleted();
-        }
+                //now write successful completion list to file
+                writeCompleted();
+            }
         
-        //close the Document
-        document.close();
+            //close the Document
+            document.close();
  
-        if (CDIS.getProperty("vfcuDirEmailList") != null) { 
-            //send email to list
-            logger.log(Level.FINEST, "Need To send Email Report");
+            if (CDIS.getProperty("vfcuDirEmailList") != null) { 
+                //send email to list
+                logger.log(Level.FINEST, "Need To send Email Report");
             
-            send();
-        }
+                send();
+            }
         
-        //set the report generated flag to indicate report was generated
-        VFCUMd5File vfcuMd5File = new VFCUMd5File();
-        vfcuMd5File.setVfcuMd5FileId(this.masterMd5Id);
-        vfcuMd5File.updateCdisRptDt();
-        
-        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
-            vfcuMd5File.setVfcuMd5FileId(this.childMd5Id);
+            //set the report generated flag to indicate report was generated
+            vfcuMd5File.setVfcuMd5FileId(this.currentMasterMd5FileId);
             vfcuMd5File.updateCdisRptDt();
+        
+            if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+                vfcuMd5File.setVfcuMd5FileId(this.childMd5Id);
+                vfcuMd5File.updateCdisRptDt();
+            }
         }
         
         try { if ( CDIS.getDamsConn()!= null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -377,7 +371,7 @@ public class GenVfcuDirReport {
         }
         
         if (sql.contains("?MD5_MASTER_ID?")) {
-            sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.masterMd5Id)) ;
+            sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.currentMasterMd5FileId)) ;
         }
         if (sql.contains("?MD5_CHILD_ID?")) {
             sql = sql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));
@@ -414,7 +408,7 @@ public class GenVfcuDirReport {
         }
        
         if (completedStepSql.contains("?MD5_MASTER_ID?")) {
-            completedStepSql = completedStepSql.replace("?MD5_MASTER_ID?", Integer.toString(this.masterMd5Id)) ;
+            completedStepSql = completedStepSql.replace("?MD5_MASTER_ID?", Integer.toString(this.currentMasterMd5FileId)) ;
         }
         if (completedStepSql.contains("?MD5_CHILD_ID?")) {
             completedStepSql = completedStepSql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));

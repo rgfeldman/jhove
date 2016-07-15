@@ -7,6 +7,7 @@ package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,5 +71,29 @@ public class VFCUMd5File {
         }
         return rowsUpdated;
         
+    }
+    
+    public Integer returnSubFileMd5Id (Integer masterMd5FileId) {
+        
+        Integer md5SubFileId = 0;     
+        String sql =    "SELECT vfcu_md5_file_id " +
+                            "FROM vfcu_md5_file " +
+                            "WHERE master_md5_file_id != vfcu_md5_file_id " +
+                            "AND master_md5_file_id = " + getMasterMd5FileId();
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+           
+            while (rs.next()) {
+                 md5SubFileId = rs.getInt(1);
+            }
+                
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to obtain child md5 ID from vfcu_md5_file", e );
+            return -1;
+        }
+        
+        return md5SubFileId;
     }
 }
