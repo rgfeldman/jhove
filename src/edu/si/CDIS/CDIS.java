@@ -5,24 +5,23 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.utilties.XmlSqlConfig;
+import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import edu.si.CDIS.Database.CollectionGroupR;
+import edu.si.CDIS.utilties.DataProvider;
+import edu.si.Utils.XmlSqlConfig;
+import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties; 
 import java.sql.Connection;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.logging.Level;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.FileHandler;
-import java.text.SimpleDateFormat;
-import java.util.logging.SimpleFormatter;
-import edu.si.CDIS.utilties.DataProvider;
-import java.text.DateFormat;
-import java.util.Date;
 import java.util.logging.Handler;
-import java.util.HashMap;
-import com.artesia.common.encryption.encryption.EncryptDecrypt;
-import java.io.File;
-
+import java.util.logging.SimpleFormatter;
 
 public class CDIS {
     
@@ -323,7 +322,7 @@ public class CDIS {
             
             // read the XML config file and obtain the selectStatements
             XmlSqlConfig xml = new XmlSqlConfig();             
-            boolean xmlReturn = xml.read();
+            boolean xmlReturn = xml.read(CDIS.getCollectionGroup(), CDIS.getOperationType());
             if (! xmlReturn) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
                 return;
@@ -386,7 +385,6 @@ public class CDIS {
                 default:     
                     logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");            
             }
-            
  
         } catch (Exception e) {
                 e.printStackTrace();
