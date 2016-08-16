@@ -7,21 +7,21 @@ package edu.si.CDIS;
 
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import edu.si.CDIS.Database.CollectionGroupR;
-import edu.si.CDIS.utilties.DataProvider;
 import edu.si.Utils.XmlSqlConfig;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties; 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
+import org.w3c.dom.NodeList;
 
 public class CDIS {
     
@@ -34,10 +34,10 @@ public class CDIS {
     private static String operationType;
     private static Properties properties;
     private static String siHoldingUnit;
-    private static HashMap <String,String[]> xmlSelectHash;
-   
-    public static HashMap<String, String[]> getXmlSelectHash() {
-        return CDIS.xmlSelectHash;
+    private static NodeList queryNodeList;
+    
+    public static NodeList getQueryNodeList() {
+        return CDIS.queryNodeList;
     }
     
     public static String getCollectionGroup() {
@@ -88,46 +88,41 @@ public class CDIS {
     */
     public boolean connectToDatabases () {
         
-        //establish and verify database connections.
-	
         try {
-            //decrypt the password, it is stored in ini in encypted fashion
-            String damsPass = EncryptDecrypt.decryptString(CDIS.getProperty("damsPass"));
+            //connect to DAMS DB
+            String passwd = EncryptDecrypt.decryptString(CDIS.getProperty("damsPass"));
+              
+            Class.forName(CDIS.getProperty("damsDriver"));
+            CDIS.damsConn = DriverManager.getConnection(CDIS.getProperty("damsConnString"), 
+                                CDIS.getProperty("damsUser"), passwd);
             
-            CDIS.damsConn = DataProvider.establishConnection(CDIS.getProperty("damsDriver"), 
-					CDIS.getProperty("damsConnString"), 
-					CDIS.getProperty("damsUser"), 
-					damsPass);
+            CDIS.damsConn.setAutoCommit(false);
                 
-        } catch(Exception ex) {
-		logger.log(Level.SEVERE, "Failure Connecting to DAMS database.", ex);
-		return false;
+            logger.log(Level.INFO, "Connection to DAMS database established.");
+            
+            if (CDIS.getProperty("cisSourceDB").equals("none"))  {
+                logger.log(Level.INFO, "No CIS database sepecified, skipping connection to CIS");
+                return true;
+            }
+            
+            //connect to CIS DB
+            passwd = EncryptDecrypt.decryptString(CDIS.getProperty("cisPass"));
+            
+            Class.forName(CDIS.getProperty("cisDriver"));
+            CDIS.cisConn = DriverManager.getConnection(CDIS.getProperty("cisConnString"), 
+                                CDIS.getProperty("cisUser"), passwd);
+            
+            CDIS.cisConn.setAutoCommit(false);
+                
+            logger.log(Level.INFO, "Connection to CIS database established.");
+            
 	}
-        
-        logger.log(Level.FINER, "Connection to DAMS database established.");
-        
-        
-        try {
-                if (CDIS.getProperty("cisSourceDB").equals("none")) {
-                    
-                    logger.log(Level.FINER, "CIS source is CDISDB. No connection to CIS database needed.");
-                    
-                } else {
-                    //decrypt the password, it is stored in ini in encypted fashion
-                    String tmsPass = EncryptDecrypt.decryptString(CDIS.getProperty("cisPass"));
-                
-                    CDIS.cisConn = DataProvider.establishConnection(CDIS.getProperty("cisDriver"), 
-                    CDIS.getProperty("cisConnString"), 
-                    CDIS.getProperty("cisUser"), 
-                    tmsPass);
-                    
-                    logger.log(Level.FINER, "Connection to CIS database established.");
-                }
-                
-	} catch(Exception ex) {
-		logger.log(Level.SEVERE, "Failure Connecting to CIS database.", ex);
-		return false;
-        } 
+            
+	catch (Exception e) 
+        {
+            logger.log(Level.SEVERE,"Failed to connect to DB:" + e.getMessage() + "\n");
+            return false;
+        }
         
         return true;
         
@@ -320,21 +315,29 @@ public class CDIS {
             }
             CDIS.siHoldingUnit = collectionGrp.getSiHoldingUnit(); 
             
-            // read the XML config file and obtain the selectStatements
-            XmlSqlConfig xml = new XmlSqlConfig();             
-            boolean xmlReturn = xml.read(CDIS.getCollectionGroup(), CDIS.getOperationType());
-            if (! xmlReturn) {
-                logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
-                return;
+            //linkToDAMS does not use the config file
+            if (! CDIS.operationType.equals("linkToDAMS")) {
+                // read the XML config file
+                XmlSqlConfig xml = new XmlSqlConfig();    
+                boolean xmlReturn = xml.read(CDIS.getCollectionGroup(), CDIS.getOperationType());
+                if (! xmlReturn) {
+                    logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
+                    return;
+                }
+                // save the queries in a Node List
+                CDIS.queryNodeList = xml.getOpQueryNodeList();
             }
-            
-            CDIS.xmlSelectHash = new HashMap <>(xml.getSelectStmtHash());
             
             switch (CDIS.operationType) {
                 
+                case "linkToDAMS" :
+                    LinkToDAMS linkToDams = new LinkToDAMS();
+                    linkToDams.link();
+                    break;
+                    
                 case "sendToHotFolder" :   
                     SendToHotFolder sendToHotFolder = new SendToHotFolder();
-                    sendToHotFolder.sendForingest();  
+                    sendToHotFolder.sendForingest(); 
                     break;
                     
                 case "linkToDamsAndCis" :
@@ -345,11 +348,6 @@ public class CDIS {
                 case "linkToCis" :
                     LinkToCis linkToCis = new LinkToCis();
                     linkToCis.link();
-                    break;
-                                    
-                case "linkToDAMS" :
-                    LinkToDAMS linkToDams = new LinkToDAMS();
-                    linkToDams.link();
                     break;
 
                 case "metadataSync" :    
@@ -383,8 +381,11 @@ public class CDIS {
                     break;    
                     
                 default:     
-                    logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting");            
+                    logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting"); 
+                    return;
             }
+            
+            logger.log(Level.INFO, CDIS.getOperationType() + " Complete");
  
         } catch (Exception e) {
                 e.printStackTrace();

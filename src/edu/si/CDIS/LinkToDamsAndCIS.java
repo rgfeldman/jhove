@@ -29,6 +29,7 @@ import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.VFCUMediaFile;
 import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.Utils.XmlSqlConfig;
 
    
 public class LinkToDamsAndCIS {
@@ -225,48 +226,46 @@ public class LinkToDamsAndCIS {
     
     private void processNeverLinkedList() {
       
-        String sql = null;    
-        String currentIterationSql = null;
-        String sqlTypeArr[] = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
-              
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getCISIdentifier"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }    
             
-            if (sqlTypeArr[0].equals("getCISIdentifier")) {   
-                sql = key;    
-            }
-        }
-
-        //Iterate though hash...the key is the select statement itself
-        for (String uoiId : neverLinkedDamsIds.keySet()) {
+            for (String uoiId : neverLinkedDamsIds.keySet()) {
+                 String sql = xml.getSqlQuery();
+                 
+                if (sql.contains("?FILE_NAME?") ) {
+                    sql = sql.replace("?FILE_NAME?",neverLinkedDamsIds.get(uoiId));
+                }
             
-            if (sql.contains("?FILE_NAME?") ) {
-                currentIterationSql = sql.replace("?FILE_NAME?",neverLinkedDamsIds.get(uoiId));
-            }
-            else if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?") ) {
-                SiAssetMetaData siAsst = new SiAssetMetaData();
-                siAsst.setUoiid(uoiId);
-                siAsst.populateOwningUnitUniqueName();
-                currentIterationSql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?",siAsst.getOwningUnitUniqueName());
-            }
-            else {
-                currentIterationSql = sql;
-            }
+                if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?") ) {
+                    SiAssetMetaData siAsst = new SiAssetMetaData();
+                    siAsst.setUoiid(uoiId);
+                    siAsst.populateOwningUnitUniqueName();
+                    sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?",siAsst.getOwningUnitUniqueName());
+                }
+                logger.log(Level.FINEST,"SQL " + sql);
             
-            logger.log(Level.FINEST,"SQL " + currentIterationSql);
-            
-            try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(currentIterationSql);
-                ResultSet rs = pStmt.executeQuery()   ) {   
+                try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
+                    ResultSet rs = pStmt.executeQuery()   ) {   
                 
-                //Get the CIS identifier for the field selected from above
-                if (rs.next()) {
-                    String cisIdentifier = rs.getString(1);
+                    //Get the CIS identifier for the field selected from above
+                    if (rs.next()) {
+                        String cisIdentifier = rs.getString(1);
                       
-                    logger.log(Level.FINER, "Will create link for uoiid/CIS id: " + uoiId + " " + cisIdentifier);
-                    CDISMap cdisMap = new CDISMap();
-                    boolean linkCreated = createNewLink(cdisMap, cisIdentifier, uoiId);
+                        logger.log(Level.FINER, "Will create link for uoiid/CIS id: " + uoiId + " " + cisIdentifier);
+                        CDISMap cdisMap = new CDISMap();
+                        boolean linkCreated = createNewLink(cdisMap, cisIdentifier, uoiId);
                     
                     if (linkCreated) {
                         
@@ -287,10 +286,13 @@ public class LinkToDamsAndCIS {
                 }
                 
                 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }    
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }    
+            }
+            
         }
+        
     }
     
     
@@ -302,35 +304,36 @@ public class LinkToDamsAndCIS {
     */
     private void populateNeverLinkedDamsIds () {
         
-        String sqlTypeArr[] = null;
-        String sql = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+        //indicate the particular query we are interested in
+        xml.setQueryTag("retrieveDamsIds"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }    
             
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
             
-            if (sqlTypeArr[0].equals("retrieveDamsIds")) {   
-                sql = key;    
-                logger.log(Level.FINEST, "SQL: {0}", sql);
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+
+                //Add the value from the database to the list
+                while (rs.next()) {
+                     neverLinkedDamsIds.put(rs.getString("UOI_ID"),rs.getString(2));
+                    logger.log(Level.FINER,"Adding DAMS asset to lookup in CIS: {0}", rs.getString("UOI_ID") );
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
             }
         }
-                
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-                ResultSet rs = pStmt.executeQuery()   ) {
-        
-            // For each record in the sql query, add it to the unlinked rendition List
-            while (rs.next()) {   
-                neverLinkedDamsIds.put(rs.getString("UOI_ID"),rs.getString(2));
-                logger.log(Level.FINER,"Adding DAMS asset to lookup in CIS: {0}", rs.getString("UOI_ID") );
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-        
-        return;
-        
     }
     
 }

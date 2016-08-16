@@ -7,15 +7,15 @@ package edu.si.CDIS;
 
 import edu.si.CDIS.Database.CDISActivityLog;
 
+import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.CIS.TMS.Thumbnail;
+import edu.si.Utils.XmlSqlConfig;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.CDIS.utilties.ErrorLog;
-import edu.si.CDIS.Database.CDISMap;
-
-import edu.si.CDIS.CIS.TMS.Thumbnail;
 
 
 public class CISThumbnailSync {
@@ -29,34 +29,42 @@ public class CISThumbnailSync {
         Description:    Populate a list of thumnails that need to be generated/updated 
         RFeldman 3/2015
     */
-    private void populateIdsToUpdate () {
-        String sqlTypeArr[] = null;
-        String sql = null;
+    
+    private boolean populateIdsToUpdate () {
         
-        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("retrieveMapIds"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }       
             
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
             
-            if (sqlTypeArr[0].equals("retrieveMapIds")) {   
-                sql = key;    
-                logger.log(Level.FINEST, "SQL: {0}", sql);
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+
+                //Add the value from the database to the list
+                while (rs.next()) {
+                    mapIdsToSync.add(rs.getInt("cdis_map_id"));
+                }
             }
-        }
-                
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql); 
-             ResultSet rs = pStmt.executeQuery() ) {
-           
-            // For each record in the sql query, add it to the unlinked rendition List
-            while (rs.next()) {   
-                mapIdsToSync.add(rs.getInt("cdis_map_id"));
-                logger.log(Level.FINER,"Adding CIS renditionID for CISThumbnailSync update: " + rs.getInt("cdis_map_id") );
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain list of mapids to sync, returning", e);
+                return false;
             }
-            
-        } catch (Exception e) {
-           logger.log(Level.FINER,"Error, unable to get list of records to thumbnail sync: ", e );
-        }    
-        return;  
+        }            
+        
+        return true;
+        
     }
     
     /*  Method :        sync

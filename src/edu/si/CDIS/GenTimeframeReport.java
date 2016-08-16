@@ -38,6 +38,7 @@ import javax.mail.Message;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
+import edu.si.Utils.XmlSqlConfig;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -155,85 +156,97 @@ public class GenTimeframeReport {
     
     private boolean genFailedIdList () {
         
-        String sqlTypeArr[] = null;
-        String sql = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getFailed"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }  
             
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-                if (sqlTypeArr[0].equals("getFailedRecords")) {   
-                    sql = key;    
+            String sql = xml.getSqlQuery();   
+            if (sql.contains("?RPT_HOURS?")) {
+                sql = sql.replace("?RPT_HOURS?", this.rptHours);
             }
-        }
-        
-        if (sql.contains("?RPT_HOURS?")) {
-            sql = sql.replace("?RPT_HOURS?", this.rptHours);
-        }
-        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            while (rs.next()) {
-                this.failedIdName.put(rs.getInt(1), rs.getString(2));    
-            }        
-        }
+            logger.log(Level.FINEST, "SQL: {0}", sql);
             
-	catch(Exception e) {
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery() ) {
+
+                while (rs.next()) {
+                    //Add the records to the masterMd5Id list 
+                    this.failedIdName.put(rs.getInt(1), rs.getString(2)); 
+                }
+            }
+            catch(Exception e) {
 		logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
                 return false;
-	}
+            }
+            
+        }            
         
         return true;
+        
     }
     
     
     private boolean genStepCompletedList () {
         
-        String sqlTypeArr[] = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+         //indicate the particular query we are interested in
+        xml.setQueryTag("getStepComplete"); 
+        
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }     
+            completedStepSql = xml.getSqlQuery();
             
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
+            if (completedStepSql.contains("?RPT_HOURS?")) {
+                completedStepSql = completedStepSql.replace("?RPT_HOURS?", this.rptHours);
+            }
+            logger.log(Level.FINEST, "SQL: {0}", completedStepSql);
             
-            if (sqlTypeArr[0].equals("getStepCompleteRecords")) {   
-                completedStepSql = key;  
-            }        
-        }
-        
-        if (completedStepSql.contains("?RPT_HOURS?")) {
-            completedStepSql = completedStepSql.replace("?RPT_HOURS?", this.rptHours);
-        }
-        
-        logger.log(Level.FINEST, "SQL: {0}", completedStepSql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(completedStepSql);
-             ResultSet rs = stmt.executeQuery() ) {
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(completedStepSql);
+            ResultSet rs = stmt.executeQuery() ) {
 
-            while (rs.next()) {
-
-                switch (rs.getString(2)) {
-                    case "LCC":
-                        this.lccMapIds.add(rs.getInt(1));
-                        break;
-                    case "LDC" :
-                        this.ldcMapIds.add(rs.getInt(1));
-                        break;    
-                    case "MDS" :
-                        this.mdsMapIds.add(rs.getInt(1));
-                        break;   
-                    default :
-                        logger.log(Level.SEVERE, "Error: Encountered status type that is not reported");
-                }  
-            }        
-        }
+                //Add the value from the database to one of the lists
+                while (rs.next()) {
+                    switch (rs.getString(2)) {
+                        case "LCC":
+                            this.lccMapIds.add(rs.getInt(1));
+                            break;
+                        case "LDC" :
+                            this.ldcMapIds.add(rs.getInt(1));
+                            break;    
+                        case "MDS" :
+                            this.mdsMapIds.add(rs.getInt(1));
+                            break;   
+                        default :
+                            logger.log(Level.SEVERE, "Error: Encountered status type that is not reported");
+                        }
+                }
+            }
             
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for report, returning", e);
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain completed list for report, returning", e);
                 return false;
-	}
-        
+            }
+        }
         return true;
+  
     }
     
     

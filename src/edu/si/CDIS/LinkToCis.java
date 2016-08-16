@@ -10,6 +10,7 @@ import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CdisLinkToCis;
 import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.Utils.XmlSqlConfig;
 
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -26,37 +27,40 @@ public class LinkToCis {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     public void link () {
-        //  The CDIS process will check CDIS for Ingest table for any entries with status RI. 
-        // note this will only pull the tifs because only the tifs are in the ingest table
         
-        //from the config file, get the cdis_map_id and the cisId for any records that need to be updated
-        String sqlTypeArr[] = null;
-        String sql = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
-            
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-            if (sqlTypeArr[0].equals("retrieveImagesToLink")) {   
-                sql = key;
-                logger.log(Level.FINEST, "SQL: {0}", sql);
-            }
-        }
+        //indicate the particular query we are interested in
+        xml.setQueryTag("retrieveImagesToLink"); 
         
         HashMap<Integer, String> mapIdsToIntegrate = new HashMap<>();
         
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery()) {
-            logger.log(Level.FINEST,"SQL! " + sql); 
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }  
             
-            while (rs.next()) {
-                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
-                    mapIdsToIntegrate.put(rs.getInt(1), rs.getString(2));
-            }
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
+                //Add the value from the database to the list
+                while (rs.next()) {
+                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
+                     mapIdsToIntegrate.put(rs.getInt(1), rs.getString(2));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+                return;
+            }
+        }
         
         //  Update status and date in CDIS activity log.
         for (Integer key : mapIdsToIntegrate.keySet()) {

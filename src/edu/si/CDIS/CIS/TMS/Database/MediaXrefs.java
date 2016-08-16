@@ -6,7 +6,6 @@
 package edu.si.CDIS.CIS.TMS.Database;
 
 import edu.si.CDIS.CDIS;
-import edu.si.CDIS.utilties.DataProvider;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -145,7 +144,8 @@ public class MediaXrefs {
     
     public boolean insertNewRecord() {
      
-        Boolean inserted;
+        int insertCount;
+        ResultSet rs = null;
         
         String sql = "insert into MediaXrefs" +
                         " (MediaMasterID, " +
@@ -166,10 +166,19 @@ public class MediaXrefs {
         
         logger.log(Level.FINER, "SQL: {0}", sql);
    
-        inserted = DataProvider.executeInsert(CDIS.getCisConn(), sql);     
-                
-        return inserted;
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
+            
+            insertCount = pStmt.executeUpdate();
+             
+            if (insertCount != 1) {
+                throw new Exception();
+            }
+        
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to insert into mediaXrefs table", e );
+            return false;    
+        }
+        
+        return true; 
     }
-    
-
 }

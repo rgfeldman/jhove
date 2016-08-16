@@ -12,6 +12,7 @@ import edu.si.CDIS.Database.VFCUMd5File;
 import com.lowagie.text.*;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
+import edu.si.Utils.XmlSqlConfig;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
@@ -84,7 +85,7 @@ public class GenVfcuDirReport {
                 CDIS.getCollectionGroup()+ " CDIS Activity Report- " + this.rptVendorDir, title));
             
         } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR, cannot create report ");
+            logger.log(Level.FINEST, "ERROR, cannot create report ", e);
             return false;
         }  
         
@@ -136,34 +137,40 @@ public class GenVfcuDirReport {
     
     private boolean populateMasterMd5FileIds () {
         
-        String sqlTypeArr[] = null;
-        String sql = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
-            
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-                if (sqlTypeArr[0].equals("getMasterMd5Ids")) {   
-                    sql = key;    
-            }
-        }
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getMasterMd5Ids"); 
         
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }     
+            
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
             ResultSet rs = stmt.executeQuery() ) {
 
-            while (rs.next()) {
-                //Add the records to the masterMd5Id list 
-                 masterMd5Ids.add(rs.getInt(1));
-            }       
-        }
-            
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for report, returning", e);
+                //Add the value from the database to the list
+                while (rs.next()) {
+                    masterMd5Ids.add(rs.getInt(1));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain list of masterMd5s, returning", e);
                 return false;
-	}
+            }
+            
+        }            
         
         return true;
+            
     }
     
     int countPendingRecordsLDC () {
@@ -358,77 +365,97 @@ public class GenVfcuDirReport {
     
     private boolean genFailedIdList () {
         
-        String sqlTypeArr[] = null;
-        String sql = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getFailedRecords"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }     
+            String sql = xml.getSqlQuery();
             
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-                if (sqlTypeArr[0].equals("getFailedRecords")) {   
-                    sql = key;    
+            if (sql.contains("?MD5_MASTER_ID?")) {
+                sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.currentMasterMd5FileId)) ;
             }
-        }
+            if (sql.contains("?MD5_CHILD_ID?")) {
+                sql = sql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));
+            }
         
-        if (sql.contains("?MD5_MASTER_ID?")) {
-            sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.currentMasterMd5FileId)) ;
-        }
-        if (sql.contains("?MD5_CHILD_ID?")) {
-            sql = sql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));
-        }
-        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            while (rs.next()) {
-                this.failedIdName.put(rs.getInt(1), rs.getString(2));    
-            }        
-        }
             
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery() ) {
+
+                //Add the value from the database to the list
+                while (rs.next()) {
+                    this.failedIdName.put(rs.getInt(1), rs.getString(2));  
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain list of Failed Records, returning", e);
                 return false;
-	}
+            }
+        }            
         
         return true;
+        
     }
+  
     
     private boolean genCompletedIdList () {
         
-        String sqlTypeArr[] = null;
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getSuccessRecords"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            } 
+            String sql = xml.getSqlQuery();
             
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);   
-            
-            if (sqlTypeArr[0].equals("getSuccessRecords")) {   
-                this.completedStepSql = key;   
+            if (sql.contains("?MD5_MASTER_ID?")) {
+                sql = sql.replace("?MD5_MASTER_ID?", Integer.toString(this.currentMasterMd5FileId)) ;
             }
-        }
-       
-        if (completedStepSql.contains("?MD5_MASTER_ID?")) {
-            completedStepSql = completedStepSql.replace("?MD5_MASTER_ID?", Integer.toString(this.currentMasterMd5FileId)) ;
-        }
-        if (completedStepSql.contains("?MD5_CHILD_ID?")) {
-            completedStepSql = completedStepSql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));
-        }
-        
-        logger.log(Level.FINEST, "SQL: {0}", completedStepSql);
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(completedStepSql);
-             ResultSet rs = stmt.executeQuery() ) {
-
-            while (rs.next()) {
-                this.completedIdName.put(rs.getInt(1), rs.getString(2));    
-            }        
-        }
+            if (sql.contains("?MD5_CHILD_ID?")) {
+                sql = sql.replace("?MD5_CHILD_ID?", Integer.toString(this.childMd5Id));
+            }
             
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list for report, returning", e);
+            this.completedStepSql = sql;
+        
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery() ) {
+
+                //Add the value from the database to the list
+                while (rs.next()) {
+                     this.completedIdName.put(rs.getInt(1), rs.getString(2)); 
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain list of Successful Records, returning", e);
                 return false;
-	}
+            }
+            
+        }            
         
         return true;
+        
     }
     
     
@@ -450,7 +477,7 @@ public class GenVfcuDirReport {
                 message.setSubject(CDIS.getCollectionGroup()+ ": Batch Hot Folder Import Activity Report - " + this.rptVendorDir);
             }
             else {
-                message.setSubject(CDIS.getCollectionGroup()+ ": Batch Hot Folder Integration Activity Report - " + this.rptVendorDir);
+                message.setSubject(CDIS.getCollectionGroup()+ ": Batch Hot Folder Media Creation/Integration Activity Report - " + this.rptVendorDir);
             }
             
             String emailContent = this.statsHeader.replace("\n","<br>");
@@ -500,10 +527,10 @@ public class GenVfcuDirReport {
             
         if (completedStepSql.contains("'LCC'")) {
             if (completedIdName.size() > 0) {
-                statsHeader = "\nNumber of Media Records Integrated with CIS : " + this.completedIdName.size();
+                statsHeader = "\nNumber of Media Records Created/Integrated with CIS : " + this.completedIdName.size();
             }
             else {
-                statsHeader = "\nNumber of Media Records Integrated with CIS : 0" ;
+                statsHeader = "\nNumber of Media Records Created/Integrated with CIS : 0" ;
             }
         }
         else if (completedStepSql.contains("'LDC'")) {
@@ -530,7 +557,7 @@ public class GenVfcuDirReport {
             String sectionHeader = null;
             
             if (completedStepSql.contains("'LCC'")) {
-                sectionHeader = "\n\nThe Following Media Successfully Integerated with CIS: ";
+                sectionHeader = "\n\nThe Following Media Successfully Created/Integerated with CIS: ";
             }
             else if (completedStepSql.contains("'LDC'")) {
                 sectionHeader = "\n\nThe Following Media Successfully Ingested / Linked with DAMS: ";

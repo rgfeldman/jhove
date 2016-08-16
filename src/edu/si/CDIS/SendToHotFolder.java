@@ -10,6 +10,7 @@ import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.VFCUMediaFile;
 import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.Utils.XmlSqlConfig;
 
 import java.io.File;
 import java.sql.PreparedStatement;
@@ -164,46 +165,42 @@ public class SendToHotFolder {
     */
     private boolean populateNewMasterMediaList () {
         
-        ResultSet rs = null;
-        PreparedStatement stmt = null;
-
-        String sql = null;
-        String sqlTypeArr[];
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {
-            
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-              
-            if (sqlTypeArr[0].equals("idListToSend")) {   
-                sql = key;      
+        //indicate the particular query we are interested in
+        xml.setQueryTag("idListToSend"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
             }   
-        }
-        
-        if (sql != null) {           
-        
-            sql = sql + "AND ROWNUM < " + CDIS.getProperty("maxNumFiles") + " + 1";
             
-            logger.log(Level.FINER, "SQL: {0}", sql);
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
             
-            try {
-                stmt = CDIS.getDamsConn().prepareStatement(sql);
-                                                    
-                rs = stmt.executeQuery();
-                     
-                while (rs.next()) {           
-                    masterMediaIds.put(rs.getString("uniqueMediaId"), rs.getString("mediaFileName"));
-                }   
+            String sql = xml.getSqlQuery();
+            sql = sql + " AND ROWNUM < " + CDIS.getProperty("maxNumFiles") + " + 1";
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery() ) {
 
-            } catch (Exception e) {
-                    logger.log(Level.FINER, "Error: obtaining ID list ", e );
-                    return false;    
-            } finally {
-                    try { if (rs != null) rs.close(); } catch (SQLException se) { se.printStackTrace(); }
-                    try { if (stmt != null) stmt.close(); } catch (SQLException se) { se.printStackTrace(); }
+                //Add the value from the database to the list
+                while (rs.next()) {
+                      masterMediaIds.put(rs.getString("uniqueMediaId"), rs.getString("mediaFileName"));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+                return false;
             }
         }
         
         return true;
+        
     }
     
     private boolean obtainHotFolderName() {

@@ -16,6 +16,7 @@ import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.Utils.XmlSqlConfig;
 
 
 import java.util.logging.Level;
@@ -44,34 +45,40 @@ public class IdsCisSync {
     
     // Get list of images that require sync file path to be updated
     private boolean getNeverSyncedImagePath () {
-        String sqlTypeArr[] = null;
-        String sql = null; 
         
-        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
-              
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            
-            if (sqlTypeArr[0].equals("getMapIds")) {   
-                sql = key;    
-            }
-        }      
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            ResultSet  rs = pStmt.executeQuery() ) {
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getMapIds"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }    
             
-            logger.log(Level.FINEST,"SQL! " + sql); 
-                 
-            while (rs.next()) {
-                logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
-                mapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
-            }
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
 
-        } catch (Exception e) {
-            logger.log(Level.FINEST, "Error obtaining list to sync mediaPath and Name ", e);
-            return false;
-        } 
+                //Add the value from the database to the list
+                while (rs.next()) {
+                     mapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+                return false;
+            }
+        }
+        
         return true;
+        
     }
     
     

@@ -20,6 +20,7 @@ import edu.si.CDIS.DAMS.Database.SiRestrictionsDtls;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.CDIS.utilties.ScrubStringForDb;
+import edu.si.Utils.XmlSqlConfig;
 
 public class MetaDataSync {
 
@@ -94,49 +95,47 @@ public class MetaDataSync {
         RFeldman 2/2015
     */
     private void getCISUpdatedRendition() {
-        String sqlTypeArr[] = null;
-        String sql = null;
 
-        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getRecordsForResync"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            } 
             
-            sqlTypeArr =  CDIS.getXmlSelectHash().get(key);
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
             
-            if (sqlTypeArr[0].equals("getRecordsForResync")) {   
-                sql = key;    
-                logger.log(Level.FINEST, "SQL: {0}", sql);
+            try (PreparedStatement stmt = CDIS.getCisConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+
+                while (rs.next()) {
+                    CDISMap cdisMap = new CDISMap();
+                    cdisMap.setCisUniqueMediaId(rs.getString(1));
+                    boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
+                    
+                    if (!cisMediaIdObtained) {
+                        continue;
+                    }
+                
+                    //Only add to the list if it is not already in the list. It could be there from never synced record list
+                    if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
+                        cdisMapIdsToSync.add(cdisMap.getCdisMapId());
+                    }
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to re-sync", e);
+                return;
             }
         }
-        
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
-            ResultSet  rs = pStmt.executeQuery() ) {
-            
-            CDISMap cdisMap = new CDISMap();
-            
-            logger.log(Level.FINEST,"SQL! " + sql); 
-                 
-            while (rs.next()) {
-                logger.log(Level.ALL, "Adding RenditionID to re-sync list: " + rs.getString(1));
-                cdisMap.setCisUniqueMediaId(rs.getString(1));
-                boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
-                
-                //check to make sure we were able to get the CDIS_MAP record
-                if (! cisMediaIdObtained) {
-                    logger.log(Level.FINEST,"Media not tracked by CDIS or errored.  CIS_MediaID: " + rs.getString(1));
-                    continue;
-                }
-
-                //Only add to the list if it is not already in the list. It could be there from never synced record list
-                if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
-                    cdisMapIdsToSync.add(cdisMap.getCdisMapId());
-                }
-
-            }
-
-        } catch (Exception e) {
-            logger.log(Level.ALL, "Error in generation list to sync: " + e);
-        } 
-        
         
     }
     
@@ -146,34 +145,38 @@ public class MetaDataSync {
         RFeldman 2/2015
     */
     private void getNeverSyncedRendition() {
-
-        String sqlTypeArr[] = null;
-        String sql = null;
-
-        //Go through the hash containing the select statements from the XML, and obtain the proper select statement
-        for (String key : CDIS.getXmlSelectHash().keySet()) {     
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getNeverSyncedRecords"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength() ; s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            } 
             
-            sqlTypeArr =  CDIS.getXmlSelectHash().get(key);
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
             
-            if (sqlTypeArr[0].equals("getNeverSyncedRecords")) {   
-                sql = key;    
-                logger.log(Level.FINEST, "SQL: {0}", sql);
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+                
+                while (rs.next()) {
+
+                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
+                    cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to sync", e);
+                return;
             }
         }
-        
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            ResultSet  rs = pStmt.executeQuery() ) {
-            
-            logger.log(Level.FINEST,"SQL! " + sql); 
-                 
-            while (rs.next()) {
-                logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
-                cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
-            }
-
-        } catch (Exception e) {
-            logger.log(Level.ALL, "Error in generation list to sync: " + e);
-        } 
     }
     
     private boolean performUpdates (SiAssetMetaData siAsst, CDISMap cdisMap, boolean managedByCIS) {
@@ -406,10 +409,6 @@ public class MetaDataSync {
     */
 
     private boolean mapData(CDISMap cdisMap) {
-        String sql;
-        String sqlTypeArr[];
-        String sqlType;
-        String delimiter;
         
         ScrubStringForDb scrub = new ScrubStringForDb();
 
@@ -418,22 +417,23 @@ public class MetaDataSync {
         this.metaDataValuesForDams = new HashMap <>();
         
         //for each select statement found in the xml 
-        for (String key : CDIS.getXmlSelectHash().keySet()) {
-
-            // Get the sql value from the hasharray
-            sql = key;
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-            sqlType = sqlTypeArr[0];
-            delimiter = sqlTypeArr[1];
-            
-            if (! ((sqlTypeArr[0].equals("singleResult")) || (sqlTypeArr[0].equals("cursorAppend")))  ){      
-                //get the next query, we are not interested in this one at this point
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("metadataMap"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
                 continue;
-            }
-                      
-            if (sql.contains("?UOI_ID?")) {
-                sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
-            }
+            } 
+            
+            String sql = xml.getSqlQuery();   
             if (sql.contains("?MEDIA_ID?")) {
                 sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
             }
@@ -444,17 +444,14 @@ public class MetaDataSync {
            
                 sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
             }
-                        
-            logger.log(Level.ALL, "select Statement: " + sql);    
             
-            try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
-                 ResultSet rs = pStmt.executeQuery() ) {
-                
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+            try (PreparedStatement stmt = CDIS.getCisConn().prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery() ) {
+
                 while (rs.next()) {
-                    
-                    try {
-                    
-                        ResultSetMetaData rsmd = rs.getMetaData();
+                    ResultSetMetaData rsmd = rs.getMetaData();
                     
                         for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
                             String columnName = rsmd.getColumnName(i);
@@ -470,9 +467,9 @@ public class MetaDataSync {
                             String columnExisting = metaDataValuesForDams.get(columnName.toUpperCase());
                              
                             if (columnExisting != null) {
-                                if (sqlType.equals("cursorAppend")) {
+                                if (! xml.getMultiResultDelim().isEmpty() ) {
                                     //append to existing column
-                                    metaDataValuesForDams.put(columnName.toUpperCase(), columnExisting + delimiter + ' ' + columnValue);
+                                    metaDataValuesForDams.put(columnName.toUpperCase(), columnExisting + xml.getMultiResultDelim() + ' ' + columnValue);
                                 }
                                 else {
                                     //put out error
@@ -483,20 +480,18 @@ public class MetaDataSync {
                             else {
                                 metaDataValuesForDams.put(columnName.toUpperCase(),columnValue);
                             }
+                        }
                        
-                               
-                        }  
-                    } catch (Exception e) {
-                        logger.log(Level.ALL, "Error, exception raised in metadata while loop", e); 
-                        return false;
-                    }
                 }
-            } catch (Exception e) {
-                logger.log(Level.ALL, "Error, exception raised in metadata for loop", e); 
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
                 return false;
-            } 
+            }
+            
             
         }
+      
         return true;
     }
 }

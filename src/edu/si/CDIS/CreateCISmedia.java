@@ -15,7 +15,7 @@ import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.utilties.ErrorLog;
-
+import edu.si.Utils.XmlSqlConfig;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -35,34 +35,41 @@ public class CreateCISmedia {
         Description:    populates the list of never linked dams Images  
         RFeldman 2/2015
     */
-    private void populateNeverLinkedImages () {
-        String sql = null;
-        String sqlTypeArr[];
+    
+    private boolean populateNeverLinkedImages () {
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
-        for (String key : CDIS.getXmlSelectHash().keySet()) {
-            
-            sqlTypeArr = CDIS.getXmlSelectHash().get(key);
-              
-            if (sqlTypeArr[0].equals("DAMSSelectList")) {   
-                sql = key;      
-            }   
-        }
-             
-        if (sql != null) {           
+        //indicate the particular query we are interested in
+        xml.setQueryTag("DamsSelectList"); 
         
-            logger.log(Level.FINER, "SQL: {0}", sql);
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }       
             
-            try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-                 ResultSet rs = pStmt.executeQuery()) {
-                                                    
-                while (rs.next()) {           
-                    logger.log(Level.FINER, "Adding uoi_id to unsynced hash: " + rs.getString("UOI_ID"));
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+
+                //Add the value from the database to the list
+                while (rs.next()) {
                     uoiidsToLink.add(rs.getString("UOI_ID"));
-                }   
-            } catch (Exception e) {
-                    logger.log(Level.FINER, "Error, unable to obtain list of UOI_IDs to integrate", e);
-            }         
-        }               
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error, unable to obtain list of UOI_IDs to integrate", e);
+                return false;
+            }
+        }
+        
+        return true;
+        
     }
     
     /*  Method :        processUAN
