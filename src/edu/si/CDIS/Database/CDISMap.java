@@ -216,8 +216,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
-                    "AND to_history_dt is NULL ";
+                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' ";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -244,8 +243,7 @@ public class CDISMap {
                     "WHERE file_name = '" + getFileName() + "' " +
                     "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND dams_uoi_id IS NULL " +
-                    "AND cis_unique_media_id IS NULL " +
-                    "AND to_history_dt IS NULL";
+                    "AND cis_unique_media_id IS NULL ";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -270,8 +268,7 @@ public class CDISMap {
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
                     "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
-                    "AND dams_uoi_id IS NULL " +
-                    "AND to_history_dt IS NULL";
+                    "AND dams_uoi_id IS NULL ";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -469,7 +466,6 @@ public class CDISMap {
                     "AND        a.file_name = c.name " +
                     "AND        c.uoi_id = d.uoi_id " +
                     "AND        a.dams_uoi_id IS NULL " +
-                    "AND        a.to_history_dt IS NULL " + 
                     "AND        a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " + 
                     "AND        b.cdis_status_cd IN ('FMM', 'FXS') " +
                     "AND        c.content_state = 'NORMAL' " +

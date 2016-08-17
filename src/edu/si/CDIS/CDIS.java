@@ -315,26 +315,18 @@ public class CDIS {
             }
             CDIS.siHoldingUnit = collectionGrp.getSiHoldingUnit(); 
             
-            //linkToDAMS does not use the config file
-            if (! CDIS.operationType.equals("linkToDAMS")) {
-                // read the XML config file
-                XmlSqlConfig xml = new XmlSqlConfig();    
-                boolean xmlReturn = xml.read(CDIS.getCollectionGroup(), CDIS.getOperationType());
-                if (! xmlReturn) {
-                    logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
-                    return;
-                }
-                // save the queries in a Node List
-                CDIS.queryNodeList = xml.getOpQueryNodeList();
+            // read the XML config file
+            XmlSqlConfig xml = new XmlSqlConfig();    
+            boolean xmlReturn = xml.read(CDIS.getCollectionGroup(), CDIS.getOperationType());
+            if (! xmlReturn) {
+                logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
+                return;
             }
+            // save the queries in a Node List
+            CDIS.queryNodeList = xml.getOpQueryNodeList();
             
             switch (CDIS.operationType) {
                 
-                case "linkToDAMS" :
-                    LinkToDAMS linkToDams = new LinkToDAMS();
-                    linkToDams.link();
-                    break;
-                    
                 case "sendToHotFolder" :   
                     SendToHotFolder sendToHotFolder = new SendToHotFolder();
                     sendToHotFolder.sendForingest(); 
@@ -348,6 +340,11 @@ public class CDIS {
                 case "linkToCis" :
                     LinkToCis linkToCis = new LinkToCis();
                     linkToCis.link();
+                    break;
+                                    
+                case "linkToDAMS" :
+                    LinkToDAMS linkToDams = new LinkToDAMS();
+                    linkToDams.link();
                     break;
 
                 case "metadataSync" :    
