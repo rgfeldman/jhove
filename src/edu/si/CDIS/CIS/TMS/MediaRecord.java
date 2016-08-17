@@ -30,6 +30,12 @@ public class MediaRecord {
     
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
+    private String errorCode;
+    
+    public String getErrorCode (){
+        return this.errorCode;
+    }
+    
     private String formatNewRenditionNumber ( String damsImageFileName) {
         
         logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsImageFileName);
@@ -70,11 +76,13 @@ public class MediaRecord {
         
         if (! returnSuccess) {
             logger.log(Level.FINER, "unable to retrieve info from DAMS, returning");
+            errorCode = "SELDAM";
             return 0;
         }
         
         if (! uois.getName().contains(".")) {
             logger.log(Level.FINER, "unable to determine filetype from filename, returning");
+            errorCode = "SELDAM";
             return 0;
         }
         
@@ -93,6 +101,7 @@ public class MediaRecord {
                 break;
             default :
                 logger.log(Level.FINER, "unable to get valid mimeType from DAMS: " + uois.getMasterObjMimeType() );
+                errorCode = "SELDAM";
                 return 0;
         }
         
@@ -103,6 +112,7 @@ public class MediaRecord {
         
         if (!mediaTypeObtained) {
             logger.log(Level.FINER, "unable to get mediaTypeId from mediaFormatId");
+            errorCode = "SELCIS";
             return 0;
         }
         //put the mediaType we have just received into the mediaRenditions record
@@ -182,7 +192,8 @@ public class MediaRecord {
                 //Set the RenditionNumber as the filename for reporting purposes
                 mediaRenditions.setRenditionNumber(extensionlessFileName);
                 logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain object Data");
-                return -1;
+                errorCode = "UNLCIS";
+                return 0;
         }
         
         // Set the primaryRenditionFlag
@@ -205,7 +216,7 @@ public class MediaRecord {
         //check if a record with the filename as the UAN exists before we create new media
         int existingFileId = mediaFiles.returnIDForFileName();
         if (existingFileId > 0) {
-            //mark as error
+            errorCode = "AFRIDS";
             return 0;
         }
         
@@ -213,7 +224,7 @@ public class MediaRecord {
         if (CDIS.getProperty("dupRenditionCheck").equals("true") ) {
             int existingRenditionId = mediaRenditions.returnIDForRenditionNumber();
             if (existingRenditionId > 0) {
-                //mark as error
+                errorCode = "AFRCIS";
                 return 0;
             }
         }
@@ -239,6 +250,7 @@ public class MediaRecord {
         
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaMaster table creation failed, returning");
+           errorCode = "INSCISM";
            return 0;
         }
         
@@ -246,6 +258,7 @@ public class MediaRecord {
         returnSuccess = mediaRenditions.insertNewRecord(mediaMaster.getMediaMasterId());
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaRenditions table creation failed, returning");
+           errorCode = "INSCISM";
            return 0;
         }
         
@@ -255,6 +268,7 @@ public class MediaRecord {
         returnSuccess = mediaMaster.updateRenditionIds();
         if (! returnSuccess) {
             logger.log(Level.FINER, "ERROR: MediaMaster table not updated correctly, returning");
+            errorCode = "INSCISM";
             return 0;
         }
         
@@ -263,6 +277,7 @@ public class MediaRecord {
         returnSuccess = mediaFiles.insertNewRecord();
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaFiles table creation failed, returning");
+           //INSCISM
            return 0;
         }
         
@@ -271,6 +286,7 @@ public class MediaRecord {
         returnSuccess = mediaRenditions.updateFileId();
         if (! returnSuccess) {
             logger.log(Level.FINER, "ERROR: MediaRenditions table not updated correctly, returning");
+            errorCode = "INSCISM";
             return 0;
         }
                 
@@ -282,6 +298,7 @@ public class MediaRecord {
         returnSuccess = mediaXrefs.insertNewRecord();
         if (! returnSuccess) {
            logger.log(Level.FINER, "ERROR: MediaXref table creation failed, returning");
+           errorCode = "INSCISM";
            return 0;
         }
         

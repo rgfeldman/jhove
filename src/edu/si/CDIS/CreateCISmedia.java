@@ -122,12 +122,12 @@ public class CreateCISmedia {
                             
         if ( objectId == 0 ) {
             ErrorLog errorLog = new ErrorLog ();
-            errorLog.capture(cdisMap, "CRCISM", "ERROR: Media Creation Failed"); 
-             return; //Go to the next record 
-        }
-        else if (objectId == -1 ) {
-            ErrorLog errorLog = new ErrorLog ();
-            errorLog.capture(cdisMap, "UNLCIS", "ERROR: Unable to obtain ObjectId from TMS"); 
+            if (mediaRecord.getErrorCode() != null) {
+                errorLog.capture(cdisMap, mediaRecord.getErrorCode() , "ERROR: Media Creation Failed"); 
+            }
+            else {
+                errorLog.capture(cdisMap, "CRCISM", "ERROR: Media Creation Failed"); 
+            }
             return; //Go to the next record 
         }
                         
