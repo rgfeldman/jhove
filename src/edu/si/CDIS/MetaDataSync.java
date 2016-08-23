@@ -437,6 +437,9 @@ public class MetaDataSync {
             if (sql.contains("?MEDIA_ID?")) {
                 sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
             }
+            if (sql.contains("?UOI_ID?")) {
+                sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
+            }
             if (sql.contains("?OBJECT_ID?")) {
                 CDISObjectMap objectMap = new CDISObjectMap();
                 objectMap.setCdisMapId(cdisMap.getCdisMapId());
