@@ -316,9 +316,6 @@ public class SendToHotFolder {
         //loop through the NotLinked Master Media and transfer the files
         for (String masterMediaId : masterMediaIds.keySet()) {       
             
-            //Make sure the last transaction is committed or a parallel running transaction can pick up the same file
-            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-            
             try {
                 
                 CDISMap cdisMap = new CDISMap();
