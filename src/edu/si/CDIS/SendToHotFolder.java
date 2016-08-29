@@ -154,6 +154,9 @@ public class SendToHotFolder {
             }
         }
         
+        //commit so the last record is saved for this batch so another batch doesnt pick it up
+        try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+        
     }
 
     
