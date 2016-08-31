@@ -317,8 +317,8 @@ public class GenVfcuDirReport {
         
             //only continue if the completedList and FailedList have reoords
             if (this.completedIdName.isEmpty() && this.failedIdName.isEmpty() ) {
-                logger.log(Level.FINEST, "No Rows to report, exiting");
-                return;
+                logger.log(Level.FINEST, "No Rows to report, will get next report");
+                continue;
             }
         
             statisticsGenerate();
