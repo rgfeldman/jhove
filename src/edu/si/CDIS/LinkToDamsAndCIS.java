@@ -282,6 +282,7 @@ public class LinkToDamsAndCIS {
                     }
                     
                     try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+                    try { if ( CDIS.getCisConn()!= null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                     
                 }
                 
