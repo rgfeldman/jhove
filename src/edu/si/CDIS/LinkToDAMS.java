@@ -237,6 +237,7 @@ public class LinkToDAMS {
             
                 //if the number of files in batch not yet completed > 1 then it is not yet ready, go grab the next one
                 if (numUnprocessedFiles > 0 ) {
+                    logger.log(Level.FINEST,"Batch not completed, number of unprocessed Files " + numUnprocessedFiles); 
                     continue;
                 }
                     
@@ -252,8 +253,7 @@ public class LinkToDAMS {
                 //if number of files is the same then create emu ready file
                 if ((totalFilesDb > 0 )&& (totalFilesDb == totalFilesFileSystem)) {
                     
-                    //commenting out for now until permission issue is determined
-                    //createEmuReadyFile(emuPickupLocation);
+                    createEmuReadyFile(emuPickupLocation);
                 }
                 else {
                     logger.log(Level.FINEST,"Need to wait, more files to process! "); 
