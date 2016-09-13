@@ -101,9 +101,9 @@ public class GenTimeframeReport {
         create();
         
         //Get list of completed records (UOI_IDs) from the past increment
-        this.lccMapIds = new ArrayList();
-        this.ldcMapIds = new ArrayList();
-        this.mdsMapIds = new ArrayList();
+        this.lccMapIds = new ArrayList<>();
+        this.ldcMapIds = new ArrayList<>();
+        this.mdsMapIds = new ArrayList<>();
          
         genStepCompletedList ();   
         
