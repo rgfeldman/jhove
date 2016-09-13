@@ -1,6 +1,7 @@
 
 package edu.si.CDIS;
 
+import edu.si.CDIS.DAMS.Database.SecurityPolicyUois;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -322,11 +323,27 @@ public class MetaDataSync {
             String[] restrictionArray = restrictionList.split(",");
          
             for (int i = 0; i < restrictionArray.length; i++) {
-            siRestictionsDtls.setRestrictions(restrictionArray[i]);
-            siRestictionsDtls.insertRestrictions();
+                siRestictionsDtls.setRestrictions(restrictionArray[i]);
+                siRestictionsDtls.insertRestrictions();
             }
         }
     }
+    
+    private boolean updateSecPolicy (String uoiId, Integer secPol) {
+        //This is not in siAssetMetadata and needs to be handled differently
+        
+        //update the security policy
+        SecurityPolicyUois secPolicy = new SecurityPolicyUois();
+       
+        secPolicy.setUoiid(uoiId);
+        secPolicy.setSecPolicyId(secPol);
+        
+        boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
+        
+        return secPolicyUpdated;
+        
+    }
+    
     
     
     /*  Method :        generateUpdate
@@ -351,6 +368,14 @@ public class MetaDataSync {
                     handleRestrictions(siAsst.getUoiid(), metaDataValuesForDams.get(column));
                     continue;
                 }
+                if (column.equals("SECPOL_UPD") ) {
+                    boolean secPolUpdated = updateSecPolicy(siAsst.getUoiid(), Integer.parseInt(metaDataValuesForDams.get(column)));
+                    if (!secPolUpdated) {
+                        return false;
+                    }
+                    continue;
+                }
+                
                                 
                 if (columnValue != null) {
                 
