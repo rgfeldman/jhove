@@ -5,10 +5,8 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.DAMS.Database.SecurityPolicyUois;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.Database.CdisLinkToCis;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.Utils.XmlSqlConfig;
 
@@ -80,29 +78,7 @@ public class LinkToCis {
            
             //get the uoi_id (and filename)
             cdisMap.populateMapInfo();
-            
-            //  Update the security policy 
-            SecurityPolicyUois secPolicy = new SecurityPolicyUois();
-            secPolicy.setUoiid(cdisMap.getDamsUoiid());
-                
-            CdisLinkToCis cdisLinkTbl = new CdisLinkToCis();
-            cdisLinkTbl.setCisUniqueMediaId(cdisMap.getCisUniqueMediaId());
-            boolean secPolicyretrieved = cdisLinkTbl.populateSecPolicyId();
-            if (!secPolicyretrieved) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPDAMS", "ERROR: unable to Update secuirty Policy in DAMS ");
-                continue;
-            }
-                
-            secPolicy.setSecPolicyId(cdisLinkTbl.getSecurityPolicyId());
-               
-            boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
-            if (!secPolicyUpdated) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPDAMS", "ERROR: unable to Update secuirty Policy in DAMS ");
-                continue;
-            }
-                
+    
             //final validation of all four checksums
             boolean checkSumVldt = validateAllChecksums(cdisMap.getCdisMapId());
             if (! checkSumVldt) {
