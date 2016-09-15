@@ -202,8 +202,15 @@ public class MediaRecord {
         logger.log(Level.FINER, "RenditionNumber: {0}", mediaRenditions.getRenditionNumber());
         logger.log(Level.FINER, "Rank: " + mediaXrefs.getRank());
   
+        boolean siDatapopulated = siAsst.populateSiAsstData();
+        if (! siDatapopulated) {
+            logger.log(Level.FINER, "ERROR: Unable to obtain siAsst Data from DAMS");
+            errorCode = "SELDAM";
+            return 0;
+        }
+
+        
         //get the uan and the filename, we will want to check that before we add the new media
-        siAsst.populateOwningUnitUniqueName();
         if (uois.getMasterObjMimeType().equals("application/pdf")) {
                 mediaFiles.setPathId(Integer.parseInt (CDIS.getProperty("PDFPathId")));
                 mediaFiles.setFileName (siAsst.getOwningUnitUniqueName() +  ".pdf");
@@ -235,7 +242,6 @@ public class MediaRecord {
         //get the correct publicAccess value based on the is_restricted value in DAMS
         // The only time the public access should not be set in TMS, is when the restricted flag in DAMS is set to "YES"
         // The default behavior in DAMS IS PUBLIC
-        siAsst.populateIsRestricted();
         if (siAsst.getIsRestricted() == null ) {
             mediaMaster.setPublicAccess(1);
         }
@@ -244,6 +250,10 @@ public class MediaRecord {
         }
         else  {
            mediaMaster.setPublicAccess(1);    
+        }
+        
+        if (! (siAsst.getMaxIdsSize() == null )) {
+            mediaRenditions.setRemarks("[MAX IDS SIZE = " + siAsst.getMaxIdsSize() + "]");
         }
         
         returnSuccess = mediaMaster.insertNewRecord();
