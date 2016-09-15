@@ -25,6 +25,7 @@ public class MediaRenditions {
     private Integer mediaTypeId;
     private Integer renditionId;
     private String renditionNumber;
+    private String remarks;
         
     public Integer getFileId () {
         return this.fileId;
@@ -32,6 +33,10 @@ public class MediaRenditions {
     
     public Integer getMediaTypeId () {
         return this.mediaTypeId;
+    }
+    
+    public String getRemarks () {
+        return this.remarks;
     }
         
     public Integer getRenditionId () {
@@ -51,6 +56,10 @@ public class MediaRenditions {
         this.mediaTypeId = mediaTypeId; 
     }
         
+    public void setRemarks (String remarks) {
+        this.remarks = remarks;
+    }
+    
     public void setRenditionId (Integer renditionId) {
         this.renditionId = renditionId; 
     }
@@ -94,7 +103,7 @@ public class MediaRenditions {
                         "1, " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
-                        "'[MAX IDS SIZE = 0]', " +
+                        getRemarks() +
                         mediaStatusID + ", " +
                         "CONVERT (date,SYSDATETIME()))";
         
