@@ -16,6 +16,7 @@ import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.utilties.ErrorLog;
+import edu.si.Utils.XmlSqlConfig;
 
 
 import java.io.File;
@@ -36,6 +37,7 @@ public class LinkToDAMS {
     private String pathBase;
     private String pathEnding;
     private Integer vfcuMd5FileId;
+    HashMap <Integer, String> neverLinkedDamsIds; 
     
     private void logIngestFailedFile (String filename) {
         logger.log(Level.FINER, "FailedFileName found: " + filename);
@@ -111,33 +113,65 @@ public class LinkToDAMS {
         }
     }
     
+    private boolean populateUnlinkedMedia () {
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("DamsSelectList"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }       
+            
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+
+                //Add the value from the database to the list
+                while (rs.next()) {
+                    neverLinkedDamsIds.put(rs.getInt(1),rs.getString(2));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error, unable to obtain list of UOI_IDs to integrate", e);
+                return false;
+            }
+        }
+        
+        return true;
+        
+    }
+    
     
     
     public void link () {
         
-        // now find all the unlinked images in DAMS (uoiid is null)
-        CDISMap cdisMap = new CDISMap();
-        
-        HashMap<Integer, String> unlinkedDamsRecords;
-        unlinkedDamsRecords = new HashMap<> ();
+        this.neverLinkedDamsIds = new HashMap <>();
         
         Set md5IdSet = new HashSet();
         
-        unlinkedDamsRecords = cdisMap.returnUnlinkedMediaInDams();
-                
         checkForFailedFiles();
         
+        boolean unlinkedListPopulated = populateUnlinkedMedia();
+        
         // See if we can find the media in DAMS based on the filename and checksum combination
-        for (Integer key : unlinkedDamsRecords.keySet()) {  
+        for (Integer cdisMapId : neverLinkedDamsIds.keySet()) {
 
             Uois uois = new Uois();
-            cdisMap = new CDISMap();
+            CDISMap cdisMap = new CDISMap();
             CDISActivityLog activityLog = new CDISActivityLog();
       
-            cdisMap.setCdisMapId(key);
-            cdisMap.setFileName(unlinkedDamsRecords.get(key));
+            cdisMap.setCdisMapId(cdisMapId);
+            cdisMap.setFileName(neverLinkedDamsIds.get(cdisMapId));
             
-            uois.setName(unlinkedDamsRecords.get(key));
+            uois.setName(neverLinkedDamsIds.get(cdisMapId));
             
             activityLog.setCdisMapId(cdisMap.getCdisMapId());
             
