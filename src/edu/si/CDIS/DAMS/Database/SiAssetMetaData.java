@@ -23,11 +23,16 @@ public class SiAssetMetaData {
     private String sourceSystemId;
     private String uoiid;  
     private String isRestricted;
+    private Integer maxIdsSize;
     
     public HashMap <String,Integer> metaDataDBLengths; 
       
     public String getIsRestricted() {
         return this.isRestricted == null ? "" : this.isRestricted;
+    }
+    
+    public Integer getMaxIdsSize() {
+        return this.maxIdsSize;
     }
      
     public String getOwningUnitUniqueName() {
@@ -44,6 +49,10 @@ public class SiAssetMetaData {
     
     public void setIsRestricted(String isRestricted) {
         this.isRestricted = isRestricted;
+    }
+    
+    public void setMaxIdsSize(Integer maxIdsSize) {
+        this.maxIdsSize = maxIdsSize;
     }
     
     public void setOwningUnitUniqueName(String owningUnitUniqueName) {
@@ -118,6 +127,29 @@ public class SiAssetMetaData {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain data field lengths ", e);
         
+        }
+        return true;
+    }
+    
+    public boolean populateSiAsstData () {
+        
+        String sql = "SELECT owning_unit_unique_name, is_restricted, max_ids_size " +
+                    "FROM towner.si_asset_metadata " +
+                    "WHERE uoi_id = '" + getUoiid() + "'";
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (rs != null && rs.next()) {
+                setOwningUnitUniqueName (rs.getString(1));
+                setIsRestricted (rs.getString(2));
+                setMaxIdsSize (rs.getInt(3));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
         }
         return true;
     }
