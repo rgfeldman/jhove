@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import java.util.HashMap;
 import java.util.logging.Level;
 
+import edu.si.CDIS.CIS.AAA.Database.TblDigitalMediaResource;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
@@ -56,8 +57,30 @@ public class LinkToDamsAndCIS {
         
     }
     
+    private boolean linkObjectAaaAv (Integer cdisMapId, String cisIdentifier) {
+        
+        //get earliest objectId on the current renditionID 
+        TblDigitalMediaResource tblDigitalMediaResource= new TblDigitalMediaResource();
+        
+        tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cisIdentifier));
+        
+        boolean collectionIdFound = tblDigitalMediaResource.populateCollectionId();
+        if (!collectionIdFound ) {
+            logger.log(Level.FINER, "Error: unable to obtain object_id" );
+            return false;
+        } 
+        
+        //Insert into CDISObjectMap
+        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        cdisObjectMap.setCdisMapId(cdisMapId);
+        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblDigitalMediaResource.getCollectionId()) );
+        cdisObjectMap.createRecord();
+        
+        return true;
+    }
     
-    private boolean linkObjectAAA (Integer cdisMapId, String cisIdentifier) {
+    
+    private boolean linkObjectAaaImage (Integer cdisMapId, String cisIdentifier) {
         
         //get earliest objectId on the current renditionID 
         TblDigitalResource tblDigitalResource= new TblDigitalResource();
@@ -163,7 +186,12 @@ public class LinkToDamsAndCIS {
         boolean objectLinked = false;
         switch (CDIS.getProperty("cisSourceDB")) {
             case "AAA" :
-                objectLinked = linkObjectAAA(cdisMap.getCdisMapId(), cisIdentifier);
+                if(CDIS.getCollectionGroup().equals("AAA_AV")) {
+                    objectLinked = linkObjectAaaAv(cdisMap.getCdisMapId(), cisIdentifier);
+                }
+                else {
+                    objectLinked = linkObjectAaaImage(cdisMap.getCdisMapId(), cisIdentifier);
+                }
                 break;
             case "IRIS" :
                 objectLinked = linkObjectIris(cdisMap.getCdisMapId(), cisIdentifier);
