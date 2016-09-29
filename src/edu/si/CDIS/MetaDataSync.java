@@ -1,7 +1,6 @@
 
 package edu.si.CDIS;
 
-import edu.si.CDIS.DAMS.Database.SecurityPolicyUois;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -17,10 +16,8 @@ import com.google.common.collect.Table.Cell;
 
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.Database.TeamsLinks;
-import edu.si.CDIS.DAMS.Database.SiRestrictionsDtls;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.Utils.XmlSqlConfig;
@@ -184,26 +181,6 @@ public class MetaDataSync {
             }
         }
         
-    }
-    
-    private void handleRestrictions (String uoiId, String restrictionList) {
-        //This is not in siAssetMetadata and needs to be handled differently
-        SiRestrictionsDtls siRestictionsDtls = new SiRestrictionsDtls();
-        
-        siRestictionsDtls.setUoiId(uoiId);
-        
-        // delete restrictions if they exist we will put new ones in.  if they dont exist this is fine too.
-        siRestictionsDtls.deleteRestrictions();
-        
-        if (restrictionList != null ) {
-            //Loop through list and insert new restriction
-            String[] restrictionArray = restrictionList.split(",");
-         
-            for (int i = 0; i < restrictionArray.length; i++) {
-                siRestictionsDtls.setRestrictions(restrictionArray[i]);
-                siRestictionsDtls.insertRestrictions();
-            }
-        }
     }
     
     
@@ -498,19 +475,6 @@ public class MetaDataSync {
             //boolean parentRetrieved = teamsLinks.populateDestValue();
                 
                 
-                
-            //if (TabColumn.equals("RESTRICTIONS") ) {
-            //    handleRestrictions(siAsst.getUoiid(), metaDataValuesForDams.get(column));
-            //    continue;
-            //}
-            //if (TabColumn.equals("SECPOL_UPD") ) {
-            //    boolean secPolUpdated = updateSecPolicy(uoiId, Integer.parseInt(metaDataValuesForDams.get(column)));
-            //    if (!secPolUpdated) {
-            //        return false;
-            //    }
-            //    continue;
-            //}
-                
                                 
             //Skip certain fields in metadata update if this is only based on parent record
             //if (! SyncFromParentChild) {
@@ -532,9 +496,6 @@ public class MetaDataSync {
             //    logger.log(Level.ALL, "No parent id to sync");
             //    continue;
             //}
-                
-            // set the current uoiid to what we obtained in the teams_links table for update
-            //siAsst.setUoiid (teamsLinks.getDestValue());
                 
             //For each parent or child, generate update statement.  should be the same, except certain fields we do not update
             //for parent/children.  These include public_use, max_ids_size, is_restricted
@@ -642,20 +603,5 @@ public class MetaDataSync {
         
         return recordsUpdated;
 
-    }
-    
-    private boolean updateSecPolicy (String uoiId, Integer secPol) {
-        //This is not in siAssetMetadata and needs to be handled differently
-        
-        //update the security policy
-        SecurityPolicyUois secPolicy = new SecurityPolicyUois();
-       
-        secPolicy.setUoiid(uoiId);
-        secPolicy.setSecPolicyId(secPol);
-        
-        boolean secPolicyUpdated = secPolicy.updateSecPolicyId();   
-        
-        return secPolicyUpdated;
-        
     }
 }
