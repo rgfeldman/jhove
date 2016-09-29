@@ -24,8 +24,6 @@ public class SiAssetMetaData {
     private String uoiid;  
     private String isRestricted;
     private Integer maxIdsSize;
-    
-    public HashMap <String,Integer> metaDataDBLengths; 
       
     public String getIsRestricted() {
         return this.isRestricted == null ? "" : this.isRestricted;
@@ -100,36 +98,6 @@ public class SiAssetMetaData {
              
     }
     
-    public boolean populateMetaDataDBLengths () {
-
-        metaDataDBLengths = new HashMap<> ();  
-        String sql = "SELECT column_name, data_length " + 
-                     "FROM all_tab_columns " +
-                     "WHERE table_name = 'SI_ASSET_METADATA' " + 
-                     "AND owner = 'TOWNER' " +
-                     "AND data_type != 'DATE' " + 
-                     "AND column_name NOT IN ('UOI_ID','OWNING_UNIT_UNIQUE_NAME')" +
-                     "UNION " +
-                     "SELECT column_name, 16 " +
-                     "FROM all_tab_columns " +
-                     "WHERE table_name = 'SI_ASSET_METADATA' " + 
-                     "AND owner = 'TOWNER' " +
-                     "AND data_type = 'DATE' ";
-        
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-            
-            while (rs != null && rs.next()) {
-                metaDataDBLengths.put(rs.getString(1),rs.getInt(2));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain data field lengths ", e);
-        
-        }
-        return true;
-    }
     
     public boolean populateSiAsstData () {
         
