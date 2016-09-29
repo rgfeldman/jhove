@@ -222,7 +222,7 @@ public class LinkToDAMS {
             }
             
             // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)           
-            if ( (CDIS.getProperty("emuPickupLocation") != null) && (cdisMap.getFileName().endsWith("tif") ) ) {
+            if ( (CDIS.getProperty("emuPickupLocation") != null) && (cdisMap.getFileName().endsWith("tif") || cdisMap.getFileName().endsWith("jpg") ) ) {
                 StagedFile stagedFile = new StagedFile();
                 stagedFile.setBasePath(pathBase);
                 stagedFile.setPathEnding(pathEnding);
