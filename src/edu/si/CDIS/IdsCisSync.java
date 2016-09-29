@@ -13,6 +13,7 @@ import java.util.Iterator;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.CIS.TMS.MediaPath;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
+import edu.si.CDIS.CIS.AAA.Database.TblDigitalMediaResource;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.utilties.ErrorLog;
@@ -119,6 +120,20 @@ public class IdsCisSync {
                         tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
                         tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
                         pathUpdated = tblDigitalResource.updateDamsUAN();
+                        break;
+                        
+                    case "AAA_AV" :
+                        TblDigitalMediaResource tblDigitalMediaResource = new TblDigitalMediaResource();
+                        siAsst = new SiAssetMetaData();
+                        
+                        //Get the uan 
+                        siAsst.setUoiid(cdisMap.getDamsUoiid());
+                        siAsst.populateOwningUnitUniqueName();
+                        
+                        //assign the uan and digital resourceID
+                        tblDigitalMediaResource.setDamsUan(siAsst.getOwningUnitUniqueName());
+                        tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
+                        pathUpdated = tblDigitalMediaResource.updateDamsUAN();
                         break;
                         
                     default :
