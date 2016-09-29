@@ -103,7 +103,7 @@ public class MediaRenditions {
                         "1, " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
-                        getRemarks() +
+                        "'" + getRemarks() + "', " +
                         mediaStatusID + ", " +
                         "CONVERT (date,SYSDATETIME()))";
         
