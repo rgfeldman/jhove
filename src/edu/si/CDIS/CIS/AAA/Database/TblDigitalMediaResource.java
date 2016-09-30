@@ -72,7 +72,7 @@ public class TblDigitalMediaResource {
     public boolean updateDamsUAN () {
         
        int recordsUpdated = 0;
-       String sql = "UPDATE dbo.tblDigitalResource " +
+       String sql = "UPDATE dbo.tblDigitalMediaResource " +
                     "SET serviceFileUAN = '" + getDamsUan() + "', " +
                     "damsUANadddate = GETDATE() " +
                     "WHERE digitalMediaResourceID = " + getDigitalMediaResourceId() ;
