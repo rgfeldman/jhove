@@ -109,33 +109,29 @@ public class IdsCisSync {
                         break;
                         
                     case "AAA" :
-                        TblDigitalResource tblDigitalResource = new TblDigitalResource();
+                        
                         SiAssetMetaData siAsst = new SiAssetMetaData();
-
                         //Get the uan 
                         siAsst.setUoiid(cdisMap.getDamsUoiid());
                         siAsst.populateOwningUnitUniqueName();
                         
-                        //assign the uan and digital resourceID
-                        tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
-                        tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
-                        pathUpdated = tblDigitalResource.updateDamsUAN();
+                        if (CDIS.getCollectionGroup().equals("AAA_AV")) {
+                            TblDigitalMediaResource tblDigitalMediaResource = new TblDigitalMediaResource();
+                            //assign the uan and digital resourceID
+                            tblDigitalMediaResource.setDamsUan(siAsst.getOwningUnitUniqueName());
+                            tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
+                            pathUpdated = tblDigitalMediaResource.updateDamsUAN();
+                        }
+                        else {
+                            TblDigitalResource tblDigitalResource = new TblDigitalResource();
+                            //assign the uan and digital resourceID
+                            tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
+                            tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
+                            pathUpdated = tblDigitalResource.updateDamsUAN();
+                        }
+                        
                         break;
-                        
-                    case "AAA_AV" :
-                        TblDigitalMediaResource tblDigitalMediaResource = new TblDigitalMediaResource();
-                        siAsst = new SiAssetMetaData();
-                        
-                        //Get the uan 
-                        siAsst.setUoiid(cdisMap.getDamsUoiid());
-                        siAsst.populateOwningUnitUniqueName();
-                        
-                        //assign the uan and digital resourceID
-                        tblDigitalMediaResource.setDamsUan(siAsst.getOwningUnitUniqueName());
-                        tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
-                        pathUpdated = tblDigitalMediaResource.updateDamsUAN();
-                        break;
-                        
+                    
                     default :
                         logger.log(Level.FINER, "Error: Invalid CIS Type indicated in config file");  
                 }
