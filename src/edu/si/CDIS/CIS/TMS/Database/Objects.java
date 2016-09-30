@@ -56,7 +56,8 @@ public class Objects {
               "ObjComponents obc " +
               "where bcl.id = obc.Componentid " +
               "and bcl.TableID = 94 " +
-              "and bcl.LabelUUID = '" + barcode + "'";
+              "and bcl.LabelUUID = '" + barcode + "' " +
+              "and ObjectID > 0";
         
         logger.log(Level.FINEST, "SQL: {0}", sql); 
         try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
