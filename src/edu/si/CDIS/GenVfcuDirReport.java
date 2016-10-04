@@ -57,120 +57,43 @@ public class GenVfcuDirReport {
     private String rptVendorDir;
     private String statsHeader;
     
-    private boolean create () {
-        
-        String timeStamp;
-        String timeStampWords;
-        
-        //get the date timestamp for use in the report file
-        DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmmss");
-        timeStamp = df.format(new Date());
-        
-        DateFormat dfWords = new SimpleDateFormat();
-        timeStampWords = dfWords.format(new Date());
-
-        this.rptFile =  CDIS.getCollectionGroup() + "\\rpt\\CDISRPT-" + CDIS.getCollectionGroup() + "-" + timeStamp + ".rtf";
-        
-        this.document = new Document();
-         
-        try {
-            
-            RtfWriter2.getInstance(document,new FileOutputStream(rptFile));
-       
-            document.open();
-            
-            RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
-            
-            document.add(new Paragraph(timeStampWords + "\n" + 
-                CDIS.getCollectionGroup()+ " CDIS Activity Report- " + this.rptVendorDir, title));
-            
-        } catch(Exception e) {
-            logger.log(Level.FINEST, "ERROR, cannot create report ", e);
-            return false;
-        }  
-        
-        return true;
-    }
     
-    private boolean populateRptVendorDir() {
+    
+    int countPendingRecordsLCC () {
+        int numPendingRecords = 0;
         
-        String sql = null;
+        String sql = "SELECT COUNT(*) " +
+                     "FROM   vfcu_media_file a " +
+                     "WHERE  a.vfcu_md5_file_id in (" + this.childMd5Id + ") " +
+                     "AND  NOT EXISTS ( " +
+                     "  SELECT 'X' " +
+                     "  FROM   cdis_map b, " +
+                     "         cdis_activity_log c " +
+                     "  WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
+                     "  AND b.cdis_map_id = c.cdis_map_id " +
+                     "  AND   c.cdis_status_cd in ('LCC','ERR')) " +
+                     "AND  NOT EXISTS ( " +  
+                     "  SELECT 'X'     " +
+                     "  FROM   vfcu_activity_log d " +     
+                     "  WHERE a.vfcu_media_file_id = d.vfcu_media_file_id " +   
+                     "  AND   d.vfcu_status_cd in ('ER','OH')) ";
         
-        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
-        sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
-                    "FROM vfcu_md5_file " +
-                    "WHERE vfcu_md5_file_id = " + this.currentMasterMd5FileId;
-        } 
-        else {
-            sql = "SELECT file_path_ending " +
-                    "FROM vfcu_md5_file " +
-                    "WHERE vfcu_md5_file_id = " + this.currentMasterMd5FileId;
-        }
-                
-        logger.log(Level.FINEST, "SQL: {0}", sql);
         try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
              ResultSet rs = stmt.executeQuery() ) {
-
-            if (rs.next()) {
-                String strFilePathEnding = rs.getString(1);
-                //Add the records to the masterMd5Id list 
-                if (strFilePathEnding.contains("\\")) {
-                      this.rptVendorDir = strFilePathEnding.replace("\\", "-");
-                }
-                else {
-                      this.rptVendorDir = strFilePathEnding;
-                } 
-            }        
-            else {
-                throw new Exception();
-            }
-        }
             
-	catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain vendor dir for report", e);
-                return false;
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+            if (rs.next()) {
+                numPendingRecords = rs.getInt(1);
+            }
+            
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to count list of pending records", e);
+            numPendingRecords = -1;
 	}
         
-        return true;
-        
-    }
-    
-    private boolean populateMasterMd5FileIds () {
-        
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getMasterMd5Ids"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }     
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
-            ResultSet rs = stmt.executeQuery() ) {
-
-                //Add the value from the database to the list
-                while (rs.next()) {
-                    masterMd5Ids.add(rs.getInt(1));
-                }
-            }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain list of masterMd5s, returning", e);
-                return false;
-            }
-            
-        }            
-        
-        return true;
-            
+        return numPendingRecords;
     }
     
     int countPendingRecordsLDC () {
@@ -218,43 +141,42 @@ public class GenVfcuDirReport {
         return numPendingRecords;
     }
     
-    int countPendingRecordsLCC () {
-        int numPendingRecords = 0;
-        
-        String sql = "SELECT COUNT(*) " +
-                     "FROM   vfcu_media_file a " +
-                     "WHERE  a.vfcu_md5_file_id in (" + this.childMd5Id + ") " +
-                     "AND  NOT EXISTS ( " +
-                     "  SELECT 'X' " +
-                     "  FROM   cdis_map b, " +
-                     "         cdis_activity_log c " +
-                     "  WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                     "  AND b.cdis_map_id = c.cdis_map_id " +
-                     "  AND   c.cdis_status_cd in ('LCC','ERR')) " +
-                     "AND  NOT EXISTS ( " +  
-                     "  SELECT 'X'     " +
-                     "  FROM   vfcu_activity_log d " +     
-                     "  WHERE a.vfcu_media_file_id = d.vfcu_media_file_id " +   
-                     "  AND   d.vfcu_status_cd in ('ER','OH')) ";
-        
-        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery() ) {
-            
-            logger.log(Level.FINEST, "SQL: {0}", sql);
-            
-            if (rs.next()) {
-                numPendingRecords = rs.getInt(1);
-            }
-            
-        }
-        catch(Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to count list of pending records", e);
-            numPendingRecords = -1;
-	}
-        
-        return numPendingRecords;
-    }
     
+    private boolean create () {
+        
+        String timeStamp;
+        String timeStampWords;
+        
+        //get the date timestamp for use in the report file
+        DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmmss");
+        timeStamp = df.format(new Date());
+        
+        DateFormat dfWords = new SimpleDateFormat();
+        timeStampWords = dfWords.format(new Date());
+
+        this.rptFile =  CDIS.getCollectionGroup() + "\\rpt\\CDISRPT-" + CDIS.getCollectionGroup() + "-" + timeStamp + ".rtf";
+        
+        this.document = new Document();
+         
+        try {
+            
+            RtfWriter2.getInstance(document,new FileOutputStream(rptFile));
+       
+            document.open();
+            
+            RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
+            
+            document.add(new Paragraph(timeStampWords + "\n" + 
+                CDIS.getCollectionGroup()+ " CDIS Activity Report- " + this.rptVendorDir, title));
+            
+        } catch(Exception e) {
+            logger.log(Level.FINEST, "ERROR, cannot create report ", e);
+            return false;
+        }  
+        
+        return true;
+    }
+
     
     public void generate () {
         
@@ -457,6 +379,90 @@ public class GenVfcuDirReport {
         return true;
         
     }
+    
+    
+    private boolean populateMasterMd5FileIds () {
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getMasterMd5Ids"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }     
+            
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+
+                //Add the value from the database to the list
+                while (rs.next()) {
+                    masterMd5Ids.add(rs.getInt(1));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain list of masterMd5s, returning", e);
+                return false;
+            }
+            
+        }            
+        
+        return true;
+            
+    }
+    
+        
+    private boolean populateRptVendorDir() {
+        
+        String sql = null;
+        
+        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+        sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
+                    "FROM vfcu_md5_file " +
+                    "WHERE vfcu_md5_file_id = " + this.currentMasterMd5FileId;
+        } 
+        else {
+            sql = "SELECT file_path_ending " +
+                    "FROM vfcu_md5_file " +
+                    "WHERE vfcu_md5_file_id = " + this.currentMasterMd5FileId;
+        }
+                
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery() ) {
+
+            if (rs.next()) {
+                String strFilePathEnding = rs.getString(1);
+                //Add the records to the masterMd5Id list 
+                if (strFilePathEnding.contains("\\")) {
+                      this.rptVendorDir = strFilePathEnding.replace("\\", "-");
+                }
+                else {
+                      this.rptVendorDir = strFilePathEnding;
+                } 
+            }        
+            else {
+                throw new Exception();
+            }
+        }
+            
+	catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain vendor dir for report", e);
+                return false;
+	}
+        
+        return true;
+        
+    }
+    
     
     
     public void send () {

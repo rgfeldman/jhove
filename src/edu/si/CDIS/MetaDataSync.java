@@ -33,7 +33,7 @@ public class MetaDataSync {
     private ArrayList<String> deleteRows;
     private ArrayList<String> deletesForUoiid;
  
-    private HashMap<String, String> metaDataMapQueries;   //Queries to run from XML fuke with delimiter from XML file
+    private HashMap<String, String[]> metaDataMapQueries;   //Queries to run from XML fuke with delimiter from XML file
 
     private Table <String, String,String> updateRowForDams;  //DAMS Table, DAMS Column, result value from CIS
     private HashMap<String, String> updatesByTableName; //DAMS Table Name and the actual sql to run 
@@ -66,7 +66,7 @@ public class MetaDataSync {
                 insertsByTableName.put(tableName, 
                     "INSERT INTO towner." + tableName + 
                     " (UOI_ID, " + columnName + ") VALUES ('" + 
-                    uoiId + "','" + value + "'");
+                    uoiId + "','" + value + "')");
             }
             else {
                 insertsByTableName.put(tableName, insertsByTableName.get(tableName) + ", " + columnName + "= '" + value + "'");
@@ -228,7 +228,9 @@ public class MetaDataSync {
         //Loop through all of the queries for the current operation type
         for (String sql : this.metaDataMapQueries.keySet()) {
           
-            String appendDelimter = metaDataMapQueries.get(sql);
+            String destTableName = metaDataMapQueries.get(sql)[0].toUpperCase();
+            String operationType = metaDataMapQueries.get(sql)[1];
+            String appendDelimter = metaDataMapQueries.get(sql)[2];
             
             if (sql.contains("?MEDIA_ID?")) {
                 sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
@@ -253,33 +255,30 @@ public class MetaDataSync {
                     ResultSetMetaData rsmd = rs.getMetaData();
                     
                     for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
-                        String columnTableName[] = rsmd.getColumnName(i).split(" ");
-                        String tableName = columnTableName[0].toUpperCase();
-                        String columnName = columnTableName[1].toUpperCase();
-                        String operationType = columnTableName[2];
-                    
+                        
+                        String columnName = rsmd.getColumnName(i).toUpperCase();
                         String resultVal = rs.getString(i);
                         
-                        logger.log(Level.ALL, "TABL: " + tableName + " COLM: " + columnName + " VAL: " + resultVal);
+                        logger.log(Level.ALL, "TABL: " + destTableName + " COLM: " + columnName + " VAL: " + resultVal);
                         
                         if (resultVal != null) {
                             //scrub the string to get rid of special characters that may not display properly in DAMS
                             resultVal = scrubString(resultVal);
                             
                            //Truncate the string if the length of the string exceeds the DAMS column width
-                           if (resultVal.length() > columnLengthHashTable.get(tableName, columnName)) {
-                                resultVal = resultVal.substring(0,columnLengthHashTable.get(tableName, columnName));
+                           if (resultVal.length() > columnLengthHashTable.get(destTableName, columnName)) {
+                                resultVal = resultVal.substring(0,columnLengthHashTable.get(destTableName, columnName));
                            }
                         }
                     
                         switch (operationType) {
                             case "U":
-                                populateUpdateRowForDams(tableName, columnName, resultVal, appendDelimter);
+                                populateUpdateRowForDams(destTableName, columnName, resultVal, appendDelimter);
                                 break;
                             case "DI":
-                                deleteRows.add(tableName);
+                                deleteRows.add(destTableName);
                                 if (resultVal != null) {
-                                    insertRowForDams.put(tableName, columnName, resultVal);
+                                    insertRowForDams.put(destTableName, columnName, resultVal);
                                 }
                                 break;   
                             default:
@@ -353,11 +352,16 @@ public class MetaDataSync {
             //if the query does not match the tag, then get the next query
             if (!queryPopulated ) {
                 continue;
-            } 
+            }  
             
             logger.log(Level.FINEST, "Adding SQL to ArrayList: {0}", xml.getSqlQuery());
             
-            metaDataMapQueries.put(xml.getSqlQuery(), xml.getMultiResultDelim());
+            String[] tableNameDelim = new String[3];
+            tableNameDelim[0]= xml.getDestinationTable();
+            tableNameDelim[1]= xml.getOperationType();
+            tableNameDelim[2]= xml.getMultiResultDelim();
+            
+            metaDataMapQueries.put(xml.getSqlQuery(), tableNameDelim);
             
         }
     }
@@ -567,10 +571,11 @@ public class MetaDataSync {
         
         //For now, populate the 4 tables we are syncing to, maybe at a later point we can have the code look for the tables in the SQL
         this.columnLengthHashTable = HashBasedTable.create();
+        populateColumnWidthArray("SECURITY_POLICY_UOIS");
         populateColumnWidthArray("SI_ASSET_METADATA");
         populateColumnWidthArray("SI_AV_ASSET_METADATA");
         populateColumnWidthArray("SI_PRESERVATION_METADATA");
-        populateColumnWidthArray("SI_RESTRICTIONS_DTS");
+        populateColumnWidthArray("SI_RESTRICTIONS_DTLS");
         
         processListToSync ();
         

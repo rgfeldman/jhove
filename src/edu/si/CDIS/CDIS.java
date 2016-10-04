@@ -71,7 +71,7 @@ public class CDIS {
     public static String getProperty (String property) {
         return CDIS.properties.getProperty(property);
     }
-    
+
     public static String getSiHoldingUnit() {
         return CDIS.siHoldingUnit;
     }
