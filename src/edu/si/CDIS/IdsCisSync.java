@@ -122,22 +122,26 @@ public class IdsCisSync {
                             TeamsLinks teamsLinks = new TeamsLinks();
                             teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
                             teamsLinks.setLinkType("CHILD");
-                            teamsLinks.populateDestValue();
-                            SiAssetMetaData masterSiAsst = new SiAssetMetaData();
-                            masterSiAsst.setUoiid(teamsLinks.getDestValue());
-                            masterSiAsst.populateOwningUnitUniqueName();
+                            boolean masterRetrieved = teamsLinks.populateDestValue();
+                            if (masterRetrieved) {
+                                SiAssetMetaData masterSiAsst = new SiAssetMetaData();
+                                masterSiAsst.setUoiid(teamsLinks.getDestValue());
+                                masterSiAsst.populateOwningUnitUniqueName();
+                                tblDigitalMediaResource.setMasterFileUan(masterSiAsst.getOwningUnitUniqueName());
+                            }
                             
                             teamsLinks.setLinkType("PARENT");
-                            teamsLinks.populateDestValue();
-                            SiAssetMetaData childSiAsst = new SiAssetMetaData();
-                            masterSiAsst.setUoiid(teamsLinks.getDestValue());
-                            childSiAsst.populateOwningUnitUniqueName();
+                            boolean childRetrieved = teamsLinks.populateDestValue();
+                            if (childRetrieved) {
+                                SiAssetMetaData childSiAsst = new SiAssetMetaData();
+                                childSiAsst.setUoiid(teamsLinks.getDestValue());
+                                childSiAsst.populateOwningUnitUniqueName();
+                                tblDigitalMediaResource.setAccessFileUan(childSiAsst.getOwningUnitUniqueName());
+                            }
                             
                             //assign the uan and digital resourceID
                             tblDigitalMediaResource.setServiceFileUan(siAsst.getOwningUnitUniqueName());
-                            tblDigitalMediaResource.setAccessFileUan(childSiAsst.getOwningUnitUniqueName());
-                            tblDigitalMediaResource.setMasterFileUan(masterSiAsst.getOwningUnitUniqueName());
-                            
+                             
                             tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
                             pathUpdated = tblDigitalMediaResource.updateDamsUans();
                         }

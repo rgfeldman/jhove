@@ -26,7 +26,7 @@ public class TblDigitalMediaResource {
     
     
     public String getAccessFileUan () {
-        return this.accessFileUan;
+        return this.accessFileUan == null ? "" : this.accessFileUan;
     }
     
     public Integer getCollectionId () {
@@ -34,7 +34,7 @@ public class TblDigitalMediaResource {
     }
     
     public String getMasterFileUan () {
-        return this.masterFileUan;
+        return this.masterFileUan == null ? "" : this.masterFileUan;
     }
       
     public String getServiceFileUan () {

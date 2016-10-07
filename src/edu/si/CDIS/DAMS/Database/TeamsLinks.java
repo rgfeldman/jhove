@@ -59,6 +59,9 @@ public class TeamsLinks {
             if (rs != null && rs.next()) {
                 setDestValue (rs.getString(1));
             }   
+            else {
+                return false;
+            }
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain destValue from teams_links", e );
