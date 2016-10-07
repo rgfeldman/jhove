@@ -18,29 +18,47 @@ import java.util.logging.Logger;
 public class TblDigitalMediaResource {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
+    private String accessFileUan;
     private Integer collectionId;
     private Integer digitalMediaResourceId;
-    private String damsUan;
+    private String masterFileUan;
+    private String serviceFileUan;
     
+    
+    public String getAccessFileUan () {
+        return this.accessFileUan;
+    }
     
     public Integer getCollectionId () {
         return this.collectionId;
     }
     
-    public String getDamsUan () {
-        return this.damsUan;
+    public String getMasterFileUan () {
+        return this.masterFileUan;
+    }
+      
+    public String getServiceFileUan () {
+        return this.serviceFileUan;
     }
     
     public Integer getDigitalMediaResourceId () {
         return this.digitalMediaResourceId;
     }
     
+    public void setAccessFileUan (String accessFileUan) {
+        this.accessFileUan = accessFileUan;
+    }
+      
     public void setCollectionId (Integer collectionId) {
         this.collectionId = collectionId;
     }
     
-    public void setDamsUan (String damsUan) {
-        this.damsUan = damsUan;
+    public void setMasterFileUan (String masterFileUan) {
+        this.masterFileUan = masterFileUan;
+    }
+        
+    public void setServiceFileUan (String serviceFileUan) {
+        this.serviceFileUan = serviceFileUan;
     }
       
     public void setDigitalMediaResourceId (Integer digitalResourceId) {
@@ -69,11 +87,13 @@ public class TblDigitalMediaResource {
         return true;
     }
     
-    public boolean updateDamsUAN () {
+    public boolean updateDamsUans () {
         
        int recordsUpdated = 0;
        String sql = "UPDATE dbo.tblDigitalMediaResource " +
-                    "SET serviceFileUAN = '" + getDamsUan() + "', " +
+                    "SET masterFileUAN = '" + getMasterFileUan() + "', " +
+                    "serviceFileUAN = '" + getServiceFileUan() + "', " +
+                    "accessFileUAN = '" + getAccessFileUan() + "', " +
                     "damsUANadddate = GETDATE() " +
                     "WHERE digitalMediaResourceID = " + getDigitalMediaResourceId() ;
        
