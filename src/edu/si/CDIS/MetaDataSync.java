@@ -410,7 +410,7 @@ public class MetaDataSync {
                 
                 if (insertCount != 1) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " + cdisMap.getDamsUoiid());    
+                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + cdisMap.getDamsUoiid());    
                     continue;
                 }
                                 

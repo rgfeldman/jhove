@@ -7,6 +7,7 @@ package edu.si.CDIS;
 
 import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.CdisCisMediaTypeR;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.VFCUMediaFile;
 import edu.si.CDIS.utilties.ErrorLog;
@@ -15,7 +16,6 @@ import edu.si.Utils.XmlSqlConfig;
 import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
@@ -99,6 +99,29 @@ public class SendToHotFolder {
     }
     
     
+    private boolean populateMediaTypeId(CDISMap cdisMap) {
+        try {
+            String mediaTypeId = CDIS.getProperty("masterCisMediaTypeId");
+            
+            if (mediaTypeId.contains(",") ) {
+                //find the right media type_id by the lookup table by matching the filename
+                CdisCisMediaTypeR cdisCisMediaTypeR = new CdisCisMediaTypeR();
+                cdisCisMediaTypeR.populateIdFromFileName(cdisMap.getFileName());
+               
+                cdisMap.setCdisCisMediaTypeId(cdisCisMediaTypeR.getCdisCisMediaTypeId());
+            }
+            else {
+                //Send the string to numeric form
+                cdisMap.setCdisCisMediaTypeId(Integer.parseInt(mediaTypeId));          
+            }
+            return true;
+        }
+        catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to get mediaTypeId", e );
+                return false;
+        }
+    }
+    
     private void logFilesInDB () {
                
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
@@ -116,7 +139,10 @@ public class SendToHotFolder {
             CDISMap cdisMap = new CDISMap();                           
             cdisMap.setFileName(masterMediaIds.get(uniqueMediaId));
             cdisMap.setVfcuMediaFileId(Integer.parseInt(uniqueMediaId));
-            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("masterCisMediaTypeId")));
+            
+            boolean mediaTypePopulated = populateMediaTypeId(cdisMap);
+            
+            
             
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
             boolean mapEntryCreated = cdisMap.createRecord();
