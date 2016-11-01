@@ -22,6 +22,7 @@ import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.CIS.TMS.Thumbnail;
 import edu.si.CDIS.CIS.TMS.Database.MediaRenditions;
+import edu.si.CDIS.DAMS.MediaRecord;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
@@ -296,6 +297,13 @@ public class LinkToDamsAndCIS {
                         boolean linkCreated = createNewLink(cdisMap, cisIdentifier, uoiId);
                     
                     if (linkCreated) {
+                    
+                        //Link Parent/Children record
+                        if ( (CDIS.getProperty("linkHierarchyInDams") != null ) && (CDIS.getProperty("linkHierarchyInDams").equals("true") ) ) {
+                            MediaRecord mediaRecord = new MediaRecord();
+                
+                            mediaRecord.establishParentChildLink(cdisMap);
+                        }
                         
                         CDISActivityLog cdisActivity = new CDISActivityLog();
                         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());

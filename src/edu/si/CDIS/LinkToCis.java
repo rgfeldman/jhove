@@ -75,7 +75,6 @@ public class LinkToCis {
                  continue;
             }
             
-           
             //get the uoi_id (and filename)
             cdisMap.populateMapInfo();
     
@@ -94,7 +93,6 @@ public class LinkToCis {
            try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
              
         }
-
     }
     
     private boolean validateAllChecksums (Integer cdisMapId) {

@@ -14,6 +14,7 @@ import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.DAMS.MediaRecord;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.Utils.XmlSqlConfig;
@@ -38,6 +39,7 @@ public class LinkToDAMS {
     private String pathEnding;
     private Integer vfcuMd5FileId;
     HashMap <Integer, String> neverLinkedDamsIds; 
+    Set md5IdSet;
     
     private void logIngestFailedFile (String filename) {
         logger.log(Level.FINER, "FailedFileName found: " + filename);
@@ -149,13 +151,11 @@ public class LinkToDAMS {
         
     }
     
-    
-    
     public void link () {
         
         this.neverLinkedDamsIds = new HashMap <>();
         
-        Set md5IdSet = new HashSet();
+        md5IdSet = new HashSet();
         
         checkForFailedFiles();
         
@@ -208,8 +208,6 @@ public class LinkToDAMS {
                  continue;
             }
                 
-            
-                
             // Update the DAMS checksum information in preservation module
             SiPreservationMetadata siPreservation = new SiPreservationMetadata();
             siPreservation.setUoiid(cdisMap.getDamsUoiid()); 
@@ -239,6 +237,12 @@ public class LinkToDAMS {
                 activityLog.insertActivity();
             }
             
+            if ( (CDIS.getProperty("linkHierarchyInDams") != null ) && (CDIS.getProperty("linkHierarchyInDams").equals("true") ) ) {
+                MediaRecord mediaRecord = new MediaRecord();
+                
+                mediaRecord.establishParentChildLink(cdisMap);
+            }
+            
             activityLog.setCdisStatusCd("LDC");
             activityLog.insertActivity();
             
@@ -247,53 +251,60 @@ public class LinkToDAMS {
         }
         
         if (CDIS.getProperty("emuPickupLocation") != null) {
-            // Get the list of vendor directories that may have been processed in this batch
-            Iterator md5Id = md5IdSet.iterator();
-        
-            while (md5Id.hasNext()) { 
-                int totalFilesDb = 0;
-                int totalFilesFileSystem = 0;
-            
-                //count the number of files in batch not yet completed
-                this.vfcuMd5FileId = (Integer) md5Id.next();
-                //getDirectory Name ending for this md5Id
-                setFilePathEndingForId();
-            
-                if (! this.pathEnding.endsWith("tifs")) {
-                    //we ignore the pickup location, only interested in tifs for delivery to emu
-                    continue;
-                }
-            
-                String emuPickupLocation = CDIS.getProperty("emuPickupLocation") + "\\" + this.pathEnding;
-            
-            
-                int numUnprocessedFiles = countUnprocessedFiles();
-            
-                //if the number of files in batch not yet completed > 1 then it is not yet ready, go grab the next one
-                if (numUnprocessedFiles > 0 ) {
-                    logger.log(Level.FINEST,"Batch not completed, number of unprocessed Files " + numUnprocessedFiles); 
-                    continue;
-                }
-                    
-                //count the number of files in batch total
-                totalFilesDb = countFilesVfcuDBVendorDir();
-            
-                //count the number of files in vendor directory
-                totalFilesFileSystem = countEmuFiles(emuPickupLocation);
-            
-                logger.log(Level.FINEST,"Files In DB for VendorDir! " + totalFilesDb); 
-                logger.log(Level.FINEST,"FilesInEmuFileSystem! " + totalFilesFileSystem); 
-                
-                //if number of files is the same then create emu ready file
-                if ((totalFilesDb > 0 )&& (totalFilesDb == totalFilesFileSystem)) {
-                    
-                    createEmuReadyFile(emuPickupLocation);
-                }
-                else {
-                    logger.log(Level.FINEST,"Need to wait, more files to process! "); 
-                }
-            }
+            generateEmuReady ();
         }
+    }
+    
+    
+    private boolean generateEmuReady () {
+        // Get the list of vendor directories that may have been processed in this batch
+        Iterator md5Id = md5IdSet.iterator();
+        
+        while (md5Id.hasNext()) { 
+            int totalFilesDb = 0;
+            int totalFilesFileSystem = 0;
+            
+            //count the number of files in batch not yet completed
+            this.vfcuMd5FileId = (Integer) md5Id.next();
+            //getDirectory Name ending for this md5Id
+            setFilePathEndingForId();
+            
+            if (! this.pathEnding.endsWith("tifs")) {
+                //we ignore the pickup location, only interested in tifs for delivery to emu
+                continue;
+            }
+            
+            String emuPickupLocation = CDIS.getProperty("emuPickupLocation") + "\\" + this.pathEnding;
+            
+            
+            int numUnprocessedFiles = countUnprocessedFiles();
+            
+            //if the number of files in batch not yet completed > 1 then it is not yet ready, go grab the next one
+            if (numUnprocessedFiles > 0 ) {
+                logger.log(Level.FINEST,"Batch not completed, number of unprocessed Files " + numUnprocessedFiles); 
+                continue;
+            }
+                    
+            //count the number of files in batch total
+            totalFilesDb = countFilesVfcuDBVendorDir();
+            
+            //count the number of files in vendor directory
+            totalFilesFileSystem = countEmuFiles(emuPickupLocation);
+            
+            logger.log(Level.FINEST,"Files In DB for VendorDir! " + totalFilesDb); 
+            logger.log(Level.FINEST,"FilesInEmuFileSystem! " + totalFilesFileSystem); 
+                
+            //if number of files is the same then create emu ready file
+            if ((totalFilesDb > 0 )&& (totalFilesDb == totalFilesFileSystem)) {
+                   
+                createEmuReadyFile(emuPickupLocation);
+            }
+            else {
+               logger.log(Level.FINEST,"Need to wait, more files to process! "); 
+            }
+            
+        }
+        return true;
     }
 
     
