@@ -404,6 +404,136 @@ public class CDISMap {
         }
     }
     
+    public boolean populateParentFileInfo (Integer relatedMapId) {
+        
+        //Get the pattern of the parent file
+        String sql = "SELECT REGEXP_REPLACE (a.file_name, " + 
+                    "b.parent_child_transform, parent.parent_child_transform) " +
+                    "FROM cdis_map a, " +
+                    "   cdis_cis_media_type_r b, " +
+                    "   cdis_cis_media_type_r parent " +
+                    "WHERE  a.cdis_cis_media_type_id = b.cdis_cis_media_type_id " +
+                    "AND    b.child_of_id = parent.cdis_cis_media_type_id " +
+                    "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
+                    "AND    a.cdis_map_id = " + relatedMapId;
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        String parentPattern = null;
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()) { 
+            
+            if (rs != null && rs.next()) {
+                parentPattern = rs.getString(1);
+            }   
+            else {
+                logger.log(Level.FINER, "No parent found");
+                return false;
+            }
+            
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to obtain parent pattern info from cdis_map", e );
+            return false;
+        }
+        
+        
+        //Find the parent file matching that pattern
+        sql =  "SELECT cdis_map_id, file_name, dams_uoi_id " +
+              "FROM cdis_map " + 
+              "WHERE REGEXP_LIKE (file_name, " +
+              " '(^" + parentPattern + "*)', 'i')" +
+              "AND dams_uoi_id IS NOT NULL " +  
+              "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "'";
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()) { 
+            
+            if (rs != null && rs.next()) {
+                setCdisMapId(rs.getInt(1));
+                setFileName(rs.getString(2));
+                setDamsUoiid(rs.getString(3));
+            }   
+            else {
+                logger.log(Level.FINER, "No record found");
+                return false;
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to obtain parent info from cdis_map", e );
+            return false;
+        }
+        
+        return true;
+    }
+    
+    public boolean populateChldFileInfo (Integer relatedMapId) {
+        
+        //Get the pattern of the parent file
+        
+        String sql = "SELECT REGEXP_REPLACE (a.file_name, " + 
+                    "b.parent_child_transform, child.parent_child_transform) " +
+                    "FROM cdis_map a, " +
+                    "   cdis_cis_media_type_r b, " +
+                    "   cdis_cis_media_type_r child " +
+                    "WHERE  a.cdis_cis_media_type_id = b.cdis_cis_media_type_id " +
+                    "AND    b.parent_of_id = child.cdis_cis_media_type_id " +
+                    "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
+                    "AND    a.cdis_map_id = " + relatedMapId;
+        
+        logger.log(Level.FINEST,"SQL! " + sql);     
+  
+        String childPattern = null;
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()) { 
+            
+            if (rs != null && rs.next()) {
+                childPattern = rs.getString(1);
+            }   
+            else {
+                logger.log(Level.FINER, "No child found");
+                return false;
+            }
+            
+        } catch (Exception e) {
+                 logger.log(Level.FINER, "Error: unable to obtain child pattern info from cdis_map", e );
+                return false;
+        }
+        
+        //Find the parent file matching that pattern
+       sql =  "SELECT cdis_map_id, file_name, dams_uoi_id " +
+              "FROM cdis_map " + 
+              "WHERE REGEXP_LIKE (file_name, " +
+              " '(^" + childPattern + "*)', 'i') " +
+              "AND dams_uoi_id IS NOT NULL " +
+              "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "'";
+        
+       logger.log(Level.FINEST,"SQL! " + sql); 
+       try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()) { 
+            
+            if (rs != null && rs.next()) {
+                setCdisMapId(rs.getInt(1));
+                setFileName(rs.getString(2));
+                setDamsUoiid(rs.getString(3));
+            }    
+            else {
+                logger.log(Level.FINER, "No record found");
+                return false;
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to obtain child info from cdis_map", e );
+            return false;
+        }
+        
+        return true;
+    }
+    
     
     public boolean updateCisUniqueMediaId() {
         

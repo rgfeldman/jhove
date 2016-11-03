@@ -20,17 +20,35 @@ public class CdisCisMediaTypeR {
     
     Integer cdisCisMediaTypeId;
     String parentChildTransform;
+    Integer parentOfId;
+    Integer childOfId;
     
     public Integer getCdisCisMediaTypeId() {
         return this.cdisCisMediaTypeId;
+    }
+    
+    public Integer getChildOfId() {
+        return this.childOfId;
     }
     
     public String getParentChildTransform() {
         return this.parentChildTransform;
     }
     
+    public Integer getParentOfId() {
+        return this.parentOfId;
+    }
+    
     public void setCdisCisMediaTypeId(Integer cdisCisMediaTypeId) {
         this.cdisCisMediaTypeId = cdisCisMediaTypeId;
+    }
+    
+    public void setChildOfId (Integer childOfId) {
+        this.childOfId = childOfId;
+    }
+        
+    public void setParentOfId (Integer parentOfId) {
+        this.parentOfId = parentOfId;
     }
     
     public void setParentChildTransform(String parentChildTransform) {
@@ -58,6 +76,33 @@ public class CdisCisMediaTypeR {
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain cdis_cis_media_type_id ", e );
+                return false;
+        }
+        return true;
+    }
+    
+    
+    public boolean populateChildAndParentOfId () {
+        
+        String sql = "SELECT parent_of_id, child_of_id " +
+                    "FROM cdis_cis_media_type_r " +
+                    "WHERE cdis_cis_media_type_id = " + getCdisCisMediaTypeId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                setParentOfId(rs.getInt(1));
+                setChildOfId(rs.getInt(2));
+            }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                return false;
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain parent id ", e );
                 return false;
         }
         return true;
