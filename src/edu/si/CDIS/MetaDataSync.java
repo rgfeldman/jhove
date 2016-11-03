@@ -575,6 +575,7 @@ public class MetaDataSync {
         populateColumnWidthArray("SI_ASSET_METADATA");
         populateColumnWidthArray("SI_AV_ASSET_METADATA");
         populateColumnWidthArray("SI_MANAGING_UNIT_DTLS");
+        populateColumnWidthArray("SI_NAMED_PERSON_DTLS");
         populateColumnWidthArray("SI_PRESERVATION_METADATA");
         populateColumnWidthArray("SI_RESTRICTIONS_DTLS");
         
