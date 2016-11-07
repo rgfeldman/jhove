@@ -87,30 +87,6 @@ public class TblDigitalMediaResource {
         return true;
     }
     
-    public boolean updateDamsUans () {
-        
-       int recordsUpdated = 0;
-       String sql = "UPDATE dbo.tblDigitalMediaResource " +
-                    "SET masterFileUAN = '" + getMasterFileUan() + "', " +
-                    "serviceFileUAN = '" + getServiceFileUan() + "', " +
-                    "accessFileUAN = '" + getAccessFileUan() + "', " +
-                    "damsUANadddate = GETDATE() " +
-                    "WHERE digitalMediaResourceID = " + getDigitalMediaResourceId() ;
-       
-       logger.log(Level.FINER, "SQL: {0}", sql);
-        
-      try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql) ) {
-            recordsUpdated = pStmt.executeUpdate();
-            
-            logger.log(Level.FINEST,"Rows Updated in AAA CIS! {0}", recordsUpdated);
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error, unable to update DamsUAN in AAA CIS", e);
-                return false;
-        }
-        return true;
-    }
-    
     public boolean updateServiceFileUan () {
         
        int recordsUpdated = 0;
