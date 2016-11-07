@@ -15,6 +15,7 @@ import edu.si.CDIS.CIS.TMS.MediaPath;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalMediaResource;
 import edu.si.CDIS.Database.CDISActivityLog;
+import edu.si.CDIS.Database.CdisCisMediaTypeR;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.TeamsLinks;
 import edu.si.CDIS.utilties.ErrorLog;
@@ -115,35 +116,65 @@ public class IdsCisSync {
                         //Get the uan 
                         siAsst.setUoiid(cdisMap.getDamsUoiid());
                         siAsst.populateOwningUnitUniqueName();
-                        
+                       
                         if (CDIS.getCollectionGroup().equals("AAA_AV")) {
+                            
+                            CdisCisMediaTypeR cdiscisMediaTypeR = new CdisCisMediaTypeR();
+                            cdiscisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
+                            cdiscisMediaTypeR.populateDescription();
+                            
                             TblDigitalMediaResource tblDigitalMediaResource = new TblDigitalMediaResource();
                             
-                            TeamsLinks teamsLinks = new TeamsLinks();
-                            teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
-                            teamsLinks.setLinkType("CHILD");
-                            boolean masterRetrieved = teamsLinks.populateDestValue();
-                            if (masterRetrieved) {
-                                SiAssetMetaData masterSiAsst = new SiAssetMetaData();
-                                masterSiAsst.setUoiid(teamsLinks.getDestValue());
-                                masterSiAsst.populateOwningUnitUniqueName();
-                                tblDigitalMediaResource.setMasterFileUan(masterSiAsst.getOwningUnitUniqueName());
+                            if (cdiscisMediaTypeR.getDescription().contains("Master")) {
+                                //Get Child uoi_id (which is the service record)
+                                TeamsLinks teamsLinks = new TeamsLinks();
+                                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
+                                teamsLinks.setLinkType("PARENT");
+                                
+                                boolean serviceRetrieved = teamsLinks.populateDestValue();
+                                if (! serviceRetrieved) {
+                                    continue;
+                                }
+                                
+                                CDISMap serviceCdisMap = new CDISMap();
+                                serviceCdisMap.setDamsUoiid(teamsLinks.getDestValue());
+                                serviceCdisMap.populateCisUniqueMediaIdForUoiid();
+                                    
+                                tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(serviceCdisMap.getCisUniqueMediaId() ));
+                                   
+                                tblDigitalMediaResource.setMasterFileUan(siAsst.getOwningUnitUniqueName());
+                                
+                                pathUpdated = tblDigitalMediaResource.updateMasterFileUan();
+                            }
+                            else if (cdiscisMediaTypeR.getDescription().contains("Service")) {
+                                tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
+                                tblDigitalMediaResource.setServiceFileUan(siAsst.getOwningUnitUniqueName());         
+                                
+                                pathUpdated = tblDigitalMediaResource.updateServiceFileUan();
+                                
+                            }
+                            else if (cdiscisMediaTypeR.getDescription().contains("Access")) {
+                                //Get Child uoi_id (which is the service record)
+                                TeamsLinks teamsLinks = new TeamsLinks();
+                                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
+                                teamsLinks.setLinkType("CHILD");
+                                
+                                boolean serviceRetrieved = teamsLinks.populateDestValue();
+                                if (! serviceRetrieved) {
+                                    continue;
+                                }
+                                
+                                CDISMap serviceCdisMap = new CDISMap();
+                                serviceCdisMap.setDamsUoiid(teamsLinks.getDestValue());
+                                serviceCdisMap.populateCisUniqueMediaIdForUoiid();
+                                    
+                                tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(serviceCdisMap.getCisUniqueMediaId() ));
+                                   
+                                tblDigitalMediaResource.setAccessFileUan(siAsst.getOwningUnitUniqueName());
+                                
+                                pathUpdated = tblDigitalMediaResource.updateAccessFileUan();
                             }
                             
-                            teamsLinks.setLinkType("PARENT");
-                            boolean childRetrieved = teamsLinks.populateDestValue();
-                            if (childRetrieved) {
-                                SiAssetMetaData childSiAsst = new SiAssetMetaData();
-                                childSiAsst.setUoiid(teamsLinks.getDestValue());
-                                childSiAsst.populateOwningUnitUniqueName();
-                                tblDigitalMediaResource.setAccessFileUan(childSiAsst.getOwningUnitUniqueName());
-                            }
-                            
-                            //assign the uan and digital resourceID
-                            tblDigitalMediaResource.setServiceFileUan(siAsst.getOwningUnitUniqueName());
-                             
-                            tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
-                            pathUpdated = tblDigitalMediaResource.updateDamsUans();
                         }
                         else {
                             TblDigitalResource tblDigitalResource = new TblDigitalResource();

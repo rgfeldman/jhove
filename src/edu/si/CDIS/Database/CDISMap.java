@@ -45,16 +45,16 @@ public class CDISMap {
         return this.cisUniqueMediaId == null ? "" : this.cisUniqueMediaId;
     }
     
+    public String getDamsUoiid () {
+         return this.damsUoiid == null ? "" : this.damsUoiid;
+    }
+    
     public char getErrorInd () {
         return this.errorInd;
     }
     
     public String getFileName () {
         return this.fileName == null ? "" : this.fileName;
-    }
-    
-    public String getDamsUoiid () {
-         return this.damsUoiid == null ? "" : this.damsUoiid;
     }
     
     public Integer getVfcuMediaFileId () {
@@ -212,6 +212,31 @@ public class CDISMap {
         
     }
     
+    public boolean populateCisUniqueMediaIdForUoiid () {
+
+        String sql = "SELECT cis_unique_media_id " +
+                    "FROM cdis_map " +
+                    "WHERE dams_uoi_id = '" + getDamsUoiid() + "' ";
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                setCisUniqueMediaId (rs.getString(1));
+            }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain map_id for cis ID", e );
+                return false;
+        }
+        return true;
+    }
+    
      public boolean populateIdFromCisMediaId () {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
@@ -359,7 +384,8 @@ public class CDISMap {
         
         String sql = "SELECT cis_unique_media_id, " + 
                             "dams_uoi_id, " +
-                            "file_name " +
+                            "file_name, " +
+                            "cdis_cis_media_type_id " +
                     "FROM cdis_map " +
                     "WHERE cdis_map_id = " + getCdisMapId();
         
@@ -371,6 +397,7 @@ public class CDISMap {
                 setCisUniqueMediaId (rs.getString(1));
                 setDamsUoiid (rs.getString(2));
                 setFileName (rs.getString(3));
+                setCdisCisMediaTypeId (rs.getInt(4));
             }   
             
         } catch (Exception e) {
