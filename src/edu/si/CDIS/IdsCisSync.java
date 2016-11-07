@@ -11,14 +11,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.CIS.TMS.MediaPath;
-import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
-import edu.si.CDIS.CIS.AAA.Database.TblDigitalMediaResource;
+import edu.si.CDIS.CIS.TMS.MediaRecord;
+import edu.si.CDIS.CIS.AAA.CollectionRecord;
 import edu.si.CDIS.Database.CDISActivityLog;
-import edu.si.CDIS.Database.CdisCisMediaTypeR;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
-import edu.si.CDIS.DAMS.Database.TeamsLinks;
-import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.Utils.XmlSqlConfig;
 
 
@@ -106,102 +101,27 @@ public class IdsCisSync {
                  
                 switch (CDIS.getProperty("cisSourceDB")) {
                     case "TMS" :
-                        MediaPath mediaPath = new MediaPath();
-                        pathUpdated = mediaPath.redirectCisMediaPath(cdisMap);
+                        MediaRecord mediaRecord = new MediaRecord();
+                        pathUpdated = mediaRecord.redirectPath(cdisMap);
                         break;
                         
-                    case "AAA" :
-                        
-                        SiAssetMetaData siAsst = new SiAssetMetaData();
-                        //Get the uan 
-                        siAsst.setUoiid(cdisMap.getDamsUoiid());
-                        siAsst.populateOwningUnitUniqueName();
-                       
-                        if (CDIS.getCollectionGroup().equals("AAA_AV")) {
-                            
-                            CdisCisMediaTypeR cdiscisMediaTypeR = new CdisCisMediaTypeR();
-                            cdiscisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
-                            cdiscisMediaTypeR.populateDescription();
-                            
-                            TblDigitalMediaResource tblDigitalMediaResource = new TblDigitalMediaResource();
-                            
-                            if (cdiscisMediaTypeR.getDescription().contains("Master")) {
-                                //Get Child uoi_id (which is the service record)
-                                TeamsLinks teamsLinks = new TeamsLinks();
-                                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
-                                teamsLinks.setLinkType("PARENT");
-                                
-                                boolean serviceRetrieved = teamsLinks.populateDestValue();
-                                if (! serviceRetrieved) {
-                                    continue;
-                                }
-                                
-                                CDISMap serviceCdisMap = new CDISMap();
-                                serviceCdisMap.setDamsUoiid(teamsLinks.getDestValue());
-                                serviceCdisMap.populateCisUniqueMediaIdForUoiid();
-                                    
-                                tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(serviceCdisMap.getCisUniqueMediaId() ));
-                                   
-                                tblDigitalMediaResource.setMasterFileUan(siAsst.getOwningUnitUniqueName());
-                                
-                                pathUpdated = tblDigitalMediaResource.updateMasterFileUan();
-                            }
-                            else if (cdiscisMediaTypeR.getDescription().contains("Service")) {
-                                tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
-                                tblDigitalMediaResource.setServiceFileUan(siAsst.getOwningUnitUniqueName());         
-                                
-                                pathUpdated = tblDigitalMediaResource.updateServiceFileUan();
-                                
-                            }
-                            else if (cdiscisMediaTypeR.getDescription().contains("Access")) {
-                                //Get Child uoi_id (which is the service record)
-                                TeamsLinks teamsLinks = new TeamsLinks();
-                                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
-                                teamsLinks.setLinkType("CHILD");
-                                
-                                boolean serviceRetrieved = teamsLinks.populateDestValue();
-                                if (! serviceRetrieved) {
-                                    continue;
-                                }
-                                
-                                CDISMap serviceCdisMap = new CDISMap();
-                                serviceCdisMap.setDamsUoiid(teamsLinks.getDestValue());
-                                serviceCdisMap.populateCisUniqueMediaIdForUoiid();
-                                    
-                                tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(serviceCdisMap.getCisUniqueMediaId() ));
-                                   
-                                tblDigitalMediaResource.setAccessFileUan(siAsst.getOwningUnitUniqueName());
-                                
-                                pathUpdated = tblDigitalMediaResource.updateAccessFileUan();
-                            }
-                            
-                        }
-                        else {
-                            TblDigitalResource tblDigitalResource = new TblDigitalResource();
-                            //assign the uan and digital resourceID
-                            tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
-                            tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
-                            pathUpdated = tblDigitalResource.updateDamsUAN();
-                        }
-                        
+                    case "AAA" :            
+                        CollectionRecord collectionRecord = new CollectionRecord();      
+                        pathUpdated = collectionRecord.pointToUans(cdisMap);
                         break;
                     
                     default :
                         logger.log(Level.FINER, "Error: Invalid CIS Type indicated in config file");  
                 }
                 
-                if (! pathUpdated) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPCISU", "Error: unable to update media Path");
-                    continue;
-                }
-                
-                CDISActivityLog cdisActivity = new CDISActivityLog(); 
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("CPS");    
-                boolean activityLogged = cdisActivity.insertActivity();
-                if (!activityLogged) {
-                    logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+                if (pathUpdated) {
+                    CDISActivityLog cdisActivity = new CDISActivityLog(); 
+                    cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisActivity.setCdisStatusCd("CPS");    
+                    boolean activityLogged = cdisActivity.insertActivity();
+                    if (!activityLogged) {
+                        logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+                    }
                 }
                 
                 try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }

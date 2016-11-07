@@ -15,12 +15,15 @@ import edu.si.CDIS.CIS.TMS.Database.MediaFormats;
 
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.Uois;
+import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.utilties.ErrorLog;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  *
@@ -318,4 +321,46 @@ public class MediaRecord {
         
     }
     
+    public boolean redirectPath(CDISMap cdisMap) {
+        
+        MediaFiles mediaFiles = new MediaFiles ();
+        SiAssetMetaData siAsst = new SiAssetMetaData();
+        
+        //Get the uoiid from the CDIS_map object and put into siAsst object
+        siAsst.setUoiid(cdisMap.getDamsUoiid());
+        
+        //Get the uan based on the uoiid
+        siAsst.populateOwningUnitUniqueName();
+        
+        //pdfs need to be handled different, they have a different path in the CIS, and a different file naming convention
+
+        String fileNameExtension = FilenameUtils.getExtension(cdisMap.getFileName()).toLowerCase();
+        switch (fileNameExtension) {
+            case "tif" :
+            case "jpg" :
+            case "jpeg" :    
+                mediaFiles.setPathId (Integer.parseInt (CDIS.getProperty("IDSPathId")) );
+                mediaFiles.setFileName(siAsst.getOwningUnitUniqueName());
+                break;
+            case "pdf" :
+                mediaFiles.setPathId (Integer.parseInt (CDIS.getProperty("PDFPathId")) );
+                mediaFiles.setFileName(siAsst.getOwningUnitUniqueName() + ".pdf");
+                break;
+            default :
+                logger.log(Level.FINER, "Error: unable to determine PDF path for fileType: " + fileNameExtension);
+        } 
+        
+        mediaFiles.setRenditionId (Integer.parseInt (cdisMap.getCisUniqueMediaId()) );
+        
+        boolean pathUpdated = mediaFiles.updateFileNameAndPath();
+        
+        if (!pathUpdated) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "UPCISU", "Error: unable to update media Path");
+                    
+            return false;
+        }
+                    
+        return true;
+    }
 }
