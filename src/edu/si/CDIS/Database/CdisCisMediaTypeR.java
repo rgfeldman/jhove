@@ -19,10 +19,11 @@ public class CdisCisMediaTypeR {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     Integer cdisCisMediaTypeId;
+    Integer childOfId;
     String description;
     String parentChildTransform;
     Integer parentOfId;
-    Integer childOfId;
+    String postIngestDelivery;
     
     public Integer getCdisCisMediaTypeId() {
         return this.cdisCisMediaTypeId;
@@ -44,6 +45,10 @@ public class CdisCisMediaTypeR {
         return this.parentOfId;
     }
     
+    public String getPostIngestDelivery() {
+        return this.postIngestDelivery;
+    }
+    
     public void setCdisCisMediaTypeId(Integer cdisCisMediaTypeId) {
         this.cdisCisMediaTypeId = cdisCisMediaTypeId;
     }
@@ -62,6 +67,10 @@ public class CdisCisMediaTypeR {
     
     public void setParentChildTransform(String parentChildTransform) {
         this.parentChildTransform = parentChildTransform;
+    }
+    
+    public void setPostIngestDelivery (String postIngestDelivery) {
+        this.postIngestDelivery = postIngestDelivery;
     }
     
     public boolean populateIdFromFileName (String fileName) {
@@ -141,5 +150,31 @@ public class CdisCisMediaTypeR {
         }
         return true;
     }
+    
+    public boolean populatePostIngestDelivery () {
+        
+        String sql = "SELECT post_ingest_delivery " +
+                    "FROM cdis_cis_media_type_r " +
+                    "WHERE cdis_cis_media_type_id = " + getCdisCisMediaTypeId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                setPostIngestDelivery (rs.getString(1));
+            }   
+            else {
+                // we need a description
+                return false;
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain post ingest delivery ", e );
+                return false;
+        }
+        return true;
+    }
+    
     
 }

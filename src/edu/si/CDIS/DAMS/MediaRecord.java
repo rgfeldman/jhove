@@ -8,7 +8,7 @@ package edu.si.CDIS.DAMS;
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CdisCisMediaTypeR;
-import edu.si.CDIS.Database.TeamsLinks;
+import edu.si.CDIS.DAMS.Database.TeamsLinks;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

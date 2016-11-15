@@ -13,6 +13,7 @@ package edu.si.CDIS;
 import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.StagedFile;
+import edu.si.CDIS.Database.CdisCisMediaTypeR;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.MediaRecord;
 import edu.si.CDIS.Database.CDISMap;
@@ -219,17 +220,22 @@ public class LinkToDAMS {
                  continue;
             }
             
-            // Move any .tif files from staging to NMNH EMu pick up directory (on same DAMS Isilon cluster)           
-            if ( (CDIS.getProperty("emuPickupLocation") != null) && (cdisMap.getFileName().endsWith("tif") || cdisMap.getFileName().endsWith("jpg") ) ) {
+            //Check to see if we have to move this filetype to the post-ingest delivery area
+            cdisMap.populateCdisCisMediaTypeId();
+            CdisCisMediaTypeR cdisCisMediaTypeR = new CdisCisMediaTypeR();
+            cdisCisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
+            cdisCisMediaTypeR.populatePostIngestDelivery();
+            
+            if (cdisCisMediaTypeR.getPostIngestDelivery().equals("Y")) {
                 StagedFile stagedFile = new StagedFile();
                 stagedFile.setBasePath(pathBase);
                 stagedFile.setPathEnding(pathEnding);
                 stagedFile.setFileName(cdisMap.getFileName());
             
-                boolean subFileDelivered = stagedFile.deliverSubFile(CDIS.getProperty("emuPickupLocation"));
+                boolean subFileDelivered = stagedFile.deliverSubFile(CDIS.getProperty("postIngestDeliveryLoc"));
                 if (! subFileDelivered) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CPEMUP", "Error, unable to move file to emu pickup location");
+                    errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
                     continue;
                 }
                 
@@ -250,7 +256,7 @@ public class LinkToDAMS {
             
         }
         
-        if (CDIS.getProperty("emuPickupLocation") != null) {
+        if (CDIS.getProperty("postIngestDeliveryLoc") != null) {
             generateEmuReady ();
         }
     }
@@ -270,11 +276,11 @@ public class LinkToDAMS {
             setFilePathEndingForId();
             
             if (! this.pathEnding.endsWith("tifs")) {
-                //we ignore the pickup location, only interested in tifs for delivery to emu
+                //we ignore the pickup location, only interested in tifs for delivery
                 continue;
             }
             
-            String emuPickupLocation = CDIS.getProperty("emuPickupLocation") + "\\" + this.pathEnding;
+            String postIngestDeliveryLoc = CDIS.getProperty("postIngestDeliveryLoc") + "\\" + this.pathEnding;
             
             
             int numUnprocessedFiles = countUnprocessedFiles();
@@ -289,15 +295,15 @@ public class LinkToDAMS {
             totalFilesDb = countFilesVfcuDBVendorDir();
             
             //count the number of files in vendor directory
-            totalFilesFileSystem = countEmuFiles(emuPickupLocation);
+            totalFilesFileSystem = countDeliveredFiles(postIngestDeliveryLoc);
             
             logger.log(Level.FINEST,"Files In DB for VendorDir! " + totalFilesDb); 
-            logger.log(Level.FINEST,"FilesInEmuFileSystem! " + totalFilesFileSystem); 
+            logger.log(Level.FINEST,"FilesInDeliveryFileSystem! " + totalFilesFileSystem); 
                 
-            //if number of files is the same then create emu ready file
+            //if number of files is the same then create ready file
             if ((totalFilesDb > 0 )&& (totalFilesDb == totalFilesFileSystem)) {
                    
-                createEmuReadyFile(emuPickupLocation);
+                createReadyFile(postIngestDeliveryLoc);
             }
             else {
                logger.log(Level.FINEST,"Need to wait, more files to process! "); 
@@ -339,20 +345,20 @@ public class LinkToDAMS {
         return true;
     }
     
-    private void createEmuReadyFile (String emuPickupDirName) {
+    private void createReadyFile (String postIngestDeliveryLoc) {
         
         try {
                 //Create the ready.txt file and put in the media location
-                String readyFilewithPath = emuPickupDirName + "\\EMu_ready.txt";
+                String readyFilewithPath = postIngestDeliveryLoc + "\\EMu_ready.txt";
 
-                logger.log(Level.FINER, "Creating EMu ReadyFile: " + readyFilewithPath);
+                logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 
                 File readyFile = new File (readyFilewithPath);
             
                 readyFile.createNewFile();
   
         } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR encountered when trying to create EMu_ready.txt file",e);;
+            logger.log(Level.FINER,"ERROR encountered when trying to create ready file",e);;
         }
     }   
     
@@ -411,12 +417,12 @@ public class LinkToDAMS {
         return count;
     }
         
-    private int countEmuFiles (String emuLocation) {
+    private int countDeliveredFiles (String postIngestDeliveryLoc) {
         int count = 0;
         
-        File emuDirectory = new File(emuLocation);
+        File deliveryDirectory = new File(postIngestDeliveryLoc);
         
-        for (File file : emuDirectory.listFiles()) {
+        for (File file : deliveryDirectory.listFiles()) {
             if (file.getName().endsWith("tif")) {
                 count++;
             }

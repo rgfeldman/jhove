@@ -13,6 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import edu.si.CDIS.Database.CDISMap;
+import edu.si.CDIS.Database.CdisCisMediaTypeR;
 
 /**
  *
@@ -84,15 +86,15 @@ public class StagedFile {
     public boolean deliverSubFile (String destination) {
 
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        String emuPickupLocation = destination + "\\" + getPathEnding();
+        String postIngestDeliveryLoc = destination + "\\" + getPathEnding();
         
         logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
-        logger.log(Level.FINER,"File moved to emuPickup location: " + emuPickupLocation );
+        logger.log(Level.FINER,"File moved to emuPickup location: " + postIngestDeliveryLoc );
             
         try {            
             Path sourceFile      = Paths.get(fileNamewithPath);
-            Path destPath = Paths.get(emuPickupLocation);
-            Path destWithFile = Paths.get(emuPickupLocation + "\\" + getFileName());
+            Path destPath = Paths.get(postIngestDeliveryLoc);
+            Path destWithFile = Paths.get(postIngestDeliveryLoc + "\\" + getFileName());
 
             // create the directory if we need it
             Files.createDirectories(destPath);
@@ -101,7 +103,7 @@ public class StagedFile {
             Files.move(sourceFile, destWithFile);
             
         } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR encountered when moving to emuPickup directory",e);
+            logger.log(Level.FINER,"ERROR encountered when moving to delivery location",e);
             return false;
         }
         
@@ -110,7 +112,7 @@ public class StagedFile {
     
     
     // Moves the staged file to the MASTER folder
-    public boolean xferToHotFolder (String destination, String xFerType) {
+    public boolean xferToHotFolder (String destination, Integer cdisMapId) {
         
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
         String hotFolderDestStr = destination + "\\" + getFileName();
@@ -118,15 +120,25 @@ public class StagedFile {
         logger.log(Level.FINER,"File xferred from staging location: " + fileNamewithPath );
         logger.log(Level.FINER,"File xferred to hotfolder location: " + hotFolderDestStr );
             
+        //Determine file transfer type
+        CDISMap cdisMap = new CDISMap();
+        cdisMap.setCdisMapId(cdisMapId);
+        cdisMap.populateCdisCisMediaTypeId();
+        
+        CdisCisMediaTypeR cdisCisMediaTypeR = new CdisCisMediaTypeR();
+        cdisCisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
+        
+        cdisCisMediaTypeR.populatePostIngestDelivery();
+        
         try {
             Path source      = Paths.get(fileNamewithPath);
             Path destWithFile = Paths.get(hotFolderDestStr);
             
-            if (xFerType.equals("move")) {
-                Files.move(source, destWithFile);
+            if (cdisCisMediaTypeR.getPostIngestDelivery().equals("Y")) {
+                Files.copy(source, destWithFile);
             }
             else {
-                Files.copy(source, destWithFile);
+                Files.move(source, destWithFile);
             }
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when xFerrring to hot folder",e);

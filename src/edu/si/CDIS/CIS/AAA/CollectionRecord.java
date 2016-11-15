@@ -46,7 +46,7 @@ public class CollectionRecord {
                 teamsLinks.setLinkType("PARENT");
                                 
                 //Get the serviceRecord for the master 
-                boolean serviceRetrieved = teamsLinks.populateDestValue();
+                boolean serviceRetrieved = teamsLinks.populateDestValueNotDeleted();
                 if (! serviceRetrieved) {
                     return false;
                 }
@@ -76,7 +76,7 @@ public class CollectionRecord {
                 teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
                 teamsLinks.setLinkType("CHILD");
                                 
-                boolean serviceRetrieved = teamsLinks.populateDestValue();
+                boolean serviceRetrieved = teamsLinks.populateDestValueNotDeleted();
                 if (! serviceRetrieved) {
                     return false;
                 }

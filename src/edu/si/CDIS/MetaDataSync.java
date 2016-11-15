@@ -13,7 +13,6 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.collect.Table.Cell;
 
-
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.DAMS.Database.Uois;
@@ -379,6 +378,8 @@ public class MetaDataSync {
         // for each UOI_ID that was identified for sync
         for (Iterator<Integer> iter = cdisMapIdsToSync.iterator(); iter.hasNext();) {
             
+            boolean errorInd = false;
+            
             //commit with each iteration
             try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
@@ -392,6 +393,7 @@ public class MetaDataSync {
             if (! dataMappedFromCIS) {
                 ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
+                errorInd = true;
                 continue; 
             }
             
@@ -411,9 +413,9 @@ public class MetaDataSync {
                 if (insertCount != 1) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + cdisMap.getDamsUoiid());    
+                    errorInd = true;
                     continue;
-                }
-                                
+                }            
             }
               
             //Perform any updates that need to be run on the current DAMSID
@@ -425,21 +427,26 @@ public class MetaDataSync {
                 // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
                 if (updateCount != 1) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " + cdisMap.getDamsUoiid());    
+                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " + cdisMap.getDamsUoiid()); 
+                    errorInd = true;
                     continue;
-                }
-            
+                } 
             }
             
             Uois uois = new Uois();
             uois.setUoiid(cdisMap.getDamsUoiid());
             int updateCount = uois.updateMetaDataStateDate();
             if (updateCount != 1) {
-               ErrorLog errorLog = new ErrorLog ();
+                ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "UPDAMD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
+                errorInd = true;
                 continue; 
             }
                 
+            if (errorInd) {
+                //Do not set status as metadata synced if we had an error
+                continue;
+            }
             // see if there already is a row that in the activity_log that has been synced
             CDISActivityLog cdisActivity = new CDISActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
@@ -451,7 +458,7 @@ public class MetaDataSync {
                  boolean activityLogged = cdisActivity.insertActivity();
                  if (!activityLogged) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CRACTL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                    errorLog.capture(cdisMap, "CRACTL",  "Could not create CDIS Activity entry: " + cdisMap.getDamsUoiid());  
                     continue;
                 }
             }
@@ -461,7 +468,7 @@ public class MetaDataSync {
                     
                 if (!activityLogged) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CRACTL",  "Could not update CDIS Activity entry: " + cdisMap.getDamsUoiid());   
+                    errorLog.capture(cdisMap, "CRACTL",  "Could not update CDIS Activity entry: " + cdisMap.getDamsUoiid());
                     continue;
                 }    
             }

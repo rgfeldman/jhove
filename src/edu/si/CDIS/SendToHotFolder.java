@@ -358,6 +358,8 @@ public class SendToHotFolder {
             
                 if (CDIS.getProperty("useMasterSubPairs").equals("true") ) {
                     // Get the child record
+                    CDISMap cdisMapChild = new CDISMap();
+                    
                     int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
                     if (! (childVfcuMediaFileId > 0 )) {
                         logger.log(Level.FINER, "Could not get child ID");
@@ -368,31 +370,28 @@ public class SendToHotFolder {
                     boolean infoPopulated = stagedFile.populateNamePathFromId(childVfcuMediaFileId);
                     if (! infoPopulated) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "CPHOTF", "Error, unable to populate name and path from database for subfile ");
+                        errorLog.capture(cdisMapChild, "CPHOTF", "Error, unable to populate name and path from database for subfile ");
                         continue;
                     }
                 
-                    cdisMap.setVfcuMediaFileId(childVfcuMediaFileId);
-                    cdisMap.populateIdFromVfcuId();
-                    cdisMap.setFileName(stagedFile.getFileName());
+                    cdisMapChild.setVfcuMediaFileId(childVfcuMediaFileId);
+                    cdisMapChild.populateIdFromVfcuId();
+                    cdisMapChild.setFileName(stagedFile.getFileName());
                  
                     boolean fileXferred;
                     //Find the image and move/copy to hotfolder
-                    if (CDIS.getProperty("subHotFolderXferType").equals("move")) {
-                        fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "SUBFILES","move"); 
-                    }
-                    else {
-                        fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "SUBFILES","copy"); 
-                    }
+
+                    fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "SUBFILES", cdisMapChild.getCdisMapId()); 
+                    
                       
                     if (! fileXferred) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "XFHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
+                        errorLog.capture(cdisMapChild, "XFHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
                         continue;
                     }
                 
                     CDISActivityLog cdisActivity = new CDISActivityLog();
-                    cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisActivity.setCdisMapId(cdisMapChild.getCdisMapId());
                     cdisActivity.setCdisStatusCd("FXS");
                     boolean activityLogged = cdisActivity.insertActivity();
                     if (!activityLogged) {
@@ -412,7 +411,9 @@ public class SendToHotFolder {
                 //Get the CDIS_ID 
                 cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
                 cdisMap.populateIdFromVfcuId();
-                boolean fileMoved = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "MASTER","move");  
+               
+                //Decide whether to move file or to copy it
+                boolean fileMoved = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "MASTER", cdisMap.getCdisMapId());  
                 if (! fileMoved) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "MVHOTF", "Error, unable to move file to master: " + stagedFile.getFileName());
