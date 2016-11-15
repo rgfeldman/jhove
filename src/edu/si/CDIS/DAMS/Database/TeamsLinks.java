@@ -50,10 +50,10 @@ public class TeamsLinks {
         
         String sql = "SELECT dest_value " +
                     "FROM towner.teams_links a, " +
-                    "       towner.uois b " +
+                    "       towner.uois b, " +
                     "       towner.uois c " +
                     "WHERE a.src_value = b.uoi_id " +
-                    "AND   a.dest_value = b.uoi_id " +
+                    "AND   a.dest_value = c.uoi_id " +
                     "AND   b.content_state != 'DELETED' " +
                     "AND   c.content_state != 'DELETED' " +
                     "AND   a.src_value = '" + getSrcValue() + "' " +
