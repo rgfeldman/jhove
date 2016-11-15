@@ -46,11 +46,18 @@ public class TeamsLinks {
         this.srcValue = srcValue;
     }
 
-    public boolean populateDestValue () {
+    public boolean populateDestValueNotDeleted () {
         
-        String sql = "SELECT dest_value FROM towner.teams_links " +
-                    "WHERE src_value = '" + getSrcValue() + "' " +
-                    "AND link_type = '" + getLinkType() + "' ";
+        String sql = "SELECT dest_value " +
+                    "FROM towner.teams_links a, " +
+                    "       towner.uois b " +
+                    "       towner.uois c " +
+                    "WHERE a.src_value = b.uoi_id " +
+                    "AND   a.dest_value = b.uoi_id " +
+                    "AND   b.content_state != 'DELETED' " +
+                    "AND   c.content_state != 'DELETED' " +
+                    "AND   a.src_value = '" + getSrcValue() + "' " +
+                    "AND   a.link_type = '" + getLinkType() + "' ";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -67,6 +74,44 @@ public class TeamsLinks {
                 logger.log(Level.FINER, "Error: unable to obtain destValue from teams_links", e );
                 return false;
         }
+        return true;
+    }
+    
+    public boolean createRecord () {
+        
+        int rowsInserted = 0;
+        
+        String sql =  "INSERT INTO towner.teams_links ( " +
+                "src_type, " +
+                "src_value, " +
+                "dest_type, " +
+                "dest_value, " +
+                "link_type, " +
+                "seq_num, " +
+                "follow_latest) " +
+             "VALUES ( " +
+                "'UOI', " +
+                "'" + getSrcValue() + "', " +
+                "'UOI', " +
+                "'" + getDestValue() + "', " +
+                "'" + getLinkType() + "', " +
+                0 + ", " +
+                "'N')";
+                
+        logger.log(Level.FINEST,"SQL! " + sql);      
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
+        
+            rowsInserted = pStmt.executeUpdate();
+            
+            if (rowsInserted != 1) {
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to insert into TEAMS_LINKS table", e );
+                return false;
+        }      
+        
         return true;
     }
 }
