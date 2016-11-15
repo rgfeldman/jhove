@@ -257,12 +257,12 @@ public class LinkToDAMS {
         }
         
         if (CDIS.getProperty("postIngestDeliveryLoc") != null) {
-            generateEmuReady ();
+            generateReadyFile ();
         }
     }
     
     
-    private boolean generateEmuReady () {
+    private boolean generateReadyFile () {
         // Get the list of vendor directories that may have been processed in this batch
         Iterator md5Id = md5IdSet.iterator();
         
@@ -349,7 +349,7 @@ public class LinkToDAMS {
         
         try {
                 //Create the ready.txt file and put in the media location
-                String readyFilewithPath = postIngestDeliveryLoc + "\\EMu_ready.txt";
+                String readyFilewithPath = postIngestDeliveryLoc + "\\" + CDIS.getProperty("readyFileName");
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 
