@@ -21,18 +21,12 @@ public class CDISMap {
     
     private Integer cdisMapId;
     private Integer cdisCisMediaTypeId;
-    private Long batchNumber;
     private String fileName;
     private String damsUoiid;
     private String cisUniqueMediaId;
     private Integer vfcuMediaFileId;
     private char errorInd;
     
-    
-    public Long getBatchNumber () {
-        return this.batchNumber;
-    }
-       
     public Integer getCdisMapId () {
         return this.cdisMapId;
     }
@@ -59,11 +53,6 @@ public class CDISMap {
     
     public Integer getVfcuMediaFileId () {
         return this.vfcuMediaFileId;
-    }
-    
-    
-    public void setBatchNumber (Long batchNumber) {
-        this.batchNumber = batchNumber;
     }
         
     public void setCdisMapId (Integer cdisMapId) {
@@ -338,7 +327,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE vfcu_media_file_id = " + getVfcuMediaFileId() +
-                    " AND batch_number = " + getBatchNumber();
+                    " AND batch_number = " + CDIS.getBatchNumber();
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -363,7 +352,7 @@ public class CDISMap {
   
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "'" +
-                    "AND batch_number = " + getBatchNumber();
+                    "AND batch_number = " + CDIS.getBatchNumber();
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
