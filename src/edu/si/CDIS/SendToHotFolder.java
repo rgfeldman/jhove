@@ -348,7 +348,6 @@ public class SendToHotFolder {
             try {
                 
                 CDISMap cdisMap = new CDISMap();
-                cdisMap.setBatchNumber(CDIS.getBatchNumber());
                 StagedFile stagedFile = new StagedFile();
             
                 try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
