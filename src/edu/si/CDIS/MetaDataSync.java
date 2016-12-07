@@ -27,6 +27,9 @@ public class MetaDataSync {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private ArrayList<Integer> cdisMapIdsToSync;  //list of all CDIS MAP IDs to sync
+    
+    private ArrayList<String> relatedUoiIdsToSync;
+    
     private Table <String,String,Integer> columnLengthHashTable;  //List of columns with maximum length in DAMS
     
     private ArrayList<String> deleteRows;
@@ -47,14 +50,12 @@ public class MetaDataSync {
         Description:    generates the update sql for updating metadata in the DAMS SI_ASSET_METADATA table
         RFeldman 2/2015
     */
-    private boolean generateSql(String uoiId, boolean SyncFromParentChild) {
+    private boolean generateSql(String uoiId, boolean parentChildSync) {
             
-        deletesForUoiid = new ArrayList<>();
         for (String tableName: deleteRows) {
             deletesForUoiid.add("DELETE FROM towner." + tableName + " WHERE UOI_ID = '" + uoiId + "'");
         }
         
-        insertsByTableName = new HashMap<>();
         for (Cell<String, String, String> cell : this.insertRowForDams.cellSet()) {
             
             String tableName =  cell.getRowKey();
@@ -72,12 +73,27 @@ public class MetaDataSync {
             }
         }    
         
-        updatesByTableName =  new HashMap<>();
         for (Cell<String, String, String> cell : updateRowForDams.cellSet()) {
             
             String tableName =  cell.getRowKey();
             String columnName = cell.getColumnKey();
             String value = cell.getValue();
+            
+            //never update these special fields in parent/child sync
+            if (parentChildSync) {
+                switch (columnName) {
+                    case "ADMIN_CONTENT_TYPE" :
+                    case "IS_RESTRICTED" :
+                    case "MANAGING_UNIT" :
+                    case "MAX_IDS_SIZE" :
+                    case "PUBLIC_USE" :                  
+                    case "SEC_POLICY_ID" :
+                    case "TERMS_AND_RESTRICTIONS" :
+                    case "RESTRICTIONS" :
+                    case "RIGHTS_SUMMARY_CORE" :
+                        continue;
+                }
+            }
             
             if (updatesByTableName.isEmpty() || updatesByTableName.get(tableName) == null) {
                 updatesByTableName.put(tableName, "UPDATE towner." + tableName + " SET " + columnName + "= '" + value + "'");
@@ -88,7 +104,7 @@ public class MetaDataSync {
         }   
         
         return true;
-
+        
     }
     
     
@@ -366,19 +382,86 @@ public class MetaDataSync {
     }
     
     
+    private void buildDamsRelationList (String uoiId, String linkType) {
+        // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
+        // by CDIS or not.  We get only the direct parent for now...later we may want to add more functionality
+        
+        TeamsLinks teamsLinks = new TeamsLinks();
+        teamsLinks.setSrcValue(uoiId);
+        teamsLinks.setLinkType(linkType);
+        boolean relatedRecRetrieved = teamsLinks.populateDestValueNotDeleted();
+        
+        if (relatedRecRetrieved ) {
+            relatedUoiIdsToSync.add(teamsLinks.getDestValue());
+        }
+        
+    }
+    
+    private boolean performTransactions (String linkedOrParChilduoiId, CDISMap cdisMap, boolean parentChildOnly) {
+        
+        deletesForUoiid = new ArrayList<>();
+        insertsByTableName = new HashMap<>();
+        updatesByTableName =  new HashMap<>();
+            
+        boolean sqlUpdateCreated = generateSql(linkedOrParChilduoiId, parentChildOnly); 
+        
+        //Perform any deletes that need to be run on the current DAMSID
+        for (String sqlToDelete :deletesForUoiid) {
+            updateDamsData(sqlToDelete);
+        }
+            
+        //Perform any Inserts that need to be run on the current DAMSID
+        for (String tableName : insertsByTableName.keySet()) {
+            ///NEED TO DO DB INSERTS!
+            String sqlToInsert = insertsByTableName.get(tableName);
+            int insertCount = updateDamsData(sqlToInsert);
+                
+            if (insertCount != 1) {
+                ErrorLog errorLog = new ErrorLog ();
+                //Get CDISMAPID by uoiId
+                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + linkedOrParChilduoiId);    
+                return false;            
+            }
+        }      
+        
+        //Perform any updates that need to be run on the current DAMSID
+        for (String tableName : updatesByTableName.keySet()) {
+            String sqlToUpdate = updatesByTableName.get(tableName);
+            sqlToUpdate = sqlToUpdate + " WHERE uoi_id  = '" + linkedOrParChilduoiId + "'";
+            int updateCount = updateDamsData(sqlToUpdate);
+                
+            // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
+            if (updateCount != 1) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " + linkedOrParChilduoiId); 
+                return false;
+            } 
+        }
+    
+        Uois uois = new Uois();
+        uois.setUoiid(linkedOrParChilduoiId);
+        int updateCount = uois.updateMetaDataStateDate();
+        if (updateCount != 1) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "UPDAMD", "Error, unable to update uois table with new metadata_state_dt " + linkedOrParChilduoiId);   
+            return false; 
+        }
+        
+        return true;
+    }
     
     /*  Method :       processListToSync
         Arguments:      
         Description:    Goes through the list of rendition Records one at a time 
                         and determines how to update the metadata on each one
-        RFeldman 2/2015
+      syncParentChild  RFeldman 2/2015
     */
     private void processListToSync() {
 
         // for each UOI_ID that was identified for sync
         for (Iterator<Integer> iter = cdisMapIdsToSync.iterator(); iter.hasNext();) {
             
-            boolean errorInd = false;
+            boolean noErrorFound = true;
             
             //commit with each iteration
             try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -387,63 +470,37 @@ public class MetaDataSync {
                 
             cdisMap.setCdisMapId(iter.next());
             cdisMap.populateMapInfo();
+            
+            //Build the DAMS child/parent relationships for the current uoiId
+            relatedUoiIdsToSync = new ArrayList();
+
+            //Add the current
+            if (CDIS.getProperty("syncParentChild") != null  && CDIS.getProperty("syncParentChild").equals("true") ) {
+                buildDamsRelationList (cdisMap.getDamsUoiid(), "PARENT");
+                buildDamsRelationList (cdisMap.getDamsUoiid(), "CHILD");
+            }
+            
                 
              // execute the SQL statment to obtain the metadata and populate variables. The key value is the CDIS MAP ID
             boolean dataMappedFromCIS = populateMetaDataValuesForDams(cdisMap);
             if (! dataMappedFromCIS) {
                 ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
-                errorInd = true;
+                noErrorFound = false;
                 continue; 
             }
             
-            boolean sqlUpdateCreated = generateSql(cdisMap.getDamsUoiid(), false);
+            noErrorFound = performTransactions(cdisMap.getDamsUoiid(), cdisMap, false);
             
-            //Perform any deletes that need to be run on the current DAMSID
-            for (String sqlToDelete :deletesForUoiid) {
-                 updateDamsData(sqlToDelete);
-            }
-            
-            //Perform any Inserts that need to be run on the current DAMSID
-            for (String tableName : insertsByTableName.keySet()) {
-                ///NEED TO DO DB INSERTS!
-                String sqlToInsert = insertsByTableName.get(tableName);
-                int insertCount = updateDamsData(sqlToInsert);
-                
-                if (insertCount != 1) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + cdisMap.getDamsUoiid());    
-                    errorInd = true;
+            if (noErrorFound = false) {
                     continue;
-                }            
-            }
-              
-            //Perform any updates that need to be run on the current DAMSID
-            for (String tableName : updatesByTableName.keySet()) {
-                String sqlToUpdate = updatesByTableName.get(tableName);
-                sqlToUpdate = sqlToUpdate + " WHERE uoi_id  = '" + cdisMap.getDamsUoiid() + "'";
-                int updateCount = updateDamsData(sqlToUpdate);
-                
-                // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
-                if (updateCount != 1) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " + cdisMap.getDamsUoiid()); 
-                    errorInd = true;
-                    continue;
-                } 
             }
             
-            Uois uois = new Uois();
-            uois.setUoiid(cdisMap.getDamsUoiid());
-            int updateCount = uois.updateMetaDataStateDate();
-            if (updateCount != 1) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPDAMD", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
-                errorInd = true;
-                continue; 
+            for (String relatedUoiId : relatedUoiIdsToSync) {
+                noErrorFound = performTransactions(relatedUoiId, cdisMap, true);
             }
-                
-            if (errorInd) {
+            
+            if (! noErrorFound) {
                 //Do not set status as metadata synced if we had an error
                 continue;
             }
@@ -472,46 +529,6 @@ public class MetaDataSync {
                     continue;
                 }    
             }
-                
-            //if (CDIS.getProperty("syncDamsChildren") == null  || CDIS.getProperty("syncDamsChildren").equals("false") ) {
-            //skip next steps, they are only for syncing children records
-            //   continue;
-            //}
-            
-            // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
-            // by CDIS or not.  We get only the direct parent for now...later we may want to add more functionality
-            //TeamsLinks teamsLinks = new TeamsLinks();
-            //teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
-            //teamsLinks.setLinkType("CHILD");
-            //boolean parentRetrieved = teamsLinks.populateDestValue();
-                
-                
-                                
-            //Skip certain fields in metadata update if this is only based on parent record
-            //if (! SyncFromParentChild) {
-            //    switch (column) {     
-            //        case "PUBLIC_USE" :
-            //        case "MAX_IDS_SIZE" :
-            //        case "IS_RESTRICTED" :
-            //        case "ADMIN_CONTENT_TYPE" :    
-            //            continue;
-            //    }
-            //}
-                
-            //Only update a parent record if we found one, or else just skip this step.
-            //if (! parentRetrieved) {
-            //    logger.log(Level.ALL, "Error: unable to obtain parent id to sync");
-            //   continue;
-            //}
-            //if (teamsLinks.getDestValue() == null) {
-            //    logger.log(Level.ALL, "No parent id to sync");
-            //    continue;
-            //}
-                
-            //For each parent or child, generate update statement.  should be the same, except certain fields we do not update
-            //for parent/children.  These include public_use, max_ids_size, is_restricted
-            //performUpdates(siAsst, cdisMap, false);
-            
 
         }
     }
@@ -618,4 +635,5 @@ public class MetaDataSync {
         return recordsUpdated;
 
     }
+    
 }
