@@ -44,197 +44,14 @@ public class MetaDataSync {
     private HashMap<String, String> insertsByTableName; 
 
 
-    /*  Method :        generateUpdate
+    /*  Method :        buildCISQueryPopulateResults
         Arguments:      
-        Returns:      
-        Description:    generates the update sql for updating metadata in the DAMS SI_ASSET_METADATA table
-        RFeldman 2/2015
-    */
-    private boolean generateSql(String uoiId, boolean parentChildSync) {
-            
-        for (String tableName: deleteRows) {
-            deletesForUoiid.add("DELETE FROM towner." + tableName + " WHERE UOI_ID = '" + uoiId + "'");
-        }
-        
-        for (Cell<String, String, String> cell : this.insertRowForDams.cellSet()) {
-            
-            String tableName =  cell.getRowKey();
-            String columnName = cell.getColumnKey();
-            String value = cell.getValue();
-            
-            if (insertsByTableName.isEmpty() || insertsByTableName.get(tableName) == null) {
-                insertsByTableName.put(tableName, 
-                    "INSERT INTO towner." + tableName + 
-                    " (UOI_ID, " + columnName + ") VALUES ('" + 
-                    uoiId + "','" + value + "')");
-            }
-            else {
-                insertsByTableName.put(tableName, insertsByTableName.get(tableName) + ", " + columnName + "= '" + value + "'");
-            }
-        }    
-        
-        for (Cell<String, String, String> cell : updateRowForDams.cellSet()) {
-            
-            String tableName =  cell.getRowKey();
-            String columnName = cell.getColumnKey();
-            String value = cell.getValue();
-            
-            //never update these special fields in parent/child sync
-            if (parentChildSync) {
-                switch (columnName) {
-                    case "ADMIN_CONTENT_TYPE" :
-                    case "IS_RESTRICTED" :
-                    case "MANAGING_UNIT" :
-                    case "MAX_IDS_SIZE" :
-                    case "PUBLIC_USE" :                  
-                    case "SEC_POLICY_ID" :
-                    case "TERMS_AND_RESTRICTIONS" :
-                    case "RESTRICTIONS" :
-                    case "RIGHTS_SUMMARY_CORE" :
-                        continue;
-                }
-            }
-            
-            if (updatesByTableName.isEmpty() || updatesByTableName.get(tableName) == null) {
-                updatesByTableName.put(tableName, "UPDATE towner." + tableName + " SET " + columnName + "= '" + value + "'");
-            }
-            else {
-                updatesByTableName.put(tableName, updatesByTableName.get(tableName) + ", " + columnName + "= '" + value + "'");
-            }
-        }   
-        
-        return true;
-        
-    }
-    
-    
-    /*  Method :       getNeverSyncedRendition
-        Arguments:      
-        Description:    get Renditions by CDIS_ID that have never been synced 
-        RFeldman 2/2015
-    */
-    private void getNeverSyncedRendition() {
-        
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getNeverSyncedRecords"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < CDIS.getQueryNodeList().getLength() ; s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            } 
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
-            ResultSet rs = stmt.executeQuery() ) {
-                
-                while (rs.next()) {
-
-                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
-                    cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
-                }
-            }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync", e);
-                return;
-            }
-        }
-    }
-    
-    /*  Method :       getUpdatedCisRecords
-        Arguments:      
-        Description:    get Renditions by CDIS_ID that have never been synced 
-        RFeldman 2/2015
-    */
-    private void getUpdatedCisRecords() {
-
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getRecordsForResync"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            } 
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = CDIS.getCisConn().prepareStatement(xml.getSqlQuery());
-            ResultSet rs = stmt.executeQuery() ) {
-
-                while (rs.next()) {
-                    CDISMap cdisMap = new CDISMap();
-                    cdisMap.setCisUniqueMediaId(rs.getString(1));
-                    boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
-                    
-                    if (!cisMediaIdObtained) {
-                        continue;
-                    }
-                
-                    //Only add to the list if it is not already in the list. It could be there from never synced record list
-                    if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
-                        cdisMapIdsToSync.add(cdisMap.getCdisMapId());
-                    }
-                }
-            }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to re-sync", e);
-                return;
-            }
-        }
-        
-    }
-    
-    
-    private boolean populateUpdateRowForDams (String tableName, String columnName, String resultVal, String appendDelim) {
-                    
-        //check if the column has already been populated
-        String priorResults = updateRowForDams.get(tableName, columnName);
-        
-        if (priorResults != null) {
-            if (appendDelim != null ) {
-            //append to existing column
-            updateRowForDams.put(tableName, columnName, priorResults + appendDelim + ' ' + resultVal);
-            }
-            else {
-                //put out error
-                logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
-                updateRowForDams.put(tableName, columnName, resultVal);
-            }
-        }
-        else {
-            if (resultVal == null) {
-                updateRowForDams.put(tableName, columnName, "null");
-            }    
-            else {
-                updateRowForDams.put(tableName, columnName, resultVal);
-            }
-        }
-        
-        return true;
-    }
-        
-    /*  Method :        mapData
-        Arguments:      
-        Returns:      
-        Description:    maps the information obtained from the TMS select statement to the appropriate member variables
+        Returns:        true for success, false for failures
+        Description:    creates the sql statements to run in the CIS, then executes them and put results in query structure
         RFeldman 2/2015
     */
 
-    private boolean populateMetaDataValuesForDams(CDISMap cdisMap) {
+    private boolean buildCisQueryPopulateResults(CDISMap cdisMap) {
         
         this.deleteRows = new ArrayList<>();
         this.insertRowForDams = HashBasedTable.create();
@@ -316,71 +133,12 @@ public class MetaDataSync {
     }
     
     
-    
-    private boolean populateColumnWidthArray (String destTableName) {
-          
-        String sql = "SELECT column_name, data_length " + 
-                     "FROM all_tab_columns " +
-                     "WHERE table_name = '" + destTableName + "' " + 
-                     "AND owner = 'TOWNER' " +
-                     "AND data_type != 'DATE' " + 
-                     "AND column_name NOT IN ('UOI_ID','OWNING_UNIT_UNIQUE_NAME')" +
-                     "UNION " +
-                     "SELECT column_name, 16 " +
-                     "FROM all_tab_columns " +
-                     "WHERE table_name = '" + destTableName + "' " + 
-                     "AND owner = 'TOWNER' " +
-                     "AND data_type = 'DATE' ";
-        
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-            
-            while (rs != null && rs.next()) {         
-                columnLengthHashTable.put(destTableName, rs.getString(1), rs.getInt(2));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain data field lengths ", e);
-        
-        }
-        return true;
-    
-    }
-    
-    
-    
-    private void populateXmls() {
-        
-        this.metaDataMapQueries = new HashMap<>();
-                
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("metadataMap"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < CDIS.getQueryNodeList().getLength() ; s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }  
-            
-            logger.log(Level.FINEST, "Adding SQL to ArrayList: {0}", xml.getSqlQuery());
-            
-            String[] tableNameDelim = new String[3];
-            tableNameDelim[0]= xml.getDestinationTable();
-            tableNameDelim[1]= xml.getOperationType();
-            tableNameDelim[2]= xml.getMultiResultDelim();
-            
-            metaDataMapQueries.put(xml.getSqlQuery(), tableNameDelim);
-            
-        }
-    }
-    
+    /*  Method :        buildDamsRelationList
+        Arguments:      
+        Returns:        true for success, false for failures
+        Description:    populates relatedUoiIdsToSync which will hold a list of related uoiIds (connected by parents or children relations in DAMS)
+        RFeldman 12/2016
+    */
     
     private void buildDamsRelationList (String uoiId, String linkType) {
         // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
@@ -396,6 +154,77 @@ public class MetaDataSync {
         }
         
     }
+    
+    /*  Method :        generateUpdate
+        Arguments:      
+        Returns:        true for success, false for failures
+        Description:    generates the update sql for updating metadata in the DAMS
+        RFeldman 2/2015
+    */
+    private boolean generateSql(String uoiId, boolean parentChildSync) {
+            
+        for (String tableName: deleteRows) {
+            deletesForUoiid.add("DELETE FROM towner." + tableName + " WHERE UOI_ID = '" + uoiId + "'");
+        }
+        
+        for (Cell<String, String, String> cell : this.insertRowForDams.cellSet()) {
+            
+            String tableName =  cell.getRowKey();
+            String columnName = cell.getColumnKey();
+            String value = cell.getValue();
+            
+            if (insertsByTableName.isEmpty() || insertsByTableName.get(tableName) == null) {
+                insertsByTableName.put(tableName, 
+                    "INSERT INTO towner." + tableName + 
+                    " (UOI_ID, " + columnName + ") VALUES ('" + 
+                    uoiId + "','" + value + "')");
+            }
+            else {
+                insertsByTableName.put(tableName, insertsByTableName.get(tableName) + ", " + columnName + "= '" + value + "'");
+            }
+        }    
+        
+        for (Cell<String, String, String> cell : updateRowForDams.cellSet()) {
+            
+            String tableName =  cell.getRowKey();
+            String columnName = cell.getColumnKey();
+            String value = cell.getValue();
+            
+            //never update these special fields in parent/child sync
+            if (parentChildSync) {
+                switch (columnName) {
+                    case "ADMIN_CONTENT_TYPE" :
+                    case "IS_RESTRICTED" :
+                    case "MANAGING_UNIT" :
+                    case "MAX_IDS_SIZE" :
+                    case "PUBLIC_USE" :                  
+                    case "SEC_POLICY_ID" :
+                    case "TERMS_AND_RESTRICTIONS" :
+                    case "RESTRICTIONS" :
+                    case "RIGHTS_SUMMARY_CORE" :
+                        continue;
+                }
+            }
+            
+            if (updatesByTableName.isEmpty() || updatesByTableName.get(tableName) == null) {
+                updatesByTableName.put(tableName, "UPDATE towner." + tableName + " SET " + columnName + "= '" + value + "'");
+            }
+            else {
+                updatesByTableName.put(tableName, updatesByTableName.get(tableName) + ", " + columnName + "= '" + value + "'");
+            }
+        }   
+        
+        return true;
+        
+    }
+    
+    
+    /*  Method :        performTransactions
+        Arguments:      
+        Returns:        true for success, false for failures
+        Description:    transverses list of updates/inserts/deletes for metadata sync in DAMS and kicks them off one at a time.
+        RFeldman 12/2016
+    */
     
     private boolean performTransactions (String linkedOrParChilduoiId, CDISMap cdisMap, boolean parentChildOnly) {
         
@@ -450,10 +279,213 @@ public class MetaDataSync {
         return true;
     }
     
+    
+    /*  Method :       populateCisUpdatedMapIds
+        Arguments:      
+        Description:    populates list of media records in the CDIS_MAP table by CDIS_MAP_ID that have been updated in the CIS system
+        RFeldman 2/2015
+    */
+    private void populateCisUpdatedMapIds() {
+
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getRecordsForResync"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            } 
+            
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getCisConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+
+                while (rs.next()) {
+                    CDISMap cdisMap = new CDISMap();
+                    cdisMap.setCisUniqueMediaId(rs.getString(1));
+                    boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
+                    
+                    if (!cisMediaIdObtained) {
+                        continue;
+                    }
+                
+                    //Only add to the list if it is not already in the list. It could be there from never synced record list
+                    if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
+                        cdisMapIdsToSync.add(cdisMap.getCdisMapId());
+                    }
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to re-sync", e);
+                return;
+            }
+        }
+        
+    }
+    
+    
+    /*  Method :        populateColumnWidthArray
+        Arguments:      
+        Returns:        true for success, false for failures
+        Description:    populates structure to hold columns and widths for all DAMS tables involved in metadata sync
+        RFeldman 12/2016
+    */
+    private boolean populateColumnWidthArray (String destTableName) {
+          
+        String sql = "SELECT column_name, data_length " + 
+                     "FROM all_tab_columns " +
+                     "WHERE table_name = '" + destTableName + "' " + 
+                     "AND owner = 'TOWNER' " +
+                     "AND data_type != 'DATE' " + 
+                     "AND column_name NOT IN ('UOI_ID','OWNING_UNIT_UNIQUE_NAME')" +
+                     "UNION " +
+                     "SELECT column_name, 16 " +
+                     "FROM all_tab_columns " +
+                     "WHERE table_name = '" + destTableName + "' " + 
+                     "AND owner = 'TOWNER' " +
+                     "AND data_type = 'DATE' ";
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+            
+            while (rs != null && rs.next()) {         
+                columnLengthHashTable.put(destTableName, rs.getString(1), rs.getInt(2));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain data field lengths ", e);
+        
+        }
+        return true;
+    
+    }
+    
+    
+    /*  Method :       populateNeverSyncedMapIds
+        Arguments:      
+        Description:    populates list of media records in the CDIS_MAP table by CDIS_MAP_ID that have never been synced 
+        RFeldman 2/2015
+    */
+    private void populateNeverSyncedMapIds() {
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("getNeverSyncedRecords"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength() ; s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            } 
+            
+            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
+            
+            try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(xml.getSqlQuery());
+            ResultSet rs = stmt.executeQuery() ) {
+                
+                while (rs.next()) {
+
+                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
+                    cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error obtaining list to sync", e);
+                return;
+            }
+        }
+    }
+    
+    
+    /*  Method :       populateCisUpdatedMapIds
+        Arguments:      
+        Description:    Helps generate the update statement used for the metadata sync by determining if we should add onto existing update
+                        statement or start a new update statement 
+        RFeldman 12/2016
+    */
+    private boolean populateUpdateRowForDams (String tableName, String columnName, String resultVal, String appendDelim) {
+                    
+        //check if the column has already been populated
+        String priorResults = updateRowForDams.get(tableName, columnName);
+        
+        if (priorResults != null) {
+            if (appendDelim != null ) {
+            //append to existing column
+            updateRowForDams.put(tableName, columnName, priorResults + appendDelim + ' ' + resultVal);
+            }
+            else {
+                //put out error
+                logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
+                updateRowForDams.put(tableName, columnName, resultVal);
+            }
+        }
+        else {
+            if (resultVal == null) {
+                updateRowForDams.put(tableName, columnName, "null");
+            }    
+            else {
+                updateRowForDams.put(tableName, columnName, resultVal);
+            }
+        }
+        
+        return true;
+    }
+        
+    
+    /*  Method :        populateXmls
+        Arguments:      
+        Returns:        true for success, false for failures
+        Description:    populates structure to hold columns and widths for all DAMS tables involved in metadata sync
+        RFeldman 12/2016
+    */
+    private void populateXmls() {
+        
+        this.metaDataMapQueries = new HashMap<>();
+                
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        
+        //indicate the particular query we are interested in
+        xml.setQueryTag("metadataMap"); 
+        
+        //Loop through all of the queries for the current operation type
+        for (int s = 0; s < CDIS.getQueryNodeList().getLength() ; s++) {
+            boolean queryPopulated = xml.populateSqlInfoForType(s);
+        
+            //if the query does not match the tag, then get the next query
+            if (!queryPopulated ) {
+                continue;
+            }  
+            
+            logger.log(Level.FINEST, "Adding SQL to ArrayList: {0}", xml.getSqlQuery());
+            
+            String[] tableNameDelim = new String[3];
+            tableNameDelim[0]= xml.getDestinationTable();
+            tableNameDelim[1]= xml.getOperationType();
+            tableNameDelim[2]= xml.getMultiResultDelim();
+            
+            metaDataMapQueries.put(xml.getSqlQuery(), tableNameDelim);
+            
+        }
+    }
+    
+    
     /*  Method :       processListToSync
         Arguments:      
-        Description:    Goes through the list of rendition Records one at a time 
-                        and determines how to update the metadata on each one
+        Description:   The main 'driver' for the record level. Goes through the list of media Records that were determined to require syncing one at a time 
       syncParentChild  RFeldman 2/2015
     */
     private void processListToSync() {
@@ -482,7 +514,7 @@ public class MetaDataSync {
             
                 
              // execute the SQL statment to obtain the metadata and populate variables. The key value is the CDIS MAP ID
-            boolean dataMappedFromCIS = populateMetaDataValuesForDams(cdisMap);
+            boolean dataMappedFromCIS = buildCisQueryPopulateResults(cdisMap);
             if (! dataMappedFromCIS) {
                 ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
@@ -534,7 +566,11 @@ public class MetaDataSync {
     }
     
     
-    
+    /*  Method :       scrubString
+        Arguments:      
+        Description:   Scrubs the database insert/update/delete statement and replaces special characters before updating the DAMS database
+      syncParentChild  RFeldman 2/2015
+    */
     public String scrubString(String inputString) {
           
         String newString;
@@ -574,12 +610,12 @@ public class MetaDataSync {
         cdisMapIdsToSync = new ArrayList<>();
         
         // Grab all the records that have NEVER EVER been synced by CDIS yet
-        getNeverSyncedRendition();      
+        populateNeverSyncedMapIds();      
         
         //Grab all the records that have been synced in the past, but have been updated in the CIS
         //  Must check first, some implementations do not even have a CIS to check
         if (! CDIS.getProperty("cisSourceDB").equals("none")) {
-            getUpdatedCisRecords();
+            populateCisUpdatedMapIds();
         }
 
         if (cdisMapIdsToSync.isEmpty()) {
