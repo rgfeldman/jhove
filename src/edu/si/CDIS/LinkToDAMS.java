@@ -13,7 +13,7 @@ package edu.si.CDIS;
 import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.StagedFile;
-import edu.si.CDIS.Database.CdisCisMediaTypeR;
+import edu.si.CDIS.Database.MediaTypeConfigR;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.DAMS.MediaRecord;
 import edu.si.CDIS.Database.CDISMap;
@@ -222,11 +222,11 @@ public class LinkToDAMS {
             
             //Check to see if we have to move this filetype to the post-ingest delivery area
             cdisMap.populateCdisCisMediaTypeId();
-            CdisCisMediaTypeR cdisCisMediaTypeR = new CdisCisMediaTypeR();
-            cdisCisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
-            cdisCisMediaTypeR.populatePostIngestDelivery();
+            MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
+            mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
+            mediaTypeConfigR.populatePostIngestDelivery();
             
-            if (cdisCisMediaTypeR.getPostIngestDelivery().equals("Y")) {
+            if (mediaTypeConfigR.getPostIngestDelivery().equals("Y")) {
                 StagedFile stagedFile = new StagedFile();
                 stagedFile.setBasePath(pathBase);
                 stagedFile.setPathEnding(pathEnding);

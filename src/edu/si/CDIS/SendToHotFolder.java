@@ -7,7 +7,7 @@ package edu.si.CDIS;
 
 import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.Database.CDISActivityLog;
-import edu.si.CDIS.Database.CdisCisMediaTypeR;
+import edu.si.CDIS.Database.MediaTypeConfigR;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.VFCUMediaFile;
 import edu.si.CDIS.utilties.ErrorLog;
@@ -105,10 +105,10 @@ public class SendToHotFolder {
             
             if (mediaTypeId.contains(",") ) {
                 //find the right media type_id by the lookup table by matching the filename
-                CdisCisMediaTypeR cdisCisMediaTypeR = new CdisCisMediaTypeR();
-                cdisCisMediaTypeR.populateIdFromFileName(cdisMap.getFileName());
+                MediaTypeConfigR mediaTypeConfigId = new MediaTypeConfigR();
+                mediaTypeConfigId.populateIdFromFileName(cdisMap.getFileName());
                
-                cdisMap.setCdisCisMediaTypeId(cdisCisMediaTypeR.getCdisCisMediaTypeId());
+                cdisMap.setCdisCisMediaTypeId(mediaTypeConfigId.getMediaTypeConfigId());
             }
             else {
                 //Send the string to numeric form

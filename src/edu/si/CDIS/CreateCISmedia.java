@@ -96,7 +96,7 @@ public class CreateCISmedia {
         if (!mapRecordExists) {    
             //  In the cases where media was put into DAMS by something other than CDIS, there will be no existing map entry there
             //      and we will need to add it  
-            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisCisMediaTypeId")) );
+            cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("mediaTypeConfigId")) );
                 
             boolean mapCreated = cdisMap.createRecord();
             if (!mapCreated) {

@@ -197,11 +197,9 @@ public class MetaDataSync {
                     case "IS_RESTRICTED" :
                     case "MANAGING_UNIT" :
                     case "MAX_IDS_SIZE" :
+                    case "ORIGINAL_FILE_NAME" :
                     case "PUBLIC_USE" :                  
                     case "SEC_POLICY_ID" :
-                    case "TERMS_AND_RESTRICTIONS" :
-                    case "RESTRICTIONS" :
-                    case "RIGHTS_SUMMARY_CORE" :
                         continue;
                 }
             }
