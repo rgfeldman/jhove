@@ -11,7 +11,7 @@ import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
 import edu.si.CDIS.DAMS.Database.TeamsLinks;
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.Database.CdisCisMediaTypeR;
+import edu.si.CDIS.Database.MediaTypeConfigR;
 import edu.si.CDIS.utilties.ErrorLog;
 import java.util.logging.Logger;
 
@@ -33,8 +33,8 @@ public class CollectionRecord {
         
         if (CDIS.getCollectionGroup().equals("AAA_AV")) {
                             
-            CdisCisMediaTypeR cdiscisMediaTypeR = new CdisCisMediaTypeR();
-            cdiscisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
+            MediaTypeConfigR cdiscisMediaTypeR = new MediaTypeConfigR();
+            cdiscisMediaTypeR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
             cdiscisMediaTypeR.populateDescription();
                             
             TblDigitalMediaResource tblDigitalMediaResource = new TblDigitalMediaResource();
