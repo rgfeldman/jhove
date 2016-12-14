@@ -14,7 +14,7 @@ import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.Database.CdisCisMediaTypeR;
+import edu.si.CDIS.Database.MediaTypeConfigR;
 
 /**
  *
@@ -125,16 +125,16 @@ public class StagedFile {
         cdisMap.setCdisMapId(cdisMapId);
         cdisMap.populateCdisCisMediaTypeId();
         
-        CdisCisMediaTypeR cdisCisMediaTypeR = new CdisCisMediaTypeR();
-        cdisCisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
+        MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
+        mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
         
-        cdisCisMediaTypeR.populatePostIngestDelivery();
+        mediaTypeConfigR.populatePostIngestDelivery();
         
         try {
             Path source      = Paths.get(fileNamewithPath);
             Path destWithFile = Paths.get(hotFolderDestStr);
             
-            if (cdisCisMediaTypeR.getPostIngestDelivery().equals("Y")) {
+            if (mediaTypeConfigR.getPostIngestDelivery().equals("Y")) {
                 Files.copy(source, destWithFile);
             }
             else {

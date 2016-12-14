@@ -7,7 +7,7 @@ package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
 import edu.si.CDIS.Database.CDISMap;
-import edu.si.CDIS.Database.CdisCisMediaTypeR;
+import edu.si.CDIS.Database.MediaTypeConfigR;
 import edu.si.CDIS.DAMS.Database.TeamsLinks;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,15 +26,15 @@ public class MediaRecord {
         cdisMap.populateCdisCisMediaTypeId();
         
         //populate the Parent ID from the db
-        CdisCisMediaTypeR cdisCisMediaTypeR = new CdisCisMediaTypeR();
-        cdisCisMediaTypeR.setCdisCisMediaTypeId(cdisMap.getCdisCisMediaTypeId());
+        MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
+        mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
         
         //populate the parent and child ID from the db
-        cdisCisMediaTypeR.populateChildAndParentOfId();
+        mediaTypeConfigR.populateChildAndParentOfId();
           
         CDISMap childCdisMap = new CDISMap();
         
-        if (cdisCisMediaTypeR.getChildOfId() > 0 ) {
+        if (mediaTypeConfigR.getChildOfId() > 0 ) {
             
             CDISMap parentCdisMap = new CDISMap();
             
@@ -57,7 +57,7 @@ public class MediaRecord {
             }
         }
         
-        if (cdisCisMediaTypeR.getParentOfId() > 0 ) {
+        if (mediaTypeConfigR.getParentOfId() > 0 ) {
             boolean childInfoPopulated = childCdisMap.populateChldFileInfo(cdisMap.getCdisMapId() );
             
             if (childInfoPopulated) {

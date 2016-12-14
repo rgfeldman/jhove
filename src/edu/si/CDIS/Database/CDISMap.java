@@ -20,7 +20,7 @@ public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private Integer cdisMapId;
-    private Integer cdisCisMediaTypeId;
+    private Integer mediaTypeConfigId;
     private String fileName;
     private String damsUoiid;
     private String cisUniqueMediaId;
@@ -31,8 +31,8 @@ public class CDISMap {
         return this.cdisMapId;
     }
     
-    public Integer getCdisCisMediaTypeId () {
-        return this.cdisCisMediaTypeId;
+    public Integer getMediaTypeConfigId () {
+        return this.mediaTypeConfigId;
     }
     
     public String getCisUniqueMediaId () {
@@ -71,8 +71,8 @@ public class CDISMap {
         this.cisUniqueMediaId = cisUniqueMediaId;
     }
     
-    public void setCdisCisMediaTypeId (Integer cdisCisMediaTypeId) {
-        this.cdisCisMediaTypeId = cdisCisMediaTypeId;
+    public void setCdisCisMediaTypeId (Integer mediaTypeConfigId) {
+        this.mediaTypeConfigId = mediaTypeConfigId;
     }
     
     public void setDamsUoiid (String damsUoiid) {
@@ -112,7 +112,7 @@ public class CDISMap {
                     "file_name, " +
                     "batch_number, " +
                     "vfcu_media_file_id, " +
-                    "cdis_cis_media_type_id) " +
+                    "media_type_config_id) " +
                 "VALUES (" +
                     getCdisMapId() + ", " +
                     "'" + CDIS.getCollectionGroup() + "', " +
@@ -121,7 +121,7 @@ public class CDISMap {
                     "'" + getFileName() + "', " +
                     CDIS.getBatchNumber() + ", " +
                     getVfcuMediaFileId() + ", " +
-                    getCdisCisMediaTypeId() + ")";
+                    getMediaTypeConfigId() + ")";
                  
         logger.log(Level.FINEST,"SQL! " + sql);      
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql)) {
@@ -178,7 +178,7 @@ public class CDISMap {
     }
     
     public boolean populateCdisCisMediaTypeId() {
-        String sql = "SELECT cdis_cis_media_type_id FROM cdis_map " +
+        String sql = "SELECT media_type_config_id FROM cdis_map " +
                       "WHERE cdis_map_id = " + getCdisMapId();
 
         logger.log(Level.FINEST,"SQL! " + sql);
@@ -374,7 +374,7 @@ public class CDISMap {
         String sql = "SELECT cis_unique_media_id, " + 
                             "dams_uoi_id, " +
                             "file_name, " +
-                            "cdis_cis_media_type_id " +
+                            "media_type_config_id " +
                     "FROM cdis_map " +
                     "WHERE cdis_map_id = " + getCdisMapId();
         
@@ -426,10 +426,10 @@ public class CDISMap {
         String sql = "SELECT REGEXP_REPLACE (a.file_name, " + 
                     "b.parent_child_transform, parent.parent_child_transform) " +
                     "FROM cdis_map a, " +
-                    "   cdis_cis_media_type_r b, " +
-                    "   cdis_cis_media_type_r parent " +
-                    "WHERE  a.cdis_cis_media_type_id = b.cdis_cis_media_type_id " +
-                    "AND    b.child_of_id = parent.cdis_cis_media_type_id " +
+                    "   media_type_config_r b, " +
+                    "   media_type_config_r parent " +
+                    "WHERE  a.media_type_config_id = b.media_type_config_id " +
+                    "AND    b.child_of_id = parent.media_type_config_id " +
                     "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND    a.cdis_map_id = " + relatedMapId;
         
@@ -493,10 +493,10 @@ public class CDISMap {
         String sql = "SELECT REGEXP_REPLACE (a.file_name, " + 
                     "b.parent_child_transform, child.parent_child_transform) " +
                     "FROM cdis_map a, " +
-                    "   cdis_cis_media_type_r b, " +
-                    "   cdis_cis_media_type_r child " +
-                    "WHERE  a.cdis_cis_media_type_id = b.cdis_cis_media_type_id " +
-                    "AND    b.parent_of_id = child.cdis_cis_media_type_id " +
+                    "   media_type_config_id, " +
+                    "   media_type_config_r child " +
+                    "WHERE  a.media_type_config_id = b.media_type_config_id " +
+                    "AND    b.parent_of_id = child.media_type_config_id " +
                     "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND    a.cdis_map_id = " + relatedMapId;
         
