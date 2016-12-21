@@ -522,8 +522,8 @@ public class MetaDataSync {
             
             noErrorFound = performTransactions(cdisMap.getDamsUoiid(), cdisMap, false);
             
-            if (noErrorFound = false) {
-                    continue;
+            if (! noErrorFound) {
+               continue;
             }
             
             for (String relatedUoiId : relatedUoiIdsToSync) {
@@ -531,9 +531,9 @@ public class MetaDataSync {
             }
             
             if (! noErrorFound) {
-                //Do not set status as metadata synced if we had an error
-                continue;
-            }
+               continue;
+            }            
+            
             // see if there already is a row that in the activity_log that has been synced
             CDISActivityLog cdisActivity = new CDISActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
