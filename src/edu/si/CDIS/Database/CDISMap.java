@@ -493,7 +493,7 @@ public class CDISMap {
         String sql = "SELECT REGEXP_REPLACE (a.file_name, " + 
                     "b.parent_child_transform, child.parent_child_transform) " +
                     "FROM cdis_map a, " +
-                    "   media_type_config_id, " +
+                    "   media_type_config_r b, " +
                     "   media_type_config_r child " +
                     "WHERE  a.media_type_config_id = b.media_type_config_id " +
                     "AND    b.parent_of_id = child.media_type_config_id " +
