@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,8 +44,26 @@ public class MetaDataSync {
 
     private Table <String, String,String> insertRowForDams;
     private HashMap<String, String> insertsByTableName; 
+    
+    
+    private String calculateMaxIdsSize (String tmsRemarks, String idsType) {
+        
+        //Set the internal size to default
+        String internalSize = "3000";
+        
+        Pattern p = Pattern.compile("MAX "+ idsType +" IDS SIZE = (\\d+)");
+        Matcher m = p.matcher(tmsRemarks);
+        
+        if (m.find()) {
+            internalSize = m.group(1);
+            logger.log(Level.SEVERE, "Size in TMS set to: " + m.group(1));
+        }
+        
+        logger.log(Level.SEVERE, "size: " + internalSize);
 
-
+        return internalSize;
+    }
+    
     /*  Method :        buildCISQueryPopulateResults
         Arguments:      
         Returns:        true for success, false for failures
@@ -92,20 +112,31 @@ public class MetaDataSync {
                         String resultVal = rs.getString(i);
                         
                         logger.log(Level.ALL, "TABL: " + destTableName + " COLM: " + columnName + " VAL: " + resultVal);
-                        
+                            
                         if (resultVal != null) {
                             //scrub the string to get rid of special characters that may not display properly in DAMS
                             resultVal = scrubString(resultVal);
                             
-                           //Truncate the string if the length of the string exceeds the DAMS column width
-                           if (resultVal.length() > columnLengthHashTable.get(destTableName, columnName)) {
-                                resultVal = resultVal.substring(0,columnLengthHashTable.get(destTableName, columnName));
-                           }
+                            if (! columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {
+                                //Truncate the string if the length of the string exceeds the DAMS column width
+                                if (resultVal.length() > columnLengthHashTable.get(destTableName, columnName)) {
+                                    resultVal = resultVal.substring(0,columnLengthHashTable.get(destTableName, columnName));
+                                }
+                            }
                         }
                     
                         switch (operationType) {
                             case "U":
-                                populateUpdateRowForDams(destTableName, columnName, resultVal, appendDelimter);
+                                if (columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {
+                                    String internalSize = calculateMaxIdsSize(resultVal, "INTERNAL");
+                                    String externalSize = calculateMaxIdsSize(resultVal, "EXTERNAL");
+                                    
+                                    populateUpdateRowForDams(destTableName, "INTERNAL_IDS_SIZE", internalSize, appendDelimter);
+                                    populateUpdateRowForDams(destTableName, "MAX_IDS_SIZE", externalSize, appendDelimter);
+                                }
+                                else {
+                                    populateUpdateRowForDams(destTableName, columnName, resultVal, appendDelimter);
+                                }
                                 break;
                             case "DI":
                                 deleteRows.add(destTableName);
@@ -125,8 +156,7 @@ public class MetaDataSync {
             catch(Exception e) {
 		logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
                 return false;
-            }
-            
+            }   
         }
       
         return true;
@@ -197,7 +227,6 @@ public class MetaDataSync {
                     case "IS_RESTRICTED" :
                     case "MANAGING_UNIT" :
                     case "MAX_IDS_SIZE" :
-                    case "ORIGINAL_FILE_NAME" :
                     case "PUBLIC_USE" :                  
                     case "SEC_POLICY_ID" :
                         continue;
