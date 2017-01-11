@@ -48,20 +48,38 @@ public class MetaDataSync {
     
     private String calculateMaxIdsSize (String tmsRemarks, String idsType) {
         
-        //Set the internal size to default
-        String internalSize = "3000";
+        String idsSize = null;
+        String defaultIdsSize = "3000";
         
-        Pattern p = Pattern.compile("MAX "+ idsType +" IDS SIZE = (\\d+)");
-        Matcher m = p.matcher(tmsRemarks);
+        try {
+            Pattern p = Pattern.compile("MAX "+ idsType +" IDS SIZE = (\\d+)");
+            Matcher m = p.matcher(tmsRemarks);
         
-        if (m.find()) {
-            internalSize = m.group(1);
-            logger.log(Level.SEVERE, "Size in TMS set to: " + m.group(1));
-        }
+            if (m.find()) {
+                idsSize = m.group(1);
+                //logger.log(Level.SEVERE, "Size in TMS set to: " + m.group(1));
+            }
         
-        logger.log(Level.SEVERE, "size: " + internalSize);
+            //Validate the values are numeric.  0 (original size) is valid for external IDS, but not internal IDS.
+            if (idsType.equals("INTERNAL") ) {
+                 if (! (Integer.parseInt(idsSize) > 0)) {
+                      idsSize = defaultIdsSize;
+                 }
+             }
+             else if (idsType.equals("EXTERNAL") ) {
+                 if (! (Integer.parseInt(idsSize) >= 0)) {
+                      idsSize = defaultIdsSize;
+                 }
+             }
+        
+            logger.log(Level.SEVERE, "size: " + idsSize);
 
-        return internalSize;
+        } catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to Obtain IDS size, setting to default", e);
+            idsSize = defaultIdsSize;
+        }       
+            
+        return idsSize;
     }
     
     /*  Method :        buildCISQueryPopulateResults
