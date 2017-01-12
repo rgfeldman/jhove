@@ -94,11 +94,11 @@ public class CollectionRecord {
         }
         else {
             TblDigitalResource tblDigitalResource = new TblDigitalResource();
-                        //assign the uan and digital resourceID
-                            tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
-                            tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
-                          //  pathUpdated = tblDigitalResource.updateDamsUAN();
-                        }
+            //assign the uan and digital resourceID
+            tblDigitalResource.setDamsUan(siAsst.getOwningUnitUniqueName());
+            tblDigitalResource.setDigitalResourceId(Integer.parseInt(cdisMap.getCisUniqueMediaId() ));
+            pathUpdated = tblDigitalResource.updateDamsUAN();
+        }
         
         if (!pathUpdated) {
             ErrorLog errorLog = new ErrorLog ();
