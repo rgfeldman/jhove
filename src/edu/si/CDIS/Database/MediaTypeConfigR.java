@@ -76,9 +76,9 @@ public class MediaTypeConfigR {
     public boolean populateIdFromFileName (String fileName) {
         
         String sql = "SELECT media_type_config_id " +
-                    "FROM media_type_config_r " +
-                    "WHERE REGEXP_LIKE ('" + fileName + "', parent_child_transform, 'i')" +
-                    " AND media_type_config_id in (" + CDIS.getProperty("masterCisMediaTypeId") + ")";
+                   "FROM media_type_config_r " +
+                    "WHERE REGEXP_LIKE ('" + fileName + "', filename_pattern, 'i')" +
+                    " AND media_type_config_id in (" + CDIS.getProperty("mediaTypeConfigId") + ")";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);

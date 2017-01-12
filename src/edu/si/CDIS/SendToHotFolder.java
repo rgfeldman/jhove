@@ -101,14 +101,14 @@ public class SendToHotFolder {
     
     private boolean populateMediaTypeId(CDISMap cdisMap) {
         try {
-            String mediaTypeId = CDIS.getProperty("masterCisMediaTypeId");
+            String mediaTypeId = CDIS.getProperty("mediaTypeConfigId");
             
             if (mediaTypeId.contains(",") ) {
                 //find the right media type_id by the lookup table by matching the filename
-                MediaTypeConfigR mediaTypeConfigId = new MediaTypeConfigR();
-                mediaTypeConfigId.populateIdFromFileName(cdisMap.getFileName());
+                MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
+                mediaTypeConfigR.populateIdFromFileName(cdisMap.getFileName());
                
-                cdisMap.setCdisCisMediaTypeId(mediaTypeConfigId.getMediaTypeConfigId());
+                cdisMap.setCdisCisMediaTypeId(mediaTypeConfigR.getMediaTypeConfigId());
             }
             else {
                 //Send the string to numeric form
@@ -122,7 +122,7 @@ public class SendToHotFolder {
         }
     }
     
-    private void logFilesInDB () {
+    private void processFilesFromList () {
                
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
         Iterator<String> it = masterMediaIds.keySet().iterator();
@@ -141,8 +141,6 @@ public class SendToHotFolder {
             cdisMap.setVfcuMediaFileId(Integer.parseInt(uniqueMediaId));
             
             boolean mediaTypePopulated = populateMediaTypeId(cdisMap);
-            
-            
             
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
             boolean mapEntryCreated = cdisMap.createRecord();
@@ -320,7 +318,7 @@ public class SendToHotFolder {
         
         // Process each media item from list (move to workfolder/hotfolder)
         logger.log(Level.FINER, "Processing media List");
-        logFilesInDB();
+        processFilesFromList();
         
         boolean hotFolderObtained = obtainHotFolderName();
         
