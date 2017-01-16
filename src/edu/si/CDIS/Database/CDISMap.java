@@ -424,12 +424,10 @@ public class CDISMap {
         
         //Get the pattern of the parent file
         String sql = "SELECT REGEXP_REPLACE (a.file_name, " + 
-                    "b.parent_child_transform, parent.parent_child_transform) " +
+                    "b.filename_pattern, b.parent_filename_pattern) " +
                     "FROM cdis_map a, " +
-                    "   media_type_config_r b, " +
-                    "   media_type_config_r parent " +
+                    "   media_type_config_r b " +
                     "WHERE  a.media_type_config_id = b.media_type_config_id " +
-                    "AND    b.child_of_id = parent.media_type_config_id " +
                     "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND    a.cdis_map_id = " + relatedMapId;
         
@@ -491,12 +489,10 @@ public class CDISMap {
         //Get the pattern of the parent file
         
         String sql = "SELECT REGEXP_REPLACE (a.file_name, " + 
-                    "b.parent_child_transform, child.parent_child_transform) " +
+                    "b.filename_pattern, b.child_filename_pattern) " +
                     "FROM cdis_map a, " +
-                    "   media_type_config_r b, " +
-                    "   media_type_config_r child " +
+                    "   media_type_config_r b " +
                     "WHERE  a.media_type_config_id = b.media_type_config_id " +
-                    "AND    b.parent_of_id = child.media_type_config_id " +
                     "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
                     "AND    a.cdis_map_id = " + relatedMapId;
         
