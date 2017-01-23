@@ -320,7 +320,7 @@ public class SendToHotFolder {
             // get the subfile location
             File subfiledir = new File (hotFolderBaseName + "\\SUBFILES") ;
                 
-            if  (this.masterMediaIds.size() !=  subfiledir.list().length ) {
+            if  (this.fullMasterHotFolder.list().length !=  subfiledir.list().length ) {
                 logger.log(Level.FINER, "Do not put ready.txt file, number of subfiles != number of master files");
                 return;
             }
