@@ -98,30 +98,6 @@ public class SendToHotFolder {
         return true;
     }
     
-    
-    private boolean populateMediaTypeId(CDISMap cdisMap) {
-        try {
-            String mediaTypeId = CDIS.getProperty("mediaTypeConfigId");
-            
-            if (mediaTypeId.contains(",") ) {
-                //find the right media type_id by the lookup table by matching the filename
-                MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
-                mediaTypeConfigR.populateIdFromFileName(cdisMap.getFileName());
-               
-                cdisMap.setCdisCisMediaTypeId(mediaTypeConfigR.getMediaTypeConfigId());
-            }
-            else {
-                //Send the string to numeric form
-                cdisMap.setCdisCisMediaTypeId(Integer.parseInt(mediaTypeId));          
-            }
-            return true;
-        }
-        catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to get mediaTypeId", e );
-                return false;
-        }
-    }
-    
     private void processFilesFromList () {
                
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair for insert into CDIS_MAP table       
@@ -140,7 +116,7 @@ public class SendToHotFolder {
             cdisMap.setFileName(masterMediaIds.get(uniqueMediaId));
             cdisMap.setVfcuMediaFileId(Integer.parseInt(uniqueMediaId));
             
-            boolean mediaTypePopulated = populateMediaTypeId(cdisMap);
+            cdisMap.populateMediaTypeId();
             
             // Now that we have the cisUniqueMediaId, Add the media to the CDIS_MAP table
             boolean mapEntryCreated = cdisMap.createRecord();
@@ -329,12 +305,30 @@ public class SendToHotFolder {
         
         xferFilesToHotFolder ();
         
-        // if there are any files in the hotfolder now, create a ready.txt file
-        if (fullMasterHotFolder.exists()) {
-            if (fullMasterHotFolder.list().length > 0) {
-                createReadyFile(hotFolderBaseName + "\\MASTER");
+        // check to make sure if the hotfolder is there
+        if ( ! fullMasterHotFolder.exists() ) {
+            logger.log(Level.FINER, "Unable to find hotfolder to put ready.txt file");
+            return;
+        }
+        
+        // check to make sure there were files that were sent
+        if  (! (fullMasterHotFolder.list().length > 0) ) {
+            logger.log(Level.FINER, "No ready.txt file needed, no files sent to ingest folder");
+        }
+        
+        if (CDIS.getProperty("useMasterSubPairs").equals("true") ) {
+            // get the subfile location
+            File subfiledir = new File (hotFolderBaseName + "\\SUBFILES") ;
+                
+            if  (this.masterMediaIds.size() !=  subfiledir.list().length ) {
+                logger.log(Level.FINER, "Do not put ready.txt file, number of subfiles != number of master files");
+                return;
             }
         }
+        
+        //if we have gotten this far, create the ready.txt file
+        createReadyFile(fullMasterHotFolder.getName());
+        
      }
      
 
