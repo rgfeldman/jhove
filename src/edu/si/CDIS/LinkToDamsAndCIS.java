@@ -149,12 +149,13 @@ public class LinkToDamsAndCIS {
         //Populate cdisMap Object based on renditionNumber
         cdisMap.setCisUniqueMediaId(cisIdentifier);     
         cdisMap.setDamsUoiid(uoiId);
-        cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("linkedMediaTypeId")));
-                
+
         Uois uois = new Uois();
         uois.setUoiid(uoiId);
         uois.populateName();        
         cdisMap.setFileName(uois.getName());
+        
+        cdisMap.populateMediaTypeId();
         
         //We have two conditions: Create a cdis_map entry where it does not exist...
         //OR link an cdis_map row (where we add BOTH rhe DAMS_UOIID and the CIS_UNIQUE identifier

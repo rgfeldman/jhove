@@ -226,6 +226,29 @@ public class CDISMap {
         return true;
     }
     
+     public boolean populateMediaTypeId(){
+        try {
+            String mediaTypeId = CDIS.getProperty("mediaTypeConfigId");
+            
+            if (mediaTypeId.contains(",") ) {
+                //find the right media type_id by the lookup table by matching the filename
+                MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
+                mediaTypeConfigR.populateIdFromFileName(getFileName());
+               
+                setCdisCisMediaTypeId(mediaTypeConfigR.getMediaTypeConfigId());
+            }
+            else {
+                //Send the string to numeric form
+                setCdisCisMediaTypeId(Integer.parseInt(mediaTypeId));          
+            }
+            return true;
+        }
+        catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to get mediaTypeId", e );
+                return false;
+        }
+    }
+    
      public boolean populateIdFromCisMediaId () {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
