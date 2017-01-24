@@ -37,11 +37,11 @@ public class SendToHotFolder {
     private File fullMasterHotFolder;
     
     
-    private void createReadyFile (String hotDirectoryName) {
+    private void createReadyFile () {
         
         try {
                 //Create the ready.txt file and put in the media location
-                String readyFilewithPath = hotDirectoryName + "\\ready.txt";
+                String readyFilewithPath = fullMasterHotFolderNm + "\\ready.txt";
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 
@@ -50,7 +50,7 @@ public class SendToHotFolder {
                 readyFile.createNewFile();
   
         } catch (Exception e) {
-            logger.log(Level.FINER,"ERROR encountered when trying to create ready.txt file",e);;
+            logger.log(Level.FINER,"ERROR encountered when trying to create ready.txt file",e);
         }
     }   
         
@@ -322,12 +322,14 @@ public class SendToHotFolder {
                 
             if  (this.fullMasterHotFolder.list().length !=  subfiledir.list().length ) {
                 logger.log(Level.FINER, "Do not put ready.txt file, number of subfiles != number of master files");
+                logger.log(Level.FINER, "Number of Masterfiles: " + this.fullMasterHotFolder.list().length);
+                logger.log(Level.FINER, "Number of Subfiles: " + subfiledir.list().length);
                 return;
-            }
+            }      
         }
         
         //if we have gotten this far, create the ready.txt file
-        createReadyFile(fullMasterHotFolder.getName());
+       createReadyFile();
         
      }
      
