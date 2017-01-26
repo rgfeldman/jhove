@@ -131,6 +131,7 @@ public class Uois {
     
     public boolean populateUoiidForNameChksum(String checksum) {
   
+        //temporarily added clause for ccos
         String sql = "SELECT    a.uoi_id " +
                     "FROM       towner.uois a, " +
                     "           towner.checksum_view b " +
@@ -138,7 +139,13 @@ public class Uois {
                     "AND        a.content_state = 'NORMAL' " +
                     "AND        a.content_type != 'SHORTCUT' " +
                     "AND        a.name = '" + getName() + "' " +
-                    "AND        b.content_checksum = '" + checksum + "'";
+                    "AND        b.content_checksum = '" + checksum + "' " +
+                    " AND NOT EXISTS ( " +
+                    "   SELECT  'X' " +
+                    "   FROM    towner.si_asset_metadata c " +
+                    "   WHERE   a.uoi_id = c.uoi_id " +
+                    "   AND     c.notes = 'delete for ccos-remediation') ";
+                
         
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
                 ResultSet rs = pStmt.executeQuery() ) {
