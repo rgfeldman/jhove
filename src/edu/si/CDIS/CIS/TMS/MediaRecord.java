@@ -248,7 +248,7 @@ public class MediaRecord {
         if (siAsst.getIsRestricted() == null ) {
             mediaMaster.setPublicAccess(1);
         }
-        else if (siAsst.getIsRestricted() == "Yes" ) {
+        else if (siAsst.getIsRestricted().equals("Yes") ) {
              mediaMaster.setPublicAccess(0);
         }
         else  {
