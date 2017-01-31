@@ -28,10 +28,12 @@ import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
+import edu.si.CDIS.Database.CDISRefIdMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.Database.VFCUMediaFile;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.Utils.XmlSqlConfig;
+import java.sql.ResultSetMetaData;
 
    
 public class LinkToDamsAndCIS {
@@ -57,6 +59,19 @@ public class LinkToDamsAndCIS {
         processNeverLinkedList ();    
         
     }
+    
+    private boolean linkObjectAspace(Integer cdisMapId, String refId) {
+        
+        //Insert into CDISRefIdMap
+        CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+        cdisRefIdMap.setCdisMapId(cdisMapId);
+        cdisRefIdMap.setRefId(refId);
+        cdisRefIdMap.createRecord();
+        
+        return true;
+    }
+    
+    
     
     private boolean linkObjectAaaAv (Integer cdisMapId, String cisIdentifier) {
         
@@ -144,10 +159,13 @@ public class LinkToDamsAndCIS {
         return true;
     }
 
-    public boolean createNewLink(CDISMap cdisMap, String cisIdentifier, String uoiId) {
+    public boolean createNewLink(CDISMap cdisMap, String cisIdentifier, String cisIdentifierType, String uoiId) {
         
-        //Populate cdisMap Object based on renditionNumber
-        cdisMap.setCisUniqueMediaId(cisIdentifier);     
+        //Populate cdisMap Object based on cis indicator if present
+        if ( (cisIdentifierType).equals("cisUniqueMediaId") ) {
+            cdisMap.setCisUniqueMediaId(cisIdentifier);
+        }
+        
         cdisMap.setDamsUoiid(uoiId);
 
         Uois uois = new Uois();
@@ -161,7 +179,7 @@ public class LinkToDamsAndCIS {
         //OR link an cdis_map row (where we add BOTH rhe DAMS_UOIID and the CIS_UNIQUE identifier
         
         //Check if the map record exists already with null cisID and null dams_uoiid 
-        boolean mapRecordExists = cdisMap.populateIdForNameNullUoiidNullCisId();
+        boolean mapRecordExists = cdisMap.populateIdForNameNullUoiidandCisId();
         if (mapRecordExists) {
             cdisMap.updateCisUniqueMediaId();
             cdisMap.updateUoiid();
@@ -195,6 +213,9 @@ public class LinkToDamsAndCIS {
                     objectLinked = linkObjectAaaImage(cdisMap.getCdisMapId(), cisIdentifier);
                 }
                 break;
+            case "ASpace" :
+                objectLinked = linkObjectAspace(cdisMap.getCdisMapId(), cisIdentifier);
+                break;
             case "IRIS" :
                 objectLinked = linkObjectIris(cdisMap.getCdisMapId(), cisIdentifier);
                 break;
@@ -206,7 +227,7 @@ public class LinkToDamsAndCIS {
                 mediaRenditions.updateIsColor1();
         } 
         if (! objectLinked ) {
-            logger.log(Level.FINER, "Error, unable to link objects to Media for AAA ");
+            logger.log(Level.FINER, "Error, unable to link objects to Media");
             return false;
         } 
         
@@ -260,7 +281,7 @@ public class LinkToDamsAndCIS {
         xml.setOpQueryNodeList(CDIS.getQueryNodeList());
         
         //indicate the particular query we are interested in
-        xml.setQueryTag("getCISIdentifier"); 
+        xml.setQueryTag("getCISIdentifier");
         
         //Loop through all of the queries for the current operation type
         for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {
@@ -288,14 +309,18 @@ public class LinkToDamsAndCIS {
             
                 try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql);
                     ResultSet rs = pStmt.executeQuery()   ) {   
+                    
+                    ResultSetMetaData rsmd = rs.getMetaData();
+                    String cisIdentifierType = rsmd.getColumnName(1).toUpperCase();
                 
                     //Get the CIS identifier for the field selected from above
                     if (rs.next()) {
+                                
                         String cisIdentifier = rs.getString(1);
-                      
+                        
                         logger.log(Level.FINER, "Will create link for uoiid/CIS id: " + uoiId + " " + cisIdentifier);
                         CDISMap cdisMap = new CDISMap();
-                        boolean linkCreated = createNewLink(cdisMap, cisIdentifier, uoiId);
+                        boolean linkCreated = createNewLink(cdisMap, cisIdentifier, cisIdentifierType, uoiId);
                     
                     if (linkCreated) {
                     

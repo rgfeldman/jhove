@@ -48,6 +48,11 @@ public class CDIS {
         if (CDIS.getProperty("cisSourceDB").equals("none")) {
             return CDIS.damsConn;
         }
+        else if (CDIS.getProperty("linkFromDams") != null && 
+                CDIS.getProperty("linkFromDams").equals("true") 
+                && operationType.equals("linkToDamsAndCis")) {
+            return CDIS.damsConn;
+        }
         else 
             return CDIS.cisConn;
     }

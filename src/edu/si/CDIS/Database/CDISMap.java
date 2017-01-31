@@ -78,7 +78,7 @@ public class CDISMap {
     public void setDamsUoiid (String damsUoiid) {
         this.damsUoiid = damsUoiid;
     }
-    
+        
     public void setVfcuMediaFileId (Integer vfcuMediaFileId) {
         this.vfcuMediaFileId = vfcuMediaFileId;
     }
@@ -274,7 +274,7 @@ public class CDISMap {
         return true;
     }
      
-    public boolean populateIdForNameNullUoiidNullCisId () {
+    public boolean populateIdForNameNullUoiidandCisId () {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
