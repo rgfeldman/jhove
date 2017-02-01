@@ -74,8 +74,8 @@ public class SendToHotFolder {
 
         cdisMap.setFileName(vfcuMediafile.getMediaFileName());
         cdisMap.setVfcuMediaFileId(vfcuMediafile.getVfcuMediaFileId());
-        cdisMap.setCdisCisMediaTypeId(Integer.parseInt(CDIS.getProperty("cdisLinkedCisMediaTypeId")));
-            
+        cdisMap.populateMediaTypeId();
+        
         // put the entry into the CDIS_MAP table
         boolean mapEntryCreated = cdisMap.createRecord();
             
