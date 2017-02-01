@@ -314,6 +314,7 @@ public class SendToHotFolder {
         // check to make sure there were files that were sent
         if  (! (fullMasterHotFolder.list().length > 0) ) {
             logger.log(Level.FINER, "No ready.txt file needed, no files sent to ingest folder");
+            return;
         }
         
         if (CDIS.getProperty("useMasterSubPairs").equals("true") ) {
