@@ -162,7 +162,7 @@ public class LinkToDamsAndCIS {
     public boolean createNewLink(CDISMap cdisMap, String cisIdentifier, String cisIdentifierType, String uoiId) {
         
         //Populate cdisMap Object based on cis indicator if present
-        if ( (cisIdentifierType).equals("cisUniqueMediaId") ) {
+        if ( (cisIdentifierType).equals("CIS_UNIQUE_MEDIA_ID") ) {
             cdisMap.setCisUniqueMediaId(cisIdentifier);
         }
         
@@ -257,7 +257,7 @@ public class LinkToDamsAndCIS {
         
         
         // ONLY refresh thumbnail IF the properties setting indicates we should.
-        if (CDIS.getProperty("updateTMSThumbnail").equals("true") ) {
+        if ( ! (CDIS.getProperty("updateTMSThumbnail") == null) && CDIS.getProperty("updateTMSThumbnail").equals("true") ) {
            
             Thumbnail thumbnail = new Thumbnail();
             boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());

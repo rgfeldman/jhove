@@ -48,7 +48,7 @@ public class CDISRefIdMap {
     
     public boolean createRecord() {
              
-        String sql = "INSERT INTO cdis_refId_map (" +
+        String sql = "INSERT INTO cdis_ref_Id_map (" +
                         "cdis_refid_map_id, " +
                         "cdis_map_id, " +
                         "ref_id )" +

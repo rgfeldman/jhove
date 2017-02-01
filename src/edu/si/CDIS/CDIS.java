@@ -105,9 +105,14 @@ public class CDIS {
                 
             logger.log(Level.INFO, "Connection to DAMS database established.");
             
-            if (CDIS.getProperty("cisSourceDB").equals("none"))  {
+            if (CDIS.getProperty("cisSourceDB").equals("none")) {
                 logger.log(Level.INFO, "No CIS database sepecified, skipping connection to CIS");
                 return true;
+            }
+            
+            if (CDIS.operationType.equals("linkToDamsAndCis") && ! (CDIS.getProperty("linkFromDams") == null) 
+                    && CDIS.getProperty("linkFromDams").equals("true") ) {
+                logger.log(Level.INFO, "No CIS connection needed, skipping connection to CIS");
             }
             
             //connect to CIS DB
