@@ -21,6 +21,9 @@ public class ErrorLog {
         
         logger.log(Level.FINER, logMessage);
         
+        //populate the filename and mapinfo if we need it
+        cdisMap.populateMapInfo();
+        
         CDISErrorLog cdisError = new CDISErrorLog();
         cdisError.setCdisMapId(cdisMap.getCdisMapId());
         cdisError.setFileName(cdisMap.getFileName());
