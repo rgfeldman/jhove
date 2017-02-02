@@ -80,6 +80,8 @@ public class SendToHotFolder {
         boolean mapEntryCreated = cdisMap.createRecord();
             
         if (!mapEntryCreated) { 
+            //Set the mapid to null because the mapId failed upon insert
+            cdisMap.setCdisMapId(null);
             ErrorLog errorLog = new ErrorLog ();
             errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
             return false;
@@ -123,6 +125,8 @@ public class SendToHotFolder {
                     
             if (!mapEntryCreated) {
                 ErrorLog errorLog = new ErrorLog ();
+                //Set the mapid to null because the mapId failed upon insert
+                cdisMap.setCdisMapId(null);
                 errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
                     
                 //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
