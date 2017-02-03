@@ -43,7 +43,7 @@ public class MetaDataSync {
     private HashMap<String, String> updatesByTableName; //DAMS Table Name and the actual sql to run 
 
     private Table <String, String,String> insertRowForDams;
-    private HashMap<String, String> insertsByTableName; 
+    private HashMap<String, ArrayList<String>> insertsByTableName; 
     
     
     private String calculateMaxIdsSize (String tmsRemarks, String idsType) {
@@ -221,15 +221,38 @@ public class MetaDataSync {
             String columnName = cell.getColumnKey();
             String value = cell.getValue();
             
-            if (insertsByTableName.isEmpty() || insertsByTableName.get(tableName) == null) {
-                insertsByTableName.put(tableName, 
-                    "INSERT INTO towner." + tableName + 
-                    " (UOI_ID, " + columnName + ") VALUES ('" + 
-                    uoiId + "','" + value + "')");
+            ArrayList<String> sqlVals = new ArrayList<String>();
+            
+            if (value.contains("^MULTILINE_LIST_SEP^")) {
+                 // If the value contains "^MULTILINE_LIST_SEP^" then we need to break that result down and perform two or more insert statements 
+                Pattern delim = Pattern.compile("^MULTILINE_LIST_SEP^");
+                
+                String valuesToInsert[] = value.split(delim.quote("^") );
+                                                                 
+                //We can have multiple inserts for a single table, the first column of the map holds the tablename,
+                //the list contains the insert statements
+                for (int i =0; i < valuesToInsert.length; i++ ) {
+                    
+                    if ( ! (valuesToInsert[i].equals("MULTILINE_LIST_SEP") ) ) {
+                        sqlVals.add ("INSERT INTO towner." + tableName + 
+                            " (UOI_ID, " + columnName + ") VALUES ('" + 
+                            uoiId + "','" + valuesToInsert[i] + "')");
+                    }
+                    
+                    insertsByTableName.put(tableName, sqlVals);
+                
+                }
             }
             else {
-                insertsByTableName.put(tableName, insertsByTableName.get(tableName) + ", " + columnName + "= '" + value + "'");
+                //We only have a single row to insert into the table specified.
+                sqlVals.add  ("INSERT INTO towner." + tableName + 
+                    " (UOI_ID, " + columnName + ") VALUES ('" + 
+                    uoiId + "','" + value + "')");
+                
+                insertsByTableName.put(tableName, sqlVals);
+                
             }
+                    
         }    
         
         for (Cell<String, String, String> cell : updateRowForDams.cellSet()) {
@@ -288,15 +311,19 @@ public class MetaDataSync {
         //Perform any Inserts that need to be run on the current DAMSID
         for (String tableName : insertsByTableName.keySet()) {
             ///NEED TO DO DB INSERTS!
-            String sqlToInsert = insertsByTableName.get(tableName);
-            int insertCount = updateDamsData(sqlToInsert);
+            ArrayList<String> sqlToInsert = new ArrayList<String>();
+            
+            sqlToInsert = insertsByTableName.get(tableName);
+            for (String sqlStmnt :sqlToInsert  ) {
+                int insertCount = updateDamsData(sqlStmnt);
                 
-            if (insertCount != 1) {
-                ErrorLog errorLog = new ErrorLog ();
-                //Get CDISMAPID by uoiId
-                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + linkedOrParChilduoiId);    
-                return false;            
-            }
+                if (insertCount != 1) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    //Get CDISMAPID by uoiId
+                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + linkedOrParChilduoiId);    
+                    return false;    
+                }
+            }   
         }      
         
         //Perform any updates that need to be run on the current DAMSID
