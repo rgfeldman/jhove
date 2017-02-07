@@ -6,6 +6,9 @@
 package edu.si.CDIS.DAMS;
 
 import edu.si.CDIS.CDIS;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,8 +85,8 @@ public class StagedFile {
         return true;
     }
     
-    // Moves the staged file to the MASTER folder
-    public boolean deliverSubFile (String destination) {
+    // Moves the staged file to the pickup location folder for delivery
+    public boolean deliverFileForPickup (String destination) {
 
         String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
         String postIngestDeliveryLoc = destination + "\\" + getPathEnding();
@@ -109,7 +112,6 @@ public class StagedFile {
         
         return true;
     }
-    
     
     // Moves the staged file to the MASTER folder
     public boolean xferToHotFolder (String destination, Integer cdisMapId) {
@@ -140,6 +142,7 @@ public class StagedFile {
             else {
                 Files.move(source, destWithFile);
             }
+           
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when xFerrring to hot folder",e);
             return false;
