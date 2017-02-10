@@ -231,8 +231,11 @@ public class LinkToDAMS {
                 stagedFile.setBasePath(pathBase);
                 stagedFile.setPathEnding(pathEnding);
                 stagedFile.setFileName(cdisMap.getFileName());
-            
-                boolean fileDelivered = stagedFile.deliverFileForPickup(CDIS.getProperty("postIngestDeliveryLoc"));
+               
+                boolean fileDelivered = false;    
+                if (CDIS.getProperty("postIngestDeliveryLoc") != null ) {
+                    fileDelivered = stagedFile.deliverFileForPickup(CDIS.getProperty("postIngestDeliveryLoc"));
+                }
                 if (! fileDelivered) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
