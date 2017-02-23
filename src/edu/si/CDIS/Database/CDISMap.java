@@ -106,7 +106,7 @@ public class CDISMap {
           
         sql =  "INSERT INTO cdis_map (" +
                     "cdis_map_id, " +
-                    "collection_group_cd, " +
+                    "project_cd, " +
                     "cis_unique_media_id, " +
                     "dams_uoi_id, " +
                     "file_name, " +
@@ -115,7 +115,7 @@ public class CDISMap {
                     "media_type_config_id) " +
                 "VALUES (" +
                     getCdisMapId() + ", " +
-                    "'" + CDIS.getCollectionGroup() + "', " +
+                    "'" + CDIS.getProjectCd() + "', " +
                     "'" + getCisUniqueMediaId() + "', " +
                     "'" + getDamsUoiid() + "', " +
                     "'" + getFileName() + "', " +
@@ -253,7 +253,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' ";
+                    "AND project_cd = '" + CDIS.getProjectCd() + "' ";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -278,7 +278,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
-                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
+                    "AND project_cd = '" + CDIS.getProjectCd() + "' " +
                     "AND dams_uoi_id IS NULL " +
                     "AND cis_unique_media_id IS NULL ";
         
@@ -304,7 +304,7 @@ public class CDISMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
-                    "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
+                    "AND project_cd = '" + CDIS.getProjectCd() + "' " +
                     "AND dams_uoi_id IS NULL ";
         
         logger.log(Level.FINEST,"SQL! " + sql);
@@ -451,7 +451,7 @@ public class CDISMap {
                     "FROM cdis_map a, " +
                     "   media_type_config_r b " +
                     "WHERE  a.media_type_config_id = b.media_type_config_id " +
-                    "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
+                    "AND    a.project_cd = '" + CDIS.getProjectCd() + "' " +
                     "AND    a.cdis_map_id = " + relatedMapId;
         
         logger.log(Level.FINEST,"SQL! " + sql); 
@@ -482,7 +482,7 @@ public class CDISMap {
               "WHERE REGEXP_LIKE (file_name, " +
               " '(^" + parentPattern + "*)', 'i')" +
               "AND dams_uoi_id IS NOT NULL " +  
-              "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "'";
+              "AND project_cd = '" + CDIS.getProjectCd() + "'";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         
@@ -516,7 +516,7 @@ public class CDISMap {
                     "FROM cdis_map a, " +
                     "   media_type_config_r b " +
                     "WHERE  a.media_type_config_id = b.media_type_config_id " +
-                    "AND    a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " +
+                    "AND    a.project_cd = '" + CDIS.getProjectCd() + "' " +
                     "AND    a.cdis_map_id = " + relatedMapId;
         
         logger.log(Level.FINEST,"SQL! " + sql);     
@@ -545,7 +545,7 @@ public class CDISMap {
               "WHERE REGEXP_LIKE (file_name, " +
               " '(^" + childPattern + "*)', 'i') " +
               "AND dams_uoi_id IS NOT NULL " +
-              "AND collection_group_cd = '" + CDIS.getCollectionGroup() + "'";
+              "AND project_cd = '" + CDIS.getProjectCd() + "'";
         
        logger.log(Level.FINEST,"SQL! " + sql); 
        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
@@ -631,11 +631,11 @@ public class CDISMap {
                     "AND        a.file_name = c.name " +
                     "AND        c.uoi_id = d.uoi_id " +
                     "AND        a.dams_uoi_id IS NULL " +
-                    "AND        a.collection_group_cd = '" + CDIS.getCollectionGroup() + "' " + 
+                    "AND        a.project_cd = '" + CDIS.getProjectCd() + "' " + 
                     "AND        b.cdis_status_cd IN ('FMM', 'FXS') " +
                     "AND        c.content_state = 'NORMAL' " +
                     "AND        c.content_type != 'SHORTCUT' " +
-                    "AND        d.owning_unit_unique_name like '" + CDIS.getSiHoldingUnit() + "%' " + 
+                    "AND        d.owning_unit_unique_name like '" + CDIS.getProjectCd() + "%' " + 
                     "AND NOT EXISTS ( " + 
                         "SELECT 'X' " +
                         "FROM cdis_error_log d " +

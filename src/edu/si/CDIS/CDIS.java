@@ -6,7 +6,7 @@
 package edu.si.CDIS;
 
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
-import edu.si.CDIS.Database.CollectionGroupR;
+import edu.si.CDIS.Database.ProjectHoldingUnitR;
 import edu.si.Utils.XmlSqlConfig;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +29,7 @@ public class CDIS {
    
     private static Long batchNumber;
     private static Connection cisConn;
-    private static String collectionGroup;
+    private static String projectCd;
     private static Connection damsConn;
     private static String operationType;
     private static Properties properties;
@@ -40,8 +40,8 @@ public class CDIS {
         return CDIS.queryNodeList;
     }
     
-    public static String getCollectionGroup() {
-        return CDIS.collectionGroup;
+    public static String getProjectCd() {
+        return CDIS.projectCd;
     }
     
     public static Connection getCisConn() {
@@ -150,7 +150,7 @@ public class CDIS {
         Handler fh;
             
         try {
-		fh = new FileHandler( CDIS.getCollectionGroup() + "\\log\\CDISLog-" + CDIS.operationType + CDIS.batchNumber + ".txt");
+		fh = new FileHandler( CDIS.getProjectCd() + "\\log\\CDISLog-" + CDIS.operationType + CDIS.batchNumber + ".txt");
 	
         } catch (Exception e) {
 		e.printStackTrace();
@@ -174,7 +174,7 @@ public class CDIS {
     */
     private boolean readIni () {
         
-        String iniFile =  CDIS.getCollectionGroup() + "\\conf\\cdis.ini";
+        String iniFile =  CDIS.getProjectCd() + "\\conf\\cdis.ini";
         
         logger.log(Level.FINER, "Loading ini file: " + iniFile);
                 
@@ -246,7 +246,7 @@ public class CDIS {
     */
     public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
                 
-        File folderDir = new File(CDIS.getCollectionGroup() + "\\" + folder);
+        File folderDir = new File(CDIS.getProjectCd() + "\\" + folder);
         File[] logs = folderDir.listFiles();
 	
         if (logs != null) {
@@ -274,7 +274,7 @@ public class CDIS {
         CDIS cdis = new CDIS();
         
         CDIS.operationType = args[0];
-        CDIS.collectionGroup = args[1];
+        CDIS.projectCd = args[1];
         
         // Delete old log and report files
         cdis.deleteLogs("rpt","CDISRPT-",21);
@@ -316,18 +316,18 @@ public class CDIS {
                 return;
             }
             
-            // Get the holding unit from the collectionGroup
-            CollectionGroupR collectionGrp = new CollectionGroupR();
-            boolean unitFound = collectionGrp.populateSiHoldingUnit();
+            // Get the holding unit from the ProjectCode
+            ProjectHoldingUnitR projectHoldingUnit = new ProjectHoldingUnitR();
+            boolean unitFound = projectHoldingUnit.populateSiHoldingUnit();
             if (! unitFound) {
                 logger.log(Level.SEVERE, "Fatal Error: Unable to get holding unit");
                 return;
             }
-            CDIS.siHoldingUnit = collectionGrp.getSiHoldingUnit(); 
+            CDIS.siHoldingUnit = projectHoldingUnit.getSiHoldingUnit(); 
             
             // read the XML config file
             XmlSqlConfig xml = new XmlSqlConfig();    
-            boolean xmlReturn = xml.read(CDIS.getCollectionGroup(), CDIS.getOperationType());
+            boolean xmlReturn = xml.read(CDIS.getProjectCd(), CDIS.getOperationType());
             if (! xmlReturn) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
                 return;

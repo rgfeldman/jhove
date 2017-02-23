@@ -9,7 +9,6 @@ import edu.si.CDIS.CDIS;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.CDIS.Database.CDISMap;
 import java.sql.ResultSet;
 
 
@@ -68,7 +67,7 @@ public class CDISErrorLog {
         String sql = "INSERT INTO cdis_error_log ( " +
                         "cdis_error_log_id, " +
                         "cdis_map_id, " +
-                        "collection_group_cd, " +
+                        "project_cd, " +
                         "file_name, " +
                         "cdis_error_cd, " +
                         "error_dt, " +
@@ -76,7 +75,7 @@ public class CDISErrorLog {
                     "values ( " + 
                         "cdis_error_log_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
-                        "'" + CDIS.getCollectionGroup()+ "', " +
+                        "'" + CDIS.getProjectCd() + "', " +
                         "'" + getFileName() + "', " +
                         "'" + getCdisErrorCd() + "', " +
                         "SYSDATE, " +
