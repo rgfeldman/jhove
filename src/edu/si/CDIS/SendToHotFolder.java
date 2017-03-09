@@ -7,7 +7,6 @@ package edu.si.CDIS;
 
 import edu.si.CDIS.DAMS.StagedFile;
 import edu.si.CDIS.Database.CDISActivityLog;
-import edu.si.CDIS.Database.MediaTypeConfigR;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.VFCUMediaFile;
 import edu.si.CDIS.utilties.ErrorLog;
