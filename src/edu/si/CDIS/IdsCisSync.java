@@ -127,7 +127,7 @@ public class IdsCisSync {
                 try { if ( CDIS.getCisConn() != null)  CDIS.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                     
             } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.log(Level.FINER, "Error in IDS Sync loop");
             }
         }
     }
