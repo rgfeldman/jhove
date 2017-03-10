@@ -13,6 +13,7 @@ import java.io.FileInputStream;
 import java.util.Properties; 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.logging.Level;
@@ -91,7 +92,7 @@ public class CDIS {
         Description:    establishes connections to both DAMS and CIS database s
         RFeldman 2/2015
     */
-    public boolean connectToDatabases () {
+    private boolean connectToDatabases () {
         
         try {
             //connect to DAMS DB
@@ -101,7 +102,7 @@ public class CDIS {
             CDIS.damsConn = DriverManager.getConnection(CDIS.getProperty("damsConnString"), 
                                 CDIS.getProperty("damsUser"), passwd);
             
-            CDIS.damsConn.setAutoCommit(false);
+            
                 
             logger.log(Level.INFO, "Connection to DAMS database established.");
             
@@ -122,7 +123,7 @@ public class CDIS {
             CDIS.cisConn = DriverManager.getConnection(CDIS.getProperty("cisConnString"), 
                                 CDIS.getProperty("cisUser"), passwd);
             
-            CDIS.cisConn.setAutoCommit(false);
+           
                 
             logger.log(Level.INFO, "Connection to CIS database established.");
             
@@ -136,6 +137,28 @@ public class CDIS {
         
         return true;
         
+    }
+    
+    private boolean setDbDefaults () {
+        try { 
+            
+            if ( CDIS.damsConn != null) {
+                CDIS.damsConn.setAutoCommit(false);
+            }
+             
+            if ( CDIS.cisConn != null) {
+                CDIS.cisConn.setAutoCommit(false);
+                if (CDIS.getProperty("cisSourceDB").equals("ASpace")) {
+                    setRecursiveDepth();
+                }                           
+            }
+ 
+        } catch (Exception e) 
+            {
+                logger.log(Level.SEVERE,"Failed to connect to DB:" + e.getMessage() + "\n");
+                return false;
+            }
+        return true;
     }
     
     /*  Method :        setLogger
@@ -214,6 +237,28 @@ public class CDIS {
         }
         return true;
     }
+    
+    //This really doesnt belong in this class, but putting it here for now.
+    public boolean setRecursiveDepth () {
+       
+        String sql = "set max_sp_recursion_depth = 10";
+       
+        logger.log(Level.FINEST,"SQL:" + sql );
+        
+        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
+            //This only needs to happen in one place.  It gets set every time here which is not needed.
+            
+            pStmt.executeQuery();
+       
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to set recursion", e );
+            return false;
+        } 
+        
+        return true;
+    }
+    
+    
     
     /*  Method :        verifyProps
         Arguments:      
@@ -316,6 +361,12 @@ public class CDIS {
                 return;
             }
             
+            boolean dbDefaultsSet = cdis.setDbDefaults();
+            if (! dbDefaultsSet) {
+                logger.log(Level.SEVERE, "Fatal Error: Unable to set Database Defaults");
+                return;
+            }
+            
             // Get the holding unit from the ProjectCode
             ProjectHoldingUnitR projectHoldingUnit = new ProjectHoldingUnitR();
             boolean unitFound = projectHoldingUnit.populateSiHoldingUnit();
@@ -386,6 +437,11 @@ public class CDIS {
                     GenTimeframeReport timeFrameReport = new GenTimeframeReport();
                     timeFrameReport.generate();
                     break;    
+                    
+                case "cisUpdate" :
+                    CisUpdate cisUpdate = new CisUpdate();
+                    cisUpdate.updateCisFromDams();
+                    break;
                     
                 default:     
                     logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting"); 

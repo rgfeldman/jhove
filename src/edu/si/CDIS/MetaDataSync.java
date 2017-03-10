@@ -17,6 +17,8 @@ import com.google.common.collect.Table.Cell;
 
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISObjectMap;
+import edu.si.CDIS.Database.CDISRefIdMap;
+import edu.si.CDIS.CIS.ArchiveSpace.CDISUpdates;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.DAMS.Database.TeamsLinks;
 import edu.si.CDIS.Database.CDISActivityLog;
@@ -126,7 +128,7 @@ public class MetaDataSync {
                     
                     for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
                         
-                        String columnName = rsmd.getColumnName(i).toUpperCase();
+                        String columnName = rsmd.getColumnLabel(i).toUpperCase();
                         String resultVal = rs.getString(i);
                         
                         logger.log(Level.ALL, "TABL: " + destTableName + " COLM: " + columnName + " VAL: " + resultVal);
@@ -382,16 +384,33 @@ public class MetaDataSync {
 
                 while (rs.next()) {
                     CDISMap cdisMap = new CDISMap();
-                    cdisMap.setCisUniqueMediaId(rs.getString(1));
-                    boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
                     
-                    if (!cisMediaIdObtained) {
-                        continue;
+                    if (CDIS.getProperty("cisSourceDB").equals("ASpace")){
+                        CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+                        cdisRefIdMap.setRefId(rs.getString(1));
+                        
+                        ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
+                        mapIdsForRefId =  cdisRefIdMap.returnCdisMapIdsForRefId();
+                        
+                        for (Integer mapId : mapIdsForRefId ) {
+                            if (!cdisMapIdsToSync.contains(mapId)) {
+                                cdisMapIdsToSync.add(mapId);
+                            }
+                        }
+                        
                     }
-                
-                    //Only add to the list if it is not already in the list. It could be there from never synced record list
-                    if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
-                        cdisMapIdsToSync.add(cdisMap.getCdisMapId());
+                    else {
+                        cdisMap.setCisUniqueMediaId(rs.getString(1));
+                        boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
+                    
+                        if (!cisMediaIdObtained) {
+                            continue;
+                        }
+                        
+                        //Only add to the list if it is not already in the list. It could be there from never synced record list
+                        if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
+                            cdisMapIdsToSync.add(cdisMap.getCdisMapId());
+                        }
                     }
                 }
             }
@@ -585,6 +604,24 @@ public class MetaDataSync {
                 buildDamsRelationList (cdisMap.getDamsUoiid(), "CHILD");
             }
             
+            CDISUpdates cdisUpdates = new CDISUpdates();
+            //For ArchiveSpace, we need to prep the view that we get data from 
+            if (CDIS.getProperty("cisSourceDB").equals("ASpace")){
+                
+                CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+                cdisRefIdMap.setCdisMapId(cdisMap.getCdisMapId());
+                cdisRefIdMap.populateRefIdFromMapId();
+                cdisUpdates.setEadRefId(cdisRefIdMap.getRefId());
+                
+                boolean getDescriptiveDateCalled = cdisUpdates.callGetDescriptiveData();
+                
+                if (getDescriptiveDateCalled != true) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to Seed Archive Space information " + cdisMap.getDamsUoiid());   
+                    noErrorFound = false;
+                    continue; 
+                }  
+            }
                 
              // execute the SQL statment to obtain the metadata and populate variables. The key value is the CDIS MAP ID
             boolean dataMappedFromCIS = buildCisQueryPopulateResults(cdisMap);
