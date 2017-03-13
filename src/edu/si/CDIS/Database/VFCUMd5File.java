@@ -20,7 +20,12 @@ public class VFCUMd5File {
     private Integer masterMd5FileId;
     private String vendorMd5FileName;
     private Integer vfcuMd5FileId;
+    private String filePathEnding;
     
+    
+    public String getFilePathEnding() {
+        return this.filePathEnding;
+    }
     
     public Integer getMasterMd5FileId () {
         return this.masterMd5FileId;
@@ -73,7 +78,7 @@ public class VFCUMd5File {
         
     }
     
-    public Integer returnSubFileMd5Id (Integer masterMd5FileId) {
+    public Integer returnSubFileMd5Id () {
         
         Integer md5SubFileId = 0;     
         String sql =    "SELECT vfcu_md5_file_id " +
@@ -95,5 +100,26 @@ public class VFCUMd5File {
         }
         
         return md5SubFileId;
+    }
+    
+    public void setFilePathEnding () {
+        
+        String sql =    "SELECT file_path_ending " +
+                        "FROM   vfcu_md5_file " +
+                        "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                this.filePathEnding = rs.getString(1);
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain path ending", e );
+        }
+        
     }
 }

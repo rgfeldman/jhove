@@ -6,7 +6,9 @@
 package edu.si.CDIS.Database;
 
 import edu.si.CDIS.CDIS;
+import java.util.ArrayList;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,11 +51,11 @@ public class CDISRefIdMap {
     public boolean createRecord() {
              
         String sql = "INSERT INTO cdis_ref_Id_map (" +
-                        "cdis_refid_map_id, " +
+                        "cdis_ref_id_map_id, " +
                         "cdis_map_id, " +
                         "ref_id )" +
                     "VALUES (" +
-                        "cdis_refid_map_id_seq.NextVal, " +
+                        "cdis_ref_id_map_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
                         "'" + getRefId() + "')";
                  
@@ -74,5 +76,54 @@ public class CDISRefIdMap {
         return true;
     }
     
+    public boolean populateRefIdFromMapId () {
+        String sql = "SELECT    ref_id " +
+                     "FROM      cdis_ref_Id_map " +
+                     "WHERE     cdis_map_id = " + getCdisMapId();
+                
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                setRefId (rs.getString(1));
+            }   
+            else {
+                // we need a map id, if we cant find one then raise error
+                throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain cdisMediaType ", e );
+                return false;
+        }
+        return true;
+    }
+    
+    public ArrayList<Integer> returnCdisMapIdsForRefId() {
+
+        ArrayList cdisMapIdsForRefId = new ArrayList<>();
+        
+        String sql = "SELECT    cdis_map_id " +
+                     "FROM      cdis_ref_id_map " +
+                     "WHERE     ref_id = '" + getRefId() + "'";
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            while (rs.next()) {
+                cdisMapIdsForRefId.add(rs.getInt(1));
+            }   
+            
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain mapid list from refId ", e );
+                return null;
+        }
+        
+        return cdisMapIdsForRefId;
+        
+    }
     
 }
