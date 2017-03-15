@@ -27,8 +27,8 @@ public class ProjectHoldingUnitR {
     public boolean populateSiHoldingUnit () {
         
         String sql = "SELECT si_holding_unit " +
-                    "FROM collection_group_r " +
-                    "WHERE collection_group_cd = '" + CDIS.getProjectCd() + "'";
+                    "FROM project_holding_unit_r " +
+                    "WHERE project_cd = '" + CDIS.getProjectCd() + "'";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
