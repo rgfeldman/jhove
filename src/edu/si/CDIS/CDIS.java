@@ -148,9 +148,9 @@ public class CDIS {
              
             if ( CDIS.cisConn != null) {
                 CDIS.cisConn.setAutoCommit(false);
-                if (CDIS.getProperty("cisSourceDB").equals("ASpace")) {
-                    setRecursiveDepth();
-                }                           
+                //if (CDIS.getProperty("cisSourceDB").equals("ASpace")) {
+                //    setRecursiveDepth();
+                //}                           
             }
  
         } catch (Exception e) 
@@ -239,24 +239,24 @@ public class CDIS {
     }
     
     //This really doesnt belong in this class, but putting it here for now.
-    public boolean setRecursiveDepth () {
+    //public boolean setRecursiveDepth () {
        
-        String sql = "set max_sp_recursion_depth = 10";
+    //    String sql = "set max_sp_recursion_depth = 10";
        
-        logger.log(Level.FINEST,"SQL:" + sql );
+    //    logger.log(Level.FINEST,"SQL:" + sql );
         
-        try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
+    //    try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
             //This only needs to happen in one place.  It gets set every time here which is not needed.
             
-            pStmt.executeQuery();
+    //        pStmt.executeQuery();
        
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to set recursion", e );
-            return false;
-        } 
+    //    } catch (Exception e) {
+    //        logger.log(Level.FINER, "Error: unable to set recursion", e );
+    //        return false;
+    //    } 
         
-        return true;
-    }
+    //    return true;
+    //}
     
     
     

@@ -144,6 +144,7 @@ class CisUpdate {
                         "       cdis_ref_id_map ref, " +
                         "       cdis_activity_log act " +
                         "WHERE ref.cdis_map_id = act.cdis_map_id " +
+                        "AND   map.cdis_map_id = act.cdis_map_id " +
                         "AND   act.cdis_status_cd = 'CPD' " +
                         "AND   ref.ref_id = '" + refId + "'";
                         
