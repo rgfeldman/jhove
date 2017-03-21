@@ -130,7 +130,7 @@ public class GenVfcuDirReport {
             // We do not have a child record, only look at master record
             queryParam = "WHERE  a.vfcu_md5_file_id = " + masterMd5Id;       
         }
-        
+          
         String sql = "SELECT COUNT(*) " +
                      "FROM   vfcu_media_file a " +
                      queryParam +
@@ -145,7 +145,7 @@ public class GenVfcuDirReport {
                      "  SELECT 'X'     " +
                      "  FROM   vfcu_activity_log d " +     
                      "  WHERE a.vfcu_media_file_id = d.vfcu_media_file_id " +   
-                     "  AND   d.vfcu_status_cd in ('ER','OH')) ";
+                     "  AND   d.vfcu_status_cd = 'ER') ";
         
         try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
              ResultSet rs = stmt.executeQuery() ) {
@@ -176,7 +176,7 @@ public class GenVfcuDirReport {
         int numFilesDbDelivered = 0;
         int numFilesInDeliveryArea = 0;
         
-        countPendingRecords(masterMd5FileId, childMd5FileId );
+        numPendingRecords = countPendingRecords(masterMd5FileId, childMd5FileId );
         
         if (! (numPendingRecords == 0)) {
             logger.log(Level.FINEST, "Some records are in pending state...holding off for report generation.");
