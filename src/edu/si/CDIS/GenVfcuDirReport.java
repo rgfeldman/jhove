@@ -64,8 +64,14 @@ public class GenVfcuDirReport {
     int countFilesInDeliveryLoc(String deliveryLocation) {
         int numFiles = 0;
         
+        logger.log(Level.FINEST, "Looking to see how many files were sent to delivery location: "+ deliveryLocation );
+        
         File deliveryDirectory = new File(deliveryLocation);
         
+        if (! deliveryDirectory.exists() ) {
+            //directory does not yet exist, no files delivered
+            return 0;
+        } 
         //We count the files unless they end with .txt (which could indicate a ready file)
         for (File file : deliveryDirectory.listFiles()) {
             if (! file.getName().endsWith("txt")) {
@@ -84,16 +90,17 @@ public class GenVfcuDirReport {
     int countNumberFilesDbDelivered (Integer masterMd5Id, Integer childMd5Id) {
         int numFilesSent = 0;
         
-        String sql = "SELECT COUNT (*) " +
+        String sql = "SELECT COUNT (distinct media.vfcu_media_file_id) " +
                      "FROM vfcu_media_file media " +
-                     "INNER JOIN vfcu_activity_log activity" +
+                     "INNER JOIN vfcu_activity_log activity " +
                      "ON media.vfcu_media_file_id = activity.vfcu_media_file_id " + 
-                     "AND media.vfcu_md5_file_id in (" + masterMd5Id + ", " + childMd5Id + ")";
+                     "AND media.vfcu_md5_file_id = " + childMd5Id;
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
         try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
-            logger.log(Level.FINEST, "SQL: {0}", sql);
-            
+                
             if (rs.next()) {
                 numFilesSent = rs.getInt(1);
             }
@@ -193,8 +200,8 @@ public class GenVfcuDirReport {
         
             if (numFilesDbDelivered != numFilesInDeliveryArea) {
                 logger.log(Level.FINEST, "All Files in DB are not in delivery location or vice versa");
-                logger.log(Level.FINEST, "Num Files listed in DB: ", numFilesDbDelivered);
-                logger.log(Level.FINEST, "Num Files in Delivery Area: ", numFilesInDeliveryArea);
+                logger.log(Level.FINEST, "Num Files listed in DB: " + numFilesDbDelivered);
+                logger.log(Level.FINEST, "Num Files in Delivery Area: " + numFilesInDeliveryArea);
                 return false;
             }
         }
@@ -289,26 +296,27 @@ public class GenVfcuDirReport {
         
             masterVfcuMd5File.setMasterMd5FileId(masterMd5Id);
             masterVfcuMd5File.setVfcuMd5FileId(masterMd5Id);
-            childVfcuMd5File.setMasterMd5FileId(masterMd5Id);
-            
+               
             if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
             //get childMd5FileId for the master XML
             
+                childVfcuMd5File.setMasterMd5FileId(masterMd5Id);
+                
                 childVfcuMd5File.setVfcuMd5FileId (childVfcuMd5File.returnSubFileMd5Id());
                         
                 if (childVfcuMd5File.getVfcuMd5FileId() == null) {
                     logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
                     continue;
                 }
+                childVfcuMd5File.populateFilePathEnding();
+                
             }
         
             String pickupLocation = null;
             
             if (CDIS.getProperty("postIngestDeliveryLoc") != null) {
-                pickupLocation = CDIS.getProperty("postIngestDeliveryLoc") + "\\" + masterVfcuMd5File.getFilePathEnding();
+                pickupLocation = CDIS.getProperty("postIngestDeliveryLoc") + "\\" + childVfcuMd5File.getFilePathEnding();
             }
-            
-            masterVfcuMd5File.setFilePathEnding();
             
             boolean countsVerified = countVerify(masterVfcuMd5File.getVfcuMd5FileId(), childVfcuMd5File.getVfcuMd5FileId(), pickupLocation);
             if (! countsVerified) {

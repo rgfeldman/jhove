@@ -102,7 +102,7 @@ public class VFCUMd5File {
         return md5SubFileId;
     }
     
-    public void setFilePathEnding () {
+    public void populateFilePathEnding () {
         
         String sql =    "SELECT file_path_ending " +
                         "FROM   vfcu_md5_file " +
