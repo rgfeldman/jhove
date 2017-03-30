@@ -71,7 +71,7 @@ public class GenTimeframeReport {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
 
-        this.rptFile =  CDIS.getProjectCd()+ "\\rpt\\CDISRPT-" + CDIS.getProjectCd()+ "-" + timeStamp + ".rtf";
+        this.rptFile =  CDIS.getSiHoldingUnit()+ "/rpt/CDISRPT-" + CDIS.getProjectCd().toUpperCase() + "-" + timeStamp + ".rtf";
         
         this.document = new Document();
          
@@ -84,7 +84,7 @@ public class GenTimeframeReport {
             RtfFont title=new RtfFont("Times New Roman",14,Font.BOLD);
             
             document.add(new Paragraph(timeStampWords + "\n" + 
-                    CDIS.getProjectCd()+ " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
+                    CDIS.getProjectCd().toUpperCase() + " CDIS Activity Report- Past " + this.rptHours + " Hours", title));
 
         } catch(Exception e) {
             logger.log(Level.FINEST, "ERROR, cannot create report ");
@@ -98,7 +98,11 @@ public class GenTimeframeReport {
         
         this.rptHours = CDIS.getProperty("rptHours");
                 
-        create();
+        boolean reportStarted = create();
+        if (!reportStarted) {
+            logger.log(Level.FINEST, "Report Creation Failed");
+            return;
+        }
         
         //Get list of completed records (UOI_IDs) from the past increment
         this.lccMapIds = new ArrayList<>();
@@ -266,7 +270,7 @@ public class GenTimeframeReport {
 	
             String emailContent = null;
             
-            message.setSubject("CDIS Activity Report for " + CDIS.getProjectCd() + "- Past " + this.rptHours + " Hours" ); 
+            message.setSubject("CDIS Activity Report for " + CDIS.getProjectCd().toUpperCase() + "- Past " + this.rptHours + " Hours" ); 
             
             emailContent = this.statsHeader.replace("\n","<br>") + "<br><br>Please see the attached CDIS Activity Report for details<br><br>" +
                     "If you have any questions regarding information contained in this report, please contact: <br>" + 

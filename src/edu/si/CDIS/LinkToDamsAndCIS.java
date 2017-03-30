@@ -206,7 +206,7 @@ public class LinkToDamsAndCIS {
         boolean objectLinked = false;
         switch (CDIS.getProperty("cisSourceDB")) {
             case "AAA" :
-                if(CDIS.getProjectCd().equals("AAA_AV")) {
+                if(CDIS.getProjectCd().equals("aaa_av")) {
                     objectLinked = linkObjectAaaAv(cdisMap.getCdisMapId(), cisIdentifier);
                 }
                 else {

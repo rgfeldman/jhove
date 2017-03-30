@@ -13,7 +13,6 @@ import java.io.FileInputStream;
 import java.util.Properties; 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.logging.Level;
@@ -173,11 +172,11 @@ public class CDIS {
         Handler fh;
             
         try {
-		fh = new FileHandler( CDIS.getProjectCd() + "\\log\\CDISLog-" + CDIS.operationType + CDIS.batchNumber + ".txt");
+            fh = new FileHandler(CDIS.siHoldingUnit + "/log/CDISLog-" + CDIS.operationType + "_" + CDIS.projectCd + "_" + CDIS.batchNumber + ".txt");
 	
         } catch (Exception e) {
-		e.printStackTrace();
-                return false;
+            e.printStackTrace();
+            return false;
 	}
         
         fh.setFormatter(new SimpleFormatter());          
@@ -190,14 +189,14 @@ public class CDIS {
         
     }
     
-    /*  Method :        setLogger
+    /*  Method :        readIni
         Arguments:      
         Description:    assigns values from the .ini file into the properties object
         RFeldman 2/2015
     */
     private boolean readIni () {
         
-        String iniFile =  CDIS.getProjectCd() + "\\conf\\cdis.ini";
+        String iniFile = CDIS.siHoldingUnit + "/conf/" + CDIS.projectCd + ".ini";
         
         logger.log(Level.FINER, "Loading ini file: " + iniFile);
                 
@@ -237,28 +236,6 @@ public class CDIS {
         }
         return true;
     }
-    
-    //This really doesnt belong in this class, but putting it here for now.
-    //public boolean setRecursiveDepth () {
-       
-    //    String sql = "set max_sp_recursion_depth = 10";
-       
-    //    logger.log(Level.FINEST,"SQL:" + sql );
-        
-    //    try (PreparedStatement pStmt = CDIS.getCisConn().prepareStatement(sql)) {
-            //This only needs to happen in one place.  It gets set every time here which is not needed.
-            
-    //        pStmt.executeQuery();
-       
-    //    } catch (Exception e) {
-    //        logger.log(Level.FINER, "Error: unable to set recursion", e );
-    //        return false;
-    //    } 
-        
-    //    return true;
-    //}
-    
-    
     
     /*  Method :        verifyProps
         Arguments:      
@@ -319,7 +296,8 @@ public class CDIS {
         CDIS cdis = new CDIS();
         
         CDIS.operationType = args[0];
-        CDIS.projectCd = args[1];
+        CDIS.siHoldingUnit = args[1];
+        CDIS.projectCd = args[2]; 
         
         // Delete old log and report files
         cdis.deleteLogs("rpt","CDISRPT-",21);
@@ -377,8 +355,9 @@ public class CDIS {
             CDIS.siHoldingUnit = projectHoldingUnit.getSiHoldingUnit(); 
             
             // read the XML config file
-            XmlSqlConfig xml = new XmlSqlConfig();    
-            boolean xmlReturn = xml.read(CDIS.getProjectCd(), CDIS.getOperationType());
+            XmlSqlConfig xml = new XmlSqlConfig();
+            xml.setFileNameAndPath(siHoldingUnit + "/" + CDIS.getProperty(CDIS.operationType + "XmlFile"));
+            boolean xmlReturn = xml.read(CDIS.getOperationType());
             if (! xmlReturn) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
                 return;

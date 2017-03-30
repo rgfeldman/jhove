@@ -31,7 +31,7 @@ public class CollectionRecord {
                       
         boolean pathUpdated = false;
         
-        if (CDIS.getProjectCd().equals("AAA_AV")) {
+        if (CDIS.getProjectCd().equals("aaa_av")) {
                             
             MediaTypeConfigR cdiscisMediaTypeR = new MediaTypeConfigR();
             cdiscisMediaTypeR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());

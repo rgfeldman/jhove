@@ -618,42 +618,4 @@ public class CDISMap {
         return true;
     }
     
-    public HashMap<Integer, String> returnUnlinkedMediaInDams () {
-        
-        HashMap<Integer, String> unlinkedDamsRecords;
-        unlinkedDamsRecords = new HashMap<> ();
-        String sql = "SELECT    a.cdis_map_id, a.file_name " +
-                    "FROM       cdis_map a, " +
-                    "           cdis_activity_log b, " +
-                    "           towner.uois c, "  +
-                    "           towner.si_asset_metadata d " +
-                    "WHERE      a.cdis_map_id = b.cdis_map_id " +
-                    "AND        a.file_name = c.name " +
-                    "AND        c.uoi_id = d.uoi_id " +
-                    "AND        a.dams_uoi_id IS NULL " +
-                    "AND        a.project_cd = '" + CDIS.getProjectCd() + "' " + 
-                    "AND        b.cdis_status_cd IN ('FMM', 'FXS') " +
-                    "AND        c.content_state = 'NORMAL' " +
-                    "AND        c.content_type != 'SHORTCUT' " +
-                    "AND        d.owning_unit_unique_name like '" + CDIS.getProjectCd() + "%' " + 
-                    "AND NOT EXISTS ( " + 
-                        "SELECT 'X' " +
-                        "FROM cdis_error_log d " +
-                        "WHERE a.cdis_map_id = d.CDIS_MAP_ID)" ;
-                
-                                
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-              ResultSet rs = pStmt.executeQuery() ) {
-            
-            while (rs.next()) {
-                unlinkedDamsRecords.put(rs.getInt(1), rs.getString(2));
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain map_id for file/batch", e );
-        }
-        return unlinkedDamsRecords; 
-    }
 }

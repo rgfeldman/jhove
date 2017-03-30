@@ -53,6 +53,23 @@ public class StagedFile {
         this.pathEnding = pathEnding;
     }
     
+    public boolean addPermission(String deliveryFilePath) {
+    
+        
+        String fileToChange = deliveryFilePath + "\\" + getPathEnding() + "\\" + getFileName();
+        
+        try {
+            String command = "icacls \"" + fileToChange +  "\" /inheritance:e";
+         
+            Runtime.getRuntime().exec(command);
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update permissions", e );
+                return false; 
+        }
+        
+        return true;
+    }
+    
     public boolean populateNamePathFromId (Integer vfcuMediaFileId) {
  
         String sql = "SELECT b.media_file_name, a.base_path_staging, a.file_path_ending " +
