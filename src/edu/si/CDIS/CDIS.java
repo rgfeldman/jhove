@@ -17,6 +17,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.Date;
+import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -227,8 +228,12 @@ public class CDIS {
     private boolean calcBatchNumber () {    
         try {
         
-            DateFormat df = new SimpleDateFormat("yyyyMMddkkmmss");
-            setBatchNumber (Long.parseLong(df.format(new Date())));
+            DateFormat df = new SimpleDateFormat("yyyyMMddkkmmssSSS");
+            
+            Random rand = new Random();
+            String batchNum = df.format(new Date()) + rand.nextInt(100);
+            
+            setBatchNumber (Long.parseLong(batchNum));
             
         } catch (Exception e) {
               System.out.println("Error: obtaining Batch number" + e );
