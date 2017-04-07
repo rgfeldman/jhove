@@ -235,16 +235,17 @@ public class LinkToDAMS {
                         continue;
                     } 
                     
-                    //add the appropriate file permission
-                    boolean filePermAdded = stagedFile.addPermission(CDIS.getProperty("postIngestDeliveryLoc"));
+                    if (CDIS.getProperty("setDeliveredFilePerm") != null  && CDIS.getProperty("setDeliveredFilePerm").equals("win") ) {
+                        //add the appropriate file permission
+                        boolean filePermAdded = stagedFile.addPermissionWin(CDIS.getProperty("postIngestDeliveryLoc"));
                     
-                    if (! filePermAdded) {
-                        ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "CPDELP", "Error, unable to set file permission in pickup location");
-                        continue;
-                    } 
-                    
-                    
+                        if (! filePermAdded) {
+                            ErrorLog errorLog = new ErrorLog ();
+                            errorLog.capture(cdisMap, "CPDELP", "Error, unable to set file permission in pickup location");
+                            continue;
+                        } 
+                    }
+                               
                 }
                 
                 activityLog.setCdisStatusCd("FME");

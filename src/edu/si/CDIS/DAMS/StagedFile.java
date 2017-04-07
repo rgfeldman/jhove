@@ -53,7 +53,7 @@ public class StagedFile {
         this.pathEnding = pathEnding;
     }
     
-    public boolean addPermission(String deliveryFilePath) {
+    public boolean addPermissionWin(String deliveryFilePath) {
     
         
         String fileToChange = deliveryFilePath + "\\" + getPathEnding() + "\\" + getFileName();
