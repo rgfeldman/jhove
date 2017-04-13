@@ -40,7 +40,7 @@ public class SendToHotFolder {
         
         try {
                 //Create the ready.txt file and put in the media location
-                String readyFilewithPath = fullMasterHotFolderNm + "\\ready.txt";
+                String readyFilewithPath = fullMasterHotFolderNm + "/ready.txt";
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 
@@ -247,7 +247,7 @@ public class SendToHotFolder {
             }
         
             //count files in hotfolder master area
-            fullMasterHotFolderNm = hotFolderBaseName + "\\MASTER";
+            fullMasterHotFolderNm = hotFolderBaseName + "/MASTER";
             fullMasterHotFolder = new File(fullMasterHotFolderNm);
                 
             if (! fullMasterHotFolder.exists()) {
@@ -257,7 +257,7 @@ public class SendToHotFolder {
             int numMasterFolderFiles = fullMasterHotFolder.list().length;
             
             //count files in hotfolder subfiles area
-            String fullSubFilesHotFolderNm = hotFolderBaseName + "\\SUBFILES";
+            String fullSubFilesHotFolderNm = hotFolderBaseName + "/SUBFILES";
             File subFilesHotFolderNm = new File(fullSubFilesHotFolderNm);
                 
             if (! subFilesHotFolderNm.exists()) {
@@ -322,7 +322,7 @@ public class SendToHotFolder {
         
         if (CDIS.getProperty("useMasterSubPairs").equals("true") ) {
             // get the subfile location
-            File subfiledir = new File (hotFolderBaseName + "\\SUBFILES") ;
+            File subfiledir = new File (hotFolderBaseName + "/SUBFILES") ;
                 
             if  (this.fullMasterHotFolder.list().length !=  subfiledir.list().length ) {
                 logger.log(Level.FINER, "Do not put ready.txt file, number of subfiles != number of master files");
@@ -378,7 +378,7 @@ public class SendToHotFolder {
                     boolean fileXferred;
                     //Find the image and move/copy to hotfolder
 
-                    fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "SUBFILES", cdisMapChild.getCdisMapId()); 
+                    fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "/" + "SUBFILES", cdisMapChild.getCdisMapId()); 
                     
                       
                     if (! fileXferred) {
@@ -410,7 +410,7 @@ public class SendToHotFolder {
                 cdisMap.populateIdFromVfcuId();
                
                 //Decide whether to move file or to copy it
-                boolean fileMoved = stagedFile.xferToHotFolder(hotFolderBaseName + "\\" + "MASTER", cdisMap.getCdisMapId());  
+                boolean fileMoved = stagedFile.xferToHotFolder(hotFolderBaseName + "/" + "MASTER", cdisMap.getCdisMapId());  
                 if (! fileMoved) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "MVHOTF", "Error, unable to move file to master: " + stagedFile.getFileName());

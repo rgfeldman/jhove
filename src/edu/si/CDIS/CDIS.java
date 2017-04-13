@@ -273,7 +273,7 @@ public class CDIS {
     */
     public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
                 
-        File folderDir = new File(CDIS.getProjectCd() + "\\" + folder);
+        File folderDir = new File(CDIS.getProjectCd() + "/" + folder);
         File[] logs = folderDir.listFiles();
 	
         if (logs != null) {

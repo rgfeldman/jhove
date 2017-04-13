@@ -49,10 +49,11 @@ public class StagedFile {
         this.basePath = basePath;
     }
     
-    public void setPathEnding (String pathEnding) {
+    public void setPathEnding  (String pathEnding) {
         this.pathEnding = pathEnding;
     }
     
+    /*
     public boolean addPermissionWin(String deliveryFilePath) {
     
         
@@ -69,6 +70,7 @@ public class StagedFile {
         
         return true;
     }
+    */
     
     public boolean populateNamePathFromId (Integer vfcuMediaFileId) {
  
@@ -102,8 +104,8 @@ public class StagedFile {
     // Moves the staged file to the pickup location folder for delivery
     public boolean deliverFileForPickup (String destination) {
 
-        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        String postIngestDeliveryLoc = destination + "\\" + getPathEnding();
+        String fileNamewithPath = getBasePath() + "/" + getPathEnding() + "/" + getFileName();
+        String postIngestDeliveryLoc = destination + "/" + getPathEnding();
         
         logger.log(Level.FINER,"File moved from staging location: " + fileNamewithPath );
         logger.log(Level.FINER,"File moved to emuPickup location: " + postIngestDeliveryLoc );
@@ -111,7 +113,7 @@ public class StagedFile {
         try {            
             Path sourceFile      = Paths.get(fileNamewithPath);
             Path destPath = Paths.get(postIngestDeliveryLoc);
-            Path destWithFile = Paths.get(postIngestDeliveryLoc + "\\" + getFileName());
+            Path destWithFile = Paths.get(postIngestDeliveryLoc + "/" + getFileName());
 
             // create the directory if we need it
             Files.createDirectories(destPath);
@@ -130,8 +132,8 @@ public class StagedFile {
     // Moves the staged file to the MASTER folder
     public boolean xferToHotFolder (String destination, Integer cdisMapId) {
         
-        String fileNamewithPath = getBasePath() + "\\" + getPathEnding() + "\\" + getFileName();
-        String hotFolderDestStr = destination + "\\" + getFileName();
+        String fileNamewithPath = getBasePath() + "/" + getPathEnding() + "/" + getFileName();
+        String hotFolderDestStr = destination + "/" + getFileName();
         
         logger.log(Level.FINER,"File xferred from staging location: " + fileNamewithPath );
         logger.log(Level.FINER,"File xferred to hotfolder location: " + hotFolderDestStr );

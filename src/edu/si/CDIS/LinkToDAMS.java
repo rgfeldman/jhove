@@ -71,7 +71,7 @@ public class LinkToDAMS {
                 int numFailedFiles = 0;
 
                 //count files in failed folder master area
-                String failedFolderNm = failedFolderBaseName + "\\FAILED";
+                String failedFolderNm = failedFolderBaseName + "/FAILED";
                 File failedHotFolder = new File(failedFolderNm);
                 
                 logger.log(Level.FINER, "FailedDir: " + failedFolderNm);
@@ -235,16 +235,16 @@ public class LinkToDAMS {
                         continue;
                     } 
                     
-                    if (CDIS.getProperty("setDeliveredFilePerm") != null  && CDIS.getProperty("setDeliveredFilePerm").equals("win") ) {
-                        //add the appropriate file permission
-                        boolean filePermAdded = stagedFile.addPermissionWin(CDIS.getProperty("postIngestDeliveryLoc"));
+                    //if (CDIS.getProperty("setDeliveredFilePerm") != null  && CDIS.getProperty("setDeliveredFilePerm").equals("win") ) {
+                    //    //add the appropriate file permission
+                    //    boolean filePermAdded = stagedFile.addPermissionWin(CDIS.getProperty("postIngestDeliveryLoc"));
                     
-                        if (! filePermAdded) {
-                            ErrorLog errorLog = new ErrorLog ();
-                            errorLog.capture(cdisMap, "CPDELP", "Error, unable to set file permission in pickup location");
-                            continue;
-                        } 
-                    }
+                    //    if (! filePermAdded) {
+                    //        ErrorLog errorLog = new ErrorLog ();
+                    //        errorLog.capture(cdisMap, "CPDELP", "Error, unable to set file permission in pickup location");
+                    //        continue;
+                    //    } 
+                    // }
                                
                 }
                 

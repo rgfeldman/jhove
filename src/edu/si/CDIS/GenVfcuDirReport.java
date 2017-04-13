@@ -258,7 +258,7 @@ public class GenVfcuDirReport {
         
         try {
                 //Create the ready.txt file and put in the media location
-                String readyFilewithPath = postIngestDeliveryLoc + "\\" + CDIS.getProperty("readyFileName");
+                String readyFilewithPath = postIngestDeliveryLoc + "/" + CDIS.getProperty("readyFileName");
 
                 logger.log(Level.FINER, "Creating ReadyFile: " + readyFilewithPath);
                 
@@ -315,7 +315,7 @@ public class GenVfcuDirReport {
             String pickupLocation = null;
             
             if (CDIS.getProperty("postIngestDeliveryLoc") != null) {
-                pickupLocation = CDIS.getProperty("postIngestDeliveryLoc") + "\\" + childVfcuMd5File.getFilePathEnding();
+                pickupLocation = CDIS.getProperty("postIngestDeliveryLoc") + "/" + childVfcuMd5File.getFilePathEnding();
             }
             
             boolean countsVerified = countVerify(masterVfcuMd5File.getVfcuMd5FileId(), childVfcuMd5File.getVfcuMd5FileId(), pickupLocation);
@@ -548,7 +548,7 @@ public class GenVfcuDirReport {
         String sql = null;
         
         if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
-            sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '\\', 1, 1)-1) " +
+            sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1) " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + masterMd5FileId;
         } 
@@ -565,8 +565,8 @@ public class GenVfcuDirReport {
             if (rs.next()) {
                 String strFilePathEnding = rs.getString(1);
                 //Add the records to the masterMd5Id list 
-                if (strFilePathEnding.contains("\\")) {
-                      this.rptVendorDir = strFilePathEnding.replace("\\", "-");
+                if (strFilePathEnding.contains("/")) {
+                      this.rptVendorDir = strFilePathEnding.replace("/", "-");
                 }
                 else {
                       this.rptVendorDir = strFilePathEnding;
