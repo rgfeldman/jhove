@@ -54,7 +54,11 @@ public class Thumbnail {
             return false;
         }
  
-        String imageFile = "\\\\smb.si-osmisilon1.si.edu\\prodartesiarepo\\" + this.damsLocation; 
+        if (CDIS.getProperty("damsRepoLoc") == null) {
+            logger.log(Level.FINER, "Not updating thumbnail, unable to get DAMS repository");
+        }
+        
+        String imageFile = CDIS.getProperty("damsRepoLoc") + "/" + this.damsLocation; 
         
         logger.log(Level.FINER, "Need to Obtain imageLocation " + imageFile);
         
