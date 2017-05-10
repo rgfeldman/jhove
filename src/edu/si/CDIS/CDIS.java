@@ -147,10 +147,7 @@ public class CDIS {
             }
              
             if ( CDIS.cisConn != null) {
-                CDIS.cisConn.setAutoCommit(false);
-                //if (CDIS.getProperty("cisSourceDB").equals("ASpace")) {
-                //    setRecursiveDepth();
-                //}                           
+                CDIS.cisConn.setAutoCommit(false);                        
             }
  
         } catch (Exception e) 

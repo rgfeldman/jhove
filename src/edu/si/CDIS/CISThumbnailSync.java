@@ -74,7 +74,7 @@ public class CISThumbnailSync {
     */
     public void sync () {
         
-        this.mapIdsToSync = new ArrayList <Integer>();
+        this.mapIdsToSync = new ArrayList <>();
         
         //Get a list of RenditionIDs that require syncing from the sql XML file
         populateIdsToUpdate ();
