@@ -18,6 +18,7 @@ import java.util.logging.Level;
 
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalMediaResource;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
+import edu.si.CDIS.CIS.AAA.Database.TblCollectionsOnlineImage;
 import edu.si.CDIS.CIS.IRIS.Database.SI_IrisDAMSMetaCore;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.CIS.TMS.Thumbnail;
@@ -71,6 +72,25 @@ public class LinkToDamsAndCIS {
         return true;
     }
     
+    private boolean linkObjectAaaFndgAid (Integer cdisMapId, String cisIdentifier) {
+        TblCollectionsOnlineImage tblCollectionOnlineImage = new TblCollectionsOnlineImage();
+        
+        tblCollectionOnlineImage.setCollectionOnlineImageId(Integer.parseInt(cisIdentifier));
+        
+        boolean collectionIdFound = tblCollectionOnlineImage.populateCollectionId();
+        if (!collectionIdFound ) {
+            logger.log(Level.FINER, "Error: unable to obtain object_id" );
+            return false;
+        } 
+        
+        //Insert into CDISObjectMap
+        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        cdisObjectMap.setCdisMapId(cdisMapId);
+        cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblCollectionOnlineImage.getCollectionId()) );
+        cdisObjectMap.createRecord();
+        
+        return true;
+    }
     
     
     private boolean linkObjectAaaAv (Integer cdisMapId, String cisIdentifier) {
@@ -208,6 +228,9 @@ public class LinkToDamsAndCIS {
             case "AAA" :
                 if(CDIS.getProjectCd().equals("aaa_av")) {
                     objectLinked = linkObjectAaaAv(cdisMap.getCdisMapId(), cisIdentifier);
+                }
+                else if (CDIS.getProjectCd().equals("aaa_fndg_aid") ) {
+                     objectLinked = linkObjectAaaFndgAid(cdisMap.getCdisMapId(), cisIdentifier);
                 }
                 else {
                     objectLinked = linkObjectAaaImage(cdisMap.getCdisMapId(), cisIdentifier);
