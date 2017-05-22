@@ -77,7 +77,7 @@ public class MetaDataSync {
             logger.log(Level.SEVERE, "size: " + idsSize);
 
         } catch(Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to Obtain IDS size, setting to default", e);
+            logger.log(Level.INFO, "IDS size not an integer, setting to default for " + idsType);
             idsSize = defaultIdsSize;
         }       
             
