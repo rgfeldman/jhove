@@ -246,6 +246,7 @@ public class MetaDataSync {
                     case "IS_RESTRICTED" :
                     case "MANAGING_UNIT" :
                     case "MAX_IDS_SIZE" :
+                    case "INTERNAL_IDS_SIZE" :
                     case "PUBLIC_USE" :                  
                     case "SEC_POLICY_ID" :
                     case "SI_DEL_RESTS" :
