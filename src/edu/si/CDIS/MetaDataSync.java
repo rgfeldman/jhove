@@ -715,7 +715,6 @@ public class MetaDataSync {
         
         //For now, populate the 4 tables we are syncing to, maybe at a later point we can have the code look for the tables in the SQL
         this.columnLengthHashTable = HashBasedTable.create();
-        populateColumnWidthArray("IPTC_APP_RECORDS");
         populateColumnWidthArray("SECURITY_POLICY_UOIS");
         populateColumnWidthArray("SI_ASSET_METADATA");
         populateColumnWidthArray("SI_AV_ASSET_METADATA");
