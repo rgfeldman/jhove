@@ -20,7 +20,7 @@ import edu.si.CDIS.Database.CDISObjectMap;
 import edu.si.CDIS.Database.CDISRefIdMap;
 import edu.si.CDIS.CIS.ArchiveSpace.CDISUpdates;
 import edu.si.CDIS.DAMS.Database.Uois;
-import edu.si.CDIS.DAMS.Database.TeamsLinks;
+import edu.si.CDIS.DAMS.MediaRecord;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.utilties.ErrorLog;
 import edu.si.Utils.XmlSqlConfig;
@@ -31,8 +31,6 @@ public class MetaDataSync {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
     
     private ArrayList<Integer> cdisMapIdsToSync;  //list of all CDIS MAP IDs to sync
-    
-    private ArrayList<String> relatedUoiIdsToSync;
     
     private Table <String,String,Integer> columnLengthHashTable;  //List of columns with maximum length in DAMS
     
@@ -77,7 +75,7 @@ public class MetaDataSync {
             logger.log(Level.SEVERE, "size: " + idsSize);
 
         } catch(Exception e) {
-            logger.log(Level.INFO, "IDS size not an integer, setting to default for " + idsType);
+            logger.log(Level.ALL, "IDS size not an integer, setting to default for " + idsType);
             idsSize = defaultIdsSize;
         }       
             
@@ -182,28 +180,6 @@ public class MetaDataSync {
         return true;
     }
     
-    
-    /*  Method :        buildDamsRelationList
-        Arguments:      
-        Returns:        true for success, false for failures
-        Description:    populates relatedUoiIdsToSync which will hold a list of related uoiIds (connected by parents or children relations in DAMS)
-        RFeldman 12/2016
-    */
-    
-    private void buildDamsRelationList (String uoiId, String linkType) {
-        // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
-        // by CDIS or not.  We get only the direct parent for now...later we may want to add more functionality
-        
-        TeamsLinks teamsLinks = new TeamsLinks();
-        teamsLinks.setSrcValue(uoiId);
-        teamsLinks.setLinkType(linkType);
-        boolean relatedRecRetrieved = teamsLinks.populateDestValueNotDeleted();
-        
-        if (relatedRecRetrieved ) {
-            relatedUoiIdsToSync.add(teamsLinks.getDestValue());
-        }
-        
-    }
     
     /*  Method :        generateUpdate
         Arguments:      
@@ -591,17 +567,15 @@ public class MetaDataSync {
             try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
             CDISMap cdisMap = new CDISMap();
+            MediaRecord mediaRecord = new MediaRecord();
                 
             cdisMap.setCdisMapId(iter.next());
             cdisMap.populateMapInfo();
-            
-            //Build the DAMS child/parent relationships for the current uoiId
-            relatedUoiIdsToSync = new ArrayList();
 
             //Add the current
             if (CDIS.getProperty("syncParentChild") != null  && CDIS.getProperty("syncParentChild").equals("true") ) {
-                buildDamsRelationList (cdisMap.getDamsUoiid(), "PARENT");
-                buildDamsRelationList (cdisMap.getDamsUoiid(), "CHILD");
+                mediaRecord.setUoiId(cdisMap.getDamsUoiid()); 
+                mediaRecord.buildDamsRelationList ();
             }
             
             CDISUpdates cdisUpdates = new CDISUpdates();
@@ -638,13 +612,13 @@ public class MetaDataSync {
                continue;
             }
             
-            for (String relatedUoiId : relatedUoiIdsToSync) {
+            for (String relatedUoiId : mediaRecord.relatedUoiIds) {
                 noErrorFound = performTransactions(relatedUoiId, cdisMap, true);
             }
             
             if (! noErrorFound) {
                continue;
-            }            
+            } 
             
             // see if there already is a row that in the activity_log that has been synced
             CDISActivityLog cdisActivity = new CDISActivityLog();
