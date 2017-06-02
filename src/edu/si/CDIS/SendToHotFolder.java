@@ -86,16 +86,6 @@ public class SendToHotFolder {
             return false;
         }
              
-        //Log into the activity table
-        CDISActivityLog cdisActivity = new CDISActivityLog();
-        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-        cdisActivity.setCdisStatusCd("MIC");    
-        boolean activityLogged = cdisActivity.insertActivity();
-        
-        if (!activityLogged) {
-            logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
-            return false;
-        }   
         return true;
     }
     
@@ -130,22 +120,6 @@ public class SendToHotFolder {
                     
                 //Remove from the list of renditions to ingest, we dont want to bring this file over without a map entry
                 it.remove();
-                continue;
-            }
-                
-            //Log into the activity table
-            CDISActivityLog cdisActivity = new CDISActivityLog();
-            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("MIC");    
-            boolean activityLogged = cdisActivity.insertActivity();
-            if (!activityLogged) {
-                logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
-                 //Remove from the list of renditions to ingest, we dont want to bring this file over without an activity_log entry
-                it.remove();
-                
-                //rollback the database to remove the map Entry
-                try { if ( CDIS.getDamsConn() != null)  CDIS.getDamsConn().rollback(); } catch (Exception e) { e.printStackTrace(); }
-                
                 continue;
             }
             

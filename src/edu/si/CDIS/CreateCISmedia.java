@@ -104,12 +104,6 @@ public class CreateCISmedia {
                 errorLog.capture(cdisMap, "CRCDMP", "Error, Unable to create CDISMAP entry");  
                 return;
             }
-           
-            CDISActivityLog activityLog = new CDISActivityLog();
-            activityLog.setCdisMapId(cdisMap.getCdisMapId());
-            activityLog.setCdisStatusCd("MIC");
-            activityLog.insertActivity();
-            
         } 
         else {
             cdisMap.populateCdisCisMediaTypeId();

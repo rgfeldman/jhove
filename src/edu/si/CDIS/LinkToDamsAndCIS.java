@@ -213,14 +213,6 @@ public class LinkToDamsAndCIS {
                 return false;
             }
                
-            CDISActivityLog cdisActivity = new CDISActivityLog();
-            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("MIC");    
-            boolean activityLogged = cdisActivity.insertActivity();
-            if (!activityLogged) {
-                logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
-                return false;
-            }
         }
          
         boolean objectLinked = false;
