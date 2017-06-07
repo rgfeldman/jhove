@@ -394,8 +394,8 @@ public class CDIS {
                     metadata.sync();
                     break;
                     
-                case "createCISMedia" :
-                    CreateCISmedia createCisMedia = new CreateCISmedia();
+                case "createCisMedia" :
+                    CreateCisMedia createCisMedia = new CreateCisMedia();
                     createCisMedia.createMedia();
                     break;  
                 
