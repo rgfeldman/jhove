@@ -13,9 +13,13 @@ import edu.si.CDIS.CIS.AAA.Database.TblCollection;
 import edu.si.CDIS.Database.CDISRefIdMap;
 import edu.si.CDIS.CIS.TMS.Database.Objects;
 
-import com.lowagie.text.*;
+import com.lowagie.text.Document;
+import com.lowagie.text.Font;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
