@@ -9,21 +9,27 @@ The batch processes are run on a nightly basis, but can also be manually execute
 The batch process operation types are as follows:
 
 
-* SendToHotFolder  (Copies media to the appropriate DAMS hotfolder so it can be ingested into DAMS).
+* sendToHotFolder  (Copies media to the appropriate DAMS hotfolder so it can be ingested into DAMS).
 
-* LinkToDAMS	  (Establishes the link from media already in DAMS to a CDIS_MAP record and records the DAMS unique ID).
+* linkToDams	   (Establishes the link from media already in DAMS to a CDIS_MAP record and records the DAMS ID in the cdis tables).
 
-* LinkToCISMdpp   (Establishes a link from DAMS/CDIS media back to the CIS system by recording the CIS unique ID).
+* linkToCis        (Establishes the link from media already in the CIS to a CDIS_MAP record and records the CIS ID in the cdis tables).   
 
-* IngestToCIS   (Adds the CIS media record of a DAMS image to an existing object in the CIS).
+* linkToDamsAndCis (Performs linkToDams and linkToCis simultaneously).
 
-* MetaDataSync  (Brings over metadata from the CIS to the DAMS, Syncs the pathname in the CIS to point to the IDS derivative rather than the media drive).
+* createCisMedia   (Adds a brand new CIS media record based on an existing DAMS image and attaches it to an existing object in the CIS).
 
-* ThumbnailSync (replaces the thumbnail image in the CIS with the current thumbnail image in the DAMS system).
+* metadataSync     (Brings over metadata from the CIS into the DAMS).
 
-* Report        (generates and emails report showing the status/completion/errors of files through CDIS)
+* idsSync          (Updates the Cis with a reference to the IDS uan so the CIS no longer needs to retain an independant full-size copy of the image)
 
+* thumbnailSync    (replaces the thumbnail image in the CIS with the current thumbnail image in the DAMS system).
+
+* timeFrameReport  (generates and emails report showing the status/completion/errors of files through CDIS for a given timeframe)
+
+* vfcuDirReport   (generates and emails report showing the status/completion/errors of files through CDIS for a given vfcu source directory)
 
 The java code for ALL of these execution types is found in this repository and is to be compiled into a single .jar file.
+Each SI unit uses different combinations of the above operation types to fully integrate the DAMS with the CIS.
 
 
