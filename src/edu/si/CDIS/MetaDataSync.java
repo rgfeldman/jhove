@@ -613,8 +613,10 @@ public class MetaDataSync {
                continue;
             }
             
-            for (String relatedUoiId : mediaRecord.relatedUoiIds) {
-                noErrorFound = performTransactions(relatedUoiId, cdisMap, true);
+            if (mediaRecord.relatedUoiIds != null) {
+                for (String relatedUoiId : mediaRecord.relatedUoiIds) {
+                    noErrorFound = performTransactions(relatedUoiId, cdisMap, true);
+                }
             }
             
             if (! noErrorFound) {
