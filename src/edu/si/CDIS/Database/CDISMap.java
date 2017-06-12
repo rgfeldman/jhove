@@ -14,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.HashMap;
 
 public class CDISMap {
     private final static Logger logger = Logger.getLogger(CDIS.class.getName());
@@ -98,10 +97,6 @@ public class CDISMap {
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to insert into CDIS_MAP table", e );
                 return false;
-        }
-         
-        if (getDamsUoiid() == null) {
-        
         }
           
         sql =  "INSERT INTO cdis_map (" +
