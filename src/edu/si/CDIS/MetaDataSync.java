@@ -135,7 +135,7 @@ public class MetaDataSync {
                             //scrub the string to get rid of special characters that may not display properly in DAMS
                             resultVal = scrubString(resultVal);
                             
-                            if (! columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {
+                            if (! columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {                               
                                 //Truncate the string if the length of the string exceeds the DAMS column width
                                 if (resultVal.length() > columnLengthHashTable.get(destTableName, columnName)) {
                                     resultVal = resultVal.substring(0,columnLengthHashTable.get(destTableName, columnName));
@@ -408,12 +408,18 @@ public class MetaDataSync {
     */
     private boolean populateColumnWidthArray (String destTableName) {
           
-        String sql = "SELECT column_name, data_length " + 
+        String sql = "SELECT column_name, char_length " + 
                      "FROM all_tab_columns " +
                      "WHERE table_name = '" + destTableName + "' " + 
                      "AND owner = 'TOWNER' " +
-                     "AND data_type != 'DATE' " + 
+                     "AND data_type in ('VARCHAR2','CHAR') " + 
                      "AND column_name NOT IN ('UOI_ID','OWNING_UNIT_UNIQUE_NAME')" +
+                     "UNION " +
+                     "SELECT column_name, data_length " + 
+                     "FROM all_tab_columns " +
+                     "WHERE table_name = '" + destTableName + "' " + 
+                     "AND owner = 'TOWNER' " +
+                     "AND data_type = 'NUMBER' " + 
                      "UNION " +
                      "SELECT column_name, 16 " +
                      "FROM all_tab_columns " +
@@ -675,6 +681,8 @@ public class MetaDataSync {
         //substitute curly double quotes for regular double quotes
         newString = newString.replaceAll("\u201c", "\"");
         newString = newString.replaceAll("\u201d", "\"");
+        
+        newString = newString.replaceAll("\r\n", "\n");
         
 	//double any single quotes
 	newString = newString.replaceAll("'", "''");
