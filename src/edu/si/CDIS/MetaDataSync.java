@@ -321,6 +321,13 @@ public class MetaDataSync {
     
         Uois uois = new Uois();
         uois.setUoiid(linkedOrParChilduoiId);
+        if (CDIS.getProperty("overrideUpdtDt") != null) {
+            uois.setMetadataStateDt(CDIS.getProperty("overrideUpdtDt"));
+        }
+        else {
+            uois.setMetadataStateDt("SYSDATE");
+        }
+        
         int updateCount = uois.updateMetaDataStateDate();
         if (updateCount != 1) {
             ErrorLog errorLog = new ErrorLog ();

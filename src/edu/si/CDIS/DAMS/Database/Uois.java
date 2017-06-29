@@ -18,6 +18,7 @@ public class Uois {
     private Integer bitmapHeight;
     private Integer bitmapWidth; 
     private String masterObjMimeType; 
+    private String metadataStateDt;
     private String name;
     private String uoiid;
     
@@ -32,6 +33,10 @@ public class Uois {
     public String getMasterObjMimeType () {
         return this.masterObjMimeType;
     }
+    
+    public String getMetadataStateDt () {
+        return this.metadataStateDt;
+    }
         
     public String getName () {
         return this.name;
@@ -39,6 +44,10 @@ public class Uois {
     
     public String getUoiid () {
         return this.uoiid;
+    }
+    
+    public void setMetadataStateDt (String metadataStateDt) {
+        this.metadataStateDt = metadataStateDt;
     }
     
     public void setName (String name) {
@@ -109,7 +118,7 @@ public class Uois {
         
         // We have not met any of the above conditions, we should update for IDS
         String sql = "UPDATE towner.uois " +
-                    "SET metadata_state_dt = SYSDATE, " +
+                    "SET metadata_state_dt = " + getMetadataStateDt() + ", " +
                     "    metadata_state_user_id = '22246' " +
                     "WHERE uoi_id = '" + this.uoiid + "'";
         
