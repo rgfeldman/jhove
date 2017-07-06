@@ -24,7 +24,7 @@ import edu.si.CDIS.CIS.TMS.Database.Objects;
 import edu.si.CDIS.CIS.TMS.Thumbnail;
 import edu.si.CDIS.CIS.TMS.Database.MediaRenditions;
 import edu.si.CDIS.DAMS.MediaRecord;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SiAssetMetadata;
 import edu.si.CDIS.DAMS.Database.SiPreservationMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
@@ -315,7 +315,7 @@ public class LinkToDamsAndCIS {
                 }
             
                 if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?") ) {
-                    SiAssetMetaData siAsst = new SiAssetMetaData();
+                    SiAssetMetadata siAsst = new SiAssetMetadata();
                     siAsst.setUoiid(uoiId);
                     siAsst.populateOwningUnitUniqueName();
                     sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?",siAsst.getOwningUnitUniqueName());

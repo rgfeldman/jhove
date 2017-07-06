@@ -9,7 +9,7 @@ import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.CDISRefIdMap;
 import edu.si.CDIS.Database.CDISActivityLog;
 import edu.si.CDIS.utilties.ErrorLog;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SiAssetMetadata;
 import edu.si.CDIS.CIS.ArchiveSpace.CDISUpdates;
 import edu.si.Utils.XmlSqlConfig;
 import java.sql.PreparedStatement;
@@ -113,7 +113,7 @@ class CisUpdate {
         //If the RefID has not yet been sent, Update the CIS information
         if (numRefIdsSent == 0) {
             
-            SiAssetMetaData siAsst = new SiAssetMetaData();
+            SiAssetMetadata siAsst = new SiAssetMetadata();
             siAsst.setUoiid(cdisMap.getDamsUoiid());
             siAsst.populateOwningUnitUniqueName();
             

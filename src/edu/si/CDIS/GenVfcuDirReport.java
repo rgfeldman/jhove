@@ -5,7 +5,7 @@
  */
 package edu.si.CDIS;
 
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SiAssetMetadata;
 import edu.si.CDIS.Database.CDISErrorLog;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.VFCUMd5File;
@@ -731,7 +731,7 @@ public class GenVfcuDirReport {
                 String listing = null;
                 
                 CDISMap cdisMap = new CDISMap();
-                SiAssetMetaData siAsst = new SiAssetMetaData();
+                SiAssetMetadata siAsst = new SiAssetMetadata();
                 
                 cdisMap.setCdisMapId(mapId);
                 cdisMap.populateMapInfo();
