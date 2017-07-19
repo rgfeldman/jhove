@@ -13,7 +13,7 @@ import edu.si.CDIS.CIS.TMS.Database.MediaFiles;
 import edu.si.CDIS.CIS.TMS.Database.MediaXrefs;
 import edu.si.CDIS.CIS.TMS.Database.MediaFormats;
 
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SiAssetMetadata;
 import edu.si.CDIS.DAMS.Database.Uois;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.utilties.ErrorLog;
@@ -69,7 +69,7 @@ public class MediaRecord {
         
         MediaXrefs mediaXrefs = new MediaXrefs();
         MediaFiles mediaFiles = new MediaFiles();
-        SiAssetMetaData siAsst = new SiAssetMetaData();
+        SiAssetMetadata siAsst = new SiAssetMetadata();
         
         siAsst.setUoiid(uois.getUoiid());
         
@@ -324,7 +324,7 @@ public class MediaRecord {
     public boolean redirectPath(CDISMap cdisMap) {
         
         MediaFiles mediaFiles = new MediaFiles ();
-        SiAssetMetaData siAsst = new SiAssetMetaData();
+        SiAssetMetadata siAsst = new SiAssetMetadata();
         
         //Get the uoiid from the CDIS_map object and put into siAsst object
         siAsst.setUoiid(cdisMap.getDamsUoiid());

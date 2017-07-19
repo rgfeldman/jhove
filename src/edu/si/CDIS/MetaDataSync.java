@@ -46,6 +46,40 @@ public class MetaDataSync {
     private HashMap<String, ArrayList<String>> insertsByTableName; 
     
     
+    
+    private String calculateMaxIdsSize (String tmsRemarks) {
+        
+        String idsSize = null;
+        String defaultIdsSize = "3000";
+        
+        try {
+            Pattern p = Pattern.compile("MAX IDS SIZE = (\\d+)");
+            Matcher m = p.matcher(tmsRemarks);
+        
+            if (m.find()) {
+                idsSize = m.group(1);
+                //logger.log(Level.SEVERE, "Size in TMS set to: " + m.group(1));
+            }
+            else {
+                //We were unable to find size parameters with the legacy method.
+                return null;
+            }
+        
+            if (! (Integer.parseInt(idsSize) >= 0)) {
+                idsSize = defaultIdsSize;
+            }
+        
+            logger.log(Level.FINEST, "size: " + idsSize);
+
+        } catch(Exception e) {
+            logger.log(Level.ALL, "IDS size not an integer, setting external to default for Legacy Method");
+            idsSize = defaultIdsSize;
+        }       
+            
+        return idsSize;
+    }
+    
+    
     private String calculateMaxIdsSize (String tmsRemarks, String idsType) {
         
         String idsSize = null;
@@ -72,7 +106,7 @@ public class MetaDataSync {
                  }
              }
         
-            logger.log(Level.SEVERE, "size: " + idsSize);
+            logger.log(Level.FINEST, "size: " + idsSize);
 
         } catch(Exception e) {
             logger.log(Level.ALL, "IDS size not an integer, setting to default for " + idsType);
@@ -146,8 +180,17 @@ public class MetaDataSync {
                         switch (operationType) {
                             case "U":
                                 if (columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {
-                                    String internalSize = calculateMaxIdsSize(resultVal, "INTERNAL");
-                                    String externalSize = calculateMaxIdsSize(resultVal, "EXTERNAL");
+                                    String internalSize;
+                                    String externalSize;
+                                            
+                                    externalSize = calculateMaxIdsSize(resultVal);
+                                    if (externalSize != null) {
+                                        internalSize = "3000";
+                                    }
+                                    else {
+                                        internalSize = calculateMaxIdsSize(resultVal, "INTERNAL");
+                                        externalSize = calculateMaxIdsSize(resultVal, "EXTERNAL");
+                                    }
                                     
                                     populateUpdateRowForDams(destTableName, "INTERNAL_IDS_SIZE", internalSize, appendDelimter);
                                     populateUpdateRowForDams(destTableName, "MAX_IDS_SIZE", externalSize, appendDelimter);

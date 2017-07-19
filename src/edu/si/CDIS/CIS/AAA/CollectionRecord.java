@@ -9,7 +9,7 @@ import edu.si.CDIS.CDIS;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalMediaResource;
 import edu.si.CDIS.CIS.AAA.Database.TblDigitalResource;
 import edu.si.CDIS.CIS.AAA.Database.TblCollectionsOnlineImage;
-import edu.si.CDIS.DAMS.Database.SiAssetMetaData;
+import edu.si.CDIS.DAMS.Database.SiAssetMetadata;
 import edu.si.CDIS.DAMS.Database.TeamsLinks;
 import edu.si.CDIS.Database.CDISMap;
 import edu.si.CDIS.Database.MediaTypeConfigR;
@@ -25,7 +25,7 @@ public class CollectionRecord {
         
     public boolean pointToUans(CDISMap cdisMap) {
          
-        SiAssetMetaData siAsst = new SiAssetMetaData();
+        SiAssetMetadata siAsst = new SiAssetMetadata();
         //Get the uan 
         siAsst.setUoiid(cdisMap.getDamsUoiid());
         siAsst.populateOwningUnitUniqueName();
