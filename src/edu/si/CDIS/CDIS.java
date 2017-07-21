@@ -23,6 +23,12 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
 import org.w3c.dom.NodeList;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+
 
 public class CDIS {
     
@@ -36,6 +42,7 @@ public class CDIS {
     private static Properties properties;
     private static String siHoldingUnit;
     private static NodeList queryNodeList;
+    private static String configFile;
     
     public static NodeList getQueryNodeList() {
         return CDIS.queryNodeList;
@@ -170,8 +177,8 @@ public class CDIS {
         Handler fh;
             
         try {
-            fh = new FileHandler(CDIS.siHoldingUnit + "/log/CDISLog-" + CDIS.operationType + "_" + CDIS.projectCd + "_" + CDIS.batchNumber + ".txt");
-	
+            fh = new FileHandler(CDIS.siHoldingUnit + "/log/CDISLog-" + CDIS.operationType + "_" + this.configFile + "_" + CDIS.batchNumber + ".txt");
+            
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -194,7 +201,7 @@ public class CDIS {
     */
     private boolean readIni () {
         
-        String iniFile = CDIS.siHoldingUnit + "/conf/" + CDIS.projectCd + ".ini";
+        String iniFile = CDIS.siHoldingUnit + "/conf/" + CDIS.configFile + ".ini";
         
         logger.log(Level.FINER, "Loading ini file: " + iniFile);
                 
@@ -270,8 +277,9 @@ public class CDIS {
     */
     public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
                 
-        File folderDir = new File(CDIS.getProjectCd() + "/" + folder);
-        File[] logs = folderDir.listFiles();
+        File logfolderDir = new File(CDIS.siHoldingUnit + "/" + folder);
+        
+        File[] logs = logfolderDir.listFiles();
 	
         if (logs != null) {
             for(int i = 0; i < logs.length; i++) {
@@ -297,9 +305,7 @@ public class CDIS {
        
         CDIS cdis = new CDIS();
         
-        CDIS.operationType = args[0];
-        CDIS.siHoldingUnit = args[1];
-        CDIS.projectCd = args[2]; 
+        cdis.handleArguments(args);
         
         // Delete old log and report files
         cdis.deleteLogs("rpt","CDISRPT-",21);
@@ -329,6 +335,8 @@ public class CDIS {
                 return;
             }
             
+            CDIS.projectCd = CDIS.getProperty("projectCd");
+            
             boolean propsVerified = cdis.verifyProps ();
             if (! propsVerified) {
                 logger.log(Level.SEVERE, "Fatal Error: Required Property missing.  Exiting");
@@ -346,15 +354,6 @@ public class CDIS {
                 logger.log(Level.SEVERE, "Fatal Error: Unable to set Database Defaults");
                 return;
             }
-            
-            // Get the holding unit from the ProjectCode
-            ProjectHoldingUnitR projectHoldingUnit = new ProjectHoldingUnitR();
-            boolean unitFound = projectHoldingUnit.populateSiHoldingUnit();
-            if (! unitFound) {
-                logger.log(Level.SEVERE, "Fatal Error: Unable to get holding unit");
-                return;
-            }
-            CDIS.siHoldingUnit = projectHoldingUnit.getSiHoldingUnit(); 
             
             // read the XML config file
             XmlSqlConfig xml = new XmlSqlConfig();
@@ -438,6 +437,50 @@ public class CDIS {
             try { if ( CDIS.damsConn != null)  CDIS.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
     
+    }
+    
+    private void handleArguments (String[] args) {
+        
+        Options options = new Options();
+        
+        Option option = Option.builder("o")
+            .hasArg()
+            .required()
+            .argName("operationType")
+            .build();
+        options.addOption( option );
+        
+        option = Option.builder("c")
+            .hasArg()
+            .required()
+            .argName("configFile")
+            .build();
+        options.addOption( option );
+        
+        option = Option.builder("s")
+            .hasArg()
+            .required()
+            .argName("siHoldingUnit")
+            .build();
+        options.addOption( option );
+     
+        // create the parser
+        CommandLineParser parser = new DefaultParser();
+        try {
+            // parse the command line arguments
+            CommandLine line = parser.parse( options, args );
+            
+            CDIS.operationType = line.getOptionValue("o");
+            
+            this.configFile = line.getOptionValue( "c" );
+
+            CDIS.siHoldingUnit = line.getOptionValue( "s" );
+            
+        }
+        catch( Exception e ) {
+            // oops, something went wrong
+            System.err.println( "Parsing failed.  Reason: " + e.getMessage() );
+        }
     }
   
 }
