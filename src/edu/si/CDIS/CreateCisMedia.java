@@ -39,6 +39,7 @@ public class CreateCisMedia {
     private boolean populateNeverLinkedImages () {
         XmlSqlConfig xml = new XmlSqlConfig(); 
         xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        xml.setProjectCd(CDIS.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("DamsSelectList"); 

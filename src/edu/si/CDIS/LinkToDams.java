@@ -120,6 +120,7 @@ public class LinkToDams {
         
         //indicate the particular query we are interested in
         xml.setQueryTag("DamsSelectList"); 
+        xml.setProjectCd(CDIS.getProjectCd());
         
         //Loop through all of the queries for the current operation type
         for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {

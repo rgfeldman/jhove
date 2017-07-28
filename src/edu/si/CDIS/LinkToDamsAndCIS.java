@@ -294,9 +294,11 @@ public class LinkToDamsAndCIS {
       
         XmlSqlConfig xml = new XmlSqlConfig(); 
         xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        xml.setProjectCd(CDIS.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("getCISIdentifier");
+       
         
         //Loop through all of the queries for the current operation type
         for (int s = 0; s < CDIS.getQueryNodeList().getLength(); s++) {

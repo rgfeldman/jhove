@@ -147,6 +147,7 @@ public class SendToHotFolder {
         
         XmlSqlConfig xml = new XmlSqlConfig(); 
         xml.setOpQueryNodeList(CDIS.getQueryNodeList());
+        xml.setProjectCd(CDIS.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("idListToSend"); 
