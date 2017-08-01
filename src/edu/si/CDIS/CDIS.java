@@ -6,7 +6,6 @@
 package edu.si.CDIS;
 
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
-import edu.si.CDIS.Database.ProjectHoldingUnitR;
 import edu.si.Utils.XmlSqlConfig;
 import java.io.File;
 import java.io.FileInputStream;
@@ -109,8 +108,6 @@ public class CDIS {
             CDIS.damsConn = DriverManager.getConnection(CDIS.getProperty("damsConnString"), 
                                 CDIS.getProperty("damsUser"), passwd);
             
-            
-                
             logger.log(Level.INFO, "Connection to DAMS database established.");
             
             if (CDIS.getProperty("cisSourceDB").equals("none")) {
