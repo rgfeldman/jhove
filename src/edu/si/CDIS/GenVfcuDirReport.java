@@ -556,12 +556,12 @@ public class GenVfcuDirReport {
         String sql = null;
         
         if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
-            sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1) " +
+            sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1), base_path_vendor " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + masterMd5FileId;
         } 
         else {
-            sql = "SELECT file_path_ending " +
+            sql = "SELECT file_path_ending, base_path_vendor " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + masterMd5FileId;
         }
@@ -571,14 +571,19 @@ public class GenVfcuDirReport {
              ResultSet rs = stmt.executeQuery() ) {
 
             if (rs.next()) {
-                String strFilePathEnding = rs.getString(1);
-                //Add the records to the masterMd5Id list 
-                if (strFilePathEnding.contains("/")) {
-                      this.rptVendorDir = strFilePathEnding.replace("/", "-");
+                if (rs.getString(1) == null) {
+                    this.rptVendorDir = rs.getString(2).substring(rs.getString(2).lastIndexOf("/") + 1);
                 }
                 else {
-                      this.rptVendorDir = strFilePathEnding;
-                } 
+                    String strFilePathEnding = rs.getString(1);
+                    //Add the records to the masterMd5Id list 
+                    if (strFilePathEnding.contains("/")) {
+                        this.rptVendorDir = strFilePathEnding.replace("/", "-");
+                    }
+                    else {
+                        this.rptVendorDir = strFilePathEnding;
+                    }
+                }
             }        
             else {
                 throw new Exception();

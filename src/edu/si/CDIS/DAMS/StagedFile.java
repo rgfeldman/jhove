@@ -132,7 +132,15 @@ public class StagedFile {
     // Moves the staged file to the MASTER folder
     public boolean xferToHotFolder (String destination, Integer cdisMapId) {
         
-        String fileNamewithPath = getBasePath() + "/" + getPathEnding() + "/" + getFileName();
+        String fileNamewithPath;
+        
+        if (getPathEnding() == null) {
+            fileNamewithPath = getBasePath() + "/" + getFileName();
+        }
+        else {
+            fileNamewithPath = getBasePath() + "/" + getPathEnding() + "/" + getFileName();
+        }
+        
         String hotFolderDestStr = destination + "/" + getFileName();
         
         logger.log(Level.FINER,"File xferred from staging location: " + fileNamewithPath );
