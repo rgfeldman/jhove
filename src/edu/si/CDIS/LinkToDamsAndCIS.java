@@ -216,8 +216,8 @@ public class LinkToDamsAndCIS {
         }
          
         boolean objectLinked = false;
-        switch (CDIS.getProperty("cisSourceDB")) {
-            case "AAA" :
+        switch (CDIS.getProperty("cis")) {
+            case "aaa" :
                 if(CDIS.getProjectCd().equals("aaa_av")) {
                     objectLinked = linkObjectAaaAv(cdisMap.getCdisMapId(), cisIdentifier);
                 }
@@ -228,13 +228,13 @@ public class LinkToDamsAndCIS {
                     objectLinked = linkObjectAaaImage(cdisMap.getCdisMapId(), cisIdentifier);
                 }
                 break;
-            case "ASpace" :
+            case "aSpace" :
                 objectLinked = linkObjectAspace(cdisMap.getCdisMapId(), cisIdentifier);
                 break;
-            case "IRIS" :
+            case "iris" :
                 objectLinked = linkObjectIris(cdisMap.getCdisMapId(), cisIdentifier);
                 break;
-            case "TMS" :
+            case "tms" :
                 objectLinked = linkObjectTMS(cdisMap.getCdisMapId(), cisIdentifier);
                 //update the isColor/Dams flag
                 MediaRenditions mediaRenditions = new MediaRenditions();

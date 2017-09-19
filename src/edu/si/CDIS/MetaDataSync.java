@@ -413,7 +413,7 @@ public class MetaDataSync {
                 while (rs.next()) {
                     CDISMap cdisMap = new CDISMap();
                     
-                    if (CDIS.getProperty("cisSourceDB").equals("ASpace")){
+                    if (CDIS.getProperty("cis").equals("aSpace")){
                         CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
                         cdisRefIdMap.setRefId(rs.getString(1));
                         
@@ -639,7 +639,7 @@ public class MetaDataSync {
             
             CDISUpdates cdisUpdates = new CDISUpdates();
             //For ArchiveSpace, we need to prep the view that we get data from 
-            if (CDIS.getProperty("cisSourceDB").equals("ASpace")){
+            if (CDIS.getProperty("cis").equals("aSpace")){
                 
                 CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
                 cdisRefIdMap.setCdisMapId(cdisMap.getCdisMapId());
@@ -761,7 +761,7 @@ public class MetaDataSync {
         
         //Grab all the records that have been synced in the past, but have been updated in the CIS
         //  Must check first, some implementations do not even have a CIS to check
-        if (! CDIS.getProperty("cisSourceDB").equals("none")) {
+        if (! CDIS.getProperty("cis").equals("none")) {
             populateCisUpdatedMapIds();
         }
 

@@ -5,6 +5,7 @@
  */
 package edu.si.CDIS;
 
+import edu.si.CDIS.report.Generator;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import edu.si.Utils.XmlSqlConfig;
 import java.io.File;
@@ -52,7 +53,7 @@ public class CDIS {
     }
     
     public static Connection getCisConn() {
-        if (CDIS.getProperty("cisSourceDB").equals("none")) {
+        if (CDIS.getProperty("cis").equals("none")) {
             return CDIS.damsConn;
         }
         else if (CDIS.getProperty("linkFromDams") != null && 
@@ -110,7 +111,7 @@ public class CDIS {
             
             logger.log(Level.INFO, "Connection to DAMS database established.");
             
-            if (CDIS.getProperty("cisSourceDB").equals("none")) {
+            if (CDIS.getProperty("cis").equals("none")) {
                 logger.log(Level.INFO, "No CIS database sepecified, skipping connection to CIS");
                 return true;
             }
@@ -255,7 +256,7 @@ public class CDIS {
                                     "damsConnString",
                                     "damsUser",
                                     "damsPass",
-                                    "cisSourceDB"};
+                                    "cis"};
         
         for(int i = 0; i < requiredProps.length; i++) {
             String reqProp = requiredProps[i];
@@ -405,19 +406,15 @@ public class CDIS {
                     thumbnail.sync();
                     break;
                     
-                case "genVfcuDirReport" :
-                    GenVfcuDirReport vfcuReport = new GenVfcuDirReport();
-                    vfcuReport.generate();
-                    break;
-                    
-                case "genTimeframeReport" :
-                    GenTimeframeReport timeFrameReport = new GenTimeframeReport();
-                    timeFrameReport.generate();
-                    break;    
-                    
                 case "cisUpdate" :
                     CisUpdate cisUpdate = new CisUpdate();
                     cisUpdate.updateCisFromDams();
+                    break;
+                    
+                 case "vfcuDirReport" :
+                 case "timeframeReport" :    
+                    Generator generator = new Generator();
+                    generator.invoke();
                     break;
                     
                 default:     
@@ -460,7 +457,7 @@ public class CDIS {
             .argName("siHoldingUnit")
             .build();
         options.addOption( option );
-     
+        
         // create the parser
         CommandLineParser parser = new DefaultParser();
         try {

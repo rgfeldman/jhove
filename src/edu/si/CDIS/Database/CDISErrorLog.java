@@ -120,6 +120,8 @@ public class CDISErrorLog {
         return true;
     }
     
+    
+    
     public String returnDescription () {
         String description = null;
 
@@ -128,6 +130,29 @@ public class CDISErrorLog {
                      "     cdis_error_log b " +
                      "WHERE a.cdis_error_cd = b.cdis_error_cd " +
                      "AND b.cdis_error_log_id = " + getCdisErrorLogId();
+                     
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            if (rs.next()) {
+                description = rs.getString(1);
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to get error description", e );
+        }
+        return description;
+    }
+    
+    public String returnDescriptionForMapId () {
+        String description = null;
+
+        String sql = "SELECT a.description " +
+                     "FROM cdis_error_code_r a, " + 
+                     "     cdis_error_log b " +
+                     "WHERE a.cdis_error_cd = b.cdis_error_cd " +
+                     "AND b.cdis_map_id = " + getCdisMapId();
                      
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);

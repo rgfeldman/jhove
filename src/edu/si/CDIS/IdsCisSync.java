@@ -100,13 +100,13 @@ public class IdsCisSync {
                 //reset the indicator that shows if the path was reset successfully
                 boolean pathUpdated = false;
                  
-                switch (CDIS.getProperty("cisSourceDB")) {
-                    case "TMS" :
+                switch (CDIS.getProperty("cis")) {
+                    case "tms" :
                         MediaRecord mediaRecord = new MediaRecord();
                         pathUpdated = mediaRecord.redirectPath(cdisMap);
                         break;
                         
-                    case "AAA" :            
+                    case "aaa" :            
                         CollectionRecord collectionRecord = new CollectionRecord();      
                         pathUpdated = collectionRecord.pointToUans(cdisMap);
                         break;

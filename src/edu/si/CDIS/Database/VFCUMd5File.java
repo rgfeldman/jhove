@@ -21,6 +21,7 @@ public class VFCUMd5File {
     private String vendorMd5FileName;
     private Integer vfcuMd5FileId;
     private String filePathEnding;
+    private String basePathVendor;
     
     
     public String getFilePathEnding() {
@@ -52,6 +53,75 @@ public class VFCUMd5File {
         this.vfcuMd5FileId = vfcuMd5FileId;
     }
     
+    
+    public void populateBasePathVendor () {
+        
+        String sql =    "SELECT base_path_vendor " +
+                        "FROM   vfcu_md5_file " +
+                        "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                this.basePathVendor = rs.getString(1);
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain basePathVendor", e );
+        }
+        
+    }
+    
+    public void populateFilePathEnding () {
+        
+        String sql =    "SELECT file_path_ending " +
+                        "FROM   vfcu_md5_file " +
+                        "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+            ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                this.filePathEnding = rs.getString(1);
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain path ending", e );
+        }
+        
+    }
+    
+    
+    public Integer returnSubFileMd5Id () {
+        
+        Integer md5SubFileId = 0;     
+        String sql =    "SELECT vfcu_md5_file_id " +
+                            "FROM vfcu_md5_file " +
+                            "WHERE master_md5_file_id != vfcu_md5_file_id " +
+                            "AND master_md5_file_id = " + getMasterMd5FileId();
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+           
+            while (rs.next()) {
+                 md5SubFileId = rs.getInt(1);
+            }
+                
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to obtain child md5 ID from vfcu_md5_file", e );
+            return -1;
+        }
+        
+        return md5SubFileId;
+    }
+    
+    
     public int updateCdisRptDt () {
         
         int rowsUpdated = 0;
@@ -78,48 +148,4 @@ public class VFCUMd5File {
         
     }
     
-    public Integer returnSubFileMd5Id () {
-        
-        Integer md5SubFileId = 0;     
-        String sql =    "SELECT vfcu_md5_file_id " +
-                            "FROM vfcu_md5_file " +
-                            "WHERE master_md5_file_id != vfcu_md5_file_id " +
-                            "AND master_md5_file_id = " + getMasterMd5FileId();
-            
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-           
-            while (rs.next()) {
-                 md5SubFileId = rs.getInt(1);
-            }
-                
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to obtain child md5 ID from vfcu_md5_file", e );
-            return -1;
-        }
-        
-        return md5SubFileId;
-    }
-    
-    public void populateFilePathEnding () {
-        
-        String sql =    "SELECT file_path_ending " +
-                        "FROM   vfcu_md5_file " +
-                        "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
-        
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        
-        try (PreparedStatement pStmt = CDIS.getDamsConn().prepareStatement(sql);
-            ResultSet rs = pStmt.executeQuery() ) {
-            
-            if (rs.next()) {
-                this.filePathEnding = rs.getString(1);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain path ending", e );
-        }
-        
-    }
 }
