@@ -44,7 +44,7 @@ public class FailedSection implements DataSection {
         cdisErrorLog.setCdisMapId(cdisMap.getCdisMapId());
         
         String errorDesc = cdisErrorLog.returnDescriptionForMapId();
-        sectionTextData.add("File: " + cdisMap.getFileName() + "Error: " + errorDesc) ;
+        sectionTextData.add("File: " + cdisMap.getFileName() + " Error: " + errorDesc) ;
 
         return true;
     }
