@@ -32,5 +32,7 @@ public interface DisplayFormat  {
     public ArrayList<String> returnKeyValueList();
     
     public boolean updateDbComplete(String multiRptkeyValue);
+    
+    public String returnStatsListsHeader(String multiRptkeyValue);
         
 }

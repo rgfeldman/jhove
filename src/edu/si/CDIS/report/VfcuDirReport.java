@@ -211,4 +211,41 @@ public class VfcuDirReport implements DisplayFormat {
                 
     }
     
+    public String returnStatsListsHeader(String multiRptkeyValue) {
+        String sql;
+        String sdir = null;
+        
+        if (CDIS.getProperty("useMasterSubPairs").equals("true")) {
+            sql = "SELECT base_path_vendor || '/' || SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1) " +
+                    "FROM vfcu_md5_file " +
+                    "WHERE vfcu_md5_file_id = " + multiRptkeyValue;
+            } 
+        else {
+            sql = "SELECT base_path_vendor || '/' || file_path_ending " +
+                    "FROM vfcu_md5_file " +
+                    "WHERE vfcu_md5_file_id = " + multiRptkeyValue;
+        }
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
+        try (PreparedStatement stmt = CDIS.getDamsConn().prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery() ) {
+
+                if (rs.next()) {
+                    sdir = rs.getString(1);
+                }        
+                else {
+                    throw new Exception();
+                }
+              
+            }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to count errors for report", e);
+        }
+            
+        String sourceDir = "Source Directory: " + sdir;
+        
+        return sourceDir;
+    }
+          
 }

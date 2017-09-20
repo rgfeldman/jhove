@@ -121,6 +121,12 @@ public class Attachment extends Report  {
         List<DataSection> sections = new ArrayList<>();
         sections = displayFormat.sectionFactory(); 
         
+        String statHeader = displayFormat.returnStatsListsHeader(keyValue);
+        
+        if (statHeader != null) {
+            statsList.add(statHeader);
+        }
+        
         genData(sections);
         printStats();
         printSectionData(sections);
@@ -129,7 +135,7 @@ public class Attachment extends Report  {
     }
     
     public boolean genData (List<DataSection> sections) {
-
+                
         for (Iterator<DataSection> it = sections.iterator(); it.hasNext();) {
             DataSection section = it.next();
             try {

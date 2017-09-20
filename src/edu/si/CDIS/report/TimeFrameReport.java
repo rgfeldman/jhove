@@ -80,5 +80,9 @@ public class TimeFrameReport implements DisplayFormat {
     public boolean updateDbComplete (String multiRptkeyValue) {
         return true;
     }
+    
+    public String returnStatsListsHeader(String multiRptkeyValue) {
+        return "Statistics For the Report:";
+    }
            
 }
