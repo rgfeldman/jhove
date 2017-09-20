@@ -53,23 +53,25 @@ public class Generator {
             Report rpt = new Report();
             rpt.generate();
         }
+        else {
+            //There are possibly more than one report to generate per execution, loop through the keyvalues of the report
+            for (String keyValue : displayFormat.returnKeyValueList()) {
+                Report rpt = new Report();
+                rpt.setKeyValue(keyValue);
+                logger.log(Level.FINEST, "MultRpt Key Value: " + keyValue);
 
-        for (String keyValue : displayFormat.returnKeyValueList()) {
-            Report rpt = new Report();
-            rpt.setKeyValue(keyValue);
-            logger.log(Level.FINEST, "MultRpt Key Value: " + keyValue);
-
-            //check if all of the files have been physically moved
+                //check if all of the files have been physically moved
             
-            //Generate and Send the attachment
-            rpt.generate();
+                //Generate and Send the attachment
+                rpt.generate();
             
-            //update the database
-            boolean dbUpdated = displayFormat.updateDbComplete(keyValue);
+                //update the database
+                boolean dbUpdated = displayFormat.updateDbComplete(keyValue);
             
-            if (dbUpdated) {
-                //create emuReady.txt file
+                if (dbUpdated) {
+                    //create emuReady.txt file
                 
+                }
             }
         }        
     }
