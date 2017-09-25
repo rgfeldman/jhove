@@ -162,7 +162,7 @@ public class MediaFile {
             
             JhoveBase jb = new JhoveBase();
             
-            String configFile = DamsTools.getSiHoldingUnit() + "/conf/jhove_config.xml";
+            String configFile = DamsTools.getDirectoryName() + "/conf/jhove_config.xml";
             jb.init( configFile, null );
              
             jb.setEncoding( "utf-8" );

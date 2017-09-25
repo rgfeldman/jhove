@@ -66,7 +66,7 @@ public class Report extends Operation {
         DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmmss");
         timeStamp = df.format(new Date());
         
-        this.rptFile =  DamsTools.getSiHoldingUnit()+ "/rpt/VFCURPT-" + DamsTools.getProjectCd().toUpperCase() + "-" + timeStamp + ".rtf";
+        this.rptFile =  DamsTools.getDirectoryName()+ "/rpt/VFCURPT-" + DamsTools.getProjectCd().toUpperCase() + "-" + timeStamp + ".rtf";
         
         this.document = new Document();
          

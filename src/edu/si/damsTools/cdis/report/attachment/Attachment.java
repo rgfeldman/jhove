@@ -90,7 +90,7 @@ public class Attachment extends Report  {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
         
-        this.fileNameLoc =  DamsTools.getSiHoldingUnit()+ "/rpt/CDISRPT-" + DamsTools.getProjectCd().toUpperCase() + "-" + timeStamp + ".rtf";
+        this.fileNameLoc =  DamsTools.getDirectoryName()+ "/rpt/CDISRPT-" + DamsTools.getProjectCd().toUpperCase() + "-" + timeStamp + ".rtf";
         this.document = new Document();
          
         try {
