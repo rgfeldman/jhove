@@ -41,13 +41,9 @@ public class LinkToDams extends Operation {
     private String pathEnding;
     private Integer vfcuMd5FileId;
     HashMap <Integer, String> neverLinkedDamsIds; 
-    
-    XmlSqlConfig xml;
             
     public LinkToDams() {
-        xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+
     }
     
     
@@ -126,6 +122,9 @@ public class LinkToDams extends Operation {
     }
     
     private boolean populateUnlinkedMedia () {
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("DamsSelectList"); 

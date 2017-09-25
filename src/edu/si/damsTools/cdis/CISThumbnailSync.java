@@ -30,16 +30,15 @@ public class CISThumbnailSync extends Operation {
         Description:    Populate a list of thumnails that need to be generated/updated 
         RFeldman 3/2015
     */
-    
-    XmlSqlConfig xml;
             
     public CISThumbnailSync() {
-        xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+
     }
     
     private boolean populateIdsToUpdate () {
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("retrieveMapIds"); 

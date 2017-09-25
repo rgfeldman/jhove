@@ -28,13 +28,9 @@ public class CreateCisMedia extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList <String> uoiidsToLink;  
-    
-    XmlSqlConfig xml;
             
     public CreateCisMedia() {
-        xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+ 
     }
     
     
@@ -45,6 +41,10 @@ public class CreateCisMedia extends Operation {
     */
     
     private boolean populateNeverLinkedImages () {
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("DamsSelectList"); 

@@ -5,14 +5,12 @@
  */
 package edu.si.damsTools;
 
-import java.util.ArrayList;
 import edu.si.damsTools.vfcu.Report;
 import edu.si.damsTools.vfcu.Watcher;
-import edu.si.damsTools.vfcu.VendorFileCopy;
 import edu.si.damsTools.cdis.Operation;
-
-import java.util.logging.Logger;
+import edu.si.damsTools.vfcu.VendorFileCopy;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *

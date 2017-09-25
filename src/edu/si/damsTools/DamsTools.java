@@ -8,29 +8,31 @@ package edu.si.damsTools;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Properties; 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.logging.Level;
 import java.util.Date;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
+import java.util.ArrayList;
+import java.util.Properties; 
+
 import org.w3c.dom.NodeList;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.DefaultParser;
-import java.util.ArrayList;
+
+import edu.si.damsTools.utilities.XmlSqlConfig;
 
 
 import edu.si.damsTools.cdis.Operation;
-
 
 
 public class DamsTools {
@@ -43,7 +45,7 @@ public class DamsTools {
     private static String projectCd;
     private static String operationType;
     private static Properties properties;
-    private static String siHoldingUnit;
+    private static String directoryName;
     private static NodeList queryNodeList;
     private static String configFile;
     private static String application;
@@ -84,8 +86,8 @@ public class DamsTools {
         return DamsTools.properties.getProperty(property);
     }
 
-    public static String getSiHoldingUnit() {
-        return DamsTools.siHoldingUnit;
+    public static String getDirectoryName() {
+       return DamsTools.directoryName;
     }
 
     private void setBatchNumber (Long batchNumber) {
@@ -105,11 +107,11 @@ public class DamsTools {
         try {
             //connect to DAMS DB
                 //connect to CIS DB
-                String passwd = EncryptDecrypt.decryptString(DamsTools.getProperty(dbName + "DbPass"));
+                String passwd = EncryptDecrypt.decryptString(DamsTools.getProperty(dbName + "Pass"));
             
-                Class.forName(DamsTools.getProperty(dbName + "DbDriver"));
-                dbConn = DriverManager.getConnection(DamsTools.getProperty(dbName + "DbString"), 
-                                DamsTools.getProperty(dbName +"DbUser"), passwd);
+                Class.forName(DamsTools.getProperty(dbName + "Driver"));
+                dbConn = DriverManager.getConnection(DamsTools.getProperty(dbName + "ConnString"), 
+                                DamsTools.getProperty(dbName +"User"), passwd);
             
                 dbConn.setAutoCommit(false);
                 
@@ -126,6 +128,8 @@ public class DamsTools {
         
     }
     
+    
+    
     /*  Method :        setLogger
         Arguments:      
         Description:    establishes logger settings
@@ -138,7 +142,7 @@ public class DamsTools {
         Handler fh;
             
         try {
-            fh = new FileHandler(DamsTools.siHoldingUnit + "/log/CDISLog-" + DamsTools.operationType + "_" + this.configFile + "_" + DamsTools.batchNumber + ".txt");
+            fh = new FileHandler(DamsTools.directoryName + "/log/CDISLog-" + DamsTools.operationType + "_" + this.configFile + "_" + DamsTools.batchNumber + ".txt");
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -162,7 +166,7 @@ public class DamsTools {
     */
     private boolean readIni () {
         
-        String iniFile = DamsTools.siHoldingUnit + "/conf/" + DamsTools.configFile + ".ini";
+        String iniFile = DamsTools.directoryName + "/conf/" + DamsTools.configFile + ".ini";
         
         logger.log(Level.FINER, "Loading ini file: " + iniFile);
                 
@@ -218,6 +222,10 @@ public class DamsTools {
         ArrayList<String> reqProps = new ArrayList<>(); 
         reqProps = operation.returnRequiredProps();
         
+        reqProps.add("damsDbDriver");
+        reqProps.add("damsDbPass");
+        reqProps.add("damsDbUser");
+        
         if (reqProps != null) {
             for(String reqProp : reqProps) {
                 if(! DamsTools.properties.containsKey(reqProp)) {
@@ -237,7 +245,7 @@ public class DamsTools {
     */
     public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
                 
-        File logfolderDir = new File(DamsTools.siHoldingUnit + "/" + folder);
+        File logfolderDir = new File(DamsTools.directoryName + "/" + folder);
         
         File[] logs = logfolderDir.listFiles();
 	
@@ -319,20 +327,31 @@ public class DamsTools {
                 return;
             }
             
-            if (DamsTools.getProperty("damsDbDriver") != null) {
+            if (DamsTools.getProperty("damsDriver") != null) {
                 damsConn = damsTool.connectToDatabases("dams");
                 if (damsConn == null ) {
                     logger.log(Level.SEVERE, "Fatal Error: unable to connect to damsDb.  Exiting");
                     return;
                 }
             }
-            if (DamsTools.getProperty("cisDbDriver") != null) {
+            if (DamsTools.getProperty("cisDriver") != null) {
                 cisConn = damsTool.connectToDatabases("cis");
                 if (cisConn == null ) {
                     logger.log(Level.SEVERE, "Fatal Error: unable to connect to cisDb. Exiting");
                     return;
                 }
             }
+            
+            // read the XML config file.  This deos not belong here and will be removed
+            XmlSqlConfig xml = new XmlSqlConfig();
+            xml.setFileNameAndPath(DamsTools.directoryName + "/" + DamsTools.getProperty(DamsTools.operationType + "XmlFile"));
+            boolean xmlReturn = xml.read(DamsTools.getOperationType());
+            if (! xmlReturn) {
+                logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
+                return;
+             }
+              // save the queries in a Node List
+            DamsTools.queryNodeList = xml.getOpQueryNodeList();
             
             damsTool.operation.invoke();
 
@@ -393,7 +412,7 @@ public class DamsTools {
             
             DamsTools.application = line.getOptionValue("a");
             DamsTools.configFile = line.getOptionValue( "c" );
-            DamsTools.siHoldingUnit = line.getOptionValue( "d" );
+            DamsTools.directoryName = line.getOptionValue( "d" );
             DamsTools.operationType = line.getOptionValue("o");
             DamsTools.subOperation = line.getOptionValue( "s" );
         }

@@ -5,20 +5,22 @@
  */
 package edu.si.damsTools;
 
-import java.util.ArrayList;
-import edu.si.damsTools.cdis.SendToHotFolder;
-import edu.si.damsTools.cdis.LinkToDamsAndCIS;
-import edu.si.damsTools.cdis.LinkToCis;
-import edu.si.damsTools.cdis.MetaDataSync;
-import edu.si.damsTools.cdis.LinkToDams;
-import edu.si.damsTools.cdis.CreateCisMedia;
-import edu.si.damsTools.cdis.IdsCisSync;
 import edu.si.damsTools.cdis.CISThumbnailSync;
 import edu.si.damsTools.cdis.CisUpdate;
-import edu.si.damsTools.cdis.report.Generator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import edu.si.damsTools.cdis.CreateCisMedia;
+import edu.si.damsTools.cdis.IdsCisSync;
+import edu.si.damsTools.cdis.LinkToCis;
+import edu.si.damsTools.cdis.LinkToDams;
+import edu.si.damsTools.cdis.LinkToDamsAndCIS;
+import edu.si.damsTools.cdis.MetaDataSync;
 import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.cdis.report.Generator;
+import edu.si.damsTools.cdis.SendToHotFolder;
+
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 /**
  *

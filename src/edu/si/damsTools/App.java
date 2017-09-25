@@ -5,7 +5,6 @@
  */
 package edu.si.damsTools;
 
-import java.util.ArrayList;
 import edu.si.damsTools.cdis.Operation;
 
 /**

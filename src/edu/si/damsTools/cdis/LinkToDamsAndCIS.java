@@ -46,13 +46,9 @@ public class LinkToDamsAndCIS extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     HashMap <String, String> neverLinkedDamsIds;   
-    
-    XmlSqlConfig xml;
             
     public LinkToDamsAndCIS() {
-        xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+
     }
     
     
@@ -304,6 +300,10 @@ public class LinkToDamsAndCIS extends Operation {
     }
     
     private void processNeverLinkedList() {
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("getCISIdentifier");

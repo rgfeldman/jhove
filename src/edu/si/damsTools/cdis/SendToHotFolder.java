@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
+import org.w3c.dom.NodeList;
 
 /**
  *
@@ -36,13 +37,9 @@ public class SendToHotFolder extends Operation {
     private String hotFolderBaseName;
     private String fullMasterHotFolderNm;
     private File fullMasterHotFolder;
-    
-    XmlSqlConfig xml;
             
     public SendToHotFolder() {
-        xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+
     }
     
     
@@ -154,6 +151,10 @@ public class SendToHotFolder extends Operation {
         RFeldman 3/2015
     */
     private boolean populateNewMasterMediaList () {
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("idListToSend"); 
@@ -420,8 +421,7 @@ public class SendToHotFolder extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        
-        //add more required props here
+
         return reqProps;    
     }
 

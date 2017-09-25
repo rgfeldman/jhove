@@ -27,16 +27,16 @@ import edu.si.damsTools.DamsTools;
 public class LinkToCis extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
-    
-    XmlSqlConfig xml;
             
     public LinkToCis() {
-        xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+        
     }
     
     public void invoke () {
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("retrieveImagesToLink"); 

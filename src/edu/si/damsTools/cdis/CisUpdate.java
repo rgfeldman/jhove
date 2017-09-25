@@ -28,16 +28,15 @@ public class CisUpdate extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList<Integer> mapIdsToSync;
-    
-    XmlSqlConfig xml;
             
     public CisUpdate() {
-        xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
     }
     
     private boolean populateRefIdsToSync() {
+        
+        XmlSqlConfig xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("retrieveMapIds"); 

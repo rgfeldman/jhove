@@ -7,15 +7,10 @@ package edu.si.damsTools.cdis.report;
 
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.Operation;
 import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.VFCUMd5File;
-import edu.si.damsTools.cdis.report.DisplayFormat;
-import edu.si.damsTools.cdis.report.Report;
-import edu.si.damsTools.cdis.report.TimeFrameReport;
-import edu.si.damsTools.cdis.report.VfcuDirReport;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -122,6 +117,10 @@ public class Generator extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
+        
+        reqProps.add("damsDbDriver");
+        reqProps.add("damsDbPass");
+        reqProps.add("damsDbUser");
         
         //add more required props here
         return reqProps;    
