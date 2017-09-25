@@ -10,7 +10,7 @@ import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;

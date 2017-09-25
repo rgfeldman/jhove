@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.collect.Table.Cell;
+import java.sql.Connection;
 
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.database.CDISObjectMap;
@@ -23,7 +24,7 @@ import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.MediaRecord;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 import edu.si.damsTools.DamsTools;
 
 
@@ -46,6 +47,16 @@ public class MetaDataSync {
     private Table <String, String,String> insertRowForDams;
     private HashMap<String, ArrayList<String>> insertsByTableName; 
     
+    Connection sourceDb;
+    
+    public MetaDataSync() {
+        if (DamsTools.getProperty("mdsFromCdisDams") != null && DamsTools.getProperty("mdsFromCdisDams").equals("true")  ) {
+            sourceDb = DamsTools.getDamsConn();
+        }
+        else {
+            sourceDb = DamsTools.getDamsConn();
+        }
+    }
     
     
     private String calculateMaxIdsSize (String tmsRemarks) {
@@ -153,7 +164,7 @@ public class MetaDataSync {
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
-            try (PreparedStatement stmt = DamsTools.getCisConn().prepareStatement(sql);
+            try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
                 while (rs.next()) {
@@ -408,7 +419,7 @@ public class MetaDataSync {
             
             logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
             
-            try (PreparedStatement stmt = DamsTools.getCisConn().prepareStatement(xml.getSqlQuery());
+            try (PreparedStatement stmt = sourceDb.prepareStatement(xml.getSqlQuery());
             ResultSet rs = stmt.executeQuery() ) {
 
                 while (rs.next()) {
@@ -624,7 +635,7 @@ public class MetaDataSync {
             boolean noErrorFound = true;
             
             //commit with each iteration
-            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
             CDISMap cdisMap = new CDISMap();
             MediaRecord mediaRecord = new MediaRecord();

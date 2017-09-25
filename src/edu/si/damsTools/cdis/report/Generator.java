@@ -7,7 +7,7 @@ package edu.si.damsTools.cdis.report;
 
 
 import edu.si.damsTools.DamsTools;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.VFCUMd5File;

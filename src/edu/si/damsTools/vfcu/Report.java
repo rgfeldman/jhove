@@ -1,6 +1,6 @@
 package edu.si.damsTools.vfcu;
 
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 import edu.si.damsTools.vfcu.database.VFCUErrorLog;
 import edu.si.damsTools.vfcu.database.VFCUMd5File;
 import edu.si.damsTools.vfcu.database.VFCUMediaFile;

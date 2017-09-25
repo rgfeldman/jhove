@@ -19,7 +19,7 @@ import com.lowagie.text.rtf.style.RtfFont;
 import edu.si.damsTools.DamsTools; 
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.report.DisplayFormat;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

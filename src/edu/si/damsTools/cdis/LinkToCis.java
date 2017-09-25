@@ -8,7 +8,7 @@ package edu.si.damsTools.cdis;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 
 import java.util.logging.Logger;
 import java.util.HashMap;

@@ -10,7 +10,7 @@ import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.database.VFCUMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 
 import java.io.File;
 import java.sql.PreparedStatement;
@@ -100,7 +100,7 @@ public class SendToHotFolder {
             String uniqueMediaId = it.next();
             
             //Make sure the last transaction is committed
-            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
             logger.log(Level.FINEST, "Processing for uniqueMediaId: " + uniqueMediaId);
                 

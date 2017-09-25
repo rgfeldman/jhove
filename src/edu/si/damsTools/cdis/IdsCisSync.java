@@ -14,7 +14,7 @@ import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.aaa.CollectionRecord;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 
 
 import java.util.logging.Level;

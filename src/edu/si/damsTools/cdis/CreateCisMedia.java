@@ -5,8 +5,6 @@
  */
 package edu.si.damsTools.cdis;
 
-import edu.si.damsTools.Cdis;
-
 import edu.si.damsTools.cdis.cis.tms.database.MediaRenditions;
 import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
@@ -15,7 +13,7 @@ import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.database.CDISObjectMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;

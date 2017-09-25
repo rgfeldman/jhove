@@ -6,12 +6,10 @@
 package edu.si.damsTools.cdis.report;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.database.CDISMap;
-import edu.si.damsTools.cdis.database.VFCUMd5File;
 import edu.si.damsTools.cdis.report.attachment.DataSection;
 import edu.si.damsTools.cdis.report.attachment.FailedSection;
 import edu.si.damsTools.cdis.report.attachment.LinkedDamsSection;
-import edu.si.Utils.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;

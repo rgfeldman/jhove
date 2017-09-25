@@ -7,7 +7,6 @@ package edu.si.damsTools;
 
 import edu.si.damsTools.cdis.report.Generator;
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
-import edu.si.Utils.XmlSqlConfig;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties; 
@@ -31,7 +30,7 @@ import org.apache.commons.cli.DefaultParser;
 import java.util.ArrayList;
 import edu.si.damsTools.cdis.MetaDataSync;
 import edu.si.damsTools.cdis.LinkToCis;
-import edu.si.damsTools.cdis.SendToHotFolder;
+//import edu.si.damsTools.cdis.SendToHotFolder;
 import edu.si.damsTools.cdis.LinkToDamsAndCIS;
 import edu.si.damsTools.cdis.LinkToDams;
 import edu.si.damsTools.cdis.CISThumbnailSync;
@@ -43,14 +42,15 @@ import edu.si.damsTools.vfcu.VendorFileCopy;
 import edu.si.damsTools.vfcu.Watcher;
 
 
+
 public class DamsTools {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
    
     private static Long batchNumber;
     private static Connection cisConn;
-    private static String projectCd;
     private static Connection damsConn;
+    private static String projectCd;
     private static String operationType;
     private static Properties properties;
     private static String siHoldingUnit;
@@ -69,15 +69,6 @@ public class DamsTools {
     }
     
     public static Connection getCisConn() {
-        if (DamsTools.getProperty("cis").equals("none")) {
-            return DamsTools.damsConn;
-        }
-        else if (DamsTools.getProperty("linkFromDams") != null && 
-                DamsTools.getProperty("linkFromDams").equals("true") 
-                && operationType.equals("linkToDamsAndCis")) {
-            return DamsTools.damsConn;
-        }
-        else 
             return DamsTools.cisConn;
     }
     
@@ -115,66 +106,34 @@ public class DamsTools {
         Description:    establishes connections to both DAMS and CIS database s
         RFeldman 2/2015
     */
-    private boolean connectToDatabases () {
+    private Connection connectToDatabases (String dbName) {
+        
+        Connection dbConn = null;
         
         try {
             //connect to DAMS DB
-            String passwd = EncryptDecrypt.decryptString(DamsTools.getProperty("damsPass"));
-              
-            Class.forName(DamsTools.getProperty("damsDriver"));
-            DamsTools.damsConn = DriverManager.getConnection(DamsTools.getProperty("damsConnString"), 
-                                DamsTools.getProperty("damsUser"), passwd);
+            if (DamsTools.getProperty(dbName + "DbDriver") != null) {
+                //connect to CIS DB
+                String passwd = EncryptDecrypt.decryptString(DamsTools.getProperty(dbName + "DbPass"));
             
-            logger.log(Level.INFO, "Connection to DAMS database established.");
+                Class.forName(DamsTools.getProperty(dbName + "DbDriver"));
+                dbConn = DriverManager.getConnection(DamsTools.getProperty(dbName + "DbString"), 
+                                DamsTools.getProperty(dbName +"DbUser"), passwd);
             
-            if (DamsTools.getProperty("cis").equals("none")) {
-                logger.log(Level.INFO, "No CIS database sepecified, skipping connection to CIS");
-                return true;
+                dbConn.setAutoCommit(false);
+                
+                logger.log(Level.INFO, "Connection to " + dbName + " database established.");
+                
             }
-            
-            if (DamsTools.operationType.equals("linkToDamsAndCis") && ! (DamsTools.getProperty("linkFromDams") == null) 
-                    && DamsTools.getProperty("linkFromDams").equals("true") ) {
-                logger.log(Level.INFO, "No CIS connection needed, skipping connection to CIS");
-            }
-            
-            //connect to CIS DB
-            passwd = EncryptDecrypt.decryptString(DamsTools.getProperty("cisPass"));
-            
-            Class.forName(DamsTools.getProperty("cisDriver"));
-            DamsTools.cisConn = DriverManager.getConnection(DamsTools.getProperty("cisConnString"), 
-                                DamsTools.getProperty("cisUser"), passwd);
-            
-            logger.log(Level.INFO, "Connection to CIS database established.");
-            
-	}
+        }
             
 	catch (Exception e) 
         {
             logger.log(Level.SEVERE,"Failed to connect to DB:" + e.getMessage() + "\n");
-            return false;
         }
         
-        return true;
+        return dbConn;
         
-    }
-    
-    private boolean setDbDefaults () {
-        try { 
-            
-            if ( DamsTools.damsConn != null) {
-                DamsTools.damsConn.setAutoCommit(false);
-            }
-             
-            if ( DamsTools.cisConn != null) {
-                DamsTools.cisConn.setAutoCommit(false);                        
-            }
- 
-        } catch (Exception e) 
-            {
-                logger.log(Level.SEVERE,"Failed to connect to DB:" + e.getMessage() + "\n");
-                return false;
-            }
-        return true;
     }
     
     /*  Method :        setLogger
@@ -269,10 +228,6 @@ public class DamsTools {
         ArrayList<String> reqProps = new ArrayList<>();
         
         reqProps = appBehavior.returnRequiredProps();
-        reqProps.add("damsDriver");
-        reqProps.add("damsConnString");
-        reqProps.add("damsUser");
-        reqProps.add("damsPass");
         
         for(String reqProp : reqProps) {
             if(! DamsTools.properties.containsKey(reqProp)) {
@@ -315,12 +270,13 @@ public class DamsTools {
             case "CDIS":
                 appBehavior = new Cdis();
                 break;
-            case "CFVU":   
+            case "VFCU":   
                 appBehavior = new Vfcu();
                 break;
         }
         
     }
+    
     
     /*  Method :        main
         Arguments:      
@@ -341,7 +297,7 @@ public class DamsTools {
         app.deleteLogs("rpt", app.appBehavior.returnCapAppName() + "",21);
         app.deleteLogs("log", app.appBehavior.returnCapAppName() + "",21);
         
-        try {
+        /*try {
         
             DamsTools.properties = new Properties();
               
@@ -373,32 +329,24 @@ public class DamsTools {
                 return;
             }
         
-            boolean databaseConnected = app.connectToDatabases();
-            if (! databaseConnected) {
-                logger.log(Level.SEVERE, "Fatal Error: Failure to Connect to database");
-                return;
-            }
+            Connection damsConn = app.connectToDatabases("dams");
+            Connection cisConn = app.connectToDatabases("cis");
             
-            boolean dbDefaultsSet = app.setDbDefaults();
-            if (! dbDefaultsSet) {
-                logger.log(Level.SEVERE, "Fatal Error: Unable to set Database Defaults");
-                return;
-            }
+            MAKE CIS DB and DAMS DB part of the BASE CLASS, and make it GLOBAL instead of a private VARIABLE
             
-            // read the XML config file
-            XmlSqlConfig xml = new XmlSqlConfig();
-            xml.setFileNameAndPath(siHoldingUnit + "/" + DamsTools.getProperty(DamsTools.operationType + "XmlFile"));
-            boolean xmlReturn = xml.read(DamsTools.getOperationType());
-            if (! xmlReturn) {
-                logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
-                return;
-            }
-            // save the queries in a Node List
-            DamsTools.queryNodeList = xml.getOpQueryNodeList();
+            THEN MOVE FACTOR DETERMINING WHICH IS TARGET AND WHICH IS SOURCE
+            to CONSTRUCTOR OF each operation type, constructor will FIGURE Out WHICH DATABASE IS WHICH
+            MOVE THIS TO CONTRUCTOR OF OPERATION....THEN WILL INHERIT FROMTHERE
+
             
-            switch (DamsTools.operationType) {
+            //if (! databaseConnected) {
+            //    logger.log(Level.SEVERE, "Fatal Error: Failure to Connect to database");
+            //    return;
+           // }
+            
+           /* switch (DamsTools.operationType) {
                 
-                case "sendToHotFolder" :   
+                case "sendToHotFolder" :
                     SendToHotFolder sendToHotFolder = new SendToHotFolder();
                     sendToHotFolder.sendForingest(); 
                     break;
@@ -470,6 +418,7 @@ public class DamsTools {
                     return;
             }
             
+            
             logger.log(Level.INFO, DamsTools.getOperationType() + " Complete");
  
         } catch (Exception e) {
@@ -478,6 +427,7 @@ public class DamsTools {
             try { if ( DamsTools.cisConn != null)  DamsTools.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.damsConn != null)  DamsTools.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
+        */
     
     }
     
