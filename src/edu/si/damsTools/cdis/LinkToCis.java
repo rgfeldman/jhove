@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
+import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
 
@@ -23,15 +24,19 @@ import edu.si.damsTools.DamsTools;
  *
  * @author rfeldman
  */
-public class LinkToCis {
+public class LinkToCis extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    public void link () {
-        
-        XmlSqlConfig xml = new XmlSqlConfig(); 
+    XmlSqlConfig xml;
+            
+    public LinkToCis() {
+        xml = new XmlSqlConfig(); 
         xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
         xml.setProjectCd(DamsTools.getProjectCd());
+    }
+    
+    public void invoke () {
         
         //indicate the particular query we are interested in
         xml.setQueryTag("retrieveImagesToLink"); 
@@ -131,6 +136,14 @@ public class LinkToCis {
                 logger.log(Level.FINER, "Error: unable to validate checksums", e );
                 return false;
         }
+    }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
     }
     
 }

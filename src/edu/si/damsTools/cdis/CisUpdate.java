@@ -24,16 +24,20 @@ import edu.si.damsTools.DamsTools;
  * @author rfeldman
  */
 
-public class CisUpdate {
+public class CisUpdate extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList<Integer> mapIdsToSync;
     
-    private boolean populateRefIdsToSync() {
-        
-        XmlSqlConfig xml = new XmlSqlConfig(); 
+    XmlSqlConfig xml;
+            
+    public CisUpdate() {
+        xml = new XmlSqlConfig(); 
         xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
         xml.setProjectCd(DamsTools.getProjectCd());
+    }
+    
+    private boolean populateRefIdsToSync() {
         
         //indicate the particular query we are interested in
         xml.setQueryTag("retrieveMapIds"); 
@@ -170,7 +174,7 @@ public class CisUpdate {
          
     }
     
-    public void updateCisFromDams() {
+    public void invoke() {
         
         mapIdsToSync = new ArrayList<>();
         
@@ -184,4 +188,13 @@ public class CisUpdate {
         try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
         
     }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
+    }
+        
 }

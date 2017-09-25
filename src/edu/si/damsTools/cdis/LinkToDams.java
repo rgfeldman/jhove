@@ -27,11 +27,12 @@ import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
 
 
-public class LinkToDams {
+public class LinkToDams extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
@@ -40,6 +41,15 @@ public class LinkToDams {
     private String pathEnding;
     private Integer vfcuMd5FileId;
     HashMap <Integer, String> neverLinkedDamsIds; 
+    
+    XmlSqlConfig xml;
+            
+    public LinkToDams() {
+        xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
+    }
+    
     
     private void logIngestFailedFile (String filename) {
         logger.log(Level.FINER, "FailedFileName found: " + filename);
@@ -116,12 +126,9 @@ public class LinkToDams {
     }
     
     private boolean populateUnlinkedMedia () {
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("DamsSelectList"); 
-        xml.setProjectCd(DamsTools.getProjectCd());
         
         //Loop through all of the queries for the current operation type
         for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
@@ -152,7 +159,7 @@ public class LinkToDams {
         
     }
     
-    public void link () {
+    public void invoke () {
         
         this.neverLinkedDamsIds = new HashMap <>();
         
@@ -300,4 +307,12 @@ public class LinkToDams {
         return true;
     }
     
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
+    }
+        
 }

@@ -7,20 +7,26 @@ package edu.si.damsTools.cdis.report;
 
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.Operation;
 import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.VFCUMd5File;
+import edu.si.damsTools.cdis.report.DisplayFormat;
+import edu.si.damsTools.cdis.report.Report;
+import edu.si.damsTools.cdis.report.TimeFrameReport;
+import edu.si.damsTools.cdis.report.VfcuDirReport;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import edu.si.damsTools.cdis.Operation;
 
 /**
  *
  * @author rfeldman
  */
-public class Generator {
+public class Generator extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     protected DisplayFormat displayFormat;  
@@ -112,5 +118,13 @@ public class Generator {
 
         return vfcuMd5FileList;
     } 
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
+    }
     
 }

@@ -24,12 +24,20 @@ import edu.si.damsTools.DamsTools;
 
 
 // This is the main entrypoint for syncing the image file and image file path in TMS
-public class IdsCisSync {
+public class IdsCisSync extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
   
     private ArrayList<Integer> mapIdsToSync;
-        
-    public void sync() {
+
+    XmlSqlConfig xml;
+            
+    public IdsCisSync() {
+        xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
+    }
+    
+    public void invoke() {
     	
         mapIdsToSync = new ArrayList<>();
 
@@ -46,10 +54,6 @@ public class IdsCisSync {
     
     // Get list of images that require sync file path to be updated
     private boolean getNeverSyncedImagePath () {
-        
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("getMapIds"); 
@@ -134,5 +138,13 @@ public class IdsCisSync {
                     logger.log(Level.FINER, "Error in IDS Sync loop", e);
             }
         }
+    }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
     }
 }

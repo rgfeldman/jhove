@@ -17,12 +17,14 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.Operation;
+import java.util.ArrayList;
 
 /**
  *
  * @author rfeldman
  */
-public class VendorFileCopy {
+public class VendorFileCopy extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());    
     
@@ -150,7 +152,7 @@ public class VendorFileCopy {
         
     }
     
-    public void validateAndCopy() {
+    public void invoke () {
     
         //Assign database entry rows to a batch
         VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
@@ -186,5 +188,13 @@ public class VendorFileCopy {
         //do final validations and status entries that need to be done AFTER the whole batch was xferred
         finalValidations();
     }             
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
+    }
     
 }

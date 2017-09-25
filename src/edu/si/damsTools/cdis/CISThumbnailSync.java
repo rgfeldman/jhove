@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
 
 
-public class CISThumbnailSync {
+public class CISThumbnailSync extends Operation {
 
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
@@ -31,11 +31,15 @@ public class CISThumbnailSync {
         RFeldman 3/2015
     */
     
-    private boolean populateIdsToUpdate () {
-        
-        XmlSqlConfig xml = new XmlSqlConfig(); 
+    XmlSqlConfig xml;
+            
+    public CISThumbnailSync() {
+        xml = new XmlSqlConfig(); 
         xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
         xml.setProjectCd(DamsTools.getProjectCd());
+    }
+    
+    private boolean populateIdsToUpdate () {
         
         //indicate the particular query we are interested in
         xml.setQueryTag("retrieveMapIds"); 
@@ -74,7 +78,7 @@ public class CISThumbnailSync {
         Description:    CISThumbnailSync sync driver 
         RFeldman 3/2015
     */
-    public void sync () {
+    public void invoke () {
         
         this.mapIdsToSync = new ArrayList <>();
         
@@ -113,5 +117,12 @@ public class CISThumbnailSync {
         
     }
     
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
+    }
     
 }

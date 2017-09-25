@@ -23,12 +23,13 @@ import java.util.logging.Logger;
 import java.util.EnumSet;
 import java.nio.file.FileVisitOption;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.Operation;
 
 /**
  *
  * @author rfeldman
  */
-public class Watcher {
+public class Watcher extends Operation{
 
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());  
     
@@ -113,7 +114,7 @@ public class Watcher {
     }
     
     
-    public void watchForNewMd5() {  
+    public void invoke() {  
      
         VendorMd5File md5File = new VendorMd5File();
         md5File.setBasePathVendor(DamsTools.getProperty("vendorBaseDir"));
@@ -146,5 +147,13 @@ public class Watcher {
         
         try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
         
-   }   
+    }   
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
+    }
 }

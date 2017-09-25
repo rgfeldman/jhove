@@ -23,11 +23,19 @@ import edu.si.damsTools.DamsTools;
 
 
 
-public class CreateCisMedia {
+public class CreateCisMedia extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList <String> uoiidsToLink;  
+    
+    XmlSqlConfig xml;
+            
+    public CreateCisMedia() {
+        xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
+    }
     
     
     /*  Method :        populateNeverLinkedImages
@@ -37,9 +45,6 @@ public class CreateCisMedia {
     */
     
     private boolean populateNeverLinkedImages () {
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("DamsSelectList"); 
@@ -177,7 +182,7 @@ public class CreateCisMedia {
         Description:    The main driver for the ingest to CIS process 
         RFeldman 2/2015
     */
-    public void createMedia () {
+    public void invoke () {
         
         this.uoiidsToLink = new ArrayList<>();
         
@@ -197,6 +202,14 @@ public class CreateCisMedia {
         
         try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
          
+    }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
     }
      
 }

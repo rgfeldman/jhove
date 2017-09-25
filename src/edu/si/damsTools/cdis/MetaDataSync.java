@@ -28,7 +28,7 @@ import edu.si.damsTools.utilities.XmlSqlConfig;
 import edu.si.damsTools.DamsTools;
 
 
-public class MetaDataSync {
+public class MetaDataSync extends Operation{
 
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
@@ -58,7 +58,7 @@ public class MetaDataSync {
         }
     }
     
-    
+   
     private String calculateMaxIdsSize (String tmsRemarks) {
         
         String idsSize = null;
@@ -763,7 +763,7 @@ public class MetaDataSync {
         Description:    The main driver for the sync operation Type 
         RFeldman 2/2015
     */
-    public void sync() {
+    public void invoke() {
 
         // initialize uoiid list for sync
         cdisMapIdsToSync = new ArrayList<>();
@@ -829,6 +829,14 @@ public class MetaDataSync {
         
         return recordsUpdated;
 
+    }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
     }
     
 }

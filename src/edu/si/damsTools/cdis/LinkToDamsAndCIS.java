@@ -36,21 +36,32 @@ import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.sql.ResultSetMetaData;
 
+import java.util.ArrayList;
+
 import edu.si.damsTools.DamsTools;
 
    
-public class LinkToDamsAndCIS {
+public class LinkToDamsAndCIS extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     HashMap <String, String> neverLinkedDamsIds;   
+    
+    XmlSqlConfig xml;
+            
+    public LinkToDamsAndCIS() {
+        xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
+    }
+    
     
     /*  Method :       linkToCIS
         Arguments:      The CDIS object, and the StatisticsReport object
         Description:    link to CIS operation specific code starts here
         RFeldman 2/2015
     */
-    public void link () {
+    public void invoke () {
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsIds = new HashMap <>();
@@ -293,10 +304,6 @@ public class LinkToDamsAndCIS {
     }
     
     private void processNeverLinkedList() {
-      
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
         
         //indicate the particular query we are interested in
         xml.setQueryTag("getCISIdentifier");
@@ -416,6 +423,14 @@ public class LinkToDamsAndCIS {
 		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
             }
         }
+    }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
     }
     
 }

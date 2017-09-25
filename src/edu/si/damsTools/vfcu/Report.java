@@ -36,6 +36,7 @@ import javax.mail.Message;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
+import edu.si.damsTools.cdis.Operation;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -43,7 +44,7 @@ import javax.mail.Transport;
  * and open the template in the editor.
  */
 
-public class Report {
+public class Report extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
    
     private Integer currentMd5FileId;
@@ -132,7 +133,7 @@ public class Report {
         
     }
     
-    public void generate () {
+    public void invoke () {
         
         VFCUMd5File vfcuMd5File = new VFCUMd5File();
         masterMd5Ids = new ArrayList<> () ;
@@ -567,5 +568,13 @@ public class Report {
                 logger.log(Level.FINEST, "ERROR",e);
             }
         }     
+    }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
     }
 }

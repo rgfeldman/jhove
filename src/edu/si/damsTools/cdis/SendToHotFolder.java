@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
 
@@ -26,7 +27,7 @@ import edu.si.damsTools.DamsTools;
  *
  * @author rfeldman
  */
-public class SendToHotFolder {
+public class SendToHotFolder extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
@@ -35,6 +36,14 @@ public class SendToHotFolder {
     private String hotFolderBaseName;
     private String fullMasterHotFolderNm;
     private File fullMasterHotFolder;
+    
+    XmlSqlConfig xml;
+            
+    public SendToHotFolder() {
+        xml = new XmlSqlConfig(); 
+        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        xml.setProjectCd(DamsTools.getProjectCd());
+    }
     
     
     private void createReadyFile () {
@@ -146,10 +155,6 @@ public class SendToHotFolder {
     */
     private boolean populateNewMasterMediaList () {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
-        
         //indicate the particular query we are interested in
         xml.setQueryTag("idListToSend"); 
         
@@ -260,7 +265,7 @@ public class SendToHotFolder {
         Description:    The main entrypoint or 'driver' for the ingestToDams operation Type
         RFeldman 3/2015
     */
-     public void sendForingest () {
+     public void invoke () {
   
         this.masterMediaIds = new LinkedHashMap<>();
         
@@ -411,4 +416,13 @@ public class SendToHotFolder {
         }
         return true;
     }
+    
+    public ArrayList<String> returnRequiredProps () {
+        
+        ArrayList<String> reqProps = new ArrayList<>();
+        
+        //add more required props here
+        return reqProps;    
+    }
+
 }
