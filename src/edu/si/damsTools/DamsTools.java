@@ -22,14 +22,11 @@ import java.util.logging.SimpleFormatter;
 import java.util.ArrayList;
 import java.util.Properties; 
 
-import org.w3c.dom.NodeList;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.DefaultParser;
-
-import edu.si.damsTools.utilities.XmlSqlConfig;
 
 
 import edu.si.damsTools.cdis.Operation;
@@ -46,17 +43,12 @@ public class DamsTools {
     private static String operationType;
     private static Properties properties;
     private static String directoryName;
-    private static NodeList queryNodeList;
     private static String configFile;
     private static String application;
     private static String subOperation;
     
     private App app;
     private Operation operation;
-    
-    public static NodeList getQueryNodeList() {
-        return DamsTools.queryNodeList;
-    }
     
     public static String getProjectCd() {
         return DamsTools.projectCd;
@@ -222,9 +214,9 @@ public class DamsTools {
         ArrayList<String> reqProps = new ArrayList<>(); 
         reqProps = operation.returnRequiredProps();
         
-        reqProps.add("damsDbDriver");
-        reqProps.add("damsDbPass");
-        reqProps.add("damsDbUser");
+        reqProps.add("damsDriver");
+        reqProps.add("damsPass");
+        reqProps.add("damsUser");
         
         if (reqProps != null) {
             for(String reqProp : reqProps) {
@@ -340,23 +332,12 @@ public class DamsTools {
                     logger.log(Level.SEVERE, "Fatal Error: unable to connect to cisDb. Exiting");
                     return;
                 }
-            }
-            
-            // read the XML config file.  This deos not belong here and will be removed
-            XmlSqlConfig xml = new XmlSqlConfig();
-            xml.setFileNameAndPath(DamsTools.directoryName + "/" + DamsTools.getProperty(DamsTools.operationType + "XmlFile"));
-            boolean xmlReturn = xml.read(DamsTools.getOperationType());
-            if (! xmlReturn) {
-                logger.log(Level.SEVERE, "Fatal Error: unable to read/parse sql xml file");
-                return;
-             }
-              // save the queries in a Node List
-            DamsTools.queryNodeList = xml.getOpQueryNodeList();
+            } 
             
             damsTool.operation.invoke();
 
             logger.log(Level.INFO, DamsTools.getOperationType() + " Complete");
-        
+            
         } catch (Exception e) {
                 e.printStackTrace();
         } finally {
@@ -421,5 +402,4 @@ public class DamsTools {
             System.err.println( "Parsing failed.  Reason: " + e.getMessage() );
         }
     }
-  
 }

@@ -1,6 +1,5 @@
 package edu.si.damsTools.vfcu;
 
-import edu.si.damsTools.utilities.XmlSqlConfig;
 import edu.si.damsTools.vfcu.database.VFCUErrorLog;
 import edu.si.damsTools.vfcu.database.VFCUMd5File;
 import edu.si.damsTools.vfcu.database.VFCUMediaFile;
@@ -37,6 +36,8 @@ import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
 import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -57,6 +58,7 @@ public class Report extends Operation {
     private String rptShrtVendorDir;
     private String rptFullVendorDir;
     private String statsHeader;
+    private ArrayList <XmlData> xmlObjList;
     
     private boolean create () {
         
@@ -134,6 +136,10 @@ public class Report extends Operation {
     }
     
     public void invoke () {
+        
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         VFCUMd5File vfcuMd5File = new VFCUMd5File();
         masterMd5Ids = new ArrayList<> () ;
@@ -240,43 +246,32 @@ public class Report extends Operation {
     
     
     private boolean populateMasterMd5FileIds () {
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd()); 
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getMasterMd5Ids"); 
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","getMasterMd5Ids");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return false;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }      
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            String sql = xml.getSqlQuery();
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                //Add the value from the database to the list
-                while (rs.next()) {
-                    if (rs.getInt(1) > 0) {
-                        masterMd5Ids.add(rs.getInt(1));
-                    }
+            //Add the value from the database to the list
+            while (rs.next()) {
+                if (rs.getInt(1) > 0) {
+                    masterMd5Ids.add(rs.getInt(1));
                 }
             }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
-                return false;
-            }
         }
-        return true;
-       
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+            return false;
+        }
+        return true; 
     }
     
     

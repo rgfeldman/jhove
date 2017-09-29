@@ -13,13 +13,14 @@ import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.database.CDISObjectMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 
 
@@ -28,6 +29,7 @@ public class CreateCisMedia extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList <String> uoiidsToLink;  
+    private ArrayList <XmlData> xmlObjList;
             
     public CreateCisMedia() {
  
@@ -41,41 +43,30 @@ public class CreateCisMedia extends Operation {
     */
     
     private boolean populateNeverLinkedImages () {
-        
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("DamsSelectList"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }       
+           
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","DamsSelectList");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return false;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
             
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                //Add the value from the database to the list
-                while (rs.next()) {
-                    uoiidsToLink.add(rs.getString("UOI_ID"));
-                }
-            }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error, unable to obtain list of UOI_IDs to integrate", e);
-                return false;
+            //Add the value from the database to the list
+            while (rs.next()) {
+                uoiidsToLink.add(rs.getString("UOI_ID"));
             }
         }
-        
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error, unable to obtain list of UOI_IDs to integrate", e);
+            return false;
+        }
         return true;
-        
     }
     
     /*  Method :        processUAN
@@ -183,6 +174,10 @@ public class CreateCisMedia extends Operation {
         RFeldman 2/2015
     */
     public void invoke () {
+ 
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         this.uoiidsToLink = new ArrayList<>();
         
@@ -207,6 +202,12 @@ public class CreateCisMedia extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
+        reqProps.add("cis");
+        reqProps.add("cisDriver");
+        reqProps.add("cisConnString");
+        reqProps.add("cisUser");
+        reqProps.add("cisPass");
+        reqProps.add("mediaTypeConfigId");
         
         //add more required props here
         return reqProps;    

@@ -8,7 +8,6 @@ package edu.si.damsTools.cdis;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -18,6 +17,8 @@ import java.util.logging.Level;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 
 /**
@@ -27,6 +28,8 @@ import edu.si.damsTools.DamsTools;
 public class LinkToCis extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
+    
+    private ArrayList <XmlData> xmlObjList;
             
     public LinkToCis() {
         
@@ -34,39 +37,33 @@ public class LinkToCis extends Operation {
     
     public void invoke () {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("retrieveImagesToLink"); 
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","retrieveImagesToLink");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return ;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
         HashMap<Integer, String> mapIdsToIntegrate = new HashMap<>();
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }  
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                //Add the value from the database to the list
-                while (rs.next()) {
-                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
-                     mapIdsToIntegrate.put(rs.getInt(1), rs.getString(2));
-                }
+            //Add the value from the database to the list
+            while (rs.next()) {
+                logger.log(Level.ALL, "Adding to list to sync: " + rs.getString(1));
+                mapIdsToIntegrate.put(rs.getInt(1), rs.getString(2));
             }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
-                return;
-            }
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+            return;
         }
         
         //  Update status and date in CDIS activity log.

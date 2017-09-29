@@ -33,19 +33,21 @@ import edu.si.damsTools.cdis.database.CDISRefIdMap;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.VFCUMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.sql.ResultSetMetaData;
 
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
    
 public class LinkToDamsAndCIS extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    HashMap <String, String> neverLinkedDamsIds;   
+    HashMap <String, String> neverLinkedDamsIds; 
+    private ArrayList <XmlData> xmlObjList;
             
     public LinkToDamsAndCIS() {
 
@@ -58,6 +60,10 @@ public class LinkToDamsAndCIS extends Operation {
         RFeldman 2/2015
     */
     public void invoke () {
+        
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsIds = new HashMap <>();
@@ -220,8 +226,7 @@ public class LinkToDamsAndCIS extends Operation {
                 ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
                 return false;
-            }
-               
+            }        
         }
          
         boolean objectLinked = false;
@@ -279,7 +284,6 @@ public class LinkToDamsAndCIS extends Operation {
             
         }
         
-        
         // ONLY refresh thumbnail IF the properties setting indicates we should.
         if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
            
@@ -301,55 +305,46 @@ public class LinkToDamsAndCIS extends Operation {
     
     private void processNeverLinkedList() {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getCISIdentifier");
-       
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }    
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","getCISIdentifier");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+              
+        for (String uoiId : neverLinkedDamsIds.keySet()) {
+            if (sql.contains("?FILE_NAME?") ) {
+                sql = sql.replace("?FILE_NAME?",neverLinkedDamsIds.get(uoiId));
+            }
             
-            for (String uoiId : neverLinkedDamsIds.keySet()) {
-                 String sql = xml.getSqlQuery();
-                 
-                if (sql.contains("?FILE_NAME?") ) {
-                    sql = sql.replace("?FILE_NAME?",neverLinkedDamsIds.get(uoiId));
-                }
+            if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?") ) {
+                SiAssetMetadata siAsst = new SiAssetMetadata();
+                siAsst.setUoiid(uoiId);
+                siAsst.populateOwningUnitUniqueName();
+                sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?",siAsst.getOwningUnitUniqueName());
+            }
+            logger.log(Level.FINEST,"SQL " + sql);
             
-                if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?") ) {
-                    SiAssetMetadata siAsst = new SiAssetMetadata();
-                    siAsst.setUoiid(uoiId);
-                    siAsst.populateOwningUnitUniqueName();
-                    sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?",siAsst.getOwningUnitUniqueName());
-                }
-                logger.log(Level.FINEST,"SQL " + sql);
-            
-                try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
-                    ResultSet rs = pStmt.executeQuery()   ) {   
+            try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
+                ResultSet rs = pStmt.executeQuery()   ) {   
                     
-                    ResultSetMetaData rsmd = rs.getMetaData();
-                    String cisIdentifierType = rsmd.getColumnName(1).toUpperCase();
+                ResultSetMetaData rsmd = rs.getMetaData();
+                String cisIdentifierType = rsmd.getColumnName(1).toUpperCase();
                 
-                    //Get the CIS identifier for the field selected from above
-                    if (rs.next()) {
+                //Get the CIS identifier for the field selected from above
+                if (rs.next()) {
                                 
-                        String cisIdentifier = rs.getString(1);
+                    String cisIdentifier = rs.getString(1);
                         
-                        logger.log(Level.FINER, "Will create link for uoiid/CIS id: " + uoiId + " " + cisIdentifier);
-                        CDISMap cdisMap = new CDISMap();
-                        boolean linkCreated = createNewLink(cdisMap, cisIdentifier, cisIdentifierType, uoiId);
+                    logger.log(Level.FINER, "Will create link for uoiid/CIS id: " + uoiId + " " + cisIdentifier);
+                    CDISMap cdisMap = new CDISMap();
+                    boolean linkCreated = createNewLink(cdisMap, cisIdentifier, cisIdentifierType, uoiId);
                     
                     if (linkCreated) {
-                    
+                  
                         //Link Parent/Children record
                         if ( (DamsTools.getProperty("linkHierarchyInDams") != null ) && (DamsTools.getProperty("linkHierarchyInDams").equals("true") ) ) {
                             MediaRecord mediaRecord = new MediaRecord();
@@ -365,23 +360,16 @@ public class LinkToDamsAndCIS extends Operation {
                         cdisActivity = new CDISActivityLog();
                         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                         cdisActivity.setCdisStatusCd("LCC"); 
-                        cdisActivity.insertActivity();
-                        
+                        cdisActivity.insertActivity();            
                     }
                     
                     try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-                    try { if ( DamsTools.getCisConn()!= null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-                    
-                }
-                
-                
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }    
-            }
-            
-        }
-        
+                    try { if ( DamsTools.getCisConn()!= null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }            
+                }                  
+            } catch (Exception e) {
+                e.printStackTrace();
+            }    
+        }       
     }
     
     
@@ -393,44 +381,39 @@ public class LinkToDamsAndCIS extends Operation {
     */
     private void populateNeverLinkedDamsIds () {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","retrieveDamsIds");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("retrieveDamsIds"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }    
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                //Add the value from the database to the list
-                while (rs.next()) {
-                     neverLinkedDamsIds.put(rs.getString("UOI_ID"),rs.getString(2));
-                    logger.log(Level.FINER,"Adding DAMS asset to lookup in CIS: {0}", rs.getString("UOI_ID") );
-                }
+            //Add the value from the database to the list
+            while (rs.next()) {
+                neverLinkedDamsIds.put(rs.getString("UOI_ID"),rs.getString(2));
+                logger.log(Level.FINER,"Adding DAMS asset to lookup in CIS: {0}", rs.getString("UOI_ID") );
             }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
-            }
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
         }
     }
     
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        
+        reqProps.add("cis");
+        reqProps.add("cisDriver");
+        reqProps.add("cisConnString");
+        reqProps.add("cisUser");
+        reqProps.add("cisPass");
         //add more required props here
         return reqProps;    
     }
-    
 }

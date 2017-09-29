@@ -18,8 +18,6 @@ import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.dams.MediaRecord;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlSqlConfig;
-
 
 import java.io.File;
 import java.sql.PreparedStatement;
@@ -30,6 +28,8 @@ import java.util.logging.Logger;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 
 public class LinkToDams extends Operation {
@@ -41,6 +41,7 @@ public class LinkToDams extends Operation {
     private String pathEnding;
     private Integer vfcuMd5FileId;
     HashMap <Integer, String> neverLinkedDamsIds; 
+    private ArrayList <XmlData> xmlObjList;
             
     public LinkToDams() {
 
@@ -122,43 +123,37 @@ public class LinkToDams extends Operation {
     }
     
     private boolean populateUnlinkedMedia () {
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","DamsSelectList");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return false;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("DamsSelectList"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }       
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                //Add the value from the database to the list
-                while (rs.next()) {
-                    neverLinkedDamsIds.put(rs.getInt(1),rs.getString(2));
-                }
-            }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error, unable to obtain list of UOI_IDs to integrate", e);
-                return false;
+            //Add the value from the database to the list
+            while (rs.next()) {
+                neverLinkedDamsIds.put(rs.getInt(1),rs.getString(2));
             }
         }
-        
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error, unable to obtain list of UOI_IDs to integrate", e);
+            return false;
+        }
         return true;
         
     }
     
     public void invoke () {
+        
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         this.neverLinkedDamsIds = new HashMap <>();
         

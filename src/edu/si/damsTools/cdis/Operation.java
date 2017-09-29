@@ -5,8 +5,6 @@
  */
 package edu.si.damsTools.cdis;
 
-import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.util.ArrayList;
 
 /**

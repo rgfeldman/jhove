@@ -19,7 +19,6 @@ import com.lowagie.text.rtf.style.RtfFont;
 import edu.si.damsTools.DamsTools; 
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.report.DisplayFormat;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,6 +31,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.report.Report;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 
 public class Attachment extends Report  {
@@ -45,7 +46,7 @@ public class Attachment extends Report  {
     private final RtfFont headerFont;
     private final RtfFont SectionHeaderFont;
     private final RtfFont listElementFont;
-    
+    private ArrayList <XmlData> xmlObjList;
     
     private String keyValue;
     
@@ -212,58 +213,45 @@ public class Attachment extends Report  {
     
     public List returnCdisMapList (DataSection section, String keyValue) {
         
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
+        
         //start with a null list, if the list doesnt apply we want a null list rather than an empty list
         List<CDISMap> idList = null;
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+         String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type",section.returnXmlTag());
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);;
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag(section.returnXmlTag()); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
+        if (sql.contains("?RPT_HOURS?")) {
+            sql = sql.replace("?RPT_HOURS?", DamsTools.getProperty("rptHours"));
+        }
+        if (sql.contains("?MULTIRPT_KEYVAL?")) {
+            sql = sql.replace("?MULTIRPT_KEYVAL?", keyValue);
+        }
             
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }  
+        logger.log(Level.FINEST, "SQL: {0}", sql);
             
-            //The list applies to this type.  Create a list that starts as empty.
-            idList = new ArrayList<>();
-
-            String sql = xml.getSqlQuery();   
-            if (sql.contains("?RPT_HOURS?")) {
-                sql = sql.replace("?RPT_HOURS?", DamsTools.getProperty("rptHours"));
-            }
-            if (sql.contains("?MULTIRPT_KEYVAL?")) {
-                sql = sql.replace("?MULTIRPT_KEYVAL?", keyValue);
-            }
-            
-            logger.log(Level.FINEST, "SQL: {0}", sql);
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                while (rs.next()) { 
-                    CDISMap cdisMap = new CDISMap();
-                    cdisMap.setCdisMapId(rs.getInt(1));
-                    cdisMap.populateMapInfo();
-                    idList.add(cdisMap);
-                }
+            while (rs.next()) { 
+                CDISMap cdisMap = new CDISMap();
+                cdisMap.setCdisMapId(rs.getInt(1));
+                cdisMap.populateMapInfo();
+                idList.add(cdisMap);
             }
-            
-            catch(Exception e) {
-                logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
-                return null;
-            }
-
+        }   
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
+            return null;
         }            
-        
-        return idList;
-        
+        return idList;   
     }
 }

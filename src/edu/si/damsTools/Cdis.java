@@ -17,7 +17,6 @@ import edu.si.damsTools.cdis.Operation;
 import edu.si.damsTools.cdis.report.Generator;
 import edu.si.damsTools.cdis.SendToHotFolder;
 
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,16 +28,6 @@ import java.util.logging.Logger;
 public class Cdis extends App {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
-    
-    public ArrayList<String> returnRequiredProps () {
-        
-        ArrayList<String> reqProps = new ArrayList<>();
-        
-        //add more required props here
-        
-        return reqProps;
-        
-    }
     
     public Operation operationFactiory() {
         

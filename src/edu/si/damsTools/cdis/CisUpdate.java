@@ -11,13 +11,14 @@ import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 /**
  *
@@ -28,44 +29,35 @@ public class CisUpdate extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList<Integer> mapIdsToSync;
+    private ArrayList <XmlData> xmlObjList;
             
     public CisUpdate() {
     }
     
     private boolean populateRefIdsToSync() {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("retrieveMapIds"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }    
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","retrieveMapIds");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return false;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
             
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
-
-                //Add the value from the database to the list
-                while (rs.next()) {
-                     mapIdsToSync.add(rs.getInt(1));
-                }
-            }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
-                return false;
+            
+            //Add the value from the database to the list
+            while (rs.next()) {
+                mapIdsToSync.add(rs.getInt(1));
             }
         }
-    
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+            return false;
+        }
         return true;
     }
     
@@ -175,6 +167,10 @@ public class CisUpdate extends Operation {
     
     public void invoke() {
         
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
+        
         mapIdsToSync = new ArrayList<>();
         
         boolean receivedList = populateRefIdsToSync();
@@ -191,6 +187,12 @@ public class CisUpdate extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
+        
+        reqProps.add("cis");
+        reqProps.add("cisDriver");
+        reqProps.add("cisConnString");
+        reqProps.add("cisUser");
+        reqProps.add("cisPass");
         
         //add more required props here
         return reqProps;    

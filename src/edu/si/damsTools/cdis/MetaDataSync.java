@@ -24,8 +24,9 @@ import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.MediaRecord;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 
 public class MetaDataSync extends Operation{
@@ -48,6 +49,7 @@ public class MetaDataSync extends Operation{
     private HashMap<String, ArrayList<String>> insertsByTableName; 
     
     Connection sourceDb;
+    private ArrayList <XmlData> xmlObjList;
     
     public MetaDataSync() {
         if (DamsTools.getProperty("mdsFromCdisDams") != null && DamsTools.getProperty("mdsFromCdisDams").equals("true")  ) {
@@ -400,66 +402,54 @@ public class MetaDataSync extends Operation{
         RFeldman 2/2015
     */
     private void populateCisUpdatedMapIds() {
-
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getRecordsForResync"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            } 
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","getRecordsForResync");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
             
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = sourceDb.prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                while (rs.next()) {
-                    CDISMap cdisMap = new CDISMap();
+            while (rs.next()) {
+                CDISMap cdisMap = new CDISMap();
                     
-                    if (DamsTools.getProperty("cis").equals("aSpace")){
-                        CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
-                        cdisRefIdMap.setRefId(rs.getString(1));
+                if (DamsTools.getProperty("cis").equals("aSpace")){
+                    CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+                    cdisRefIdMap.setRefId(rs.getString(1));
                         
-                        ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
-                        mapIdsForRefId =  cdisRefIdMap.returnCdisMapIdsForRefId();
+                    ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
+                    mapIdsForRefId =  cdisRefIdMap.returnCdisMapIdsForRefId();
                         
-                        for (Integer mapId : mapIdsForRefId ) {
-                            if (!cdisMapIdsToSync.contains(mapId)) {
-                                cdisMapIdsToSync.add(mapId);
-                            }
+                    for (Integer mapId : mapIdsForRefId ) {
+                        if (!cdisMapIdsToSync.contains(mapId)) {
+                            cdisMapIdsToSync.add(mapId);
                         }
-                        
+                    }       
+                }
+                else {
+                    cdisMap.setCisUniqueMediaId(rs.getString(1));
+                    boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
+                    
+                    if (!cisMediaIdObtained) {
+                        continue;
                     }
-                    else {
-                        cdisMap.setCisUniqueMediaId(rs.getString(1));
-                        boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
-                    
-                        if (!cisMediaIdObtained) {
-                            continue;
-                        }
                         
-                        //Only add to the list if it is not already in the list. It could be there from never synced record list
-                        if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
-                            cdisMapIdsToSync.add(cdisMap.getCdisMapId());
-                        }
+                    //Only add to the list if it is not already in the list. It could be there from never synced record list
+                    if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
+                        cdisMapIdsToSync.add(cdisMap.getCdisMapId());
                     }
                 }
             }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to re-sync", e);
-                return;
-            }
         }
-        
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to re-sync", e);
+            return;
+        }    
     }
     
     
@@ -514,37 +504,28 @@ public class MetaDataSync extends Operation{
     */
     private void populateNeverSyncedMapIds() {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
-        
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getNeverSyncedRecords"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength() ; s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            } 
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","getNeverSyncedRecords");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
             
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
                 
-                while (rs.next()) {
+            while (rs.next()) {
 
-                    logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
-                    cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
-                }
+                logger.log(Level.ALL, "Adding to list to sync: " + rs.getInt(1));
+                cdisMapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
             }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync", e);
-                return;
-            }
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to sync", e);
+            return;
         }
     }
     
@@ -593,32 +574,28 @@ public class MetaDataSync extends Operation{
     private void populateXmls() {
         
         this.metaDataMapQueries = new HashMap<>();
-                
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("metadataMap"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength() ; s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            if (! xmlInfo.getAttributeValue("type").equals("metadataMap")) {
                 continue;
-            }  
+            }
             
-            logger.log(Level.FINEST, "Adding SQL to ArrayList: {0}", xml.getSqlQuery());
-            
+            sql = xmlInfo.getDataValue();
+    
             String[] tableNameDelim = new String[3];
-            tableNameDelim[0]= xml.getDestinationTable();
-            tableNameDelim[1]= xml.getOperationType();
-            tableNameDelim[2]= xml.getMultiResultDelim();
+            tableNameDelim[0] = xmlInfo.getAttributeValue("destTableName");
+            tableNameDelim[1]= xmlInfo.getAttributeValue("operationType");
+            tableNameDelim[2]= xmlInfo.getAttributeValue("multiResultDelim");  
             
-            metaDataMapQueries.put(xml.getSqlQuery(), tableNameDelim);
-            
+            metaDataMapQueries.put(sql, tableNameDelim);
         }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);    
+        
     }
     
     
@@ -765,6 +742,10 @@ public class MetaDataSync extends Operation{
     */
     public void invoke() {
 
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
+        
         // initialize uoiid list for sync
         cdisMapIdsToSync = new ArrayList<>();
         

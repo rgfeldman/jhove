@@ -14,13 +14,14 @@ import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.aaa.CollectionRecord;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 
 // This is the main entrypoint for syncing the image file and image file path in TMS
@@ -28,12 +29,17 @@ public class IdsCisSync extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
   
     private ArrayList<Integer> mapIdsToSync;
+    private ArrayList <XmlData> xmlObjList;
     
     public IdsCisSync() {
     }
     
     public void invoke() {
     	
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
+        
         mapIdsToSync = new ArrayList<>();
 
         //Get list of renditions to sync
@@ -50,40 +56,29 @@ public class IdsCisSync extends Operation {
     // Get list of images that require sync file path to be updated
     private boolean getNeverSyncedImagePath () {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","getMapIds");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return false;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getMapIds"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }    
-            
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
                 //Add the value from the database to the list
                 while (rs.next()) {
                      mapIdsToSync.add(rs.getInt("CDIS_MAP_ID"));
-                }
-            }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
-                return false;
             }
         }
-        
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+            return false;
+        }
         return true;
-        
     }
     
     
@@ -143,6 +138,12 @@ public class IdsCisSync extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
  
+        reqProps.add("cis");
+        reqProps.add("cisDriver");
+        reqProps.add("cisConnString");
+        reqProps.add("cisUser");
+        reqProps.add("cisPass");
+        
         //add more required props here
         return reqProps;    
     }

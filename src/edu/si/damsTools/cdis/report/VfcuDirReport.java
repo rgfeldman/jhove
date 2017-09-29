@@ -9,7 +9,8 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.report.attachment.DataSection;
 import edu.si.damsTools.cdis.report.attachment.FailedSection;
 import edu.si.damsTools.cdis.report.attachment.LinkedDamsSection;
-import edu.si.damsTools.utilities.XmlSqlConfig;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -26,6 +27,7 @@ public class VfcuDirReport implements DisplayFormat {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList<String> multiReportKeyValues;
+    private ArrayList <XmlData> xmlObjList;
    
     public ArrayList<String> returnKeyValueList() {
         return this.multiReportKeyValues;
@@ -152,37 +154,31 @@ public class VfcuDirReport implements DisplayFormat {
     
     public boolean populateMultiReportKeyValues() {
         
-        XmlSqlConfig xml = new XmlSqlConfig();
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("getMultiReportKeyValue"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","getMultiReportKeyValue");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return false;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);;
             
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }  
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(xml.getSqlQuery());
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                while (rs.next()) {     
-                    multiReportKeyValues.add(rs.getString(1));
-                }
+            while (rs.next()) {     
+                multiReportKeyValues.add(rs.getString(1));
             }
-            catch(Exception e) {
-                logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
-                return false; 
-            }
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
+            return false; 
         }            
-        
         return true;
     }
     

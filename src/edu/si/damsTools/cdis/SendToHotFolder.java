@@ -10,7 +10,6 @@ import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.database.VFCUMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlSqlConfig;
 
 import java.io.File;
 import java.sql.PreparedStatement;
@@ -22,7 +21,8 @@ import java.util.logging.Logger;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
-import org.w3c.dom.NodeList;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 
 /**
  *
@@ -37,6 +37,7 @@ public class SendToHotFolder extends Operation {
     private String hotFolderBaseName;
     private String fullMasterHotFolderNm;
     private File fullMasterHotFolder;
+    private ArrayList <XmlData> xmlObjList;
             
     public SendToHotFolder() {
 
@@ -152,39 +153,28 @@ public class SendToHotFolder extends Operation {
     */
     private boolean populateNewMasterMediaList () {
         
-        XmlSqlConfig xml = new XmlSqlConfig(); 
-        xml.setOpQueryNodeList(DamsTools.getQueryNodeList());
-        xml.setProjectCd(DamsTools.getProjectCd());
+        String sql = null;
+        for(XmlData xmlInfo : xmlObjList) {
+            xmlInfo.getCleanDataForAttribute("type","idListToSend");
+        }
+        if (sql == null) {
+            logger.log(Level.SEVERE, "Error: Required sql not found");
+            return false;
+        }
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
-        //indicate the particular query we are interested in
-        xml.setQueryTag("idListToSend"); 
-        
-        //Loop through all of the queries for the current operation type
-        for (int s = 0; s < DamsTools.getQueryNodeList().getLength(); s++) {
-            boolean queryPopulated = xml.populateSqlInfoForType(s);
-        
-            //if the query does not match the tag, then get the next query
-            if (!queryPopulated ) {
-                continue;
-            }   
+        sql = sql + " AND ROWNUM < " + DamsTools.getProperty("maxNumFiles") + " + 1";
             
-            logger.log(Level.FINEST, "SQL: {0}", xml.getSqlQuery());
-            
-            String sql = xml.getSqlQuery();
-            sql = sql + " AND ROWNUM < " + DamsTools.getProperty("maxNumFiles") + " + 1";
-            
-            try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
+        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                //Add the value from the database to the list
-                while (rs.next()) {
-                      masterMediaIds.put(rs.getString("uniqueMediaId"), rs.getString("mediaFileName"));
-                }
+            //Add the value from the database to the list
+            while (rs.next()) 
+                masterMediaIds.put(rs.getString("uniqueMediaId"), rs.getString("mediaFileName"));
             }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
-                return false;
-            }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+            return false;
         }
         
         return true;
@@ -268,6 +258,10 @@ public class SendToHotFolder extends Operation {
     */
      public void invoke () {
   
+        XmlReader xmlReader = new XmlReader();
+        xmlObjList = new ArrayList();
+        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
+        
         this.masterMediaIds = new LinkedHashMap<>();
         
         // Get the list of new Media to add to DAMS
@@ -421,7 +415,10 @@ public class SendToHotFolder extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-
+        reqProps.add("hotFolderArea");
+        reqProps.add("maxNumFiles");
+        reqProps.add("maxHotFolderIncrement");
+        reqProps.add("useMasterSubPairs");
         return reqProps;    
     }
 
