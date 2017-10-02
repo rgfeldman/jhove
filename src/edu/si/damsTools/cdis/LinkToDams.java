@@ -38,6 +38,7 @@ public class LinkToDams extends Operation {
     private String pathBase;
     private String pathEnding;
     private Integer vfcuMd5FileId;
+    
     HashMap <Integer, String> neverLinkedDamsIds; 
             
     public LinkToDams() {
@@ -231,19 +232,7 @@ public class LinkToDams extends Operation {
                         ErrorLog errorLog = new ErrorLog ();
                         errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
                         continue;
-                    } 
-                    
-                    //if (CDIS.getProperty("setDeliveredFilePerm") != null  && CDIS.getProperty("setDeliveredFilePerm").equals("win") ) {
-                    //    //add the appropriate file permission
-                    //    boolean filePermAdded = stagedFile.addPermissionWin(CDIS.getProperty("postIngestDeliveryLoc"));
-                    
-                    //    if (! filePermAdded) {
-                    //        ErrorLog errorLog = new ErrorLog ();
-                    //        errorLog.capture(cdisMap, "CPDELP", "Error, unable to set file permission in pickup location");
-                    //        continue;
-                    //    } 
-                    // }
-                               
+                    }                             
                 }
                 
                 activityLog.setCdisStatusCd("FME");
@@ -303,5 +292,4 @@ public class LinkToDams extends Operation {
         //add more required props here
         return reqProps;    
     }
-        
 }
