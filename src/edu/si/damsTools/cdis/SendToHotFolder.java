@@ -8,7 +8,7 @@ package edu.si.damsTools.cdis;
 import edu.si.damsTools.cdis.dams.StagedFile;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.database.CDISMap;
-import edu.si.damsTools.cdis.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VFCUMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 
 import java.io.File;

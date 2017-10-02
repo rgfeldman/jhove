@@ -599,4 +599,35 @@ public class VFCUMediaFile {
         return true;
     }
     
+    public int retrieveSubFileId () {
+
+        int childVfcuMediaId = 0;
+        
+        String sql = "SELECT  mediachild.vfcu_media_file_id " +
+                     "FROM  vfcu_media_file mediamaster, " +
+                     "      vfcu_md5_file b," +
+                     "      vfcu_media_file mediachild " +
+                     "WHERE mediamaster.vfcu_md5_file_id = b.MASTER_MD5_FILE_ID " +
+                     "AND   mediachild.vfcu_md5_file_id = b.VFCU_MD5_FILE_ID " +
+                     "AND   mediamaster.vfcu_md5_file_id != mediachild.vfcu_md5_file_id " +
+                     "AND   SUBSTR(mediamaster.media_file_name, 0, INSTR(mediamaster.media_file_name, '.')-1) = " +
+                     "SUBSTR(mediachild.media_file_name, 0, INSTR(mediachild.media_file_name, '.')-1) " +
+                     "AND   mediamaster.vfcu_media_file_id = " + getVfcuMediaFileId(); 
+                   
+         logger.log(Level.FINEST,"SQL! " + sql); 
+             
+         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+    
+            if (rs.next()) {
+                childVfcuMediaId = (rs.getInt(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to check for child media ID in DB", e );
+        }
+         
+        return childVfcuMediaId;
+    }
+    
 }

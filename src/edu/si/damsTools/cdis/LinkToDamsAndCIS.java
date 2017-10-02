@@ -31,7 +31,7 @@ import edu.si.damsTools.cdis.database.CDISMap;
 import edu.si.damsTools.cdis.database.CDISObjectMap;
 import edu.si.damsTools.cdis.database.CDISRefIdMap;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.damsTools.cdis.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VFCUMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.sql.ResultSetMetaData;
 
