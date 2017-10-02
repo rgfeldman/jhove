@@ -16,13 +16,13 @@ import java.util.logging.Logger;
  * @author rfeldman
  */
 
-public class XmlData {
+public class XmlQueryData {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private String dataValue;
     private HashMap<String, String> attributes;
     
-    public XmlData () {
+    public XmlQueryData () {
         attributes = new HashMap<>();
     }
     
@@ -47,11 +47,12 @@ public class XmlData {
         attributes.put(attribute, value);
     }
     
-    public String getCleanDataForAttribute(String attributeType, String attributeValue) {
+    public String getDataForAttribute(String attributeType, String attributeValue) {
         
         for (String attribute : attributes.keySet()) {
             if (attribute.equals(attributeType) && attributes.get(attribute).equals(attributeValue)) {
-                cleanSqlData();
+                logger.log(Level.FINEST, "Data Value Match " + dataValue);
+                replaceVarSqlData();
                 return (dataValue);
             }
         }
@@ -68,7 +69,7 @@ public class XmlData {
         return null;
     }
     
-    private void cleanSqlData() {
+    public void replaceVarSqlData() {
         if (dataValue.contains("?PROJECT_CD?")) {
             dataValue = dataValue.replace("?PROJECT_CD?", DamsTools.getProjectCd() );
         }

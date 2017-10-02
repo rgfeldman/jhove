@@ -10,7 +10,9 @@ import edu.si.damsTools.cdis.report.attachment.FailedSection;
 import edu.si.damsTools.cdis.report.attachment.MetaSyncSection;
 import edu.si.damsTools.cdis.report.attachment.MediaCreatedSection;
 import edu.si.damsTools.cdis.report.attachment.LinkedCisSection;
+import edu.si.damsTools.cdis.report.attachment.LinkedDamsSection;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlQueryData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -64,9 +66,21 @@ public class TimeFrameReport implements DisplayFormat {
         logger.log(Level.FINEST,"In TF SectionFactory"); 
         
         sections.add(new FailedSection());
-        sections.add(new MediaCreatedSection());
-        sections.add(new LinkedCisSection());
-        sections.add(new MetaSyncSection());
+        
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            if (xmlInfo.getAttributeValue("getCisMediaCreatedRecords") != null) {
+                sections.add(new MediaCreatedSection());
+            }
+            if (xmlInfo.getAttributeValue("getDamsLinkedRecords") != null) {
+                sections.add(new LinkedDamsSection());
+            }
+            if (xmlInfo.getAttributeValue("getCisLinkedRecords") != null) {
+                sections.add(new LinkedCisSection());
+            }
+            if (xmlInfo.getAttributeValue("getMetaDataSyncRecords") != null) {
+                sections.add(new MetaSyncSection());
+            }
+        }
         
         return sections;
     }

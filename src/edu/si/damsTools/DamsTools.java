@@ -28,8 +28,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.DefaultParser;
 
-
 import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlReader;
 
 
 public class DamsTools {
@@ -46,6 +47,7 @@ public class DamsTools {
     private static String configFile;
     private static String application;
     private static String subOperation;
+    private static ArrayList <XmlQueryData> xmlQueryDataObjList;
     
     private App app;
     private Operation operation;
@@ -69,6 +71,10 @@ public class DamsTools {
     public static String getOperationType() {
         return DamsTools.operationType;
     }
+    
+    public static ArrayList <XmlQueryData> getSqlQueryObjList() {
+        return DamsTools.xmlQueryDataObjList;
+    }
         
     public static Properties getProperties() {
         return DamsTools.properties;
@@ -85,6 +91,7 @@ public class DamsTools {
     private void setBatchNumber (Long batchNumber) {
         DamsTools.batchNumber = batchNumber;
     }
+    
     
     
     /*  Method :        connectToDatabases
@@ -117,9 +124,7 @@ public class DamsTools {
         }
         
         return dbConn;
-        
     }
-    
     
     
     /*  Method :        setLogger
@@ -333,6 +338,12 @@ public class DamsTools {
                     return;
                 }
             } 
+            
+            if (DamsTools.getProperty(DamsTools.operationType + "XmlFile") != null) {
+                XmlReader xmlReader = new XmlReader();
+                damsTool.xmlQueryDataObjList = new ArrayList();
+                damsTool.xmlQueryDataObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
+            }
             
             damsTool.operation.invoke();
 

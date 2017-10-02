@@ -53,7 +53,7 @@ public class XmlReader {
         boolean operationInd = false;
         boolean finished = false;
         
-        XmlData xmlTagData = null;
+        XmlQueryData xmlTagData = null;
         
         while(eventReader.hasNext() && !finished) {
             XMLEvent event = eventReader.nextEvent();
@@ -69,7 +69,7 @@ public class XmlReader {
                     }
                     
                     if (operationInd && qName.equals(tag)) {
-                        xmlTagData = new XmlData();
+                        xmlTagData = new XmlQueryData();
                         
                         Iterator<Attribute> attributes = event.asStartElement().getAttributes();
                         while(attributes.hasNext()){

@@ -9,8 +9,7 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.report.attachment.DataSection;
 import edu.si.damsTools.cdis.report.attachment.FailedSection;
 import edu.si.damsTools.cdis.report.attachment.LinkedDamsSection;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import edu.si.damsTools.utilities.XmlQueryData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -27,7 +26,6 @@ public class VfcuDirReport implements DisplayFormat {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList<String> multiReportKeyValues;
-    private ArrayList <XmlData> xmlObjList;
    
     public ArrayList<String> returnKeyValueList() {
         return this.multiReportKeyValues;
@@ -110,7 +108,7 @@ public class VfcuDirReport implements DisplayFormat {
             String sql = "SELECT count(*) " +
                     "FROM vfcu_media_file a, " +
                     "     vfcu_error_log b " +
-                    "WHERE a.vfcu_media_file_id = b.vfcu_media_file_id" +
+                    "WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
                     "AND b.vfcu_md5_file_id = " + masterMd5FileId;
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -154,19 +152,19 @@ public class VfcuDirReport implements DisplayFormat {
     
     public boolean populateMultiReportKeyValues() {
         
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
-        
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","getMultiReportKeyValue");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","getMultiReportKeyValue");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
             return false;
         }
-        logger.log(Level.FINEST, "SQL: {0}", sql);;
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
             
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {

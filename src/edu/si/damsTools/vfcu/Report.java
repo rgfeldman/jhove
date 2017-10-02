@@ -36,8 +36,7 @@ import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
 import edu.si.damsTools.cdis.Operation;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import edu.si.damsTools.utilities.XmlQueryData;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -58,7 +57,6 @@ public class Report extends Operation {
     private String rptShrtVendorDir;
     private String rptFullVendorDir;
     private String statsHeader;
-    private ArrayList <XmlData> xmlObjList;
     
     private boolean create () {
         
@@ -136,10 +134,6 @@ public class Report extends Operation {
     }
     
     public void invoke () {
-        
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         VFCUMd5File vfcuMd5File = new VFCUMd5File();
         masterMd5Ids = new ArrayList<> () ;
@@ -248,8 +242,11 @@ public class Report extends Operation {
     private boolean populateMasterMd5FileIds () {
         
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","getMasterMd5Ids");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","getMasterMd5Ids");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");

@@ -38,8 +38,7 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import edu.si.damsTools.utilities.XmlQueryData;
 
    
 public class LinkToDamsAndCIS extends Operation {
@@ -47,7 +46,6 @@ public class LinkToDamsAndCIS extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     HashMap <String, String> neverLinkedDamsIds; 
-    private ArrayList <XmlData> xmlObjList;
             
     public LinkToDamsAndCIS() {
 
@@ -60,10 +58,6 @@ public class LinkToDamsAndCIS extends Operation {
         RFeldman 2/2015
     */
     public void invoke () {
-        
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         //Establish the hash to hold the unlinked DAMS rendition List
         this.neverLinkedDamsIds = new HashMap <>();
@@ -306,8 +300,11 @@ public class LinkToDamsAndCIS extends Operation {
     private void processNeverLinkedList() {
         
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","getCISIdentifier");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","getCISIdentifier");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
@@ -382,8 +379,11 @@ public class LinkToDamsAndCIS extends Operation {
     private void populateNeverLinkedDamsIds () {
         
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","retrieveDamsIds");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","retrieveDamsIds");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");

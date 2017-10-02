@@ -19,20 +19,16 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
-
-
+import edu.si.damsTools.utilities.XmlQueryData;
 
 public class CreateCisMedia extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList <String> uoiidsToLink;  
-    private ArrayList <XmlData> xmlObjList;
-            
+        
     public CreateCisMedia() {
- 
+        
     }
     
     
@@ -45,8 +41,11 @@ public class CreateCisMedia extends Operation {
     private boolean populateNeverLinkedImages () {
            
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","DamsSelectList");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList() ) {
+            sql = xmlInfo.getDataForAttribute("type","DamsSelectList");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
@@ -175,10 +174,6 @@ public class CreateCisMedia extends Operation {
     */
     public void invoke () {
  
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
-        
         this.uoiidsToLink = new ArrayList<>();
         
         // Get a list of Renditions from DAMS that may need to be brought to the collection system (CIS)

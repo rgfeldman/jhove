@@ -17,15 +17,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
 
-import edu.si.damsTools.utilities.XmlReader;
-import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlQueryData;
 
 public class CISThumbnailSync extends Operation {
 
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private ArrayList <Integer> mapIdsToSync;  
-    private ArrayList <XmlData> xmlObjList;
      
     /*  Method :        populateRenditionsToUpdate
         Arguments:      
@@ -34,15 +32,17 @@ public class CISThumbnailSync extends Operation {
     */
             
     public CISThumbnailSync() {
-
     }
+   
     
     private boolean populateIdsToUpdate () {
         
         String sql = null;
-        
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","retrieveMapIds");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","retrieveMapIds");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
@@ -73,10 +73,6 @@ public class CISThumbnailSync extends Operation {
         RFeldman 3/2015
     */
     public void invoke () {
- 
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         this.mapIdsToSync = new ArrayList <>();
         

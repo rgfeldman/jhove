@@ -15,13 +15,11 @@ import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.aaa.CollectionRecord;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import edu.si.damsTools.utilities.XmlQueryData;
 
 
 // This is the main entrypoint for syncing the image file and image file path in TMS
@@ -29,16 +27,11 @@ public class IdsCisSync extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
   
     private ArrayList<Integer> mapIdsToSync;
-    private ArrayList <XmlData> xmlObjList;
     
     public IdsCisSync() {
     }
     
     public void invoke() {
-    	
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         mapIdsToSync = new ArrayList<>();
 
@@ -57,8 +50,11 @@ public class IdsCisSync extends Operation {
     private boolean getNeverSyncedImagePath () {
         
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","getMapIds");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","getMapIds");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");

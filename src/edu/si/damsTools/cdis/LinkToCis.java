@@ -17,8 +17,7 @@ import java.util.logging.Level;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import edu.si.damsTools.utilities.XmlQueryData;
 
 
 /**
@@ -28,22 +27,19 @@ import edu.si.damsTools.utilities.XmlReader;
 public class LinkToCis extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
-    
-    private ArrayList <XmlData> xmlObjList;
             
     public LinkToCis() {
-        
     }
+    
     
     public void invoke () {
         
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
-        
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","retrieveImagesToLink");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","retrieveImagesToLink");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");

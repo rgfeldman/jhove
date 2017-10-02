@@ -25,8 +25,7 @@ import edu.si.damsTools.cdis.dams.MediaRecord;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import edu.si.damsTools.utilities.XmlQueryData;
 
 
 public class MetaDataSync extends Operation{
@@ -49,17 +48,19 @@ public class MetaDataSync extends Operation{
     private HashMap<String, ArrayList<String>> insertsByTableName; 
     
     Connection sourceDb;
-    private ArrayList <XmlData> xmlObjList;
     
     public MetaDataSync() {
-        if (DamsTools.getProperty("mdsFromCdisDams") != null && DamsTools.getProperty("mdsFromCdisDams").equals("true")  ) {
+         
+    }
+    
+    private void setSourceDb() {
+         if (DamsTools.getProperty("mdsFromCdisDams") != null && DamsTools.getProperty("mdsFromCdisDams").equals("true")  ) {
             sourceDb = DamsTools.getDamsConn();
         }
         else {
-            sourceDb = DamsTools.getDamsConn();
+            sourceDb = DamsTools.getCisConn();
         }
     }
-    
    
     private String calculateMaxIdsSize (String tmsRemarks) {
         
@@ -163,9 +164,9 @@ public class MetaDataSync extends Operation{
            
                 sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
             }
-            
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
+            setSourceDb();
             try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
@@ -403,8 +404,11 @@ public class MetaDataSync extends Operation{
     */
     private void populateCisUpdatedMapIds() {
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","getRecordsForResync");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","getRecordsForResync");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
@@ -412,6 +416,7 @@ public class MetaDataSync extends Operation{
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
+        setSourceDb();
         try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
@@ -447,7 +452,7 @@ public class MetaDataSync extends Operation{
             }
         }
         catch(Exception e) {
-            logger.log(Level.SEVERE, "Error obtaining list to re-sync", e);
+            logger.log(Level.FINEST, "Error obtaining list to re-sync", e);
             return;
         }    
     }
@@ -505,8 +510,11 @@ public class MetaDataSync extends Operation{
     private void populateNeverSyncedMapIds() {
         
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","getNeverSyncedRecords");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList() ) {
+            sql = xmlInfo.getDataForAttribute("type","getNeverSyncedRecords");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
@@ -576,8 +584,11 @@ public class MetaDataSync extends Operation{
         this.metaDataMapQueries = new HashMap<>();
         
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
             if (! xmlInfo.getAttributeValue("type").equals("metadataMap")) {
+                if (sql != null) {
+                    break;
+                }
                 continue;
             }
             
@@ -741,10 +752,6 @@ public class MetaDataSync extends Operation{
         RFeldman 2/2015
     */
     public void invoke() {
-
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         // initialize uoiid list for sync
         cdisMapIdsToSync = new ArrayList<>();

@@ -31,9 +31,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.report.Report;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
-
+import edu.si.damsTools.utilities.XmlQueryData;
 
 public class Attachment extends Report  {
         
@@ -46,7 +44,6 @@ public class Attachment extends Report  {
     private final RtfFont headerFont;
     private final RtfFont SectionHeaderFont;
     private final RtfFont listElementFont;
-    private ArrayList <XmlData> xmlObjList;
     
     private String keyValue;
     
@@ -213,21 +210,21 @@ public class Attachment extends Report  {
     
     public List returnCdisMapList (DataSection section, String keyValue) {
         
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
-        
         //start with a null list, if the list doesnt apply we want a null list rather than an empty list
-        List<CDISMap> idList = null;
+        List<CDISMap> idList = new ArrayList<CDISMap>();
         
-         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type",section.returnXmlTag());
+        String sql = null;
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type",section.returnXmlTag());
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
-            logger.log(Level.SEVERE, "Error: Required sql not found");
+            logger.log(Level.FINEST, "sql not found for " + section.returnXmlTag());
+            return idList;
         }
-        logger.log(Level.FINEST, "SQL: {0}", sql);;
+        logger.log(Level.FINEST, "SQL: " + sql);;
         
         if (sql.contains("?RPT_HOURS?")) {
             sql = sql.replace("?RPT_HOURS?", DamsTools.getProperty("rptHours"));

@@ -28,9 +28,7 @@ import java.util.logging.Logger;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
-
+import edu.si.damsTools.utilities.XmlQueryData;
 
 public class LinkToDams extends Operation {
     
@@ -41,10 +39,8 @@ public class LinkToDams extends Operation {
     private String pathEnding;
     private Integer vfcuMd5FileId;
     HashMap <Integer, String> neverLinkedDamsIds; 
-    private ArrayList <XmlData> xmlObjList;
             
     public LinkToDams() {
-
     }
     
     
@@ -124,8 +120,11 @@ public class LinkToDams extends Operation {
     
     private boolean populateUnlinkedMedia () {
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","DamsSelectList");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","DamsSelectList");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
@@ -150,10 +149,6 @@ public class LinkToDams extends Operation {
     }
     
     public void invoke () {
-        
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
         
         this.neverLinkedDamsIds = new HashMap <>();
         

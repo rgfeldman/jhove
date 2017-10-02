@@ -21,8 +21,7 @@ import java.util.logging.Logger;
 import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import edu.si.damsTools.utilities.XmlQueryData;
 
 /**
  *
@@ -37,7 +36,6 @@ public class SendToHotFolder extends Operation {
     private String hotFolderBaseName;
     private String fullMasterHotFolderNm;
     private File fullMasterHotFolder;
-    private ArrayList <XmlData> xmlObjList;
             
     public SendToHotFolder() {
 
@@ -154,8 +152,11 @@ public class SendToHotFolder extends Operation {
     private boolean populateNewMasterMediaList () {
         
         String sql = null;
-        for(XmlData xmlInfo : xmlObjList) {
-            xmlInfo.getCleanDataForAttribute("type","idListToSend");
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","idListToSend");
+            if (sql != null) {
+                break;
+            }
         }
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
@@ -257,11 +258,7 @@ public class SendToHotFolder extends Operation {
         RFeldman 3/2015
     */
      public void invoke () {
-  
-        XmlReader xmlReader = new XmlReader();
-        xmlObjList = new ArrayList();
-        xmlObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
-        
+
         this.masterMediaIds = new LinkedHashMap<>();
         
         // Get the list of new Media to add to DAMS
