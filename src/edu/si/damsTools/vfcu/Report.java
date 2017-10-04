@@ -1,7 +1,7 @@
 package edu.si.damsTools.vfcu;
 
-import edu.si.damsTools.vfcu.database.VFCUErrorLog;
-import edu.si.damsTools.vfcu.database.VFCUMd5File;
+import edu.si.damsTools.vfcu.database.VfcuErrorLog;
+import edu.si.damsTools.vfcu.database.VfcuMd5File;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 
 import com.lowagie.text.Font;
@@ -135,7 +135,7 @@ public class Report extends Operation {
     
     public void invoke () {
         
-        VFCUMd5File vfcuMd5File = new VFCUMd5File();
+        VfcuMd5File vfcuMd5File = new VfcuMd5File();
         masterMd5Ids = new ArrayList<> () ;
         
         //get masterMd5FileId to run report for (FROM XML)
@@ -542,7 +542,7 @@ public class Report extends Operation {
             try {
                 
                 VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-                VFCUErrorLog vfcuError = new VFCUErrorLog();
+                VfcuErrorLog vfcuError = new VfcuErrorLog();
                       
                 RtfFont listElementFont=new RtfFont("Courier",8);
             

@@ -5,9 +5,9 @@
  */
 package edu.si.damsTools.vfcu;
 
-import edu.si.damsTools.vfcu.database.VFCUActivityLog;
+import edu.si.damsTools.vfcu.database.VfcuActivityLog;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
-import edu.si.damsTools.vfcu.database.VFCUMd5File;
+import edu.si.damsTools.vfcu.database.VfcuMd5File;
 import edu.si.damsTools.vfcu.files.MediaFile;
 import edu.si.damsTools.vfcu.files.VendorMd5File;
 import java.sql.PreparedStatement;
@@ -76,7 +76,7 @@ public class VendorFileCopy extends Operation {
                     vfcuMediaFile.setVfcuMediaFileId(subFileMediaId);
                     vfcuMediaFile.setMediaFileName(fileNameId.get(subFileMediaId));
                     
-                    VFCUMd5File vfcuMd5File = new VFCUMd5File();
+                    VfcuMd5File vfcuMd5File = new VfcuMd5File();
                     
                     //find the masterMd5FileID for the current md5 FileId
                     vfcuMd5File.setVfcuMd5FileId(currentMd5FileId);
@@ -89,13 +89,13 @@ public class VendorFileCopy extends Operation {
                     //Add the PS status to indicate primary/secondary relationship has been established
                     if (masterFileId != null ) {
                         //We have a master and subfile ID
-                        VFCUActivityLog activityLog = new VFCUActivityLog();
+                        VfcuActivityLog activityLog = new VfcuActivityLog();
                         activityLog.setVfcuMediaFileId(subFileMediaId);
                         activityLog.setVfcuStatusCd("PS");
                         //insert a verification complete row for the subfile
                         activityLog.insertRow();
                         
-                        activityLog = new VFCUActivityLog();
+                        activityLog = new VfcuActivityLog();
                         activityLog.setVfcuMediaFileId(masterFileId);
                         activityLog.setVfcuStatusCd("PS");
                         //insert a verification complete row for the Master

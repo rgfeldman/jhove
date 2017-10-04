@@ -6,7 +6,7 @@
 package edu.si.damsTools.vfcu;
 
 import edu.si.damsTools.vfcu.files.VendorMd5File;
-import edu.si.damsTools.vfcu.database.VFCUMd5File;
+import edu.si.damsTools.vfcu.database.VfcuMd5File;
 import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -43,7 +43,7 @@ public class Watcher extends Operation{
         // We need to match up these subfiles with master IDs if we can find them.
         ArrayList<Integer> masterlessMd5Ids = new ArrayList<> ();
         
-        VFCUMd5File vfcuMd5File = new VFCUMd5File();
+        VfcuMd5File vfcuMd5File = new VfcuMd5File();
         masterlessMd5Ids = vfcuMd5File.returnMd5sWithNoMasterID();
         
         for (Integer masterlessMd5Id : masterlessMd5Ids) {

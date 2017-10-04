@@ -16,8 +16,8 @@ import edu.harvard.hul.ois.jhove.module.PdfModule;
 import edu.harvard.hul.ois.jhove.module.TiffModule;
 import edu.harvard.hul.ois.jhove.module.WaveModule;
 import edu.harvard.hul.ois.jhove.module.Jpeg2000Module;
-import edu.si.damsTools.vfcu.database.VFCUActivityLog;
-import edu.si.damsTools.vfcu.database.VFCUMd5File;
+import edu.si.damsTools.vfcu.database.VfcuActivityLog;
+import edu.si.damsTools.vfcu.database.VfcuMd5File;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.vfcu.utilities.ErrorLog;
  
@@ -428,7 +428,7 @@ public class MediaFile {
             boolean jhoveValidationSuccess = jhoveValidate(module, jhoveParamList);
             
             if (jhoveValidationSuccess) {
-                VFCUActivityLog activityLog = new VFCUActivityLog();
+                VfcuActivityLog activityLog = new VfcuActivityLog();
                 activityLog.setVfcuMediaFileId(getVfcuMediaFileId());
                 activityLog.setVfcuStatusCd("JH");
                 activityLog.insertRow();
@@ -444,7 +444,7 @@ public class MediaFile {
         vfcuMediaFile.populateVendorChecksum();
         if (vfcuMediaFile.getVendorChecksum().equals(getVfcuMd5Hash()) ) {
             //log in the database
-            VFCUActivityLog activityLog = new VFCUActivityLog();
+            VfcuActivityLog activityLog = new VfcuActivityLog();
             activityLog.setVfcuMediaFileId(getVfcuMediaFileId());
             activityLog.setVfcuStatusCd("PM");
             activityLog.insertRow();
@@ -460,8 +460,8 @@ public class MediaFile {
     public boolean transfer() {
             
         try {
-            VFCUActivityLog activityLog = new VFCUActivityLog();
-            VFCUMd5File vfcuMd5File = new VFCUMd5File();
+            VfcuActivityLog activityLog = new VfcuActivityLog();
+            VfcuMd5File vfcuMd5File = new VfcuMd5File();
       
             //get fileName, vendor_file_path for the current id
             populateMediaFileValues();

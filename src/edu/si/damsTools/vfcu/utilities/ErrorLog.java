@@ -5,10 +5,10 @@
  */
 package edu.si.damsTools.vfcu.utilities;
 
-import edu.si.damsTools.vfcu.database.VFCUActivityLog;
+import edu.si.damsTools.vfcu.database.VfcuActivityLog;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.vfcu.database.VFCUErrorLog;
+import edu.si.damsTools.vfcu.database.VfcuErrorLog;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.DamsTools;
 
@@ -20,7 +20,7 @@ public class ErrorLog {
         
         logger.log(Level.FINER, logMessage);
         
-        VFCUErrorLog vfcuError = new VFCUErrorLog();
+        VfcuErrorLog vfcuError = new VfcuErrorLog();
         
         vfcuError.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
         vfcuError.setFileName(vfcuMediaFile.getMediaFileName());
@@ -28,7 +28,7 @@ public class ErrorLog {
         vfcuError.setVfcuErrorCd(errorCode);
         vfcuError.insertRecord();
         
-        VFCUActivityLog vfcuActivityLog = new VFCUActivityLog();
+        VfcuActivityLog vfcuActivityLog = new VfcuActivityLog();
         vfcuActivityLog.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
         vfcuActivityLog.setVfcuStatusCd("ER");
         vfcuActivityLog.insertRow();
