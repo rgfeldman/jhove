@@ -5,10 +5,10 @@
  */
 package edu.si.damsTools.cdis.report.attachment;
 
-import edu.si.damsTools.cdis.cis.CisAttr;
-import edu.si.damsTools.cdis.cis.CisFactory;
+import edu.si.damsTools.cdis.cis.CisRecordAttr;
+import edu.si.damsTools.cdis.cis.CisRecordFactory;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -41,7 +41,7 @@ public class MetaSyncSection implements DataSection {
         return "There were no records to Sync";
     }
     
-    public boolean generateTextForRecord(CDISMap cdisMap) {
+    public boolean generateTextForRecord(CdisMap cdisMap) {
 
         SiAssetMetadata siAsst = new SiAssetMetadata();
         
@@ -51,8 +51,8 @@ public class MetaSyncSection implements DataSection {
         siAsst.setUoiid(cdisMap.getDamsUoiid());
         siAsst.populateOwningUnitUniqueName();
         
-        CisFactory cisFactory = new CisFactory();
-        CisAttr cisAttr = cisFactory.cisChooser();
+        CisRecordFactory cisFactory = new CisRecordFactory();
+        CisRecordAttr cisAttr = cisFactory.cisChooser();
         
         sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + cisAttr.returnGrpInfoForReport(cdisMap));
 

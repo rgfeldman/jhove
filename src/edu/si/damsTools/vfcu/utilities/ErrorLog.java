@@ -9,14 +9,14 @@ import edu.si.damsTools.vfcu.database.VFCUActivityLog;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.vfcu.database.VFCUErrorLog;
-import edu.si.damsTools.vfcu.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.DamsTools;
 
 public class ErrorLog {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
 
-    public void capture (VFCUMediaFile vfcuMediaFile, String errorCode, String logMessage) {
+    public void capture (VfcuMediaFile vfcuMediaFile, String errorCode, String logMessage) {
         
         logger.log(Level.FINER, logMessage);
         

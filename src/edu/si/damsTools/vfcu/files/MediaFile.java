@@ -18,7 +18,7 @@ import edu.harvard.hul.ois.jhove.module.WaveModule;
 import edu.harvard.hul.ois.jhove.module.Jpeg2000Module;
 import edu.si.damsTools.vfcu.database.VFCUActivityLog;
 import edu.si.damsTools.vfcu.database.VFCUMd5File;
-import edu.si.damsTools.vfcu.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.vfcu.utilities.ErrorLog;
  
 import java.io.File;
@@ -339,7 +339,7 @@ public class MediaFile {
     
     public void validate() {
         
-        VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+        VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
         vfcuMediaFile.setVfcuMediaFileId(getVfcuMediaFileId() ); 
         vfcuMediaFile.populateMd5FileId();
         
@@ -492,7 +492,7 @@ public class MediaFile {
             activityLog.insertRow();
             
         } catch(Exception e) {
-            VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+            VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
             vfcuMediaFile.setVfcuMediaFileId(getVfcuMediaFileId() );
             vfcuMediaFile.setVfcuMd5FileId(getVfcuMd5FileId());
             vfcuMediaFile.populateMediaFileName();

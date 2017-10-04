@@ -89,7 +89,6 @@ public class XmlReader {
                     Characters characters = event.asCharacters();
                     if(queryInd) {          
                         xmlTagData.setDataValue(characters.getData());
-                        logger.log(Level.FINEST, "found information from xml parse: " + characters.getData());
                         xmlObjList.add(xmlTagData);    
                         queryInd = false;
                     }

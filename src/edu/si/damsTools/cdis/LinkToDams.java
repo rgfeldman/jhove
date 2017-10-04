@@ -16,7 +16,7 @@ import edu.si.damsTools.cdis.dams.StagedFile;
 import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdis.dams.MediaRecord;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 
 import java.io.File;
@@ -51,7 +51,7 @@ public class LinkToDams extends Operation {
         //getCdisMapID for filename/status so we can log in table
         //may want to check by checksum too later to make sure we have uniqueness....but drawback is we want to verify file is not corrupted
         
-        CDISMap cdisMap = new CDISMap();
+        CdisMap cdisMap = new CdisMap();
         cdisMap.setFileName(filename);
         cdisMap.populateIdForNameNullUoiid();
                 
@@ -161,7 +161,7 @@ public class LinkToDams extends Operation {
         for (Integer cdisMapId : neverLinkedDamsIds.keySet()) {
 
             Uois uois = new Uois();
-            CDISMap cdisMap = new CDISMap();
+            CdisMap cdisMap = new CdisMap();
             CDISActivityLog activityLog = new CDISActivityLog();
       
             cdisMap.setCdisMapId(cdisMapId);

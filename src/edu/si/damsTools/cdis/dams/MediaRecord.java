@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools.cdis.dams;
 
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -32,7 +32,7 @@ public class MediaRecord {
         this.uoiId = uoiId;
     }
     
-    public boolean establishParentChildLink (CDISMap cdisMap) {
+    public boolean establishParentChildLink (CdisMap cdisMap) {
         
         //Get the mediaTypeId for the current record
         cdisMap.populateCdisCisMediaTypeId();
@@ -44,11 +44,11 @@ public class MediaRecord {
         //populate the parent and child ID from the db
         mediaTypeConfigR.populateChildAndParentOfId();
           
-        CDISMap childCdisMap = new CDISMap();
+        CdisMap childCdisMap = new CdisMap();
         
         if (mediaTypeConfigR.getChildOfId() > 0 ) {
             
-            CDISMap parentCdisMap = new CDISMap();
+            CdisMap parentCdisMap = new CdisMap();
             
             boolean parentInfoPopulated = parentCdisMap.populateParentFileInfo(cdisMap.getCdisMapId() );
             if (parentInfoPopulated) {

@@ -68,16 +68,17 @@ public class TimeFrameReport implements DisplayFormat {
         sections.add(new FailedSection());
         
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            if (xmlInfo.getAttributeValue("getCisMediaCreatedRecords") != null) {
+            
+            if (xmlInfo.getDataForAttribute("type","getCisMediaCreatedRecords") != null) {
                 sections.add(new MediaCreatedSection());
             }
-            if (xmlInfo.getAttributeValue("getDamsLinkedRecords") != null) {
+            if (xmlInfo.getDataForAttribute("type","getDamsLinkedRecords") != null) {
                 sections.add(new LinkedDamsSection());
             }
-            if (xmlInfo.getAttributeValue("getCisLinkedRecords") != null) {
+            if (xmlInfo.getDataForAttribute("type","getCisLinkedRecords") != null) { 
                 sections.add(new LinkedCisSection());
             }
-            if (xmlInfo.getAttributeValue("getMetaDataSyncRecords") != null) {
+            if (xmlInfo.getDataForAttribute("type","getMetaDataSyncRecords") != null) {
                 sections.add(new MetaSyncSection());
             }
         }

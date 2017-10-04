@@ -6,7 +6,7 @@
 package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 
 import java.util.logging.Logger;
@@ -64,7 +64,7 @@ public class LinkToCis extends Operation {
         
         //  Update status and date in CDIS activity log.
         for (Integer key : mapIdsToIntegrate.keySet()) {
-            CDISMap cdisMap = new CDISMap();
+            CdisMap cdisMap = new CdisMap();
             CDISActivityLog activityLog = new CDISActivityLog();
             
             cdisMap.setCdisMapId(key);

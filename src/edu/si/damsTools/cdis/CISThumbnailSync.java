@@ -8,7 +8,7 @@ package edu.si.damsTools.cdis;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
@@ -81,7 +81,7 @@ public class CISThumbnailSync extends Operation {
         
         //create the thumbnail in TMS from those DAMS images 
         for (Integer mapId : mapIdsToSync) {
-            CDISMap cdisMap = new CDISMap();
+            CdisMap cdisMap = new CdisMap();
             cdisMap.setCdisMapId(mapId);
             cdisMap.populateMapInfo();
             

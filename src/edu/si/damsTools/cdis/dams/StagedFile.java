@@ -13,7 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 
 /**
@@ -147,7 +147,7 @@ public class StagedFile {
         logger.log(Level.FINER,"File xferred to hotfolder location: " + hotFolderDestStr );
             
         //Determine file transfer type
-        CDISMap cdisMap = new CDISMap();
+        CdisMap cdisMap = new CdisMap();
         cdisMap.setCdisMapId(cdisMapId);
         cdisMap.populateCdisCisMediaTypeId();
         

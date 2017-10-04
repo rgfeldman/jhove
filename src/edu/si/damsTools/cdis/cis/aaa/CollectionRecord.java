@@ -11,7 +11,7 @@ import edu.si.damsTools.cdis.aaa.database.TblDigitalResource;
 import edu.si.damsTools.cdis.aaa.database.TblCollectionsOnlineImage;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.dams.database.TeamsLinks;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.util.logging.Logger;
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class CollectionRecord {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
         
-    public boolean pointToUans(CDISMap cdisMap) {
+    public boolean pointToUans(CdisMap cdisMap) {
          
         SiAssetMetadata siAsst = new SiAssetMetadata();
         //Get the uan 
@@ -54,7 +54,7 @@ public class CollectionRecord {
                     }
                      
                     //Get the cis_unique_media_id for the serviceRecord
-                    CDISMap serviceCdisMap = new CDISMap();
+                    CdisMap serviceCdisMap = new CdisMap();
                     serviceCdisMap.setDamsUoiid(teamsLinks.getDestValue());
                     serviceCdisMap.populateCisUniqueMediaIdForUoiid();
                                     
@@ -82,7 +82,7 @@ public class CollectionRecord {
                         return false;
                     }
                                 
-                    CDISMap serviceCdisMap = new CDISMap();
+                    CdisMap serviceCdisMap = new CdisMap();
                     serviceCdisMap.setDamsUoiid(teamsLinks.getDestValue());
                     serviceCdisMap.populateCisUniqueMediaIdForUoiid();
                                    

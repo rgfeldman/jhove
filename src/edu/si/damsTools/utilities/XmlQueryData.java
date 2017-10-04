@@ -59,11 +59,11 @@ public class XmlQueryData {
         return null;
     }
     
-    public String getAttributeValue (String attributeType) {
+    public String getAttributeData (String attributeType) {
         
         for (String attribute : attributes.keySet()) {
             if (attribute.equals(attributeType) ) {
-                return attribute;
+                return attributes.get(attribute);
             }
         }
         return null;

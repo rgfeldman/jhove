@@ -6,7 +6,7 @@
 package edu.si.damsTools.cdis.report.attachment;
 
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -38,7 +38,7 @@ public class LinkedDamsSection implements DataSection {
         return "There were no records to Link";
     }
     
-    public boolean generateTextForRecord(CDISMap cdisMap) {
+    public boolean generateTextForRecord(CdisMap cdisMap) {
         
         SiAssetMetadata siAsst = new SiAssetMetadata();
         siAsst.setUoiid(cdisMap.getDamsUoiid());

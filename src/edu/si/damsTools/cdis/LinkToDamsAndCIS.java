@@ -27,11 +27,11 @@ import edu.si.damsTools.cdis.dams.MediaRecord;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
 import edu.si.damsTools.cdis.dams.database.Uois;
-import edu.si.damsTools.cdis.database.CDISMap;
-import edu.si.damsTools.cdis.database.CDISObjectMap;
+import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.database.CDISRefIdMap;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.damsTools.vfcu.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.sql.ResultSetMetaData;
 
@@ -93,7 +93,7 @@ public class LinkToDamsAndCIS extends Operation {
         } 
         
         //Insert into CDISObjectMap
-        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        CdisObjectMap cdisObjectMap = new CdisObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
         cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblCollectionOnlineImage.getCollectionId()) );
         cdisObjectMap.createRecord();
@@ -116,7 +116,7 @@ public class LinkToDamsAndCIS extends Operation {
         } 
         
         //Insert into CDISObjectMap
-        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        CdisObjectMap cdisObjectMap = new CdisObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
         cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblDigitalMediaResource.getCollectionId()) );
         cdisObjectMap.createRecord();
@@ -139,7 +139,7 @@ public class LinkToDamsAndCIS extends Operation {
         } 
         
         //Insert into CDISObjectMap
-        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        CdisObjectMap cdisObjectMap = new CdisObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
         cdisObjectMap.setCisUniqueObjectId(Integer.toString(tblDigitalResource.getCollectionId()) );
         cdisObjectMap.createRecord();
@@ -160,7 +160,7 @@ public class LinkToDamsAndCIS extends Operation {
         } 
         
         //Insert into CDISObjectMap
-        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        CdisObjectMap cdisObjectMap = new CdisObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
         cdisObjectMap.setCisUniqueObjectId(irisObject.getItemAccnoFull() );
         cdisObjectMap.createRecord();
@@ -180,7 +180,7 @@ public class LinkToDamsAndCIS extends Operation {
         } 
         
         //Insert into CDISObjectMap
-        CDISObjectMap cdisObjectMap = new CDISObjectMap();
+        CdisObjectMap cdisObjectMap = new CdisObjectMap();
         cdisObjectMap.setCdisMapId(cdisMapId);
         cdisObjectMap.setCisUniqueObjectId(Integer.toString(tmsObject.getObjectId()) );
         cdisObjectMap.createRecord();
@@ -188,7 +188,7 @@ public class LinkToDamsAndCIS extends Operation {
         return true;
     }
 
-    public boolean createNewLink(CDISMap cdisMap, String cisIdentifier, String cisIdentifierType, String uoiId) {
+    public boolean createNewLink(CdisMap cdisMap, String cisIdentifier, String cisIdentifierType, String uoiId) {
         
         //Populate cdisMap Object based on cis indicator if present
         if ( (cisIdentifierType).equals("CIS_UNIQUE_MEDIA_ID") ) {
@@ -208,7 +208,7 @@ public class LinkToDamsAndCIS extends Operation {
         //OR link an cdis_map row (where we add BOTH rhe DAMS_UOIID and the CIS_UNIQUE identifier
         
         //Check if the map record exists already with null cisID and null dams_uoiid 
-        boolean mapRecordExists = cdisMap.populateIdForNameNullUoiidandCisId();
+        boolean mapRecordExists = cdisMap.populateIdForNameNullUoiid();
         if (mapRecordExists) {
             cdisMap.updateCisUniqueMediaId();
             cdisMap.updateUoiid();
@@ -259,7 +259,7 @@ public class LinkToDamsAndCIS extends Operation {
         if (vfcuIdPopulated) {
             
             //Get the checksum for the mediaFileId
-            VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+            VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
             vfcuMediaFile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
             vfcuMediaFile.populateVendorChecksum();
             
@@ -337,7 +337,7 @@ public class LinkToDamsAndCIS extends Operation {
                     String cisIdentifier = rs.getString(1);
                         
                     logger.log(Level.FINER, "Will create link for uoiid/CIS id: " + uoiId + " " + cisIdentifier);
-                    CDISMap cdisMap = new CDISMap();
+                    CdisMap cdisMap = new CdisMap();
                     boolean linkCreated = createNewLink(cdisMap, cisIdentifier, cisIdentifierType, uoiId);
                     
                     if (linkCreated) {

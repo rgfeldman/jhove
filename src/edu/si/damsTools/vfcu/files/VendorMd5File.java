@@ -7,9 +7,57 @@ package edu.si.damsTools.vfcu.files;
 
 import edu.si.damsTools.vfcu.database.VFCUActivityLog;
 import edu.si.damsTools.vfcu.database.VFCUMd5File;
-import edu.si.damsTools.vfcu.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.vfcu.utilities.ErrorLog;;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import edu.si.damsTools.DamsTools;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import edu.si.damsTools.DamsTools;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import edu.si.damsTools.DamsTools;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.logging.Level;
@@ -149,7 +197,7 @@ public class VendorMd5File {
                     Matcher m = r.matcher(line);
                 
                     if (m.matches()) {
-                        VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+                        VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
                         
                         vfcuMediaFile.setVendorCheckSum(m.group(1).toLowerCase());
                         vfcuMediaFile.setMediaFileName(m.group(2).trim());
@@ -296,7 +344,7 @@ public class VendorMd5File {
     public boolean finalValidations () {
         //Get counts----
         
-        VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+        VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
         vfcuMediaFile.setVfcuMd5FileId(getMd5FileId());
         
         //First get the total count of files in Database for the current md5 ID
@@ -336,7 +384,7 @@ public class VendorMd5File {
                 
                 for (String fileName : mediaFilesFromDir) {
                     
-                    vfcuMediaFile = new VFCUMediaFile();
+                    vfcuMediaFile = new VfcuMediaFile();
                     
                     //check if the file from the directory exists in the database
                     vfcuMediaFile.setMediaFileName(fileName);

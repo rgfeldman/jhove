@@ -16,8 +16,8 @@ import com.google.common.collect.Table;
 import com.google.common.collect.Table.Cell;
 import java.sql.Connection;
 
-import edu.si.damsTools.cdis.database.CDISMap;
-import edu.si.damsTools.cdis.database.CDISObjectMap;
+import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.database.CDISRefIdMap;
 import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
 import edu.si.damsTools.cdis.dams.database.Uois;
@@ -138,7 +138,7 @@ public class MetaDataSync extends Operation{
         RFeldman 2/2015
     */
 
-    private boolean buildCisQueryPopulateResults(CDISMap cdisMap) {
+    private boolean buildCisQueryPopulateResults(CdisMap cdisMap) {
         
         this.deleteRows = new ArrayList<>();
         this.insertRowForDams = HashBasedTable.create();
@@ -158,7 +158,7 @@ public class MetaDataSync extends Operation{
                 sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
             }
             if (sql.contains("?OBJECT_ID?")) {
-                CDISObjectMap objectMap = new CDISObjectMap();
+                CdisObjectMap objectMap = new CdisObjectMap();
                 objectMap.setCdisMapId(cdisMap.getCdisMapId());
                 objectMap.populateCisUniqueObjectIdforCdisId();
            
@@ -332,7 +332,7 @@ public class MetaDataSync extends Operation{
         RFeldman 12/2016
     */
     
-    private boolean performTransactions (String linkedOrParChilduoiId, CDISMap cdisMap, boolean parentChildOnly) {
+    private boolean performTransactions (String linkedOrParChilduoiId, CdisMap cdisMap, boolean parentChildOnly) {
         
         deletesForUoiid = new ArrayList<>();
         insertsByTableName = new HashMap<>();
@@ -411,7 +411,7 @@ public class MetaDataSync extends Operation{
             }
         }
         if (sql == null) {
-            logger.log(Level.SEVERE, "Error: Required sql not found");
+            logger.log(Level.SEVERE, "Error: Required sql getRecordsForResync not found");
             return;
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -421,7 +421,7 @@ public class MetaDataSync extends Operation{
             ResultSet rs = stmt.executeQuery() ) {
 
             while (rs.next()) {
-                CDISMap cdisMap = new CDISMap();
+                CdisMap cdisMap = new CdisMap();
                     
                 if (DamsTools.getProperty("cis").equals("aSpace")){
                     CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
@@ -585,28 +585,30 @@ public class MetaDataSync extends Operation{
         
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            if (! xmlInfo.getAttributeValue("type").equals("metadataMap")) {
-                if (sql != null) {
-                    break;
-                }
+            if (! xmlInfo.getAttributeData("type").equals("metadataMap")) {    
                 continue;
             }
-            
+   
             sql = xmlInfo.getDataValue();
     
-            String[] tableNameDelim = new String[3];
-            tableNameDelim[0] = xmlInfo.getAttributeValue("destTableName");
-            tableNameDelim[1]= xmlInfo.getAttributeValue("operationType");
-            tableNameDelim[2]= xmlInfo.getAttributeValue("multiResultDelim");  
+            logger.log(Level.FINEST, "SQL: {0}", sql); 
             
-            metaDataMapQueries.put(sql, tableNameDelim);
+            if (sql != null) {
+                String[] tableNameDelim = new String[3];
+                tableNameDelim[0] = xmlInfo.getAttributeData("destTableName");
+                tableNameDelim[1]= xmlInfo.getAttributeData("operationType");
+                tableNameDelim[2]= xmlInfo.getAttributeData("multiResultDelim");  
+            
+                metaDataMapQueries.put(sql, tableNameDelim);
+                   
+            }
         }
-        if (sql == null) {
-            logger.log(Level.SEVERE, "Error: Required sql not found");
+        if (metaDataMapQueries == null) {
+            logger.log(Level.FINEST, "Error: Required sql metadataMap not found");
             return;
         }
-        logger.log(Level.FINEST, "SQL: {0}", sql);    
-        
+       
+  
     }
     
     
@@ -625,7 +627,7 @@ public class MetaDataSync extends Operation{
             //commit with each iteration
             try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
-            CDISMap cdisMap = new CDISMap();
+            CdisMap cdisMap = new CdisMap();
             MediaRecord mediaRecord = new MediaRecord();
                 
             cdisMap.setCdisMapId(iter.next());

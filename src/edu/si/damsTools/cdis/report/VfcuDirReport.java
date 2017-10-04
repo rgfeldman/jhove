@@ -160,7 +160,7 @@ public class VfcuDirReport implements DisplayFormat {
             }
         }
         if (sql == null) {
-            logger.log(Level.SEVERE, "Error: Required sql not found");
+            logger.log(Level.FINEST, "Error: Required sql not found");
             return false;
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);

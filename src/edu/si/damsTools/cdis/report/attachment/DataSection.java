@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools.cdis.report.attachment;
 
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import java.util.ArrayList;
 
 /**
@@ -20,7 +20,7 @@ public interface DataSection {
     
     public String returnEmptyListString();
     
-    public boolean generateTextForRecord(CDISMap cdisMap);
+    public boolean generateTextForRecord(CdisMap cdisMap);
     
     public ArrayList getSectionTextData();
            

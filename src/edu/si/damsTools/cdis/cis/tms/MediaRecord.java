@@ -15,7 +15,7 @@ import edu.si.damsTools.cdis.cis.tms.database.MediaFormats;
 
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.dams.database.Uois;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 
 import java.text.DateFormat;
@@ -321,7 +321,7 @@ public class MediaRecord {
         
     }
     
-    public boolean redirectPath(CDISMap cdisMap) {
+    public boolean redirectPath(CdisMap cdisMap) {
         
         MediaFiles mediaFiles = new MediaFiles ();
         SiAssetMetadata siAsst = new SiAssetMetadata();

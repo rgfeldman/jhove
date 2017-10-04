@@ -99,7 +99,7 @@ public class SiAssetMetadata {
     
     public boolean populateSiAsstData () {
         
-        String sql = "SELECT owning_unit_unique_name, is_restricted, max_ids_size " +
+        String sql = "SELECT owning_unit_unique_name, is_restricted, max_ids_size, source_system_id " +
                     "FROM towner.si_asset_metadata " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
@@ -111,6 +111,7 @@ public class SiAssetMetadata {
                 setOwningUnitUniqueName (rs.getString(1));
                 setIsRestricted (rs.getString(2));
                 setMaxIdsSize (rs.getInt(3));
+                setSourceSystemId(rs.getString(4));
             }   
             
         } catch (Exception e) {

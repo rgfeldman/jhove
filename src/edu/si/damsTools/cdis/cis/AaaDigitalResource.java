@@ -6,7 +6,7 @@
 package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.cis.iris.database.SI_IrisDAMSMetaCore;
+import edu.si.damsTools.cdis.aaa.database.TblCollection;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import java.sql.PreparedStatement;
@@ -18,16 +18,13 @@ import java.util.logging.Logger;
  *
  * @author rfeldman
  */
-public class IrisBg implements CisRecordAttr {
+public class AaaDigitalResource implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private String cisImageIdentifier;
     private String cisGroupIdentifier; 
     
-    public void setUniqueImageIdentifier (String identifier) {
-        this.cisImageIdentifier = identifier;
-    }
     
     public String getCisImageIdentifier () {
         return this.cisImageIdentifier;
@@ -37,22 +34,15 @@ public class IrisBg implements CisRecordAttr {
         return this.cisGroupIdentifier;
     }
     
-    public String returnGrpInfoForReport (CdisMap cdisMap) {
-        
-        CdisObjectMap cdisObjectMap = new CdisObjectMap();
-        
-        cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
-        cdisObjectMap.populateCisUniqueObjectIdforCdisId();
-        
-        return "Accno: " + cdisObjectMap.getCisUniqueObjectId();    
+    public void setUniqueImageIdentifier (String identifier) {
+        this.cisImageIdentifier = identifier;
     }
     
     public boolean populateGroupIdForImageId() {
         
-         //get earliest objectId on the current renditionID       
-        String sql =    "SELECT itemAccnoFull " +
-                        "FROM  SI_IrisDAMSMetaCore5 " +
-                        "WHERE ImageLibId = '" + this.cisImageIdentifier + "'";
+        String sql =    "SELECT fkCollectionDigResId " +
+                        "FROM  dbo.tblDigitalResource " +
+                        "WHERE digitalResourceID = " + cisImageIdentifier;
         
         logger.log(Level.FINEST,"SQL! " + sql);
         
@@ -64,10 +54,25 @@ public class IrisBg implements CisRecordAttr {
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain itemAccnoFull for ImageLibId", e );
+                logger.log(Level.FINER, "Error: unable to obtain CollectionID for digResource", e );
                 return false;
         }
         return true;
     }
+    
+    public String returnGrpInfoForReport (CdisMap cdisMap) {
         
+        CdisObjectMap cdisObjectMap = new CdisObjectMap();
+        
+        cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
+        cdisObjectMap.populateCisUniqueObjectIdforCdisId();
+        
+        TblCollection tblCollection = new TblCollection();
+        tblCollection.setCollectionId(Integer.parseInt(cdisObjectMap.getCisUniqueObjectId()) );
+        tblCollection.populateCollcode();
+        
+        return "Collection: " + tblCollection.getCollcode();
+        
+    }
+    
 }

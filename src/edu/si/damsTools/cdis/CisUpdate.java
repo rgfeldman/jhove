@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools.cdis;
 
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CDISRefIdMap;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -66,7 +66,7 @@ public class CisUpdate extends Operation {
         
         for (Integer mapId : this.mapIdsToSync) {
             try {
-                CDISMap cdisMap = new CDISMap();
+                CdisMap cdisMap = new CdisMap();
                 
                 cdisMap.setCdisMapId( mapId);
                 boolean mapInfoPopulated = cdisMap.populateMapInfo();
@@ -98,7 +98,7 @@ public class CisUpdate extends Operation {
         
     }
     
-    private boolean updateRefId (CDISMap cdisMap) {
+    private boolean updateRefId (CdisMap cdisMap) {
         
         //Get the RefId
         CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();

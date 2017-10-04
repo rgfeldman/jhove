@@ -10,8 +10,8 @@ import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.damsTools.cdis.database.CDISMap;
-import edu.si.damsTools.cdis.database.CDISObjectMap;
+import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -80,7 +80,7 @@ public class CreateCisMedia extends Operation {
         uois.populateName(); 
             
         //Create CDISMap entry for the record
-        CDISMap cdisMap = new CDISMap();
+        CdisMap cdisMap = new CdisMap();
         cdisMap.setDamsUoiid(uoiId);
         cdisMap.setFileName(uois.getName());
             
@@ -137,7 +137,7 @@ public class CreateCisMedia extends Operation {
             return;
         }
             
-        CDISObjectMap cdisObjectMap = new CDISObjectMap ();
+        CdisObjectMap cdisObjectMap = new CdisObjectMap ();
         cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
         cdisObjectMap.setCisUniqueObjectId(Integer.toString (objectId) );
         boolean objectMapCreated = cdisObjectMap.createRecord();

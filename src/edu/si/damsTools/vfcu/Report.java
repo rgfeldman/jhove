@@ -2,7 +2,7 @@ package edu.si.damsTools.vfcu;
 
 import edu.si.damsTools.vfcu.database.VFCUErrorLog;
 import edu.si.damsTools.vfcu.database.VFCUMd5File;
-import edu.si.damsTools.vfcu.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 
 import com.lowagie.text.Font;
 import com.lowagie.text.Document;
@@ -495,7 +495,7 @@ public class Report extends Operation {
         for (Integer mediaId :completedIdName.keySet()) {     
             try {
                 
-                VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+                VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
                       
                 RtfFont listElementFont=new RtfFont("Courier",8);
                 
@@ -541,7 +541,7 @@ public class Report extends Operation {
             
             try {
                 
-                VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+                VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
                 VFCUErrorLog vfcuError = new VFCUErrorLog();
                       
                 RtfFont listElementFont=new RtfFont("Courier",8);

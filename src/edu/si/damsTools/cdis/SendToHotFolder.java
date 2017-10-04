@@ -7,8 +7,8 @@ package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.cdis.dams.StagedFile;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.damsTools.cdis.database.CDISMap;
-import edu.si.damsTools.vfcu.database.VFCUMediaFile;
+import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 
 import java.io.File;
@@ -61,7 +61,7 @@ public class SendToHotFolder extends Operation {
         
     private boolean logChildRecord (Integer parentVfcuMediaFileId) {
         
-        VFCUMediaFile vfcuMediafile = new VFCUMediaFile();
+        VfcuMediaFile vfcuMediafile = new VfcuMediaFile();
         vfcuMediafile.setVfcuMediaFileId(parentVfcuMediaFileId);
             
         // Get the child record
@@ -75,7 +75,7 @@ public class SendToHotFolder extends Operation {
 
         vfcuMediafile.populateMediaFileName();
                     
-        CDISMap cdisMap = new CDISMap();
+        CdisMap cdisMap = new CdisMap();
 
         cdisMap.setFileName(vfcuMediafile.getMediaFileName());
         cdisMap.setVfcuMediaFileId(vfcuMediafile.getVfcuMediaFileId());
@@ -109,7 +109,7 @@ public class SendToHotFolder extends Operation {
             
             logger.log(Level.FINEST, "Processing for uniqueMediaId: " + uniqueMediaId);
                 
-            CDISMap cdisMap = new CDISMap();                           
+            CdisMap cdisMap = new CdisMap();                           
             cdisMap.setFileName(masterMediaIds.get(uniqueMediaId));
             cdisMap.setVfcuMediaFileId(Integer.parseInt(uniqueMediaId));
             
@@ -318,17 +318,17 @@ public class SendToHotFolder extends Operation {
             
             try {
                 
-                CDISMap cdisMap = new CDISMap();
+                CdisMap cdisMap = new CdisMap();
                 StagedFile stagedFile = new StagedFile();
             
                 try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 
-                VFCUMediaFile vfcuMediafile = new VFCUMediaFile();
+                VfcuMediaFile vfcuMediafile = new VfcuMediaFile();
                 vfcuMediafile.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
             
                 if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
                     // Get the child record
-                    CDISMap cdisMapChild = new CDISMap();
+                    CdisMap cdisMapChild = new CdisMap();
                     
                     int childVfcuMediaFileId = vfcuMediafile.retrieveSubFileId();
                     if (! (childVfcuMediaFileId > 0 )) {

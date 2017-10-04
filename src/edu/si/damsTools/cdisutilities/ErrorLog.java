@@ -9,7 +9,7 @@ import edu.si.damsTools.cdis.database.CDISErrorLog;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
 
 
@@ -17,7 +17,7 @@ public class ErrorLog {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
 
-    public void capture (CDISMap cdisMap, String errorCode, String logMessage) {
+    public void capture (CdisMap cdisMap, String errorCode, String logMessage) {
         
         logger.log(Level.FINER, logMessage);
         

@@ -18,7 +18,7 @@ import org.apache.commons.io.IOUtils;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IMOperation;
 
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 
 /**
  *
@@ -42,7 +42,7 @@ public class Thumbnail {
         bytes = null;
         
         //Get uoiid from mapId
-        CDISMap cdisMap = new CDISMap();
+        CdisMap cdisMap = new CdisMap();
         cdisMap.setCdisMapId(mapId);
         cdisMap.populateMapInfo();
         

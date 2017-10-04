@@ -17,7 +17,7 @@ import com.lowagie.text.Phrase;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
 import edu.si.damsTools.DamsTools; 
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.report.DisplayFormat;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
@@ -138,7 +138,7 @@ public class Attachment extends Report  {
             DataSection section = it.next();
             try {
                  
-                List<CDISMap> cdisMapList = new ArrayList<>();
+                List<CdisMap> cdisMapList = new ArrayList<>();
             
                 cdisMapList = returnCdisMapList(section, keyValue);
                         
@@ -149,7 +149,7 @@ public class Attachment extends Report  {
                     continue;
                 } 
                 
-                for (CDISMap cdisMap : cdisMapList) {
+                for (CdisMap cdisMap : cdisMapList) {
                     //Get the text for this cdisMapId for this section of the report
                     section.generateTextForRecord(cdisMap);
                 }
@@ -211,7 +211,7 @@ public class Attachment extends Report  {
     public List returnCdisMapList (DataSection section, String keyValue) {
         
         //start with a null list, if the list doesnt apply we want a null list rather than an empty list
-        List<CDISMap> idList = new ArrayList<CDISMap>();
+        List<CdisMap> idList = new ArrayList<CdisMap>();
         
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
@@ -239,7 +239,7 @@ public class Attachment extends Report  {
             ResultSet rs = stmt.executeQuery() ) {
 
             while (rs.next()) { 
-                CDISMap cdisMap = new CDISMap();
+                CdisMap cdisMap = new CdisMap();
                 cdisMap.setCdisMapId(rs.getInt(1));
                 cdisMap.populateMapInfo();
                 idList.add(cdisMap);

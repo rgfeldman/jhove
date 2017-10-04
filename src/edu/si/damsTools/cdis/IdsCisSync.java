@@ -10,7 +10,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import edu.si.damsTools.cdis.database.CDISMap;
+import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.aaa.CollectionRecord;
 import edu.si.damsTools.cdis.database.CDISActivityLog;
@@ -86,7 +86,7 @@ public class IdsCisSync extends Operation {
         while (mapIds.hasNext()) {
             try {
                 // Reassign object with each loop
-                CDISMap cdisMap = new CDISMap();
+                CdisMap cdisMap = new CdisMap();
                    
                 // set the MapId in the CDIS_MAP object
                 cdisMap.setCdisMapId( (Integer) mapIds.next());

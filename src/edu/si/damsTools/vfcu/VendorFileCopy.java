@@ -6,7 +6,7 @@
 package edu.si.damsTools.vfcu;
 
 import edu.si.damsTools.vfcu.database.VFCUActivityLog;
-import edu.si.damsTools.vfcu.database.VFCUMediaFile;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.vfcu.database.VFCUMd5File;
 import edu.si.damsTools.vfcu.files.MediaFile;
 import edu.si.damsTools.vfcu.files.VendorMd5File;
@@ -62,7 +62,7 @@ public class VendorFileCopy extends Operation {
             //to drive this process.
             
             if (masterIndStr.equals("subfile")) {
-                VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+                VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
                 vfcuMediaFile.setVfcuMd5FileId(currentMd5FileId);
                 HashMap<Integer, String> fileNameId;
                 fileNameId = new HashMap<> ();
@@ -72,7 +72,7 @@ public class VendorFileCopy extends Operation {
                 // Loop through each subfile in list
                 // For each subfile in list, see if there is a corresponding master file
                 for (Integer subFileMediaId : fileNameId.keySet()) { 
-                    vfcuMediaFile = new VFCUMediaFile();
+                    vfcuMediaFile = new VfcuMediaFile();
                     vfcuMediaFile.setVfcuMediaFileId(subFileMediaId);
                     vfcuMediaFile.setMediaFileName(fileNameId.get(subFileMediaId));
                     
@@ -155,7 +155,7 @@ public class VendorFileCopy extends Operation {
     public void invoke () {
     
         //Assign database entry rows to a batch
-        VFCUMediaFile vfcuMediaFile = new VFCUMediaFile();
+        VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
         vfcuMediaFile.setMaxFiles(Integer.parseInt(DamsTools.getProperty("maxFilesBatch")));
         vfcuMediaFile.setVfcuBatchNumber(DamsTools.getBatchNumber());
         

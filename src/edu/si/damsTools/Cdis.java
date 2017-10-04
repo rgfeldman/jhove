@@ -11,6 +11,7 @@ import edu.si.damsTools.cdis.CreateCisMedia;
 import edu.si.damsTools.cdis.IdsCisSync;
 import edu.si.damsTools.cdis.LinkToCis;
 import edu.si.damsTools.cdis.LinkToDams;
+import edu.si.damsTools.cdis.LinkDamsRecord;
 import edu.si.damsTools.cdis.LinkToDamsAndCIS;
 import edu.si.damsTools.cdis.MetaDataSync;
 import edu.si.damsTools.cdis.Operation;
@@ -49,6 +50,10 @@ public class Cdis extends App {
                                     
             case "linkToDams" :           
                 operation = new LinkToDams();
+                break;
+                
+             case "linkDamsRecord" :           
+                operation = new LinkDamsRecord();
                 break;
 
             case "metadataSync" :    
