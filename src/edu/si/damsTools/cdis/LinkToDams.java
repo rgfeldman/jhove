@@ -14,7 +14,7 @@ import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.StagedFile;
 import edu.si.damsTools.cdis.database.MediaTypeConfigR;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.dams.MediaRecord;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -162,7 +162,7 @@ public class LinkToDams extends Operation {
 
             Uois uois = new Uois();
             CdisMap cdisMap = new CdisMap();
-            CDISActivityLog activityLog = new CDISActivityLog();
+            CdisActivityLog activityLog = new CdisActivityLog();
       
             cdisMap.setCdisMapId(cdisMapId);
             cdisMap.setFileName(neverLinkedDamsIds.get(cdisMapId));

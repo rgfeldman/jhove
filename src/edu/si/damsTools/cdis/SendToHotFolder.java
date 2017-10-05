@@ -6,7 +6,7 @@
 package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.cdis.dams.StagedFile;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -360,7 +360,7 @@ public class SendToHotFolder extends Operation {
                         continue;
                     }
                 
-                    CDISActivityLog cdisActivity = new CDISActivityLog();
+                    CdisActivityLog cdisActivity = new CdisActivityLog();
                     cdisActivity.setCdisMapId(cdisMapChild.getCdisMapId());
                     cdisActivity.setCdisStatusCd("FXS");
                     boolean activityLogged = cdisActivity.insertActivity();
@@ -390,7 +390,7 @@ public class SendToHotFolder extends Operation {
                     continue;
                 }
                 
-                CDISActivityLog cdisActivity = new CDISActivityLog();
+                CdisActivityLog cdisActivity = new CdisActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());   
                 cdisActivity.setCdisStatusCd("FMM");
                 boolean activityLogged = cdisActivity.insertActivity();

@@ -14,7 +14,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
@@ -68,12 +68,10 @@ public class LinkDamsRecord extends Operation {
                 
                 SiPreservationMetadata prev = new SiPreservationMetadata();
                 prev.setPreservationIdNumber(vfcuMediaFile.getVendorChecksum());
-                prev.insertRow();
-                
+                prev.insertRow();           
             } 
         }    
-        
-        
+            
         //Now for both cdisMaps that were added OR cdisMaps ingested from VFCU, we need to do other things
         
         for (CdisMap cdisMap : cdisMapList) {
@@ -87,12 +85,9 @@ public class LinkDamsRecord extends Operation {
             if ( (DamsTools.getProperty("linkHierarchyInDams") != null ) && (DamsTools.getProperty("linkHierarchyInDams").equals("true") ) ) {
                 MediaRecord mediaRecord = new MediaRecord();
                 mediaRecord.establishParentChildLink(cdisMap);
-            }
-                        
+            }                    
             logActivity(cdisMap);    
-
         }
-
     }
 
 
@@ -106,7 +101,7 @@ public class LinkDamsRecord extends Operation {
                 return false;
             }
             
-            CDISActivityLog cdisActivity = new CDISActivityLog();
+            CdisActivityLog cdisActivity = new CdisActivityLog();
             cdisActivity.setCdisMapId(cdisMapId);
             cdisActivity.setCdisStatusCd("CTS");
             cdisActivity.insertActivity();
@@ -115,9 +110,8 @@ public class LinkDamsRecord extends Operation {
     }
         
     
-    
     private boolean logActivity(CdisMap cdisMap) {
-        CDISActivityLog cdisActivity = new CDISActivityLog();
+        CdisActivityLog cdisActivity = new CdisActivityLog();
         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
         cdisActivity.setCdisStatusCd("LDC");
         cdisActivity.insertActivity();
@@ -140,7 +134,6 @@ public class LinkDamsRecord extends Operation {
         }
         
         return cdisMap;
-        
     }
     
     
@@ -205,8 +198,7 @@ public class LinkDamsRecord extends Operation {
             logger.log(Level.SEVERE, "Error, unable to obtain MapId list to integrate", e);
             return false;
         }
-        return true;
-        
+        return true;     
     }
     
      public ArrayList<String> returnRequiredProps () {
@@ -215,6 +207,4 @@ public class LinkDamsRecord extends Operation {
         //add more required props here
         return reqProps;    
     }
-    
-    
 }

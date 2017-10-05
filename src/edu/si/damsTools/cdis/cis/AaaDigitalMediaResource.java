@@ -22,43 +22,18 @@ public class AaaDigitalMediaResource implements CisRecordAttr{
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private String cisImageIdentifier;
-    private String cisGroupIdentifier; 
-    
     
     public String getCisImageIdentifier () {
-        return this.cisImageIdentifier;
+        return null;
     }
     
     public String getGroupIdentifier () {
-        return this.cisGroupIdentifier;
+        return null;
     }
     
-    public void setUniqueImageIdentifier (String identifier) {
-        this.cisImageIdentifier = identifier;
-    }
-    
-    public boolean populateGroupIdForImageId() {
-        
-        String sql =    "SELECT fkCollectionID " +
-                        "FROM  dbo.tblDigitalMediaResource " +
-                        "WHERE digitalMediaResourceID = " + cisImageIdentifier;
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        
-        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
-                ResultSet rs = pStmt.executeQuery() ) {
-            
-            if (rs != null && rs.next()) {
-                cisGroupIdentifier = rs.getString(1);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain CollectionID for digResource", e );
-                return false;
-        }
+    public boolean setBasicValues (String cisRecordId) {
+
         return true;
-    
     }
     
     public String returnGrpInfoForReport (CdisMap cdisMap) {

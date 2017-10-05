@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools.cdis;
 
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.cdis.database.CdisMap;
@@ -95,7 +95,7 @@ public class CISThumbnailSync extends Operation {
             }
             
             // we have successfully updated the Blob if we got to this point, mark it as success in the db
-            CDISActivityLog cdisActivity = new CDISActivityLog();
+            CdisActivityLog cdisActivity = new CdisActivityLog();
             cdisActivity.setCdisMapId(mapId);
             cdisActivity.setCdisStatusCd("CTS");    
             cdisActivity.insertActivity();

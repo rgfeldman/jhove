@@ -13,7 +13,7 @@ import java.util.Iterator;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.aaa.CollectionRecord;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -113,7 +113,7 @@ public class IdsCisSync extends Operation {
                 }
                 
                 if (pathUpdated) {
-                    CDISActivityLog cdisActivity = new CDISActivityLog(); 
+                    CdisActivityLog cdisActivity = new CdisActivityLog(); 
                     cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                     cdisActivity.setCdisStatusCd("CPS");    
                     boolean activityLogged = cdisActivity.insertActivity();

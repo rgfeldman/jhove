@@ -6,8 +6,8 @@
 package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.CDISRefIdMap;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisRefIdMap;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
@@ -80,7 +80,7 @@ public class CisUpdate extends Operation {
                 }
                 
                 //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
-                CDISActivityLog cdisActivity = new CDISActivityLog(); 
+                CdisActivityLog cdisActivity = new CdisActivityLog(); 
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                 cdisActivity.setCdisStatusCd("CPD"); 
                 boolean activityLogged = cdisActivity.insertActivity();
@@ -101,7 +101,7 @@ public class CisUpdate extends Operation {
     private boolean updateRefId (CdisMap cdisMap) {
         
         //Get the RefId
-        CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+        CdisRefIdMap cdisRefIdMap = new CdisRefIdMap();
         cdisRefIdMap.setCdisMapId(cdisMap.getCdisMapId());
         cdisRefIdMap.populateRefIdFromMapId();
         

@@ -6,7 +6,6 @@
 package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.cis.iris.database.SI_IrisDAMSMetaCore;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import java.sql.PreparedStatement;
@@ -22,19 +21,13 @@ public class IrisBg implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private String cisImageIdentifier;
-    private String cisGroupIdentifier; 
-    
-    public void setUniqueImageIdentifier (String identifier) {
-        this.cisImageIdentifier = identifier;
-    }
     
     public String getCisImageIdentifier () {
-        return this.cisImageIdentifier;
+        return null;
     }
     
     public String getGroupIdentifier () {
-        return this.cisGroupIdentifier;
+        return null;
     }
     
     public String returnGrpInfoForReport (CdisMap cdisMap) {
@@ -47,26 +40,8 @@ public class IrisBg implements CisRecordAttr {
         return "Accno: " + cdisObjectMap.getCisUniqueObjectId();    
     }
     
-    public boolean populateGroupIdForImageId() {
-        
-         //get earliest objectId on the current renditionID       
-        String sql =    "SELECT itemAccnoFull " +
-                        "FROM  SI_IrisDAMSMetaCore5 " +
-                        "WHERE ImageLibId = '" + this.cisImageIdentifier + "'";
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        
-        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
-                ResultSet rs = pStmt.executeQuery() ) {
-            
-            if (rs != null && rs.next()) {
-                cisGroupIdentifier = rs.getString(1);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain itemAccnoFull for ImageLibId", e );
-                return false;
-        }
+     public boolean setBasicValues (String cisRecordId) {
+
         return true;
     }
         

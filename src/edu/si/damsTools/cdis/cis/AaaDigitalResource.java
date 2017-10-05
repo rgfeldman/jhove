@@ -38,6 +38,11 @@ public class AaaDigitalResource implements CisRecordAttr {
         this.cisImageIdentifier = identifier;
     }
     
+    public boolean setBasicValues (String cisRecordId) {
+
+        return true;
+    }
+    
     public boolean populateGroupIdForImageId() {
         
         String sql =    "SELECT fkCollectionDigResId " +

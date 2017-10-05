@@ -29,8 +29,8 @@ import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
-import edu.si.damsTools.cdis.database.CDISRefIdMap;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisRefIdMap;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.sql.ResultSetMetaData;
@@ -73,7 +73,7 @@ public class LinkToDamsAndCIS extends Operation {
     private boolean linkObjectAspace(Integer cdisMapId, String refId) {
         
         //Insert into CDISRefIdMap
-        CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+        CdisRefIdMap cdisRefIdMap = new CdisRefIdMap();
         cdisRefIdMap.setCdisMapId(cdisMapId);
         cdisRefIdMap.setRefId(refId);
         cdisRefIdMap.createRecord();
@@ -289,7 +289,7 @@ public class LinkToDamsAndCIS extends Operation {
                 return false;
             }
             
-            CDISActivityLog cdisActivity = new CDISActivityLog();
+            CdisActivityLog cdisActivity = new CdisActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
             cdisActivity.setCdisStatusCd("CTS");
             cdisActivity.insertActivity();
@@ -349,12 +349,12 @@ public class LinkToDamsAndCIS extends Operation {
                             mediaRecord.establishParentChildLink(cdisMap);
                         }
                         
-                        CDISActivityLog cdisActivity = new CDISActivityLog();
+                        CdisActivityLog cdisActivity = new CdisActivityLog();
                         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                         cdisActivity.setCdisStatusCd("LDC");
                         cdisActivity.insertActivity();
                         
-                        cdisActivity = new CDISActivityLog();
+                        cdisActivity = new CdisActivityLog();
                         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
                         cdisActivity.setCdisStatusCd("LCC"); 
                         cdisActivity.insertActivity();            

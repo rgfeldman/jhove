@@ -23,19 +23,13 @@ public class Tms implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private String cisImageIdentifier;
-    private String cisGroupIdentifier; 
-    
-    public void setUniqueImageIdentifier (String identifier) {
-        this.cisImageIdentifier = identifier;
-    }
     
     public String getCisImageIdentifier () {
-        return this.cisImageIdentifier;
+        return null;
     }
     
     public String getGroupIdentifier () {
-        return this.cisGroupIdentifier;
+        return null;
     }
     
     public String returnGrpInfoForReport (CdisMap cdisMap) {
@@ -52,35 +46,10 @@ public class Tms implements CisRecordAttr {
         return "Object: " + objects.getObjectNumber() ;
     }
     
-    public boolean populateGroupIdForImageId() {
-        
-        //get earliest objectId on the current renditionID 
-        String sql =    "select min(a.ObjectID) " +
-                        "from Objects a, " +
-                        "MediaXrefs b, " +
-                        "MediaMaster c, " +
-                        "MediaRenditions d " +
-                        "where a.ObjectID = b.ID " +
-                        "and b.MediaMasterID = c.MediaMasterID " +
-                        "and b.TableID = 108 " +
-                        "and c.MediaMasterID = d.MediaMasterID " +
-                        "and d.RenditionID = " + cisImageIdentifier;
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        
-        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-   
-            if (rs.next()) {
-                logger.log(Level.FINER,"Located ObjectID: " + rs.getString(1) + " For RenditionID: " + cisImageIdentifier);
-                cisGroupIdentifier = rs.getString(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+    
+    public boolean setBasicValues (String cisRecordId) {
+
         return true;
-        
     }
     
 }

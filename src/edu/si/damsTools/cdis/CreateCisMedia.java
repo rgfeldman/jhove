@@ -9,7 +9,7 @@ import edu.si.damsTools.cdis.cis.tms.database.MediaRenditions;
 import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 import edu.si.damsTools.cdis.dams.database.Uois;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -148,19 +148,19 @@ public class CreateCisMedia extends Operation {
         }
             
         // Add activity record indicating Media Has been created
-        CDISActivityLog activityLog = new CDISActivityLog();
+        CdisActivityLog activityLog = new CdisActivityLog();
         activityLog.setCdisMapId(cdisMap.getCdisMapId());
         activityLog.setCdisStatusCd("CMC");
         activityLog.insertActivity();
           
         // Add activity record indicating Media Has been Linked
-        activityLog = new CDISActivityLog();
+        activityLog = new CdisActivityLog();
         activityLog.setCdisMapId(cdisMap.getCdisMapId());
         activityLog.setCdisStatusCd("LCC");
         activityLog.insertActivity();
             
         // Add activity record indicating Media Has been Thumbnail Synced
-        activityLog = new CDISActivityLog();
+        activityLog = new CdisActivityLog();
         activityLog.setCdisMapId(cdisMap.getCdisMapId());
         activityLog.setCdisStatusCd("CTS");
         activityLog.insertActivity();

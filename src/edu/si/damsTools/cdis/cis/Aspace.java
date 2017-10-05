@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools.cdis.cis;
 
-import edu.si.damsTools.cdis.database.CDISRefIdMap;
+import edu.si.damsTools.cdis.database.CdisRefIdMap;
 import edu.si.damsTools.cdis.database.CdisMap;
 
 /**
@@ -14,34 +14,29 @@ import edu.si.damsTools.cdis.database.CdisMap;
  */
 public class Aspace implements CisRecordAttr {
     
-    private String cisImageIdentifier;
-    private String cisGroupIdentifier; 
-    
-    public void setUniqueImageIdentifier (String identifier) {
-        this.cisImageIdentifier = identifier;
-    }
     
     public String getCisImageIdentifier () {
-        return this.cisImageIdentifier;
+        return null;
     }
     
     public String getGroupIdentifier () {
-        return this.cisGroupIdentifier;
+        return null;
     }
     
     
     public String returnGrpInfoForReport (CdisMap cdisMap) {
         
-        CDISRefIdMap cdisRefidMap = new CDISRefIdMap();
+        CdisRefIdMap cdisRefidMap = new CdisRefIdMap();
         cdisRefidMap.setCdisMapId(cdisMap.getCdisMapId());
         cdisRefidMap.populateRefIdFromMapId();
                         
         return "CDISRefId: " +  cdisRefidMap.getRefId();
     }
     
-    public boolean populateGroupIdForImageId() {
-        return false;
+    public boolean setBasicValues (String cisRecordId) {
+
+        return true;
     }
-    
+
     
 }

@@ -13,14 +13,12 @@ import edu.si.damsTools.cdis.database.CdisMap;
  */
 public interface CisRecordAttr {
     
-    public boolean populateGroupIdForImageId();
-    
     public String returnGrpInfoForReport (CdisMap cdisMap);
-    
-    public void setUniqueImageIdentifier(String identifier);
     
     public String getCisImageIdentifier();
     
     public String getGroupIdentifier ();
+    
+    public boolean setBasicValues(String cisRecordId);
  
 }

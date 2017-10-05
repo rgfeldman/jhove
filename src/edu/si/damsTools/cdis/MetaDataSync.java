@@ -18,11 +18,11 @@ import java.sql.Connection;
 
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
-import edu.si.damsTools.cdis.database.CDISRefIdMap;
+import edu.si.damsTools.cdis.database.CdisRefIdMap;
 import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.MediaRecord;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.XmlQueryData;
@@ -54,7 +54,7 @@ public class MetaDataSync extends Operation{
     }
     
     private void setSourceDb() {
-         if (DamsTools.getProperty("mdsFromCdisDams") != null && DamsTools.getProperty("mdsFromCdisDams").equals("true")  ) {
+        if (DamsTools.getProperty("mdsFromCdisDams") != null && DamsTools.getProperty("mdsFromCdisDams").equals("true")  ) {
             sourceDb = DamsTools.getDamsConn();
         }
         else {
@@ -424,7 +424,7 @@ public class MetaDataSync extends Operation{
                 CdisMap cdisMap = new CdisMap();
                     
                 if (DamsTools.getProperty("cis").equals("aSpace")){
-                    CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+                    CdisRefIdMap cdisRefIdMap = new CdisRefIdMap();
                     cdisRefIdMap.setRefId(rs.getString(1));
                         
                     ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
@@ -643,7 +643,7 @@ public class MetaDataSync extends Operation{
             //For ArchiveSpace, we need to prep the view that we get data from 
             if (DamsTools.getProperty("cis").equals("aSpace")){
                 
-                CDISRefIdMap cdisRefIdMap = new CDISRefIdMap();
+                CdisRefIdMap cdisRefIdMap = new CdisRefIdMap();
                 cdisRefIdMap.setCdisMapId(cdisMap.getCdisMapId());
                 cdisRefIdMap.populateRefIdFromMapId();
                 cdisUpdates.setEadRefId(cdisRefIdMap.getRefId());
@@ -684,7 +684,7 @@ public class MetaDataSync extends Operation{
             } 
             
             // see if there already is a row that in the activity_log that has been synced
-            CDISActivityLog cdisActivity = new CDISActivityLog();
+            CdisActivityLog cdisActivity = new CdisActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
             cdisActivity.setCdisStatusCd("MDS");
         
