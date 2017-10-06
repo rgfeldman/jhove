@@ -5,10 +5,10 @@
  */
 package edu.si.damsTools.cdisutilities;
 
-import edu.si.damsTools.cdis.database.CDISErrorLog;
+import edu.si.damsTools.cdis.database.CdisErrorLog;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.cdis.database.CDISActivityLog;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
 
@@ -24,13 +24,13 @@ public class ErrorLog {
         //populate the filename and mapinfo if we need it
         cdisMap.populateMapInfo();
         
-        CDISErrorLog cdisError = new CDISErrorLog();
+        CdisErrorLog cdisError = new CdisErrorLog();
         cdisError.setCdisMapId(cdisMap.getCdisMapId());
         cdisError.setFileName(cdisMap.getFileName());
         cdisError.setCdisErrorCd(errorCode);
         cdisError.insertError();
         
-        CDISActivityLog cdisActivity = new CDISActivityLog();
+        CdisActivityLog cdisActivity = new CdisActivityLog();
         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
         cdisActivity.setCdisStatusCd("ERR");   
         cdisActivity.insertActivity(); 

@@ -6,17 +6,18 @@
 package edu.si.damsTools.cdis.dams;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.cis.CisRecordAttr;
-import edu.si.damsTools.cdis.cis.CisRecordFactory;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
-import edu.si.damsTools.utilities.XmlQueryData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.util.logging.Level;
 import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
+import edu.si.damsTools.cdis.dams.database.TeamsLinks;
+import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.database.MediaTypeConfigR;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 
 /**
  *
@@ -48,6 +49,25 @@ public class DamsRecord {
         siAsst.populateSiAsstData();
     } 
     
+     public boolean addPreservationData (CdisMap cdisMap) {
+        
+        VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
+        vfcuMediaFile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
+        vfcuMediaFile.populateVendorChecksum();
+        
+        addPreservationData(cdisMap);
+        // Add the preservation information
+        SiPreservationMetadata prev = new SiPreservationMetadata();
+        prev.setUoiid(uois.getUoiid());
+        prev.setPreservationIdNumber(vfcuMediaFile.getVendorChecksum());
+        boolean preservationInserted = prev.insertRow();       
+        if (!preservationInserted) {
+            return false;
+        }
+        
+        return true;
+    }
+     
     
-
+    
 }

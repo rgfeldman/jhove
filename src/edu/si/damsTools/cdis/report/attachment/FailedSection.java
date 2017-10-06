@@ -6,7 +6,7 @@
 package edu.si.damsTools.cdis.report.attachment;
 
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.CDISErrorLog;
+import edu.si.damsTools.cdis.database.CdisErrorLog;
 import edu.si.damsTools.DamsTools;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +40,7 @@ public class FailedSection implements DataSection {
     
     public boolean generateTextForRecord(CdisMap cdisMap) {
         
-        CDISErrorLog cdisErrorLog = new CDISErrorLog();
+        CdisErrorLog cdisErrorLog = new CdisErrorLog();
         cdisErrorLog.setCdisMapId(cdisMap.getCdisMapId());
         
         String errorDesc = cdisErrorLog.returnDescriptionForMapId();

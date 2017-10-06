@@ -53,26 +53,7 @@ public class StagedFile {
         this.pathEnding = pathEnding;
     }
     
-    /*
-    public boolean addPermissionWin(String deliveryFilePath) {
-    
-        
-        String fileToChange = deliveryFilePath + "\\" + getPathEnding() + "\\" + getFileName();
-        
-        try {
-            String command = "icacls \"" + fileToChange +  "\" /inheritance:e";
-         
-            Runtime.getRuntime().exec(command);
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update permissions", e );
-                return false; 
-        }
-        
-        return true;
-    }
-    */
-    
-    public boolean populateNamePathFromId (Integer vfcuMediaFileId) {
+    public boolean populateNameStagingPathFromId (Integer vfcuMediaFileId) {
  
         String sql = "SELECT b.media_file_name, a.base_path_staging, a.file_path_ending " +
                      "FROM  vfcu_md5_file a, " +
@@ -102,7 +83,7 @@ public class StagedFile {
     }
     
     // Moves the staged file to the pickup location folder for delivery
-    public boolean deliverFileForPickup (String destination) {
+    public boolean deliverForPickup (String destination) {
 
         String fileNamewithPath = getBasePath() + "/" + getPathEnding() + "/" + getFileName();
         String postIngestDeliveryLoc = destination + "/" + getPathEnding();

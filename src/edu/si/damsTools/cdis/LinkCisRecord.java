@@ -9,6 +9,8 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.cis.CisRecordFactory;
 import edu.si.damsTools.cdis.cis.CisRecordAttr;
+import edu.si.damsTools.cdis.cis.tms.Thumbnail;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.utilities.XmlQueryData;
 import java.sql.PreparedStatement;
@@ -44,13 +46,16 @@ public class LinkCisRecord extends Operation {
                 //Add the CIS unique Media ID
             
                 //Add the object_map record
+                
+                //update the thumbnail if needed
+                if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
+                    updateCisThumbnail(cdisMap.getCdisMapId());
+                }
             
                 //Add the status
             
-            }
-            
-        }
-        
+            }   
+        }  
     }
     
     private boolean populateCdisMapIdsToLink() {
@@ -101,9 +106,7 @@ public class LinkCisRecord extends Operation {
             return null;
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-        
-        
+
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
@@ -121,6 +124,25 @@ public class LinkCisRecord extends Operation {
         }
         return cis;
     }
+    
+    private boolean updateCisThumbnail(int cdisMapId) {
+
+        Thumbnail thumbnail = new Thumbnail();
+        boolean thumbCreated = thumbnail.generate(cdisMapId);
+                           
+        if (! thumbCreated) {
+            logger.log(Level.FINER, "CISThumbnailSync creation failed");
+            return false;
+        }
+            
+        CdisActivityLog cdisActivity = new CdisActivityLog();
+        cdisActivity.setCdisMapId(cdisMapId);
+        cdisActivity.setCdisStatusCd("CTS");
+        cdisActivity.insertActivity();
+           
+        return true;
+    }
+    
     
     
     

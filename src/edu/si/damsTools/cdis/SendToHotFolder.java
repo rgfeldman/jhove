@@ -337,7 +337,7 @@ public class SendToHotFolder extends Operation {
                     }
                 
                     //Get the file path for the vfcu_id
-                    boolean infoPopulated = stagedFile.populateNamePathFromId(childVfcuMediaFileId);
+                    boolean infoPopulated = stagedFile.populateNameStagingPathFromId(childVfcuMediaFileId);
                     if (! infoPopulated) {
                         ErrorLog errorLog = new ErrorLog ();
                         errorLog.capture(cdisMapChild, "CPHOTF", "Error, unable to populate name and path from database for subfile ");
@@ -371,7 +371,7 @@ public class SendToHotFolder extends Operation {
                 }
                 
                 //now send the master file to the hotfolder
-                boolean infoPopulated = stagedFile.populateNamePathFromId(Integer.parseInt(masterMediaId));
+                boolean infoPopulated = stagedFile.populateNameStagingPathFromId(Integer.parseInt(masterMediaId));
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "MVHOTF", "Error, unable to populate name and path from database for master file ");

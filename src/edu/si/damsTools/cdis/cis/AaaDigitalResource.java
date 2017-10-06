@@ -78,6 +78,5 @@ public class AaaDigitalResource implements CisRecordAttr {
         
         return "Collection: " + tblCollection.getCollcode();
         
-    }
-    
+    }   
 }

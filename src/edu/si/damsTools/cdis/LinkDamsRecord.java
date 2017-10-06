@@ -15,10 +15,10 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
-import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
-import edu.si.damsTools.vfcu.database.VfcuMediaFile;
-import edu.si.damsTools.cdis.cis.tms.Thumbnail;
-import edu.si.damsTools.cdis.dams.MediaRecord;
+import edu.si.damsTools.cdis.dams.StagedFile;
+import edu.si.damsTools.cdis.dams.database.TeamsLinks;
+import edu.si.damsTools.cdis.database.MediaTypeConfigR;
+import edu.si.damsTools.cdisutilities.ErrorLog;
 
 
 /**
@@ -44,71 +44,85 @@ public class LinkDamsRecord extends Operation {
         if (unlinkedListPopulated) {
             //These are records that we need to add to CDIS table
             //Add the records and add to the cdis_map_list
-            for (DamsRecord damsRecord : damsRecordList) {
-            
+            for (DamsRecord damsRecord : damsRecordList) {    
                 CdisMap cdisMap = new CdisMap();
-            
                 cdisMap = createNewRecordToLink(damsRecord);
-            
                 if (cdisMap != null) {
-                    cdisMapList.add(cdisMap);
-                } 
+                    logActivity(cdisMap); 
+                }
             }
         }
         
-         //Obtain a list of all the dams media to link that has been through VFCU
+         //This next block is for media to link that has been through VFCU
         boolean cdisListPopulated = populateCdisMediaList();
         if (cdisListPopulated) {
             for (CdisMap cdisMap : this.cdisMapList) {
-                cdisMap.updateUoiid();
-                
-                VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-                vfcuMediaFile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
-                vfcuMediaFile.populateVendorChecksum();
-                
-                SiPreservationMetadata prev = new SiPreservationMetadata();
-                prev.setPreservationIdNumber(vfcuMediaFile.getVendorChecksum());
-                prev.insertRow();           
+                boolean recordLinked = linkRecordFromVfcu(cdisMap);  
+                if(recordLinked) {
+                    logActivity(cdisMap);
+                }
             } 
         }    
-            
-        //Now for both cdisMaps that were added OR cdisMaps ingested from VFCU, we need to do other things
-        
-        for (CdisMap cdisMap : cdisMapList) {
-            
-            //update the thumbnail if needed
-            if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
-                updateCisThumbnail(cdisMap.getCdisMapId());
-            }
-            
-            //link parent and child records if necessary
-            if ( (DamsTools.getProperty("linkHierarchyInDams") != null ) && (DamsTools.getProperty("linkHierarchyInDams").equals("true") ) ) {
-                MediaRecord mediaRecord = new MediaRecord();
-                mediaRecord.establishParentChildLink(cdisMap);
-            }                    
-            logActivity(cdisMap);    
-        }
     }
-
-
-    private boolean updateCisThumbnail(int cdisMapId) {
-
-            Thumbnail thumbnail = new Thumbnail();
-            boolean thumbCreated = thumbnail.generate(cdisMapId);
-                            
-            if (! thumbCreated) {
-                logger.log(Level.FINER, "CISThumbnailSync creation failed");
-                return false;
+    
+   
+    
+    private boolean linkRecordFromVfcu(CdisMap cdisMap) {
+        cdisMap.updateUoiid();
+                
+        DamsRecord damsRecord = new DamsRecord();
+        damsRecord.setUoiId(cdisMap.getDamsUoiid());
+        damsRecord.setBasicData();
+                
+        //THE NEXT SHOULD BE DONE TO THE DAMS RECORD, not HERE
+        //link parent and child records if necessary
+        if ( DamsTools.getProperty("linkHierarchyInDams").equals("true") ) {
+            establishParentChildLink(cdisMap);
+        }
+                
+        //Add the preservation information
+        boolean preservationAdded = damsRecord.addPreservationData(cdisMap);
+        if (!preservationAdded) {
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "UPDAMP", "Error, unable to insert preservation data");
+            return false;
+        }
+                   
+        //Move file to the emu pickup area if necessary
+        if ( DamsTools.getProperty("retainFilesPostIngest").equals("true") ) {
+                    
+            boolean fileMoved = postIngestMove(cdisMap.getVfcuMediaFileId());  
+            if (! fileMoved) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
+                 return false;
             }
-            
-            CdisActivityLog cdisActivity = new CdisActivityLog();
-            cdisActivity.setCdisMapId(cdisMapId);
-            cdisActivity.setCdisStatusCd("CTS");
-            cdisActivity.insertActivity();
-            
+        }   
+        
         return true;
     }
+    
+    private boolean postIngestMove(int vfcuMediaFileId) {
         
+        if (DamsTools.getProperty("postIngestDeliveryLoc") == null) {
+            logger.log(Level.FINEST, "Error, Post ingest delivery site never specified");
+            return false;
+        }
+  
+        StagedFile stagedFile = new StagedFile();
+        stagedFile.populateNameStagingPathFromId(vfcuMediaFileId);
+        boolean fileDelivered = stagedFile.deliverForPickup(DamsTools.getProperty("postIngestDeliveryLoc"));
+ 
+        if (!fileDelivered) {
+            return false;
+        }
+        CdisActivityLog activityLog = new CdisActivityLog();
+        activityLog.setCdisStatusCd("FME");
+        activityLog.insertActivity();
+        
+        return true;
+    }
+
     
     private boolean logActivity(CdisMap cdisMap) {
         CdisActivityLog cdisActivity = new CdisActivityLog();
@@ -135,7 +149,6 @@ public class LinkDamsRecord extends Operation {
         
         return cdisMap;
     }
-    
     
     private boolean populateDamsMediaList () {
         String sql = null;
@@ -191,6 +204,7 @@ public class LinkDamsRecord extends Operation {
                 CdisMap cdisMap = new CdisMap();
                 cdisMap.setCdisMapId(rs.getInt(1));
                 cdisMap.setDamsUoiid(rs.getString(2));
+                cdisMap.populateCdisCisMediaTypeId();
                 cdisMapList.add(cdisMap);
             }
         }
@@ -204,7 +218,68 @@ public class LinkDamsRecord extends Operation {
      public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
+        reqProps.add("linkHierarchyInDams");
+        reqProps.add("retainFilesPostIngest");
         //add more required props here
         return reqProps;    
+    }
+     
+     //THIS NEEDS TO BE RE-WRITTEDN IN OO 
+    public boolean establishParentChildLink (CdisMap cdisMap) {
+        
+        //populate the Parent ID from the db
+        MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
+        mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
+        
+        //populate the parent and child ID from the db
+        mediaTypeConfigR.populateChildAndParentOfId();
+          
+        CdisMap childCdisMap = new CdisMap();
+        
+        if (mediaTypeConfigR.getChildOfId() > 0 ) {
+            
+            CdisMap parentCdisMap = new CdisMap();
+            
+            boolean parentInfoPopulated = parentCdisMap.populateParentFileInfo(cdisMap.getCdisMapId() );
+            if (parentInfoPopulated) {
+                TeamsLinks teamsLinks = new TeamsLinks();
+                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
+                teamsLinks.setDestValue(parentCdisMap.getDamsUoiid());
+                teamsLinks.setLinkType("CHILD");
+                teamsLinks.createRecord();
+        
+                teamsLinks = new TeamsLinks();
+                teamsLinks.setSrcValue(parentCdisMap.getDamsUoiid());
+                teamsLinks.setDestValue(cdisMap.getDamsUoiid());
+                teamsLinks.setLinkType("PARENT");
+                teamsLinks.createRecord();
+            }
+            else {
+                logger.log(Level.FINER, "unable to obtain parent info ");
+            }
+        }
+        
+        if (mediaTypeConfigR.getParentOfId() > 0 ) {
+            boolean childInfoPopulated = childCdisMap.populateChldFileInfo(cdisMap.getCdisMapId() );
+            
+            if (childInfoPopulated) {
+                TeamsLinks teamsLinks = new TeamsLinks();
+                teamsLinks.setSrcValue(childCdisMap.getDamsUoiid());
+                teamsLinks.setDestValue(cdisMap.getDamsUoiid());
+                teamsLinks.setLinkType("CHILD");
+                teamsLinks.createRecord();
+        
+                teamsLinks = new TeamsLinks();
+                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
+                teamsLinks.setDestValue(childCdisMap.getDamsUoiid());
+                teamsLinks.setLinkType("PARENT");
+                teamsLinks.createRecord();
+            }
+            else {
+                logger.log(Level.FINER, "unable to obtain child info ");
+            }       
+        }
+        
+        return true;
     }
 }

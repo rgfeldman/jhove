@@ -8,6 +8,7 @@ package edu.si.damsTools.cdis;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
+import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 
 import java.util.logging.Logger;
 import java.util.HashMap;
