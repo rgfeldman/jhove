@@ -8,6 +8,7 @@ package edu.si.damsTools.cdis.cis;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
+import edu.si.damsTools.cdis.cis.iris.database.SI_IrisDAMSMetaCore;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -21,13 +22,18 @@ public class IrisBg implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
+    private final SI_IrisDAMSMetaCore sI_IrisDAMSMetaCore;
+    
+    public IrisBg() {
+        sI_IrisDAMSMetaCore = new SI_IrisDAMSMetaCore();
+    }
     
     public String getCisImageIdentifier () {
-        return null;
+        return sI_IrisDAMSMetaCore.getImageLibId();
     }
     
     public String getGroupIdentifier () {
-        return null;
+        return sI_IrisDAMSMetaCore.getItemAccnoFull();
     }
     
     public String returnGrpInfoForReport (CdisMap cdisMap) {
@@ -41,8 +47,13 @@ public class IrisBg implements CisRecordAttr {
     }
     
      public boolean setBasicValues (String cisRecordId) {
-
-        return true;
+         sI_IrisDAMSMetaCore.setImageLibId(cisRecordId);
+         sI_IrisDAMSMetaCore.populateItemAccnoFull();
+         return true;
+    }
+     
+    public String returnCdisGroupType() {
+        return "cdisObjectMap";
     }
         
 }

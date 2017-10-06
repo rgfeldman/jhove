@@ -20,5 +20,7 @@ public interface CisRecordAttr {
     public String getGroupIdentifier ();
     
     public boolean setBasicValues(String cisRecordId);
+    
+    public String returnCdisGroupType();
  
 }

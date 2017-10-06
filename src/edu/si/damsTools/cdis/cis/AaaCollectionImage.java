@@ -30,8 +30,6 @@ public class AaaCollectionImage implements CisRecordAttr {
     public boolean setBasicValues (String cisRecordId) {
         imageMediaRecord.setCollectionOnlineImageId(Integer.parseInt(cisRecordId));
         imageMediaRecord.populateCollectionId();
-        //get the objectID
-
         return true;
     }
     
@@ -60,4 +58,7 @@ public class AaaCollectionImage implements CisRecordAttr {
         
     }
 
+    public String returnCdisGroupType() {
+        return "cdisObjectMap";
+    }
 }

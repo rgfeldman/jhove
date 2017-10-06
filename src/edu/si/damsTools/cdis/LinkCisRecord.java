@@ -7,6 +7,7 @@ package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.cis.CisRecordFactory;
 import edu.si.damsTools.cdis.cis.CisRecordAttr;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
@@ -41,21 +42,46 @@ public class LinkCisRecord extends Operation {
         
             for (CdisMap cdisMap  : cdisMapList) {
                 //Check if there is a matching record in the CIS for this cdisMap record
-                //getCisIdentifier
+                CisRecordAttr cis = returnCorrespondingCisRecord();
                 
-                //Add the CIS unique Media ID
-            
-                //Add the object_map record
+                cdisMap.setCisUniqueMediaId(cis.getCisImageIdentifier());
+                boolean cisMediaIdUpdated = cdisMap.updateCisUniqueMediaId();
                 
-                //update the thumbnail if needed
+                if (! cisMediaIdUpdated) {
+                    logger.log(Level.FINEST, "Error, unable to update CIS record");
+                    continue;
+                }
+                
+                ///need to take care of emu here....there is no object level information
+                if (cis.returnCdisGroupType().equals("cdisObjectMap")) {
+                    CdisObjectMap cdisObjectMap = new CdisObjectMap();
+                    cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisObjectMap.setCisUniqueObjectId(cis.getGroupIdentifier());
+                    boolean cdisObjectCreated = cdisObjectMap.createRecord();
+                    if (! cdisObjectCreated) {
+                        logger.log(Level.FINEST, "Error, unable to create cdisObjectMap record");
+                        continue;
+                    }
+                }
+                
+                //update the thumbnail if needed.  This should probably belong in CIS Update tool
                 if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
                     updateCisThumbnail(cdisMap.getCdisMapId());
                 }
             
                 //Add the status
-            
+                logActivity(cdisMap);
             }   
         }  
+    }
+    
+     private boolean logActivity(CdisMap cdisMap) {
+        CdisActivityLog cdisActivity = new CdisActivityLog();
+        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+        cdisActivity.setCdisStatusCd("LCC");
+        cdisActivity.insertActivity();
+                        
+        return true;
     }
     
     private boolean populateCdisMapIdsToLink() {
@@ -110,12 +136,11 @@ public class LinkCisRecord extends Operation {
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-            
             //Add the value from the database to the list
             if (rs.next()) {
                 CisRecordFactory cisFact = new CisRecordFactory();
                 cis = cisFact.cisChooser();
-                
+                cis.setBasicValues(rs.getString(1));
             }
         }
         catch(Exception e) {

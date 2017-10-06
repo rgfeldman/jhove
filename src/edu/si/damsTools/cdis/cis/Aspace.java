@@ -38,5 +38,8 @@ public class Aspace implements CisRecordAttr {
         return true;
     }
 
+    public String returnCdisGroupType() {
+        return null;
+    }
     
 }

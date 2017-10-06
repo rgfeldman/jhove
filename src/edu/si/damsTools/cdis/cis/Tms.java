@@ -6,9 +6,10 @@
 package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.cis.tms.database.Objects;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
+import edu.si.damsTools.cdis.cis.tms.database.MediaRenditions;
+import edu.si.damsTools.cdis.cis.tms.database.Objects;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -23,13 +24,20 @@ public class Tms implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
+    private final MediaRenditions mediaRendition;
+    private final Objects objectTbl;
+    
+    public Tms() {
+        mediaRendition = new MediaRenditions();
+        objectTbl = new Objects();
+    }
     
     public String getCisImageIdentifier () {
-        return null;
+        return mediaRendition.getRenditionNumber();
     }
     
     public String getGroupIdentifier () {
-        return null;
+        return Integer.toString(objectTbl.getObjectId());
     }
     
     public String returnGrpInfoForReport (CdisMap cdisMap) {
@@ -48,8 +56,16 @@ public class Tms implements CisRecordAttr {
     
     
     public boolean setBasicValues (String cisRecordId) {
-
+        mediaRendition.setRenditionId(Integer.parseInt(cisRecordId));
+        boolean objectIdPopuldated = objectTbl.populateMinObjectIDByRenditionId(Integer.parseInt(cisRecordId));
+        if (!objectIdPopuldated) {
+            return false;
+        }
         return true;
+    }
+    
+    public String returnCdisGroupType() {
+        return "cdisObjectMap";
     }
     
 }

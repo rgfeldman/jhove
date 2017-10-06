@@ -7,6 +7,7 @@ package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.aaa.database.TblCollection;
+import edu.si.damsTools.cdis.aaa.database.TblDigitalResource;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import java.sql.PreparedStatement;
@@ -22,46 +23,22 @@ public class AaaDigitalResource implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private String cisImageIdentifier;
-    private String cisGroupIdentifier; 
+    private final TblDigitalResource tblDigitalResource;
     
+    public AaaDigitalResource() {
+        tblDigitalResource = new TblDigitalResource();
+    }
     
     public String getCisImageIdentifier () {
-        return this.cisImageIdentifier;
+        return this.tblDigitalResource.getDigitalResourceId().toString();
     }
     
     public String getGroupIdentifier () {
-        return this.cisGroupIdentifier;
-    }
-    
-    public void setUniqueImageIdentifier (String identifier) {
-        this.cisImageIdentifier = identifier;
+        return this.tblDigitalResource.getCollectionId().toString();
     }
     
     public boolean setBasicValues (String cisRecordId) {
 
-        return true;
-    }
-    
-    public boolean populateGroupIdForImageId() {
-        
-        String sql =    "SELECT fkCollectionDigResId " +
-                        "FROM  dbo.tblDigitalResource " +
-                        "WHERE digitalResourceID = " + cisImageIdentifier;
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        
-        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
-                ResultSet rs = pStmt.executeQuery() ) {
-            
-            if (rs != null && rs.next()) {
-                cisGroupIdentifier = rs.getString(1);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain CollectionID for digResource", e );
-                return false;
-        }
         return true;
     }
     
@@ -79,4 +56,8 @@ public class AaaDigitalResource implements CisRecordAttr {
         return "Collection: " + tblCollection.getCollcode();
         
     }   
+    
+    public String returnCdisGroupType() {
+        return "cdisObjectMap";
+    }
 }
