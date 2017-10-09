@@ -9,7 +9,7 @@ import edu.si.damsTools.cdis.CISThumbnailSync;
 import edu.si.damsTools.cdis.CisUpdate;
 import edu.si.damsTools.cdis.CreateCisMedia;
 import edu.si.damsTools.cdis.IdsCisSync;
-import edu.si.damsTools.cdis.LinkToCis;
+import edu.si.damsTools.cdis.LinkCisRecord;
 import edu.si.damsTools.cdis.LinkDamsRecord;
 import edu.si.damsTools.cdis.MetaDataSync;
 import edu.si.damsTools.cdis.Operation;
@@ -38,8 +38,8 @@ public class Cdis extends App {
                 operation = new SendToHotFolder();
                 break;
                             
-            case "linkToCis" :
-                operation = new LinkToCis();
+             case "linkCisRecord" :
+                operation = new LinkCisRecord();
                 break;
                 
              case "linkDamsRecord" :           

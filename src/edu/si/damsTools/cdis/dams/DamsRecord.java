@@ -30,13 +30,17 @@ public class DamsRecord {
     private final Uois uois;
     private final SiAssetMetadata siAsst;
     
-    public Uois getUois () {
-        return uois;
-    }
-    
     public DamsRecord() {
         uois = new Uois();
         siAsst = new SiAssetMetadata();
+    }
+    
+    public SiAssetMetadata getSiAssetMetadata () {
+        return siAsst;
+    }
+    
+    public Uois getUois () {
+        return uois;
     }
     
     public void setUoiId(String uoiId) {

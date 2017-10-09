@@ -47,9 +47,14 @@ public class LinkDamsRecord extends Operation {
             for (DamsRecord damsRecord : damsRecordList) {    
                 CdisMap cdisMap = new CdisMap();
                 cdisMap = createNewRecordToLink(damsRecord);
-                if (cdisMap != null) {
-                    logActivity(cdisMap); 
+                if (cdisMap == null) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "CRCDMP", "Error, unable to create CDIS record");
+                    continue;
                 }
+                logActivity(cdisMap); 
+                
+                try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             }
         }
         
@@ -58,14 +63,18 @@ public class LinkDamsRecord extends Operation {
         if (cdisListPopulated) {
             for (CdisMap cdisMap : this.cdisMapList) {
                 boolean recordLinked = linkRecordFromVfcu(cdisMap);  
-                if(recordLinked) {
-                    logActivity(cdisMap);
+                if(! recordLinked) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPCCIS", "Error, update of CIS info in CDIS failed");
+                    continue;
                 }
+                logActivity(cdisMap);
+                
+                try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             } 
         }    
     }
     
-   
     
     private boolean linkRecordFromVfcu(CdisMap cdisMap) {
         cdisMap.updateUoiid();
@@ -153,7 +162,7 @@ public class LinkDamsRecord extends Operation {
     private boolean populateDamsMediaList () {
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveDamsIds");
+            sql = xmlInfo.getDataForAttribute("type","");
             if (sql != null) {
                 break;
             }
@@ -220,6 +229,7 @@ public class LinkDamsRecord extends Operation {
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("linkHierarchyInDams");
         reqProps.add("retainFilesPostIngest");
+        reqProps.add("linkDamsRecordXmlFile");
         //add more required props here
         return reqProps;    
     }

@@ -30,7 +30,7 @@ public class CisRecordFactory {
                     cisRecord = new AaaDigitalMediaResource();
                 }
                 if (DamsTools.getProperty("mediaTypeConfigId").equals("16")) {
-                    cisRecord = new AaaDigitalMediaResource();
+                    cisRecord = new AaaCollectionImage();
                 }
                 break;
             case "aSpace" :
