@@ -6,8 +6,8 @@
 package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.aaa.database.TblCollection;
-import edu.si.damsTools.cdis.aaa.database.TblCollectionsOnlineImage;
+import edu.si.damsTools.cdis.cis.aaa.database.TblCollection;
+import edu.si.damsTools.cdis.cis.aaa.database.TblCollectionsOnlineImage;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import java.util.logging.Logger;

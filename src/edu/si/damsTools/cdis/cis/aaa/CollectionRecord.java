@@ -6,9 +6,9 @@
 package edu.si.damsTools.cdis.cis.aaa;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.aaa.database.TblDigitalMediaResource;
-import edu.si.damsTools.cdis.aaa.database.TblDigitalResource;
-import edu.si.damsTools.cdis.aaa.database.TblCollectionsOnlineImage;
+import edu.si.damsTools.cdis.cis.aaa.database.TblDigitalMediaResource;
+import edu.si.damsTools.cdis.cis.aaa.database.TblDigitalResource;
+import edu.si.damsTools.cdis.cis.aaa.database.TblCollectionsOnlineImage;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.dams.database.TeamsLinks;
 import edu.si.damsTools.cdis.database.CdisMap;

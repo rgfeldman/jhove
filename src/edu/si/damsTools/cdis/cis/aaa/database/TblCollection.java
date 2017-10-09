@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.damsTools.cdis.aaa.database;
+package edu.si.damsTools.cdis.cis.aaa.database;
 
 import edu.si.damsTools.DamsTools;
 import java.sql.PreparedStatement;
