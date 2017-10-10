@@ -162,7 +162,7 @@ public class LinkDamsRecord extends Operation {
     private boolean populateDamsMediaList () {
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","");
+            sql = xmlInfo.getDataForAttribute("type","retrieveDamsIds");
             if (sql != null) {
                 break;
             }

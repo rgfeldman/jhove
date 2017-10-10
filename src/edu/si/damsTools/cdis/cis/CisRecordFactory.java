@@ -36,8 +36,8 @@ public class CisRecordFactory {
             case "aSpace" :
                 cisRecord = new Aspace();
                 break;
-            case "emu" :
-                cisRecord = new Emu();
+            case "cdisDb" :
+                cisRecord = new CdisDb();
                 break;
             case "iris" :
                 cisRecord = new IrisBg();

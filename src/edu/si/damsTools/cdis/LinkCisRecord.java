@@ -14,6 +14,7 @@ import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.utilities.XmlQueryData;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -30,12 +31,26 @@ public class LinkCisRecord extends Operation {
             
     private final ArrayList<CdisMap> cdisMapList;
     
+    Connection sourceDb;
+    
     public LinkCisRecord() {
         cdisMapList = new ArrayList();
     }
     
+    private void setSourceDb() {
+        if ( DamsTools.getProperty("cis").equals("cdisDb")  ) {
+            sourceDb = DamsTools.getDamsConn();
+        }
+        else {
+            sourceDb = DamsTools.getCisConn();
+        }
+    }
+    
     
     public void invoke () {
+        
+        setSourceDb();
+        
         //Obtain a list of all the dams media to link that has never been through VFCU
         boolean idsToLink = populateCdisMapIdsToLink();
         if (idsToLink) {
@@ -62,7 +77,7 @@ public class LinkCisRecord extends Operation {
                 }
                 
                 ///need to take care of emu here....there is no object level information
-                if (cis.returnCdisGroupType().equals("cdisObjectMap")) {
+                if (cis.returnCdisGroupType() != null && cis.returnCdisGroupType().equals("cdisObjectMap")) {
                     CdisObjectMap cdisObjectMap = new CdisObjectMap();
                     cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
                     cdisObjectMap.setCisUniqueObjectId(cis.getGroupIdentifier());
@@ -144,19 +159,19 @@ public class LinkCisRecord extends Operation {
             return null;
         }
         
-        if (sql.contains("?FILE_NAME?'")) {
+        if (sql.contains("?FILE_NAME?")) {
             sql = sql.replace("?FILE_NAME?", damsRecord.getUois().getName());
         }
-        if (sql.contains("?SOURCE_SYSTEM_ID?'")) {
+        if (sql.contains("?SOURCE_SYSTEM_ID?")) {
             sql = sql.replace("?SOURCE_SYSTEM_ID?", damsRecord.getSiAssetMetadata().getSourceSystemId());
         }
-        if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?'")) {
-            sql = sql.replace("?SOURCE_SYSTEM_ID?", damsRecord.getSiAssetMetadata().getOwningUnitUniqueName());
+        if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?")) {
+            sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?", damsRecord.getSiAssetMetadata().getOwningUnitUniqueName());
         }
                 
         logger.log(Level.FINEST, "SQL: {0}", sql);
 
-        try (PreparedStatement stmt = DamsTools.getCisConn().prepareStatement(sql);
+        try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
             //Add the value from the database to the list
@@ -196,6 +211,7 @@ public class LinkCisRecord extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("linkCisRecordXmlFile");
+        reqProps.add("cis");
         
         //add more required props here
         return reqProps;    

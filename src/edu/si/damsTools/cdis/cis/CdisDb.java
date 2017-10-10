@@ -13,24 +13,24 @@ import java.util.logging.Logger;
  *
  * @author rfeldman
  */
-public class Emu implements CisRecordAttr {
+public class CdisDb implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    String irn;
+    String cisIdentifier;
     
-    public Emu() {
+    public CdisDb() {
         
     }
     
     public boolean setBasicValues (String cisRecordId) {
-        irn = cisRecordId;
+        cisIdentifier = cisRecordId;
         return true;
     }
     
     
     public String getCisImageIdentifier () {
-        return this.irn;
+        return this.cisIdentifier;
     }
     
     public String getGroupIdentifier() {
@@ -43,6 +43,6 @@ public class Emu implements CisRecordAttr {
     }
 
     public String returnCdisGroupType() {
-        return "cdisObjectMap";
+        return null;
     }
 }
