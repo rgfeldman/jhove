@@ -54,7 +54,7 @@ public class MetaDataSync extends Operation{
     }
     
     private void setSourceDb() {
-        if (DamsTools.getProperty("mdsFromCdisDams") != null && DamsTools.getProperty("mdsFromCdisDams").equals("true")  ) {
+        if (DamsTools.getProperty("cis").equals("cdisDb")  ) {
             sourceDb = DamsTools.getDamsConn();
         }
         else {
