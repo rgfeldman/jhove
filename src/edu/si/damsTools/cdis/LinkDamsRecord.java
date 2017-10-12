@@ -54,7 +54,7 @@ public class LinkDamsRecord extends Operation {
                 }
                 logActivity(cdisMap); 
                 
-                try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+                try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             }
         }
         
@@ -70,7 +70,7 @@ public class LinkDamsRecord extends Operation {
                 }
                 logActivity(cdisMap);
                 
-                try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+                try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             } 
         }    
     }

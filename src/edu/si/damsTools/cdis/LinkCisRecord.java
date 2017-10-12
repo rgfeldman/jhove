@@ -13,6 +13,7 @@ import edu.si.damsTools.cdis.cis.CisRecordAttr;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.XmlQueryData;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -84,6 +85,8 @@ public class LinkCisRecord extends Operation {
                     boolean cdisObjectCreated = cdisObjectMap.createRecord();
                     if (! cdisObjectCreated) {
                         logger.log(Level.FINEST, "Error, unable to create cdisObjectMap record");
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CDIS object record");
                         continue;
                     }
                 }

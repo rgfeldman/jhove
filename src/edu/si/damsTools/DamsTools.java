@@ -281,7 +281,6 @@ public class DamsTools {
        
         DamsTools damsTool = new DamsTools();
         
-        
         damsTool.handleArguments(args);  
         damsTool.applicationFactory();
         if (damsTool.app == null) {
@@ -324,13 +323,12 @@ public class DamsTools {
                 return;
             }
             
-            if (DamsTools.getProperty("damsDriver") != null) {
-                damsConn = damsTool.connectToDatabases("dams");
-                if (damsConn == null ) {
-                    logger.log(Level.SEVERE, "Fatal Error: unable to connect to damsDb.  Exiting");
-                    return;
-                }
+            damsConn = damsTool.connectToDatabases("dams");
+            if (damsConn == null ) {
+                logger.log(Level.SEVERE, "Fatal Error: unable to connect to damsDb.  Exiting");
+                return;
             }
+
             if (DamsTools.getProperty("cisDriver") != null) {
                 cisConn = damsTool.connectToDatabases("cis");
                 if (cisConn == null ) {

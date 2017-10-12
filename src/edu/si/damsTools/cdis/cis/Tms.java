@@ -33,7 +33,7 @@ public class Tms implements CisRecordAttr {
     }
     
     public String getCisImageIdentifier () {
-        return mediaRendition.getRenditionNumber();
+        return mediaRendition.getRenditionId().toString();
     }
     
     public String getGroupIdentifier () {
@@ -56,6 +56,7 @@ public class Tms implements CisRecordAttr {
     
     
     public boolean setBasicValues (String cisRecordId) {
+        
         mediaRendition.setRenditionId(Integer.parseInt(cisRecordId));
         boolean objectIdPopuldated = objectTbl.populateMinObjectIDByRenditionId(Integer.parseInt(cisRecordId));
         if (!objectIdPopuldated) {
