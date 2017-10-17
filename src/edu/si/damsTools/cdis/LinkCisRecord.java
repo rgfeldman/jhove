@@ -6,11 +6,11 @@
 package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.dams.DamsRecord;
-import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.cis.CisRecordFactory;
 import edu.si.damsTools.cdis.cis.CisRecordAttr;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
+import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -93,12 +93,19 @@ public class LinkCisRecord extends Operation {
                 
                 //update the thumbnail if needed.  This should probably belong in CIS Update tool
                 if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
-                    updateCisThumbnail(cdisMap.getCdisMapId());
+                    boolean thumbnailUpdated = updateCisThumbnail(cdisMap.getCdisMapId());
+                    if (!thumbnailUpdated) {
+                        logger.log(Level.FINEST, "Error, unable to update CIS Thumbnail");
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "CRCIST", "Error, unable to create CIS thumbnail");
+                        continue;
+                    }
                 }
             
                 //Add the status
                 logActivity(cdisMap);
                 
+                try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             }   
         }  

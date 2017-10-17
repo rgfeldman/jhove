@@ -214,6 +214,7 @@ public class LinkDamsRecord extends Operation {
                 cdisMap.setCdisMapId(rs.getInt(1));
                 cdisMap.setDamsUoiid(rs.getString(2));
                 cdisMap.populateCdisCisMediaTypeId();
+                cdisMap.populateVfcuMediaFileId();
                 cdisMapList.add(cdisMap);
             }
         }
