@@ -6,13 +6,9 @@
 package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.CdisRefIdMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.cis.CisRecordAttr;;
 import edu.si.damsTools.cdis.dams.DamsRecord;
-import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
-import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -138,77 +134,21 @@ public class CisUpdate extends Operation {
             
             //IF successful, populate ead_ref_id_log
             cis.additionalCisUpdateActivity(damsRecord);
+            
             //Populate Activity Log
-        }
-    }
-                           
-/*                boolean refIdUpdated = updateRefId(cdisMap);
-                        
-                if (!refIdUpdated) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPCISR", "Error, RefIdUpdate failed");  
-                    continue;
-                }
-                
-                //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
-                CdisActivityLog cdisActivity = new CdisActivityLog(); 
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("CPD"); 
-                boolean activityLogged = cdisActivity.insertActivity();
-                if (!activityLogged) {
-                    logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
-                }
-            
-                try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-                try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-            
-            } catch (Exception e) {
-                    logger.log(Level.FINER, "Error in Cis Update loop", e);  
-            }
-        }
-        
-    }*/
-    
-    /*
-    private boolean updateRefId (CdisMap cdisMap) {
-        
-        //Get the RefId
-        CdisRefIdMap cdisRefIdMap = new CdisRefIdMap();
-        cdisRefIdMap.setCdisMapId(cdisMap.getCdisMapId());
-        cdisRefIdMap.populateRefIdFromMapId();
-        
-        //Check to see if this refId has been sent already
-        int numRefIdsSent = countRefIdSent(cdisRefIdMap.getRefId());
-        
-        //If the RefID has not yet been sent, Update the CIS information
-        if (numRefIdsSent == 0) {
-            
-            SiAssetMetadata siAsst = new SiAssetMetadata();
-            siAsst.setUoiid(cdisMap.getDamsUoiid());
-            siAsst.populateOwningUnitUniqueName();
-            
-            String holdingUnit = siAsst.getOwningUnitUniqueName().substring(0,siAsst.getOwningUnitUniqueName().indexOf("-"));
-           
-            CDISUpdates cdisUpdates = new CDISUpdates();
-            
-            cdisUpdates.setEadRefId(cdisRefIdMap.getRefId());
-            cdisUpdates.setHoldingUnit(holdingUnit);
-
-            if (cdisUpdates.getEadRefId() == null || cdisUpdates.getHoldingUnit() == null) {
-                logger.log(Level.FINEST,"Error: Missing required information for ArchiveSpace");
-                return false;
+            //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
+            CdisActivityLog cdisActivity = new CdisActivityLog(); 
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("CPD"); 
+            boolean activityLogged = cdisActivity.insertActivity();
+            if (!activityLogged) {
+                logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
             }
             
-            boolean recordCreated = cdisUpdates.createRecord();
-            if (recordCreated != true) {
-                return false;
-            }
+            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
         }
-        
-        return true;
-    }
-*/
-    
+    }    
     
     public void invoke() {
         

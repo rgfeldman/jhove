@@ -8,7 +8,7 @@ package edu.si.damsTools.cdis.cis;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
-import edu.si.damsTools.cdis.database.CdisRefIdMap;
+import edu.si.damsTools.cdis.database.CdisCisGroupMap;
 import edu.si.damsTools.cdis.database.CdisMap;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -35,12 +35,8 @@ public class Aspace implements CisRecordAttr {
     }
     
     public String returnGrpInfoForReport (CdisMap cdisMap) {
-        
-        CdisRefIdMap cdisRefidMap = new CdisRefIdMap();
-        cdisRefidMap.setCdisMapId(cdisMap.getCdisMapId());
-        cdisRefidMap.populateRefIdFromMapId();
                         
-        return "CDISRefId: " +  cdisRefidMap.getRefId();
+        return null;
     }
     
     public boolean setBasicValues (String identifier) {
@@ -62,9 +58,21 @@ public class Aspace implements CisRecordAttr {
         
         for (CdisMap cdisMap : cdisMapList) {
             
-            //IF the record has a differen eadRefId than before, then update the refid
-            //If the record does not have any refId, then add it
+            //See if this row has eadRefId Already
+            CdisCisGroupMap cdisCisGroup = new CdisCisGroupMap();
+            cdisCisGroup.setCdisMapId(cdisMap.getCdisMapId());
+            cdisCisGroup.setCisGroupValue(this.eadRefId);
+            cdisCisGroup.setCisGroupCd("ead");
+            cdisCisGroup.populateIdForCdisMapID();
             
+            if (cdisCisGroup.getCdisCisGroupMapId() == null) {
+                // insert a new group id
+                cdisCisGroup.createRecord();
+            }
+            else {
+                //update the new group id
+                cdisCisGroup.updateCisGroupValue();
+            }
         }
        
         return true;
