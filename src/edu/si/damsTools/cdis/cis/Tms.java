@@ -10,6 +10,7 @@ import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.cis.tms.database.MediaRenditions;
 import edu.si.damsTools.cdis.cis.tms.database.Objects;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -55,10 +56,10 @@ public class Tms implements CisRecordAttr {
     }
     
     
-    public boolean setBasicValues (String cisRecordId) {
+    public boolean setBasicValues (String identifier) {
         
-        mediaRendition.setRenditionId(Integer.parseInt(cisRecordId));
-        boolean objectIdPopuldated = objectTbl.populateMinObjectIDByRenditionId(Integer.parseInt(cisRecordId));
+        mediaRendition.setRenditionId(Integer.parseInt(identifier));
+        boolean objectIdPopuldated = objectTbl.populateMinObjectIDByRenditionId(Integer.parseInt(identifier));
         if (!objectIdPopuldated) {
             return false;
         }
@@ -69,4 +70,7 @@ public class Tms implements CisRecordAttr {
         return "cdisObjectMap";
     }
     
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+        return true;
+    }
 }

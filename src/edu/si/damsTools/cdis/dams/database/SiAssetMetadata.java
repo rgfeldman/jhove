@@ -17,12 +17,17 @@ public class SiAssetMetadata {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     //class attributes
+    private String eadRefId;
+    private String isRestricted;
+    private Integer maxIdsSize;
     private String owningUnitUniqueName;
     private String sourceSystemId;
     private String uoiid;  
-    private String isRestricted;
-    private Integer maxIdsSize;
-      
+
+    public String getEadRefId () {
+        return this.eadRefId;
+    }
+    
     public String getIsRestricted() {
         return this.isRestricted == null ? "" : this.isRestricted;
     }
@@ -34,7 +39,7 @@ public class SiAssetMetadata {
     public String getOwningUnitUniqueName() {
         return this.owningUnitUniqueName;
     }
-    
+        
     public String getSourceSystemId() {
         return this.sourceSystemId;
     }
@@ -43,6 +48,10 @@ public class SiAssetMetadata {
         return this.uoiid;
     }
     
+    public void setEadRefId(String eadRefId) {
+        this.eadRefId = eadRefId;
+    }
+        
     public void setIsRestricted(String isRestricted) {
         this.isRestricted = isRestricted;
     }
@@ -96,10 +105,30 @@ public class SiAssetMetadata {
              
     }
     
+    public boolean populateEadRefId () {
+        
+        String sql = "SELECT ead_ref_id " +
+                    "FROM towner.si_asset_metadata " +
+                    "WHERE uoi_id = '" + getUoiid() + "'";
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (rs != null && rs.next()) {
+                setEadRefId(rs.getString(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain EadRefId from cdis_map", e );
+                return false;
+        }
+        return true;
+    }
     
     public boolean populateSiAsstData () {
         
-        String sql = "SELECT owning_unit_unique_name, is_restricted, max_ids_size, source_system_id " +
+        String sql = "SELECT owning_unit_unique_name, is_restricted, max_ids_size, source_system_id, ead_ref_id " +
                     "FROM towner.si_asset_metadata " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
@@ -112,10 +141,11 @@ public class SiAssetMetadata {
                 setIsRestricted (rs.getString(2));
                 setMaxIdsSize (rs.getInt(3));
                 setSourceSystemId(rs.getString(4));
+                setEadRefId(rs.getString(5));
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                logger.log(Level.FINER, "Error: unable to obtain basic data from siAsstMetadata", e );
                 return false;
         }
         return true;
@@ -135,7 +165,7 @@ public class SiAssetMetadata {
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                logger.log(Level.FINER, "Error: unable to obtain restricted from siAsstMetadata", e );
                 return false;
         }
         return true;

@@ -10,6 +10,7 @@ import edu.si.damsTools.cdis.cis.aaa.database.TblCollection;
 import edu.si.damsTools.cdis.cis.aaa.database.TblCollectionsOnlineImage;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import java.util.logging.Logger;
 
 /**
@@ -27,8 +28,8 @@ public class AaaCollectionImage implements CisRecordAttr {
         imageMediaRecord = new TblCollectionsOnlineImage();
     }
     
-    public boolean setBasicValues (String cisRecordId) {
-        imageMediaRecord.setCollectionOnlineImageId(Integer.parseInt(cisRecordId));
+    public boolean setBasicValues (String identifier) {
+        imageMediaRecord.setCollectionOnlineImageId(Integer.parseInt(identifier));
         imageMediaRecord.populateCollectionId();
         return true;
     }
@@ -60,5 +61,9 @@ public class AaaCollectionImage implements CisRecordAttr {
 
     public String returnCdisGroupType() {
         return "cdisObjectMap";
+    }
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+        return true;
     }
 }

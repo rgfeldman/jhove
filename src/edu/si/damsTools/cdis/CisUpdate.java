@@ -8,6 +8,8 @@ package edu.si.damsTools.cdis;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisRefIdMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
+import edu.si.damsTools.cdis.cis.CisRecordAttr;;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
@@ -17,6 +19,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.cis.CisRecordFactory;
 import edu.si.damsTools.utilities.XmlQueryData;
 
 /**
@@ -27,16 +30,17 @@ import edu.si.damsTools.utilities.XmlQueryData;
 public class CisUpdate extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private ArrayList<Integer> mapIdsToSync;
+    private final ArrayList<DamsRecord> damsRecordList;
             
     public CisUpdate() {
+        damsRecordList = new ArrayList<>();
     }
     
-    private boolean populateRefIdsToSync() {
+    private boolean populateDamsRecordList() {
         
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveMapIds");
+            sql = xmlInfo.getDataForAttribute("type","retrieveDamsIds");
             if (sql != null) {
                 break;
             }
@@ -52,7 +56,10 @@ public class CisUpdate extends Operation {
             
             //Add the value from the database to the list
             while (rs.next()) {
-                mapIdsToSync.add(rs.getInt(1));
+                DamsRecord damsRecord = new DamsRecord();
+                damsRecord.setUoiId(rs.getString(1));
+                damsRecord.setBasicData();
+                damsRecordList.add(damsRecord);
             }
         }
         catch(Exception e) {
@@ -62,16 +69,80 @@ public class CisUpdate extends Operation {
         return true;
     }
     
-    private void processRefList () {
+    private int updateCis (String sql) {
         
-        for (Integer mapId : this.mapIdsToSync) {
-            try {
-                CdisMap cdisMap = new CdisMap();
-                
-                cdisMap.setCdisMapId( mapId);
-                boolean mapInfoPopulated = cdisMap.populateMapInfo();
+        int recordsUpdated = 0;
+        
+        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql)) {
+ 
+            recordsUpdated = pStmt.executeUpdate(sql);
+            
+            logger.log(Level.FINEST,"Rows Updated in Cis! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+            logger.log(Level.FINEST,"Error updating DAMS data", e);    
+        } 
+        return recordsUpdated;
+   
+    }
+    
+    
+    private String generateCisSql(CisRecordAttr cis) {
+        
+        String sql = null;
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataForAttribute("type","updateCis");
+            if (sql != null) {
+                break;
+            }
+        }
+        if (sql == null) {
+            logger.log(Level.FINEST, "Cis Update sql not found");
+            return null;
+        }
+        
+        if (sql.contains("?MEDIA_ID?")) {
+            sql = sql.replace("?MEDIA_ID?", cis.getCisImageIdentifier());
+        }
+        
+        return (sql);
+
+    }
+    
+    private void processRecordList () {
+        
+        CisRecordAttr cis;
+        CisRecordFactory cisFact = new CisRecordFactory();
+            
+        for (DamsRecord damsRecord : this.damsRecordList) {
+        
+            CdisMap cdisMap = new CdisMap();
+            cdisMap.setDamsUoiid(damsRecord.getUois().getUoiid());
+            cdisMap.populateIdFromUoiid();
+            
+            cis = cisFact.cisChooser();
+            cis.setBasicValues(damsRecord.getUois().getUoiid());
+            
+            //populate the Cis
+            String cisSql = generateCisSql(cis);
+            if (cisSql == null) {
+                //unable to generate SQL, generate error
+                continue;
+            }
+            
+            int numRowsUpdate = updateCis(cisSql);
+            if (! (numRowsUpdate > 0)) {
+                //unable to generate SQL, generate error
+                continue;
+            } 
+            
+            //IF successful, populate ead_ref_id_log
+            cis.additionalCisUpdateActivity(damsRecord);
+            //Populate Activity Log
+        }
+    }
                            
-                boolean refIdUpdated = updateRefId(cdisMap);
+/*                boolean refIdUpdated = updateRefId(cdisMap);
                         
                 if (!refIdUpdated) {
                     ErrorLog errorLog = new ErrorLog ();
@@ -96,8 +167,9 @@ public class CisUpdate extends Operation {
             }
         }
         
-    }
+    }*/
     
+    /*
     private boolean updateRefId (CdisMap cdisMap) {
         
         //Get the RefId
@@ -130,53 +202,28 @@ public class CisUpdate extends Operation {
             boolean recordCreated = cdisUpdates.createRecord();
             if (recordCreated != true) {
                 return false;
-            }        
+            }
         }
         
         return true;
     }
+*/
     
-    private int countRefIdSent (String refId) {
-        String sql =   "SELECT count(*) " +
-                        "FROM   cdis_map map, " +
-                        "       cdis_ref_id_map ref, " +
-                        "       cdis_activity_log act " +
-                        "WHERE ref.cdis_map_id = act.cdis_map_id " +
-                        "AND   map.cdis_map_id = act.cdis_map_id " +
-                        "AND   act.cdis_status_cd = 'CPD' " +
-                        "AND   ref.ref_id = '" + refId + "'";
-                        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-               ResultSet rs = pStmt.executeQuery()) {
-            
-            if (rs.next()) {
-                return rs.getInt(1);
-            }   
-            else {
-                // we need a map id, if we cant find one then raise error
-                return 0;
-            }
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Did not detect RefId Sent, will send new one ", e );
-            return -1;
-        }
-         
-    }
     
     public void invoke() {
         
-        mapIdsToSync = new ArrayList<>();
-        
-        boolean receivedList = populateRefIdsToSync();
-        
-        if (receivedList) {
-            
-            processRefList ();
+        boolean receivedList = populateDamsRecordList();
+        if (! receivedList) {
+             logger.log(Level.FINER, "Error retrieving list of records to sync, returning ");
+             return;
+        }
+        if (damsRecordList == null) {
+            logger.log(Level.FINER, "Nothing detected to sync, returning");
+            return;
         }
         
+        processRecordList();
+ 
         try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
         
     }

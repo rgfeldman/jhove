@@ -7,6 +7,7 @@ package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import java.util.logging.Logger;
 
 /**
@@ -23,8 +24,8 @@ public class CdisDb implements CisRecordAttr {
         
     }
     
-    public boolean setBasicValues (String cisRecordId) {
-        cisIdentifier = cisRecordId;
+    public boolean setBasicValues (String identifier) {
+        cisIdentifier = identifier;
         return true;
     }
     
@@ -44,5 +45,9 @@ public class CdisDb implements CisRecordAttr {
 
     public String returnCdisGroupType() {
         return null;
+    }
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+        return true;
     }
 }

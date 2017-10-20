@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 
 /**
  *
@@ -19,8 +20,10 @@ public interface CisRecordAttr {
     
     public String getGroupIdentifier ();
     
-    public boolean setBasicValues(String cisRecordId);
+    public boolean setBasicValues(String identifier);
     
     public String returnCdisGroupType();
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord);
  
 }

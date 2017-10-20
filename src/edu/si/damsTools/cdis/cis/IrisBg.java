@@ -9,6 +9,7 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.cis.iris.database.SI_IrisDAMSMetaCore;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -46,14 +47,18 @@ public class IrisBg implements CisRecordAttr {
         return "Accno: " + cdisObjectMap.getCisUniqueObjectId();    
     }
     
-     public boolean setBasicValues (String cisRecordId) {
-         sI_IrisDAMSMetaCore.setImageLibId(cisRecordId);
+     public boolean setBasicValues (String identifier) {
+         sI_IrisDAMSMetaCore.setImageLibId(identifier);
          sI_IrisDAMSMetaCore.populateItemAccnoFull();
          return true;
     }
      
     public String returnCdisGroupType() {
         return "cdisObjectMap";
+    }
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+        return true;
     }
         
 }

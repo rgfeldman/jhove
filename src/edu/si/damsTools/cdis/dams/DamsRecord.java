@@ -59,7 +59,6 @@ public class DamsRecord {
         vfcuMediaFile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
         vfcuMediaFile.populateVendorChecksum();
         
-        addPreservationData(cdisMap);
         // Add the preservation information
         SiPreservationMetadata prev = new SiPreservationMetadata();
         prev.setUoiid(uois.getUoiid());

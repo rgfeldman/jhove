@@ -8,6 +8,7 @@ package edu.si.damsTools.cdis.cis;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.cis.aaa.database.TblCollection;
 import edu.si.damsTools.cdis.cis.aaa.database.TblDigitalMediaResource;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import java.sql.PreparedStatement;
@@ -37,8 +38,8 @@ public class AaaDigitalMediaResource implements CisRecordAttr{
         return tblDigitalMediaResource.getCollectionId().toString();
     }
     
-    public boolean setBasicValues (String cisRecordId) {
-        tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(cisRecordId));
+    public boolean setBasicValues (String identifier) {
+        tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(identifier));
         tblDigitalMediaResource.populateCollectionId();
         return true;
     }
@@ -59,6 +60,10 @@ public class AaaDigitalMediaResource implements CisRecordAttr{
     }
     
     public String returnCdisGroupType() {
-        return "cdisObjectMap";
+        return "return linkCisRecord";
+    }
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+        return true;
     }
 }
