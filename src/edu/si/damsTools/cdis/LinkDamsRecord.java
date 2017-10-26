@@ -22,9 +22,12 @@ import edu.si.damsTools.cdisutilities.ErrorLog;
 
 
 /**
- *
- * @author rfeldman
+ * Class: LinkDamsRecord
+ * Purpose: This class is the main class for the linkDamsRecord Operation type.
+ * The linkDamsRecord Operation Type links the DAMS record to CDIS (that is it adds the UOI_ID identifier from DAMS into the 
+ * CDIS tables). The end result is a DAMS record will be associated to a CDIS record.
  */
+
 public class LinkDamsRecord extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());

@@ -23,9 +23,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- * @author rfeldman
+ * Class: LinkCisRecord
+ * Purpose: This class is the main class for the linkCisRecord Operation type.
+ * The linkCisRecord Operation Type links the CIS Record to CDIS (that is it adds identifiers from the CIS into the 
+ * CDIS tables) The end result is a DAMS record will be associated to a CIS record in the CDIS mapping tables.
  */
+
 public class LinkCisRecord extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());

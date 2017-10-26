@@ -18,7 +18,7 @@ import java.sql.Connection;
 
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
-import edu.si.damsTools.cdis.database.CdisRefIdMap;
+import edu.si.damsTools.cdis.database.CdisCisGroupMap;
 import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.MediaRecord;
@@ -424,11 +424,13 @@ public class MetaDataSync extends Operation{
                 CdisMap cdisMap = new CdisMap();
                     
                 if (DamsTools.getProperty("cis").equals("aSpace")){
-                    CdisRefIdMap cdisRefIdMap = new CdisRefIdMap();
-                    cdisRefIdMap.setRefId(rs.getString(1));
+                    CdisCisGroupMap cdisCisGroupMap = new CdisCisGroupMap();
+                    cdisCisGroupMap.setCisGroupValue(sql);
+                    cdisCisGroupMap.setCisGroupValue(rs.getString(1));
+                    cdisCisGroupMap.setCisGroupCd("ead");
                         
                     ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
-                    mapIdsForRefId =  cdisRefIdMap.returnCdisMapIdsForRefId();
+                    mapIdsForRefId =  cdisCisGroupMap.returnCdisMapIdsForCdValue();
                         
                     for (Integer mapId : mapIdsForRefId ) {
                         if (!cdisMapIdsToSync.contains(mapId)) {
@@ -643,10 +645,11 @@ public class MetaDataSync extends Operation{
             //For ArchiveSpace, we need to prep the view that we get data from 
             if (DamsTools.getProperty("cis").equals("aSpace")){
                 
-                CdisRefIdMap cdisRefIdMap = new CdisRefIdMap();
-                cdisRefIdMap.setCdisMapId(cdisMap.getCdisMapId());
-                cdisRefIdMap.populateRefIdFromMapId();
-                cdisUpdates.setEadRefId(cdisRefIdMap.getRefId());
+                CdisCisGroupMap cdisCisGroupMap = new CdisCisGroupMap();
+                cdisCisGroupMap.setCdisMapId(cdisMap.getCdisMapId());
+                cdisCisGroupMap.setCisGroupCd("ead");
+                cdisCisGroupMap.populateCisGroupValueForCdisMapIdType();
+                cdisUpdates.setEadRefId(cdisCisGroupMap.getCisGroupValue());
                 
                 boolean getDescriptiveDateCalled = cdisUpdates.callGetDescriptiveData();
                 
@@ -657,6 +660,7 @@ public class MetaDataSync extends Operation{
                     continue; 
                 }  
             }
+            
                 
              // execute the SQL statment to obtain the metadata and populate variables. The key value is the CDIS MAP ID
             boolean dataMappedFromCIS = buildCisQueryPopulateResults(cdisMap);

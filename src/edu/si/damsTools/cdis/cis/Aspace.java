@@ -67,7 +67,11 @@ public class Aspace implements CisRecordAttr {
             
             if (cdisCisGroup.getCdisCisGroupMapId() == null) {
                 // insert a new group id
-                cdisCisGroup.createRecord();
+                boolean cisGroupCreated = cdisCisGroup.createRecord();
+                if (! cisGroupCreated) {
+                    logger.log(Level.FINEST,"Unable to create group record! "); 
+                    return false;
+                }
             }
             else {
                 //update the new group id

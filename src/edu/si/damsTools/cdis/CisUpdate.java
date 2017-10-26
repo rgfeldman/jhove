@@ -5,22 +5,25 @@
  */
 package edu.si.damsTools.cdis;
 
+import edu.si.damsTools.cdis.cis.CisRecordAttr;
+import edu.si.damsTools.cdis.cis.CisRecordFactory;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
-import edu.si.damsTools.cdis.cis.CisRecordAttr;;
-import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.utilities.XmlQueryData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.cis.CisRecordFactory;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.cdisutilities.ErrorLog;
 
 /**
- *
- * @author rfeldman
+ * Class: CisUpdate
+ * Purpose: This class is the main class for the cisUpdate Operation type.
+ * The purpose of this operation type is to update values in the CIS based on values found in DAMS.
+ * The values to be updated typically require links being established with the linkCisRecord and linkDamsRecord operations
  */
 
 public class CisUpdate extends Operation {
@@ -59,7 +62,7 @@ public class CisUpdate extends Operation {
             }
         }
         catch(Exception e) {
-            logger.log(Level.SEVERE, "Error obtaining list to sync mediaPath and Name", e);
+            logger.log(Level.SEVERE, "Error obtaining list to update in CIS", e);
             return false;
         }
         return true;
@@ -99,6 +102,7 @@ public class CisUpdate extends Operation {
         
         if (sql.contains("?MEDIA_ID?")) {
             sql = sql.replace("?MEDIA_ID?", cis.getCisImageIdentifier());
+            logger.log(Level.FINEST, "New SQL: "+ sql);
         }
         
         return (sql);
@@ -133,7 +137,13 @@ public class CisUpdate extends Operation {
             } 
             
             //IF successful, populate ead_ref_id_log
-            cis.additionalCisUpdateActivity(damsRecord);
+            boolean addtlUpdatesDone = cis.additionalCisUpdateActivity(damsRecord);
+            if (! addtlUpdatesDone) {
+                logger.log(Level.FINER, "Error, unable to perform additional updates");
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "UPCISI", "Error, update of CIS info in CDIS failed");
+                continue;
+            }
             
             //Populate Activity Log
             //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
@@ -144,6 +154,7 @@ public class CisUpdate extends Operation {
             if (!activityLogged) {
                 logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
             }
+            
             
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -164,8 +175,7 @@ public class CisUpdate extends Operation {
         
         processRecordList();
  
-        try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-        
+        try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); } 
     }
     
     public ArrayList<String> returnRequiredProps () {
@@ -181,5 +191,4 @@ public class CisUpdate extends Operation {
         //add more required props here
         return reqProps;    
     }
-        
 }
