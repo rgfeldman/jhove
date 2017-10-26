@@ -8,6 +8,7 @@ package edu.si.damsTools.cdis.database;
 import edu.si.damsTools.DamsTools;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,7 +63,7 @@ public class CdisCisGroupMap {
                     "VALUES (" +
                         "cdis_cis_group_map_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
-                        "'" + getCisGroupCd() + ", " +
+                        "'" + getCisGroupCd() + "', " +
                         "'" + getCisGroupValue () + "')";
                  
         logger.log(Level.FINEST,"SQL! " + sql);      
@@ -79,6 +80,27 @@ public class CdisCisGroupMap {
                 return false;
         }      
         
+        return true;
+    }
+    
+     public boolean populateCisGroupValueForCdisMapIdType() {
+        String sql = "SELECT cis_group_value " +
+                     "FROM cdis_cis_group_map " +
+                     "WHERE cdis_map_id = " + getCdisMapId() +
+                     " AND cis_group_cd = " + "'" + this.cisGroupCd +"'";
+
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            if (rs.next()) {
+                this.cisGroupValue = rs.getString(1);
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain cdis_cis_group_map_id ", e );
+                return false;
+        }
         return true;
     }
     
@@ -100,6 +122,33 @@ public class CdisCisGroupMap {
                 return false;
         }
         return true;
+    }
+    
+    public ArrayList<Integer> returnCdisMapIdsForCdValue() {
+
+        ArrayList cdisMapIdsForRefId = new ArrayList<>();
+        
+        String sql = "SELECT    cdis_map_id " +
+                     "FROM      cdis_cis_group_map_id " +
+                     "WHERE     cis_group_cd = '" + this.cisGroupCd + "'" +
+                     "AND       cis_group_value = '" + this.cisGroupValue + "'";  
+        
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+               ResultSet rs = pStmt.executeQuery()) {
+            
+            while (rs.next()) {
+                cdisMapIdsForRefId.add(rs.getInt(1));
+            }   
+            
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain mapid list from refId ", e );
+                return null;
+        }
+        
+        return cdisMapIdsForRefId;
+        
     }
     
     public boolean updateCisGroupValue() {

@@ -146,35 +146,14 @@ public class Objects {
                 e.printStackTrace();
                 return false;
         }
-            
-        String tmpObjectNumber = null;
         
         Transform transform = new Transform();
         
         logger.log(Level.FINER,"Need to find Object for filename...before reformat " + damsImageFileName);
         
-        //Find the objectNumber based on the Rendition number
-        if (damsDelimiter.equals("ACM")) {
-            //Drop acmobj- from the front
-            tmpObjectNumber = damsImageFileName.replaceAll("acmobj-", "");  
-          
-            //To get the object we also truncate everything after a dash
-            if (tmpObjectNumber.contains("-")) {
-                tmpObjectNumber = tmpObjectNumber.substring(0, tmpObjectNumber.indexOf("-"));
-            }
-            
-            if (tmpObjectNumber.length() > 8) {
-                //Set Dots every four
-                setObjectNumber(tmpObjectNumber.substring(0, 4) + "." + tmpObjectNumber.substring(4, 8) + "." +  tmpObjectNumber.substring(8));   
-            }
-            else {
-                setObjectNumber(tmpObjectNumber);
-            }
-        }
-        else {
-            //Call Transform to change delimter...as well as the truncation rule for finding the object based on the DAMS image fileName
-            setObjectNumber(transform.transform(damsImageFileName,damsDelimiter,tmsDelimiter,0,imageObjectTrunc));
-        }
+        //Call Transform to change delimter...as well as the truncation rule for finding the object based on the DAMS image fileName
+        setObjectNumber(transform.transform(damsImageFileName,damsDelimiter,tmsDelimiter,0,imageObjectTrunc));
+        
         
         logger.log(Level.FINER,"NEW TMS ObjectNumber: " + getObjectNumber());
     
