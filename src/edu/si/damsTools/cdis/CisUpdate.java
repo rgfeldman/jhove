@@ -203,7 +203,7 @@ public class CisUpdate extends Operation {
  
             recordsUpdated = pStmt.executeUpdate();
             
-            logger.log(Level.FINEST,"Rows Updated in Cis! {0}" + recordsUpdated);
+            logger.log(Level.FINEST,"Rows Updated in Cis " + recordsUpdated);
             
         } catch (Exception e) {
             logger.log(Level.FINEST,"Error updating CIS data", e);    

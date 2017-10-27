@@ -99,6 +99,6 @@ public class Tms implements CisRecordAttr {
     }
     
     public String returnCisUpdateCode() {
-        return "CPD";
+        return "CPS";
     } 
 }

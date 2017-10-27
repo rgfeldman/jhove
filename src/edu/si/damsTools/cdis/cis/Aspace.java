@@ -111,7 +111,7 @@ public class Aspace implements CisRecordAttr {
     }
     
     public String returnCisUpdateCode() {
-        return "CPS";
+        return "CPD";
     } 
     
 }

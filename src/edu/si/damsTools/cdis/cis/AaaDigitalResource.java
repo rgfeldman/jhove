@@ -68,6 +68,6 @@ public class AaaDigitalResource implements CisRecordAttr {
     }
     
     public String returnCisUpdateCode() {
-        return "CPD";
+        return "CPS";
     } 
 }

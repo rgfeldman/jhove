@@ -68,6 +68,6 @@ public class AaaCollectionImage implements CisRecordAttr {
     }
     
     public String returnCisUpdateCode() {
-        return "CPD";
+        return "CPS";
     } 
 }
