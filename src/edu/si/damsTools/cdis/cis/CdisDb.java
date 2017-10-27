@@ -24,7 +24,7 @@ public class CdisDb implements CisRecordAttr {
         
     }
     
-    public boolean setBasicValues (String identifier) {
+    public boolean setBasicValues (String identifier, String uoiId) {
         cisIdentifier = identifier;
         return true;
     }
@@ -47,7 +47,12 @@ public class CdisDb implements CisRecordAttr {
         return null;
     }
     
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
         return true;
     }
+    
+    public String returnCisUpdateCode() {
+        return null;
+    } 
+    
 }

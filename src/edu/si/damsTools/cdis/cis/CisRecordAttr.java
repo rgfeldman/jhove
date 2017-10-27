@@ -20,10 +20,12 @@ public interface CisRecordAttr {
     
     public String getGroupIdentifier ();
     
-    public boolean setBasicValues(String identifier);
+    public boolean setBasicValues(String identifier, String uoiId);
     
     public String returnCdisGroupType();
     
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord);
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap);
+    
+    public String returnCisUpdateCode();
  
 }

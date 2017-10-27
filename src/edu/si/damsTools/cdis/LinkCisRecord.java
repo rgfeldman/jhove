@@ -183,7 +183,7 @@ public class LinkCisRecord extends Operation {
             if (rs.next()) {
                 CisRecordFactory cisFact = new CisRecordFactory();
                 cis = cisFact.cisChooser();
-                cis.setBasicValues(rs.getString(1));
+                cis.setBasicValues(rs.getString(1), "");
             }
         }
         catch(Exception e) {

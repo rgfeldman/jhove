@@ -39,9 +39,9 @@ public class Aspace implements CisRecordAttr {
         return null;
     }
     
-    public boolean setBasicValues (String identifier) {
+    public boolean setBasicValues (String identifier, String uoiId) {
         SiAssetMetadata siAsst = new SiAssetMetadata();
-        siAsst.setUoiid(identifier);
+        siAsst.setUoiid(uoiId);
         siAsst.populateEadRefId();
         eadRefId = siAsst.getEadRefId();
         return true;
@@ -51,8 +51,8 @@ public class Aspace implements CisRecordAttr {
         return null;
     }
     
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
-        
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap notUsed) {
+                
         ArrayList<CdisMap> cdisMapList = new ArrayList();
         cdisMapList = returnMappedIdsForEad(damsRecord);
         
@@ -109,5 +109,9 @@ public class Aspace implements CisRecordAttr {
         } 
         return cdisMapList;
     }
+    
+    public String returnCisUpdateCode() {
+        return "CPS";
+    } 
     
 }

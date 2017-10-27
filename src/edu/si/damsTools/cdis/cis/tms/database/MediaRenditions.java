@@ -153,33 +153,6 @@ public class MediaRenditions {
         return id;
        
     }
-
-    public boolean updateIsColor1() {
-        
-        int updateCount = 0;
-        
-        String sql = "update mediaRenditions " +
-                    "set IsColor = 1 " +
-                    "where IsColor = 0 and RenditionID = " + getRenditionId();
-        
-         logger.log(Level.FINEST, "SQL! {0}", sql);
-         
-         try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql)) {
-            
-             updateCount = pStmt.executeUpdate();
-             
-            if (updateCount != 1) {
-                throw new Exception();
-            }
-           
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to update isColor in mediaRenditions table", e );
-            return false;    
-        }
-        
-        return true;
-        
-    }
     
     public boolean updateFileId() {
         int updateCount;

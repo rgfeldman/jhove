@@ -28,7 +28,7 @@ public class AaaCollectionImage implements CisRecordAttr {
         imageMediaRecord = new TblCollectionsOnlineImage();
     }
     
-    public boolean setBasicValues (String identifier) {
+    public boolean setBasicValues (String identifier, String uoiId) {
         imageMediaRecord.setCollectionOnlineImageId(Integer.parseInt(identifier));
         imageMediaRecord.populateCollectionId();
         return true;
@@ -63,7 +63,11 @@ public class AaaCollectionImage implements CisRecordAttr {
         return "cdisObjectMap";
     }
     
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
         return true;
     }
+    
+    public String returnCisUpdateCode() {
+        return "CPD";
+    } 
 }

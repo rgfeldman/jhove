@@ -150,27 +150,5 @@ public class MediaFiles {
         return id;
         
     }
-    
-    public boolean updateFileNameAndPath () {
-        
-       int recordsUpdated = 0;
-       String sql = "UPDATE mediaFiles " +
-                    "SET pathid = " + getPathId() + ", " +
-                    "FileName = '" + getFileName() + "' " +
-                    "WHERE RenditionID = " + getRenditionId() ;
-       
-       logger.log(Level.FINER, "SQL: {0}", sql);
-        
-      try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql) ) {
-            recordsUpdated = pStmt.executeUpdate();
-            
-            logger.log(Level.FINEST,"Rows Updated in TMS! {0}", recordsUpdated);
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error, unable to update Path and filename in mediaFiles table", e);
-                return false;
-        }
-        return true;
-    }
 
 }

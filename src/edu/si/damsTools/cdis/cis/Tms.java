@@ -56,7 +56,7 @@ public class Tms implements CisRecordAttr {
     }
     
     
-    public boolean setBasicValues (String identifier) {
+    public boolean setBasicValues (String identifier, String uoiId) {
         
         mediaRendition.setRenditionId(Integer.parseInt(identifier));
         boolean objectIdPopuldated = objectTbl.populateMinObjectIDByRenditionId(Integer.parseInt(identifier));
@@ -70,7 +70,35 @@ public class Tms implements CisRecordAttr {
         return "cdisObjectMap";
     }
     
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
-        return true;
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
+        
+        int recordsUpdated;
+        //Get the cis
+        String sql = "UPDATE mediaRenditions " +
+                     "SET isColor = 1 " +
+                     "WHERE renditionID = " + cdisMap.getCisUniqueMediaId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        
+        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql) ) {
+            recordsUpdated = pStmt.executeUpdate();
+            
+            logger.log(Level.FINEST,"Rows Updated in CIS: " + recordsUpdated);
+            
+            if (recordsUpdated != 1) {
+               logger.log(Level.FINER, "Error, no rows in CIS updated");
+               throw new Exception();
+            }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error, unable to perform additional update of CIS", e);
+                return false;
+        }
+        
+        return true; 
     }
+    
+    public String returnCisUpdateCode() {
+        return "CPD";
+    } 
 }

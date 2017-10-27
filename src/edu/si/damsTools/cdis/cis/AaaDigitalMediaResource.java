@@ -38,7 +38,7 @@ public class AaaDigitalMediaResource implements CisRecordAttr{
         return tblDigitalMediaResource.getCollectionId().toString();
     }
     
-    public boolean setBasicValues (String identifier) {
+    public boolean setBasicValues (String identifier, String uoiId) {
         tblDigitalMediaResource.setDigitalMediaResourceId(Integer.parseInt(identifier));
         tblDigitalMediaResource.populateCollectionId();
         return true;
@@ -63,7 +63,12 @@ public class AaaDigitalMediaResource implements CisRecordAttr{
         return "return linkCisRecord";
     }
     
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
         return true;
     }
+    
+    public String returnCisUpdateCode() {
+        return "CPD";
+    } 
+    
 }

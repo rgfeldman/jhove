@@ -47,7 +47,7 @@ public class IrisBg implements CisRecordAttr {
         return "Accno: " + cdisObjectMap.getCisUniqueObjectId();    
     }
     
-     public boolean setBasicValues (String identifier) {
+     public boolean setBasicValues (String identifier, String uoiId) {
          sI_IrisDAMSMetaCore.setImageLibId(identifier);
          sI_IrisDAMSMetaCore.populateItemAccnoFull();
          return true;
@@ -57,8 +57,12 @@ public class IrisBg implements CisRecordAttr {
         return "cdisObjectMap";
     }
     
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord) {
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
         return true;
     }
+    
+    public String returnCisUpdateCode() {
+        return null;
+    } 
         
 }
