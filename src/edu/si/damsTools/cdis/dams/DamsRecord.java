@@ -71,6 +71,24 @@ public class DamsRecord {
         return true;
     }
      
+    public String replaceSqlVars (String sql) {
+        
+        if (sql.contains("?HOLDING_UNIT?")) {
+            sql = sql.replace("?HOLDING_UNIT?", getSiAssetMetadata().getHoldingUnit());
+        }
+        if (sql.contains("?FILE_NAME?")) {
+            sql = sql.replace("?FILE_NAME?", getUois().getName());
+        }
+        if (sql.contains("?SOURCE_SYSTEM_ID?")) {
+            sql = sql.replace("?SOURCE_SYSTEM_ID?", getSiAssetMetadata().getSourceSystemId());
+        }
+        if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?")) {
+            sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?", getSiAssetMetadata().getOwningUnitUniqueName());
+        }
+        
+        return (sql);
+    }
+     
     
     
 }

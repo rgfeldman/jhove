@@ -23,6 +23,7 @@ public class SiAssetMetadata {
     private String owningUnitUniqueName;
     private String sourceSystemId;
     private String uoiid;  
+    private String holdingUnit;
 
     public String getEadRefId () {
         return this.eadRefId;
@@ -30,6 +31,10 @@ public class SiAssetMetadata {
     
     public String getIsRestricted() {
         return this.isRestricted == null ? "" : this.isRestricted;
+    }
+    
+    public String getHoldingUnit() {
+        return this.holdingUnit;
     }
     
     public Integer getMaxIdsSize() {
@@ -50,6 +55,10 @@ public class SiAssetMetadata {
     
     public void setEadRefId(String eadRefId) {
         this.eadRefId = eadRefId;
+    }
+    
+    public void setHoldingUnit(String holdingUnit) {
+        this.holdingUnit = holdingUnit;
     }
         
     public void setIsRestricted(String isRestricted) {
@@ -128,7 +137,7 @@ public class SiAssetMetadata {
     
     public boolean populateSiAsstData () {
         
-        String sql = "SELECT owning_unit_unique_name, is_restricted, max_ids_size, source_system_id, ead_ref_id " +
+        String sql = "SELECT holding_unit, owning_unit_unique_name, is_restricted, max_ids_size, source_system_id, ead_ref_id " +
                     "FROM towner.si_asset_metadata " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         
@@ -137,11 +146,12 @@ public class SiAssetMetadata {
              ResultSet rs = pStmt.executeQuery() ) {
 
             if (rs != null && rs.next()) {
-                setOwningUnitUniqueName (rs.getString(1));
-                setIsRestricted (rs.getString(2));
-                setMaxIdsSize (rs.getInt(3));
-                setSourceSystemId(rs.getString(4));
-                setEadRefId(rs.getString(5));
+                setHoldingUnit (rs.getString(1));
+                setOwningUnitUniqueName (rs.getString(2));
+                setIsRestricted (rs.getString(3));
+                setMaxIdsSize (rs.getInt(4));
+                setSourceSystemId(rs.getString(5));
+                setEadRefId(rs.getString(6));
             }   
             
         } catch (Exception e) {

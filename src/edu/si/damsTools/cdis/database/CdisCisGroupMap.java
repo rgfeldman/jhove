@@ -129,8 +129,8 @@ public class CdisCisGroupMap {
         ArrayList cdisMapIdsForRefId = new ArrayList<>();
         
         String sql = "SELECT    cdis_map_id " +
-                     "FROM      cdis_cis_group_map_id " +
-                     "WHERE     cis_group_cd = '" + this.cisGroupCd + "'" +
+                     "FROM      cdis_cis_group_map " +
+                     "WHERE     cis_group_cd = '" + this.cisGroupCd + "' " +
                      "AND       cis_group_value = '" + this.cisGroupValue + "'";  
         
         logger.log(Level.FINEST,"SQL! " + sql);

@@ -172,16 +172,8 @@ public class LinkCisRecord extends Operation {
             return null;
         }
         
-        if (sql.contains("?FILE_NAME?")) {
-            sql = sql.replace("?FILE_NAME?", damsRecord.getUois().getName());
-        }
-        if (sql.contains("?SOURCE_SYSTEM_ID?")) {
-            sql = sql.replace("?SOURCE_SYSTEM_ID?", damsRecord.getSiAssetMetadata().getSourceSystemId());
-        }
-        if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?")) {
-            sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?", damsRecord.getSiAssetMetadata().getOwningUnitUniqueName());
-        }
-                
+        sql = damsRecord.replaceSqlVars(sql);
+               
         logger.log(Level.FINEST, "SQL: {0}", sql);
 
         try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
