@@ -4,14 +4,12 @@ DAMS Integration Tools
 The DAMS integration tools consists of two processes in this shared repository:
 VFCU (Volume File Copy Utility) and CDIS (Collection DAMS Integration System).
 
-VFCU provides the automation, validation and tracking of large batches of files to the DAMS isilon. 
 When used in Conjuction with CDIS, VFCU provides the automation of ingesting large number of files into DAMS.
-CDIS also provides for automated integration of mediaRecords between the CIS and DAMS.
+CDIS provides for automated integration of mediaRecords between the CIS and DAMS.
 
 Both processes are run on a scheduler (such as cron) throughout the day, but can also be manually executed.
-
-  
 The batch process operation types are as follows:
+
 VFCU processes:
 
 * watcher	   (The first step of the VFCU process. Traverses the directory tree at the defined pickup location for new .md5 files. The contents of each md5 file is recorded in the database)
