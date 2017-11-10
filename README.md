@@ -1,12 +1,27 @@
-# cdis
-Collections - DAMS Integration System
+# damsTools
+DAMS Integration Tools
 
-CDIS Overview:
-CDIS is a suite of batch process that integrates the Digital Asset Management System (DAMS) with the SI unit's Collection Information System (CIS).
-The batch processes are run on a scheduler (such as cron) throughout the day, but can also be manually executed.
-  
+The DAMS integration tools consists of two processes in this shared repository:
+VFCU (Volume File Copy Utility) and CDIS (Collection DAMS Integration System).
+
+VFCU provides the automation, validation and tracking of large batches of files to the DAMS isilon. 
+When used in Conjuction with CDIS, VFCU provides the automation of ingesting large number of files into DAMS.
+CDIS also provides for automated integration of mediaRecords between the CIS and DAMS.
+
+Both processes are run on a scheduler (such as cron) throughout the day, but can also be manually executed.
+
   
 The batch process operation types are as follows:
+VFCU processes:
+
+* watcher	   (The first step of the VFCU process. Traverses the directory tree at the defined pickup location for new .md5 files. The contents of each md5 file is recorded in the database)
+
+* copyValidate (The second step of the VFCU process. Transfers the files from the defined pickup location, and validatates the file structure for completeness and well-formedness)
+
+* report       (generates an email report listing the errors and successes for a particular batch of files).
+
+
+CDIS processes:
 
 * cisUpdate          (updates select values in the CIS based on values in DAMS).
 
@@ -18,8 +33,6 @@ The batch process operation types are as follows:
 
 * metadataSync     (Brings over metadata from the CIS into the DAMS).
 
-* idsSync          (Updates the Cis with a reference to the IDS uan so the CIS no longer needs to retain an independant full-size copy of the image)
-
 * thumbnailSync    (replaces the thumbnail image in the CIS with the current thumbnail image in the DAMS system).
 
 * timeFrameReport  (generates and emails report showing the status/completion/errors of files through CDIS for a given timeframe)
@@ -30,5 +43,3 @@ The batch process operation types are as follows:
 
 The java code for ALL of these execution types is found in this repository and is to be compiled into a single .jar file.
 Each SI unit uses different combinations of the above operation types to fully integrate the DAMS with the CIS.
-
-
