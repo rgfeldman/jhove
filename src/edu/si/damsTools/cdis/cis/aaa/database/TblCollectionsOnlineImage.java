@@ -69,26 +69,4 @@ public class TblCollectionsOnlineImage {
         return true;
     }
     
-    public boolean updateDamsUAN () {
-        
-       int recordsUpdated = 0;
-       String sql = "UPDATE tblCollectionsOnlineImage " +
-                    "SET damsUAN = '" + getDamsUan() + "', " +
-                    "damsUANadddate = GETDATE() " +
-                    "WHERE collectionsOnlineImageId = " + getCollectionsOnlineImageId() ;
-       
-       logger.log(Level.FINER, "SQL: {0}", sql);
-        
-      try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql) ) {
-            recordsUpdated = pStmt.executeUpdate();
-            
-            logger.log(Level.FINEST,"Rows Updated in AAA CIS! {0}", recordsUpdated);
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error, unable to update DamsUAN in AAA CIS", e);
-                return false;
-        }
-        return true;
-    }
-    
 }

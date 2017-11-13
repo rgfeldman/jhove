@@ -5,8 +5,6 @@
  */
 package edu.si.damsTools.cdis.report;
 
-import edu.si.damsTools.cdis.report.DisplayFormat;
-
 import edu.si.damsTools.cdis.report.attachment.Attachment;
 import edu.si.damsTools.DamsTools;
 import java.io.File;
