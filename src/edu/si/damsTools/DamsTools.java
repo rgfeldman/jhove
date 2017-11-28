@@ -139,7 +139,7 @@ public class DamsTools {
         Handler fh;
             
         try {
-            fh = new FileHandler(DamsTools.directoryName + "/log/CDISLog-" + DamsTools.operationType + "_" + this.configFile + "_" + DamsTools.batchNumber + ".txt");
+            fh = new FileHandler(DamsTools.directoryName + "/log/" + DamsTools.application + "Log-" + DamsTools.operationType + "_" + DamsTools.configFile + "_" + DamsTools.batchNumber + ".txt");
             
         } catch (Exception e) {
             e.printStackTrace();
