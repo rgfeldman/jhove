@@ -102,19 +102,25 @@ public class LinkDamsRecord extends Operation {
                    
         //Move file to the emu pickup area if necessary
         if ( DamsTools.getProperty("retainFilesPostIngest").equals("true") ) {
-                    
-            boolean fileMoved = postIngestMove(cdisMap.getVfcuMediaFileId());  
-            if (! fileMoved) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
-                 return false;
-            }
+         
+            MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
+            mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
+            mediaTypeConfigR.populatePostIngestDelivery();
+            
+            if (mediaTypeConfigR.getPostIngestDelivery().equals("Y")) {
+                boolean fileMoved = postIngestMove(cdisMap);  
+                if (! fileMoved) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
+                    return false;
+                }
+            } 
         }   
         
         return true;
     }
     
-    private boolean postIngestMove(int vfcuMediaFileId) {
+    private boolean postIngestMove(CdisMap cdisMap) {
         
         if (DamsTools.getProperty("postIngestDeliveryLoc") == null) {
             logger.log(Level.FINEST, "Error, Post ingest delivery site never specified");
@@ -122,13 +128,14 @@ public class LinkDamsRecord extends Operation {
         }
   
         StagedFile stagedFile = new StagedFile();
-        stagedFile.populateNameStagingPathFromId(vfcuMediaFileId);
+        stagedFile.populateNameStagingPathFromId(cdisMap.getVfcuMediaFileId());
         boolean fileDelivered = stagedFile.deliverForPickup(DamsTools.getProperty("postIngestDeliveryLoc"));
  
         if (!fileDelivered) {
             return false;
         }
         CdisActivityLog activityLog = new CdisActivityLog();
+        activityLog.setCdisMapId(cdisMap.getCdisMapId());
         activityLog.setCdisStatusCd("FME");
         activityLog.insertActivity();
         
