@@ -651,9 +651,9 @@ public class MetaDataSync extends Operation{
                 cdisCisGroupMap.populateCisGroupValueForCdisMapIdType();
                 cdisUpdates.setEadRefId(cdisCisGroupMap.getCisGroupValue());
                 
-                boolean getDescriptiveDateCalled = cdisUpdates.callGetDescriptiveData();
+                boolean getDescriptiveDataCalled = cdisUpdates.callGetDescriptiveData();
                 
-                if (getDescriptiveDateCalled != true) {
+                if (getDescriptiveDataCalled != true) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "UPDAMM", "Error, unable to Seed Archive Space information " + cdisMap.getDamsUoiid());   
                     noErrorFound = false;

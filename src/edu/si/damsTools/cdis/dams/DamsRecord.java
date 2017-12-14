@@ -79,6 +79,9 @@ public class DamsRecord {
         if (sql.contains("?FILE_NAME?")) {
             sql = sql.replace("?FILE_NAME?", getUois().getName());
         }
+        if (sql.contains("?BASE_FILE_NAME?")) {
+            sql = sql.replace("?BASE_FILE_NAME?", getUois().getName().split("\\.")[0]);
+        }
         if (sql.contains("?SOURCE_SYSTEM_ID?")) {
             sql = sql.replace("?SOURCE_SYSTEM_ID?", getSiAssetMetadata().getSourceSystemId());
         }

@@ -83,7 +83,7 @@ public class CDISUpdates {
             pStmt.executeQuery();
        
         } catch (Exception e) {
-               logger.log(Level.FINER, "Error in getDescriptiveDate", e );
+               logger.log(Level.FINER, "Error in getDescriptiveData", e );
                return false;
         } 
        
