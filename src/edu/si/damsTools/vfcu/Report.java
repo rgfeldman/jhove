@@ -91,7 +91,7 @@ public class Report extends Operation {
         String sql = null;
         
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-             sql = "SELECT base_path_vendor, SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1) " +
+             sql = "SELECT base_path_vendor, SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', -1) -1 ) " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + this.currentMd5FileId;
         } 
