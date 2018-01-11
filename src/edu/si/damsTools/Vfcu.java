@@ -6,7 +6,7 @@
 package edu.si.damsTools;
 
 import edu.si.damsTools.vfcu.Report;
-import edu.si.damsTools.vfcu.Watcher;
+import edu.si.damsTools.vfcu.Watcher; 
 import edu.si.damsTools.cdis.Operation;
 import edu.si.damsTools.vfcu.VendorFileCopy;
 import java.util.logging.Level;

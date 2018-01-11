@@ -134,44 +134,6 @@ public class CdisMap {
         return true;
     }
     
-    public int getMasterIdFromChildId () {
-        
-        int masterMapId = 0;
-        
-        String sql = "SELECT	cdismaster.cdis_map_id " +
-                    "FROM       cdis_map cdischild, " +
-                    "           vfcu_media_file vfcuchild, " +
-                    "           vfcu_md5_file c, " +
-                    "           vfcu_media_file vfcumaster, " +
-                    "           cdis_map cdismaster " +
-                    "WHERE      cdischild.vfcu_media_file_id = vfcuchild.vfcu_media_file_id " +
-                    "AND        vfcuchild.vfcu_md5_file_id = c.vfcu_md5_file_id " +
-                    "AND        c.master_md5_file_id =  vfcumaster.vfcu_md5_file_id " +
-                    "AND        vfcumaster.vfcu_media_file_id = cdismaster.vfcu_media_file_id " +
-                    "AND        cdismaster.cdis_map_id != cdischild.cdis_map_id " +
-                    "AND        vfcumaster.vfcu_md5_file_id ! = vfcuchild.vfcu_md5_file_id " +
-                    "AND        SUBSTR(vfcumaster.media_file_name,1,LENGTH(vfcumaster.media_file_name) -3) = " +
-                    "           SUBSTR(vfcuchild.media_file_name,1,length(vfcuchild.media_file_name) -3) " +
-                    "AND        SUBSTR(cdismaster.file_name,1,LENGTH(cdismaster.file_name) -3) = " + 
-                    "           SUBSTR(cdischild.file_name,1,LENGTH(cdischild.file_name) -3) " +
-                    "AND        cdischild.cdis_map_id = " + getCdisMapId();
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ){
- 
-            if (rs != null && rs.next()) {
-                masterMapId = rs.getInt(1);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain map_id for file/null uoiid", e );
-        }
-        
-        return masterMapId;
- 
-    }
-    
     public boolean populateCdisCisMediaTypeId() {
         String sql = "SELECT media_type_config_id FROM cdis_map " +
                       "WHERE cdis_map_id = " + getCdisMapId();

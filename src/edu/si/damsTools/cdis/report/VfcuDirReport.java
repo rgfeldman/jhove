@@ -31,7 +31,7 @@ public class VfcuDirReport implements DisplayFormat {
         return this.multiReportKeyValues;
     }
      
-    private String returnRptVendorDir(Integer masterMd5FileId) {
+    private String returnRptVendorDir(Integer md5FileId) {
         
         String sql = null;
         String vendorDir = null;
@@ -39,12 +39,12 @@ public class VfcuDirReport implements DisplayFormat {
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
             sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1), base_path_vendor " +
                     "FROM vfcu_md5_file " +
-                    "WHERE vfcu_md5_file_id = " + masterMd5FileId;
+                    "WHERE md5_file_id = " + md5FileId;
         } 
         else {
             sql = "SELECT file_path_ending, base_path_vendor " +
                     "FROM vfcu_md5_file " +
-                    "WHERE vfcu_md5_file_id = " + masterMd5FileId;
+                    "WHERE md5_file_id = " + md5FileId;
         }
                 
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -180,13 +180,13 @@ public class VfcuDirReport implements DisplayFormat {
         return true;
     }
     
-    public boolean updateDbComplete (String masterMd5FileId) {
+    public boolean updateDbComplete (String md5FileId) {
         
         int recordsUpdated;
         
         String sql = "UPDATE vfcu_md5_file " +
                      "SET cdis_rpt_dt = SYSDATE " +
-                     "WHERE master_md5_file_id = " + masterMd5FileId;
+                     "WHERE md5_file_id = " + md5FileId;
         
        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
             

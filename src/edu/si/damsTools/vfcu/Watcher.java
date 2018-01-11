@@ -5,84 +5,110 @@
  */
 package edu.si.damsTools.vfcu;
 
-import edu.si.damsTools.vfcu.files.VendorMd5File;
-import edu.si.damsTools.vfcu.database.VfcuMd5File;
-import java.nio.file.Files;
+import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.vfcu.deliveryfiles.Md5File;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitor;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.EnumSet;
-import java.nio.file.FileVisitOption;
-import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.vfcu.files.xferType.XferType;
+import edu.si.damsTools.vfcu.files.xferType.XferTypeFactory;
+import edu.si.damsTools.vfcu.database.dbRecords.MediaFileRecord;
+import edu.si.damsTools.vfcu.database.dbRecords.BatchFileRecord;
+
 
 /**
  *
  * @author rfeldman
  */
-public class Watcher extends Operation{
-
-    private final static Logger logger = Logger.getLogger(DamsTools.class.getName());  
+public class Watcher extends Operation {
     
-    public ArrayList <String> masterPaths; 
+    private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
+    private final ArrayList <Md5File> sourceFileList; 
     
-    private void locateMasterIdsForSubfiles() {
-        
-        
-        // Find any rows where the master md5 ID is null, these are subfiles.
-        // We need to match up these subfiles with master IDs if we can find them.
-        ArrayList<Integer> masterlessMd5Ids = new ArrayList<> ();
-        
-        VfcuMd5File vfcuMd5File = new VfcuMd5File();
-        masterlessMd5Ids = vfcuMd5File.returnMd5sWithNoMasterID();
-        
-        for (Integer masterlessMd5Id : masterlessMd5Ids) {
-
-            vfcuMd5File.setVfcuMd5FileId(masterlessMd5Id);
-            
-            // Retrieve path information for this md5 fileID
-            boolean pathPopulated = vfcuMd5File.populateVendorFilePath();
-            
-            if (pathPopulated) {
-                // Find a row for the same base path, and the same filepath ending with the SubfileDir substituted with the masterDir
-                String filePathEnding = vfcuMd5File.getFilePathEnding();
-                
-                if (filePathEnding.endsWith(DamsTools.getProperty("vendorSubFileDir")) ){
-                    //Strip off the last level of the directory from the filePathEnding
-                    String masterFilePath =  filePathEnding.substring(0,filePathEnding.lastIndexOf('/') + 1) + DamsTools.getProperty("vendorMasterFileDir");
-                    vfcuMd5File.setFilePathEnding(masterFilePath);
-              
-                    //locate the md5Id for the basePath and FileEnding
-                    Integer masterId = vfcuMd5File.returnMasterIdForPath();
-                    
-                    //If the masterID was found, update the vfcu table with the masterID
-                    if (masterId != null) {
-                        vfcuMd5File.setMasterMd5FileId(masterId);
-                       
-                        //update MasterId in Table
-                        vfcuMd5File.updateMasterMd5File_id();
-                    }
-                }   
-            }
-        }
-        
+    public Watcher() {
+        sourceFileList = new ArrayList();
     }
-     
-    public boolean traversePopulatePathList () {
+    
+    public void invoke() {  
         
-        this.masterPaths = new ArrayList <>();
+        // If traverse option is selected then we need to obtain a list of md5Files by traversing through the directory tree
+        traversePopulateMd5List();
         
-        //walk directory tree starting at the directory specified in config file
+        //loop through the files in the md5 master path list
+        for (Md5File md5File : sourceFileList) {
+        
+            BatchFileRecord batchFileRecord = new BatchFileRecord();
+            
+            // Check to see if md5 file already exists im database
+            boolean fileAlreadyProcessed = batchFileRecord.checkIfExistsInDb();
+            if (fileAlreadyProcessed) {
+                logger.log(Level.FINEST, "File already processed, skipping"); 
+                continue;
+            }
+            
+            XferTypeFactory xferTypeFactory = new XferTypeFactory();
+            XferType xferType = xferTypeFactory.XferTypeChooser();
+            
+            // transfer md5 file to staging
+            boolean fileXferred = md5File.transferToDAMSStaging(xferType, true);
+            if (!fileXferred) {
+                logger.log(Level.FINEST, "Error, unable to transfer md5 file to staging"); 
+                continue;
+            }
+            
+            // Insert into Database
+            boolean recordInserted = batchFileRecord.insertDbRecord();
+            //if md5 inserted successfully, add the files too
+            if (!recordInserted) {
+                logger.log(Level.FINEST, "Error, unable to insert md5 record into database"); 
+                continue;
+            }
+            
+            boolean contentMapPopulated = md5File.populateContentsHashMap();
+            if (!contentMapPopulated) {
+                logger.log(Level.FINEST, "Error, unable to pull contents into HashMap"); 
+                continue;
+            }
+            
+            for (String md5Value : md5File.getContentsMap().keySet()) {
+                MediaFileRecord mediaFileRecord = new MediaFileRecord();
+                mediaFileRecord.getVfcuMediaFile().setVfcuMd5FileId(batchFileRecord.getVfcuMd5File().getVfcuMd5FileId());
+                mediaFileRecord.getVfcuMediaFile().setVendorCheckSum(md5Value);
+                mediaFileRecord.getVfcuMediaFile().setMediaFileName(md5File.getContentsMap().get(md5Value) );
+                boolean dbRecordInserted = mediaFileRecord.getVfcuMediaFile().insertRow();
+                if (!dbRecordInserted) {
+                    logger.log(Level.FINEST, "Error, unable to insert mediaFile row"); 
+                    continue;
+                }
+             
+            }
+                         
+            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+           
+        }
+ 
+        try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+        
+    }   
+    
+    public boolean traversePopulateMd5List () {
+       
+        // walk directory tree starting at the directory specified in config file
         Path startDir = Paths.get(DamsTools.getProperty("vendorBaseDir"));
         logger.log(Level.FINEST, "Starting at: " + DamsTools.getProperty("vendorBaseDir") ); 
 
@@ -91,16 +117,17 @@ public class Watcher extends Operation{
 
         FileVisitor<Path> matcherVisitor = new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attribs) {
-                Path name = file.getFileName();
+            public FileVisitResult visitFile(Path nameAndPath, BasicFileAttributes attribs) {
+                Path name = nameAndPath.getFileName();
                 if (matcher.matches(name)) {
                     
-                    logger.log(Level.FINEST, "Found md5File: " + file.toString() ); 
-                    masterPaths.add(file.toString());
+                   logger.log(Level.FINEST, "Found md5File: " + nameAndPath.toString() ); 
+                   Md5File md5File = new Md5File(nameAndPath);
+                   sourceFileList.add(md5File);
                 }
                 return FileVisitResult.CONTINUE;
             }
-        };   
+        }; 
         
         try {
             EnumSet fileVisitOptions = EnumSet.of(FileVisitOption.FOLLOW_LINKS);
@@ -109,51 +136,18 @@ public class Watcher extends Operation{
         } catch (Exception e) {
             logger.log(Level.FINEST, "Exception ", e );
         }
-            
-        return true;
+        
+        return true;        
     }
-    
-    
-    public void invoke() {  
-     
-        VendorMd5File md5File = new VendorMd5File();
-        md5File.setBasePathVendor(DamsTools.getProperty("vendorBaseDir"));
-        md5File.setBasePathStaging(DamsTools.getProperty("vfcuStagingForCDIS"));
-        
-        // If traverse option is selected then we need to obtain a list of md5Files by traversing through the directory tree
-        traversePopulatePathList();
-        
-        //loop through the files in the md5 master path list
-        for (String fileAndPathName : masterPaths) {
-            
-            String filePathEnding = fileAndPathName.substring(md5File.getBasePathVendor().length() ,fileAndPathName.lastIndexOf('/') );
-            //chop off initial '\' if it is there
-            filePathEnding = filePathEnding.startsWith("/") ? filePathEnding.substring(1) : filePathEnding;
-            md5File.setFilePathEnding(filePathEnding);
-                    
-            // Get the md5FileName in seperate variable for easy insert into Database
-            String md5FileName = fileAndPathName.substring(fileAndPathName.lastIndexOf('/') + 1);   
-            md5File.setFileName(md5FileName);
-        
-            md5File.recordInfoInDB();
-            
-            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-           
-        }
-        
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
-            locateMasterIdsForSubfiles();
-        }
-        
-        try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-        
-    }   
     
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
         //add more required props here
+        reqProps.add("vendorBaseDir");
+        reqProps.add("vfcuStagingForCDIS");
+        reqProps.add("useMasterSubPairs");
         return reqProps;    
     }
 }

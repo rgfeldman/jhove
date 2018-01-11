@@ -148,14 +148,14 @@ public class Report extends Operation {
         
         // NEED TO LOOP THROUGH MD5 IDs one at a time
         for (Integer masterMd5Id : masterMd5Ids) {
-            vfcuMd5File.setMasterMd5FileId(masterMd5Id);
+            //vfcuMd5File.setMasterMd5FileId(masterMd5Id);
             currentMd5FileId = masterMd5Id;
             this.childMd5Id = null;
             
             if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
             //get childMd5FileId for the master XML
             
-                this.childMd5Id = vfcuMd5File.returnSubFileMd5Id(childMd5Id);
+              //  this.childMd5Id = vfcuMd5File.returnSubFileMd5Id(childMd5Id);
                 if (this.childMd5Id == null) {
                     logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
                     continue;

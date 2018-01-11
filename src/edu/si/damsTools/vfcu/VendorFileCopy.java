@@ -5,20 +5,23 @@
  */
 package edu.si.damsTools.vfcu;
 
+import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.vfcu.database.VfcuActivityLog;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
-import edu.si.damsTools.vfcu.database.VfcuMd5File;
-import edu.si.damsTools.vfcu.files.MediaFile;
-import edu.si.damsTools.vfcu.files.VendorMd5File;
+import edu.si.damsTools.vfcu.database.dbRecords.BatchFileRecord;
+import edu.si.damsTools.vfcu.database.dbRecords.MediaFileRecord;
+import edu.si.damsTools.vfcu.deliveryfiles.MediaFile;
+import edu.si.damsTools.vfcu.files.xferType.XferTypeFactory;
+import edu.si.damsTools.vfcu.files.xferType.XferType;
+import edu.si.damsTools.vfcu.utilities.ErrorLog;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.Operation;
-import java.util.ArrayList;
 
 /**
  *
@@ -28,173 +31,214 @@ public class VendorFileCopy extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());    
     
+    private final ArrayList<MediaFileRecord> fileListForBatch;
+    private final ArrayList<Integer> distinctMd5FileIds;
     
-    private void finalValidations() {
-        
-        HashMap <Integer, String> idsCurrentBatch;
-        idsCurrentBatch = new HashMap<> (); 
-        
-        // GET unique md5 file ids to validate.
-        idsCurrentBatch = returnIdsForFinalVldtn();
-        
-        //go through the list array list at a time
-        for (Integer currentMd5FileId : idsCurrentBatch.keySet()) {  
-            VendorMd5File vendorMd5File = new VendorMd5File();
-            
-            vendorMd5File.setMd5FileId(currentMd5FileId);  
-            String masterIndStr = idsCurrentBatch.get(currentMd5FileId);
-            
-            if ((masterIndStr).equals("master")) {
-                vendorMd5File.setMasterIndicator(true);
-            }
-            else {        
-                vendorMd5File.setMasterIndicator(false);
-            }
-             
-            boolean md5ContentsVerified = vendorMd5File.finalValidations();
-            
-            if (! md5ContentsVerified) {
-                logger.log(Level.FINEST, "MD5 contents not verified, pending items still" );
-                continue;
-            }
-          
-            //We add the PS status only if there is a master/subfile relationship, which is why we use the subfile
-            //to drive this process.
-            
-            if (masterIndStr.equals("subfile")) {
-                VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-                vfcuMediaFile.setVfcuMd5FileId(currentMd5FileId);
-                HashMap<Integer, String> fileNameId;
-                fileNameId = new HashMap<> ();
-                 
-                fileNameId = vfcuMediaFile.returnSuccessFileNmsIdForMd5Id ();
-                
-                // Loop through each subfile in list
-                // For each subfile in list, see if there is a corresponding master file
-                for (Integer subFileMediaId : fileNameId.keySet()) { 
-                    vfcuMediaFile = new VfcuMediaFile();
-                    vfcuMediaFile.setVfcuMediaFileId(subFileMediaId);
-                    vfcuMediaFile.setMediaFileName(fileNameId.get(subFileMediaId));
-                    
-                    VfcuMd5File vfcuMd5File = new VfcuMd5File();
-                    
-                    //find the masterMd5FileID for the current md5 FileId
-                    vfcuMd5File.setVfcuMd5FileId(currentMd5FileId);
-                    vfcuMd5File.populateMasterMd5FileId();
-                    
-                    //Set the md5 FileId to the masterMd5FileID that we just obtained
-                    vfcuMediaFile.setVfcuMd5FileId(vfcuMd5File.getMasterMd5FileId());
-                    Integer masterFileId = vfcuMediaFile.returnIdForMd5IdBaseName();
-                    
-                    //Add the PS status to indicate primary/secondary relationship has been established
-                    if (masterFileId != null ) {
-                        //We have a master and subfile ID
-                        VfcuActivityLog activityLog = new VfcuActivityLog();
-                        activityLog.setVfcuMediaFileId(subFileMediaId);
-                        activityLog.setVfcuStatusCd("PS");
-                        //insert a verification complete row for the subfile
-                        activityLog.insertRow();
-                        
-                        activityLog = new VfcuActivityLog();
-                        activityLog.setVfcuMediaFileId(masterFileId);
-                        activityLog.setVfcuStatusCd("PS");
-                        //insert a verification complete row for the Master
-                        activityLog.insertRow();
-                    }
-                }
-            }        
-        }    
+    public VendorFileCopy() {
+        fileListForBatch = new ArrayList<>();
+        distinctMd5FileIds = new ArrayList<>();
     }
     
-    
-    private HashMap returnIdsForFinalVldtn () {
-
-        //Returns list of md5 file ids in current batch, 
-        //--Exclude from the list if it contains files not yet assigned to a VFCU 
-        //--Exclude from the list if it contains files that already have PS status
-        //--Exclude from the list if the VFCU report has already been generated
+    private boolean assignToCurrentBatch() {
         
-        HashMap <Integer, String> idsCurrentBatch;
-        idsCurrentBatch = new HashMap<> (); 
-        
-        String sql =    "SELECT DISTINCT b.vfcu_md5_file_id, a.master_md5_file_id " +
-                        "FROM   vfcu_md5_file a, " +
-                        "       vfcu_media_file b " +
-                        "WHERE  a.vfcu_md5_file_id = b.vfcu_md5_file_id " +
-                        "AND    a.project_cd = '" + DamsTools.getProjectCd() + "' " +
-                        "AND    b.vfcu_batch_number = '" + DamsTools.getBatchNumber() + "' " +
-                        "AND    a.vfcu_rpt_dt IS NULL " +
-                        "AND NOT EXISTS ( " + 
-                            "SELECT 'X' FROM vfcu_media_file c " + 
-                            "WHERE  a.vfcu_md5_file_id = c.vfcu_md5_file_id " + 
-                            "AND    c.vfcu_batch_number is null) " +
-                        "AND NOT EXISTS ( " +
-                            "SELECT 'X' FROM vfcu_activity_log d " +
-                            "WHERE d.vfcu_media_file_id = b.vfcu_media_file_id " +
-                            "AND d.vfcu_status_cd = 'PS') ";
-                     
-        logger.log(Level.FINEST,"SQL! " + sql);    
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-            
-            while (rs.next()) {
-                if (rs.getInt(1) == rs.getInt(2)) {
-                    idsCurrentBatch.put(rs.getInt(1), "master");
-                }
-                else {
-                    idsCurrentBatch.put(rs.getInt(1), "subfile");
-                }
-            }
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
-        }
-        return idsCurrentBatch;
-        
-    }
-    
-    public void invoke () {
-    
         //Assign database entry rows to a batch
         VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
         vfcuMediaFile.setMaxFiles(Integer.parseInt(DamsTools.getProperty("maxFilesBatch")));
         vfcuMediaFile.setVfcuBatchNumber(DamsTools.getBatchNumber());
         
         int rowsUpdated = vfcuMediaFile.updateVfcuBatchNumber();
-        if (rowsUpdated < 1 ) {
-            logger.log(Level.FINEST, "No files found in DB that require copy and validation" );
+        return rowsUpdated >= 1;
+    }
+    
+    private boolean populateMediaFilesForBatch() {
+    
+        VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
+        vfcuMediaFile.setVfcuBatchNumber(DamsTools.getBatchNumber());
+        ArrayList<Integer> fileIdsForBatch = new ArrayList<>();  
+        fileIdsForBatch = vfcuMediaFile.returnFileIdsForBatch();
+        
+        for (Integer fileId: fileIdsForBatch) {
+            MediaFileRecord mediaFileRecord = new MediaFileRecord(fileId);
+            mediaFileRecord.populateBasicValuesFromDb();
+            fileListForBatch.add(mediaFileRecord);
         }
-            
+        return true;
+    }
+    
+    public void invoke () {
+    
+        //setBatchNumber for current batch
+        boolean filesAssignedToBatch = assignToCurrentBatch();
+        if (! filesAssignedToBatch) {
+            //no files found that can be assigned to a validate and copy batch.  We have no need to go further
+            logger.log(Level.FINER, "No files found to process");
+        }
         //Now we updated the files and assigned to current batch, commit so we lock them into current batch
         try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
       
-        //create array of files just assigned to batch
-        vfcuMediaFile.populateFilesIdsForBatch();
+        XferTypeFactory xferTypeFactory = new XferTypeFactory();
+        XferType xferType = xferTypeFactory.XferTypeChooser();
         
-        for (Iterator<Integer> iter = vfcuMediaFile.getFilesIdsForBatch().iterator()  ; iter.hasNext();) {
-        //no files found that can be assigned to a validate and copy batch.  We have no need to go further
-                
-            MediaFile mediaFile = new MediaFile();
-            mediaFile.setVfcuMediaFileId(iter.next() );
-            boolean mediaTransfered = mediaFile.transfer();
+        //create array of MediaFiles just assigned to batch     
+        populateMediaFilesForBatch();
+        
+        for (MediaFileRecord mediaFileRecord: fileListForBatch) {
             
-            if (mediaTransfered) {
-                //Perform MD5 file validations once the file has been xferred
-                mediaFile.validate();
+            BatchFileRecord batchFileRecord = new BatchFileRecord(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId());
+            String fileLoc = batchFileRecord.returnStringBatchDir() + "/" + mediaFileRecord.getVfcuMediaFile().getMediaFileName();
+            Path pathFile = Paths.get(fileLoc);
+            
+            MediaFile mediaFile = new MediaFile(pathFile);
+            
+            boolean mediaTransfered = mediaFile.transferToDAMSStaging(xferType, false);   
+            
+            if (!mediaTransfered) {
+                ErrorLog errorLog = new ErrorLog(); 
+                errorLog.capture(mediaFileRecord.getVfcuMediaFile(), xferType.returnXferErrorCode(), "Failure to xfer Vendor File");        
+                continue;
+            }
+                
+            //Insert the code indicating that the file was just transferred
+            VfcuActivityLog activityLog = new VfcuActivityLog();
+            activityLog.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
+            activityLog.setVfcuStatusCd(xferType.returnCompleteXferCode());
+            activityLog.insertRow();
+                
+                
+            //Populate attributes post-file transfer
+            mediaFile.populateAttributes();
+            mediaFileRecord.getVfcuMediaFile().setVfcuChecksum(mediaFile.getMd5Hash());
+            mediaFileRecord.getVfcuMediaFile().setMediaFileSize(mediaFile.getMediaFileSize());
+            mediaFileRecord.getVfcuMediaFile().setMediaFileDate(mediaFile.getMediaFileDate());
+            mediaFileRecord.getVfcuMediaFile().updateVfcuMediaAttributes();           
+            
+            //Perform validations on the physical files
+            String errorCode = mediaFile.validate();
+            if (errorCode != null) {
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(mediaFileRecord.getVfcuMediaFile(), errorCode, "Validation Failure");
+                return;
             }
             
-            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-              
-        }       
-        //do final validations and status entries that need to be done AFTER the whole batch was xferred
-        finalValidations();
-    }             
+            //If we validated with jhove, now we need to record this in the datbase
+            if (mediaFile.retJhoveValidated()) {
+                activityLog.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
+                activityLog.setVfcuStatusCd("JH");
+                activityLog.insertRow();
+            }
+  
+            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+                mediaFileRecord.genAssociations(batchFileRecord.getVfcuMd5File().getFileHierarchyCd());
+            }
+            
+            //Perform validations on the database Record
+            mediaFileRecord.validate();
+            
+            if (! distinctMd5FileIds.contains(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId())) {
+                distinctMd5FileIds.add(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId());
+            }
+        }
+        
+        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            masterSubfileValidation();
+        }
+           
+        try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+                  
+    }       
     
+    private boolean masterSubfileValidation() {
+        
+        for (Integer vfcuMd5FileId : distinctMd5FileIds) {
+           
+            ArrayList<Integer> parentFileErrorList = new  ArrayList<>();
+            
+            //check status of files in the md5 batch to see if any remain incomplete
+            parentFileErrorList = returnParChildErrorList(vfcuMd5FileId);
+            
+            for (Integer errorMediaFileId : parentFileErrorList) {
+                
+                BatchFileRecord batchFileRecord = new BatchFileRecord();
+                MediaFileRecord mediaFileRecord  = new MediaFileRecord();
+                ErrorLog errorLog = new ErrorLog();
+                
+                batchFileRecord.getVfcuMd5File().setVfcuMd5FileId(vfcuMd5FileId);
+                mediaFileRecord.getVfcuMediaFile().setVfcuMediaFileId(errorMediaFileId);
+                
+                if(batchFileRecord.getVfcuMd5File().getFileHierarchyCd().equals("M")) {
+                    errorLog.capture(mediaFileRecord.getVfcuMediaFile(), "VMS", "Master has no subfile");
+                }
+                else if(batchFileRecord.getVfcuMd5File().getFileHierarchyCd().equals("S")) {  
+                    errorLog.capture(mediaFileRecord.getVfcuMediaFile(), "VSM", "Subfile has no master");
+                } 
+            }
+        }
+        
+        return true;
+        
+    }
+    
+     public ArrayList<Integer> returnParChildErrorList (Integer vfcuMd5FileId) {
+        ArrayList<Integer> parentFileErrorList = new  ArrayList<>();
+        
+        //get the count where some records have been primary/secondary validated, but not all have
+        
+        String sql = "SELECT 'X' " +
+                     "FROM vfcu_media_file vmf" +
+                     "WHERE vfcu_md5_file = " + vfcuMd5FileId +
+                     "AND NOT EXISTS (" +
+                        "SELECT 'X' from vfcu_activity_log vfa " +
+                        "WHERE vfa.vfcu_media_file = vfa.vfcu_media_File " +
+                        "AND vfa.activity_log in ('PS') ";
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (rs.next()) {
+                 // no need to validate, there have been no parent/child validations, we could be waiting on the other file
+                 return null;
+            }
+                
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to check for status of MD5", e );
+            return null;
+        }
+        
+        sql = "SELECT vmf.vfcu_media_file " +
+                     "FROM vfcu_media_file vmf" +
+                     "WHERE vfcu_md5_file = " + vfcuMd5FileId +
+                     "AND NOT EXISTS (" +
+                        "SELECT 'X' from vfcu_activity_log vfa " +
+                        "WHERE vfa.vfcu_media_file = vfa.vfcu_media_File " +
+                        "AND vfa.activity_log in ('ER','PS') ";
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            while (rs.next()) {
+                 parentFileErrorList.add(rs.getInt(1));
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to Count completed records for MD5", e );
+        }
+        
+        return parentFileErrorList;
+    }
+     
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
+        reqProps.add("maxFilesBatch");
+        reqProps.add("fileXferType");
+        reqProps.add("dupFileNmCheck");
+        reqProps.add("useMasterSubPairs");
         //add more required props here
         return reqProps;    
     }
-    
 }

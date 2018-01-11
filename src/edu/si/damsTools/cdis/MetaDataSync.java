@@ -609,8 +609,7 @@ public class MetaDataSync extends Operation{
             logger.log(Level.FINEST, "Error: Required sql metadataMap not found");
             return;
         }
-       
-  
+
     }
     
     

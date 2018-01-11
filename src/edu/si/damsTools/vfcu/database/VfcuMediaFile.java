@@ -5,6 +5,7 @@
  */
 package edu.si.damsTools.vfcu.database;
 
+import edu.si.damsTools.DamsTools;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -12,14 +13,14 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
-import edu.si.damsTools.DamsTools;
+
 
 
 public class VfcuMediaFile {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private ArrayList<Integer> filesIdsForBatch;
+    
     private Integer maxFiles;
     private String  mediaFileName;
     private String  mediaFileDate;
@@ -29,12 +30,13 @@ public class VfcuMediaFile {
     private Long    vfcuBatchNumber;
     private Integer vfcuMediaFileId;
     private Integer vfcuMd5FileId; 
-    
-    public ArrayList<Integer> getFilesIdsForBatch () {
-        return this.filesIdsForBatch;
-    }
+    private Integer childVfcuMediaFileId;
     
         
+    public Integer getChildVfcuMediaFileId () {
+        return this.childVfcuMediaFileId;
+    }
+      
     public String getMediaFileName () {
         return this.mediaFileName == null ? "" : this.mediaFileName;
     }
@@ -68,7 +70,10 @@ public class VfcuMediaFile {
     }
     
     
- 
+    public void setChildVfcuMediaFileId (Integer childVfcuMediaFileId) {
+        this.childVfcuMediaFileId = childVfcuMediaFileId;
+    }
+        
     public void setMaxFiles (Integer maxFiles) {
         this.maxFiles = maxFiles;
     }
@@ -341,9 +346,9 @@ public class VfcuMediaFile {
     }
     
     
-    public boolean populateFilesIdsForBatch () {
+    public ArrayList<Integer> returnFileIdsForBatch () {
     
-        filesIdsForBatch = new ArrayList<>();  
+        ArrayList<Integer> filesIdsForBatch = new ArrayList<>();  
         String sql = "SELECT  vfcu_media_file_id " +
                      "FROM     vfcu_media_file " +
                      "WHERE    vfcu_batch_number = " + getVfcuBatchNumber() + " ";
@@ -359,10 +364,39 @@ public class VfcuMediaFile {
                 
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain vfcu_media_file_ids for current batch", e );
-                return false;
         }        
-        return true;
+        return filesIdsForBatch;
     }
+    
+     public Integer returnIdForNameOtherMd5 () {
+        
+        Integer otherFile_id = null;
+        
+        String sql = "SELECT  vfcu_media_file_id " +
+                     "FROM    vfcu_media_file vmf " +
+                     "WHERE   vmf.vfcu_md5_file_id != " + getVfcuMd5FileId() +
+                     " AND    media_file_name = '" + getMediaFileName() + "' " +
+                     "AND    project_cd = '" + DamsTools.getProjectCd() + "' " +
+                     "AND NOT EXISTS ( " +
+                        "SELECT 'X' FROM vfcu_error_log vel  " +
+                        "WHERE vmf.vfcu_media_file_id = vel.vfcu_media_file_id) ";
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);         
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+            
+           if (rs.next()) {
+                //found a matching filename
+                otherFile_id = rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to check for duplicate fileName", e );
+        }
+        
+        return otherFile_id;
+    }
+    
     
     public Integer returnIdForMd5IdBaseName() {
         
@@ -440,8 +474,7 @@ public class VfcuMediaFile {
          
         return true;
     }
-    
-    
+
      public boolean populateMediaFileName () {
     
         String sql = "SELECT  media_file_name " +
@@ -463,9 +496,9 @@ public class VfcuMediaFile {
         return true;
     }
     
-      public boolean populateMd5FileId () {
+     public boolean populateBasicValues () {
     
-        String sql = "SELECT  vfcu_md5_file_id " +
+        String sql = "SELECT  vfcu_md5_file_id, media_file_name, vendor_checksum " +
                      "FROM     vfcu_media_file " +
                      "WHERE    vfcu_media_file_id = " + getVfcuMediaFileId() + " ";
             
@@ -475,6 +508,8 @@ public class VfcuMediaFile {
             
             if (rs.next()) {
                  setVfcuMd5FileId(rs.getInt(1));
+                 setMediaFileName(rs.getString(2));
+                 setVendorCheckSum(rs.getString(3));
             } 
             else {
                 logger.log(Level.FINER, "unable get Media FileName");
@@ -599,35 +634,89 @@ public class VfcuMediaFile {
         return true;
     }
     
-    public int retrieveSubFileId () {
+        public boolean updateChildVfcuMediaFileId () {
+ 
+        String sql = "UPDATE    vfcu_media_file " +
+                     "SET       child_vfcu_media_file_id = " + getChildVfcuMediaFileId() +
+                     "WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);       
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
 
-        int childVfcuMediaId = 0;
+            int rowsUpdated= pStmt.executeUpdate();        
+            logger.log(Level.FINER, "Rows updated for current batch: " + rowsUpdated );
+                    
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update child vfcuMediaFile_id", e );
+                return false;
+        }
         
-        String sql = "SELECT  mediachild.vfcu_media_file_id " +
-                     "FROM  vfcu_media_file mediamaster, " +
-                     "      vfcu_md5_file b," +
-                     "      vfcu_media_file mediachild " +
-                     "WHERE mediamaster.vfcu_md5_file_id = b.MASTER_MD5_FILE_ID " +
-                     "AND   mediachild.vfcu_md5_file_id = b.VFCU_MD5_FILE_ID " +
-                     "AND   mediamaster.vfcu_md5_file_id != mediachild.vfcu_md5_file_id " +
-                     "AND   SUBSTR(mediamaster.media_file_name, 0, INSTR(mediamaster.media_file_name, '.')-1) = " +
-                     "SUBSTR(mediachild.media_file_name, 0, INSTR(mediachild.media_file_name, '.')-1) " +
-                     "AND   mediamaster.vfcu_media_file_id = " + getVfcuMediaFileId(); 
-                   
+        return true;
+    }
+    
+    public HashMap<Integer, String> returnAssocRecords() {
+        
+        HashMap<Integer,String> assocIdList = new HashMap<>();
+        
+        String sql = "SELECT  assocvmf.vfcu_media_file_id, assocvmd5.file_hieracry_cd " +
+                     "FROM  vfcu_media_file vmf " +
+                     "INNER JOIN vfcu_media_file assocvmf " +
+                     "ON vmf.media_file_name = assocvmf.media_file_name " +
+                     "INNER JOIN vfcu_md5_file vmd5 " +
+                     "ON vmf.vfcu_md5_file_id = vmd5.vfcu_md5_file_id " +
+                     "INNER JOIN vfcu_md5_file assocvmd5 " +
+                     "ON assocvmf.vfcu_md5_file_id = assocvmd5.vfcu_md5_file_id " +
+                     "WHERE substr(vmf.media_file_name, 1, instr(vmf.media_file_name, '.') -1) = " + 
+                            "substr(assocvmf.media_file_name, 1, instr(assocvmf.media_file_name, '.') -1)" +
+                     " AND vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() +
+                     " AND assocvmf.file_path_base_path_staging = vmf.file_path_base_path_staging " +
+                     " AND substr(vmf.file_path_ending, 1, instr(vmf.file_path_ending, '/') -1) = " +
+                           "substr(assocvmf.file_path_ending, 1, instr(assocvmf.file_path_ending, '/') -1) = " +
+                     " AND vmf.media_file_name = '" + getMediaFileName() + "' " +
+                     " AND vmf.media_file_name != assocvmf.media_file_name " +
+                     " AND  assocvmd5.project_cd = vmd5.project_cd " + 
+                     " AND  vmd5.project_cd '" + DamsTools.getProjectCd() + "'";
+
          logger.log(Level.FINEST,"SQL! " + sql); 
              
          try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
              ResultSet rs = pStmt.executeQuery() ) {
     
-            if (rs.next()) {
-                childVfcuMediaId = (rs.getInt(1));
+            while (rs.next()) {
+                assocIdList.put(rs.getInt(1),rs.getString(2));
             }   
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to check for child media ID in DB", e );
         }
          
-        return childVfcuMediaId;
+        return assocIdList;
     }
     
+    public Integer retrieveSubFileId() {
+        
+        Integer subfileId = null;
+        
+        String sql = "SELECT  child_vfcu_media_file_id " +
+                     "FROM     vfcu_media_file a " +
+                     "WHERE    vfcu_media_file_name = " + getVfcuMediaFileId();
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (rs.next()) {
+                 subfileId = rs.getInt(1);
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain child Record Id", e );
+        }
+         
+        return subfileId;
+    }
+    
+   
+
 }
