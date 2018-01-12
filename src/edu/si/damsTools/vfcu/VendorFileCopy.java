@@ -72,6 +72,7 @@ public class VendorFileCopy extends Operation {
         if (! filesAssignedToBatch) {
             //no files found that can be assigned to a validate and copy batch.  We have no need to go further
             logger.log(Level.FINER, "No files found to process");
+            return;
         }
         //Now we updated the files and assigned to current batch, commit so we lock them into current batch
         try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -85,7 +86,9 @@ public class VendorFileCopy extends Operation {
         for (MediaFileRecord mediaFileRecord: fileListForBatch) {
             
             BatchFileRecord batchFileRecord = new BatchFileRecord(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId());
+            batchFileRecord.populateBasicValuesFromDb();
             String fileLoc = batchFileRecord.returnStringBatchDir() + "/" + mediaFileRecord.getVfcuMediaFile().getMediaFileName();
+             logger.log(Level.FINER, "fileLoc:" + fileLoc);
             Path pathFile = Paths.get(fileLoc);
             
             MediaFile mediaFile = new MediaFile(pathFile);

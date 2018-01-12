@@ -53,7 +53,8 @@ public class Watcher extends Operation {
         for (Md5File md5File : sourceFileList) {
         
             BatchFileRecord batchFileRecord = new BatchFileRecord();
-            
+            batchFileRecord.populateBasicValuesFromDeliveryFile(md5File.getFileName(), md5File.getLocalPathEnding());
+
             // Check to see if md5 file already exists im database
             boolean fileAlreadyProcessed = batchFileRecord.checkIfExistsInDb();
             if (fileAlreadyProcessed) {

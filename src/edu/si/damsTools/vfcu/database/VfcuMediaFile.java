@@ -19,8 +19,7 @@ import org.apache.commons.io.FilenameUtils;
 public class VfcuMediaFile {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
-    
-    
+     
     private Integer maxFiles;
     private String  mediaFileName;
     private String  mediaFileDate;
@@ -111,32 +110,6 @@ public class VfcuMediaFile {
         this.vfcuMd5FileId = vfcuMd5FileId;
     }
     
-   public boolean generateMediaFileId () {
-        PreparedStatement pStmt = null;
-        ResultSet rs = null;
-        
-        try {
-            //Generate the ID for the primary key for this table
-            String sql = "SELECT vfcu_media_file_id_seq.NextVal FROM dual"; 
-            
-            pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-            rs = pStmt.executeQuery();
-            
-            if (rs.next()) {
-                this.vfcuMediaFileId = rs.getInt(1);
-            }
-                
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to get identifier sequence for vfcu_md5_file", e );
-                return false;
-        }finally {
-            try { if (pStmt != null) pStmt.close(); } catch (Exception se) { se.printStackTrace(); }
-            try { if (rs != null) rs.close(); } catch (Exception se) { se.printStackTrace(); }
-        }
-        
-        return true;
-    }
-    
     public boolean insertRow () {
         
         String sql = "INSERT INTO vfcu_media_file ( " +
@@ -145,7 +118,7 @@ public class VfcuMediaFile {
                         "media_file_name, " +
                         "vendor_checksum) " +
                     "VALUES (" +
-                        getVfcuMediaFileId() + ", " +
+                        "vfcu_media_file_id_seq.NextVal, " + 
                         getVfcuMd5FileId() + ", " +
                         "'" + getMediaFileName() + "'," +
                         "'" + getVendorChecksum() + "')";
@@ -275,7 +248,7 @@ public class VfcuMediaFile {
     }
     
     public int returnCountStatusNoErrorForMd5Id (String status) {
-        int mediaFileCount = 0;
+        int mediaFileCount;
         
         String sql = "SELECT count(*) " +
                      "FROM vfcu_media_file a " + 
@@ -316,7 +289,7 @@ public class VfcuMediaFile {
     }
     
     public int returnCountErrorForMd5Id () {
-        int mediaFileCount = 0;
+        int mediaFileCount;
         
         String sql = "SELECT count(*) " +
                      "FROM vfcu_media_file a, " +
@@ -496,7 +469,7 @@ public class VfcuMediaFile {
         return true;
     }
     
-     public boolean populateBasicValues () {
+     public boolean populateBasicDbData () {
     
         String sql = "SELECT  vfcu_md5_file_id, media_file_name, vendor_checksum " +
                      "FROM     vfcu_media_file " +

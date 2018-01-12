@@ -30,9 +30,13 @@ public class DeliveryFile {
     public String getFileName() {
         return this.sourceNameAndPath.getFileName().toString();
     }
-    
+
     public String getLocalPathEnding() {
-        return sourceNameAndPath.toString().substring(DamsTools.getProperty("vendorBaseDir").length());
+        
+        logger.log(Level.FINEST, "sourceNameAndPath: " + sourceNameAndPath.toString());
+        
+        return sourceNameAndPath.toString().substring(DamsTools.getProperty("vendorBaseDir").length() +1, 
+                sourceNameAndPath.toString().length() - getFileName().length() -1 );
     }
     
     public boolean transferToDAMSStaging(XferType xferType, boolean createMissingDir) {

@@ -71,10 +71,10 @@ public class MediaFileRecord {
     }
     
     public boolean populateBasicValuesFromDb() {
-        vfcuMediaFile.populateBasicValues();
+        vfcuMediaFile.populateBasicDbData();
         return true;
     }
-    
+        
     
     public boolean genAssociations(String currentFileHierarchy) {
         HashMap<Integer,String> assocIds = new HashMap<>();

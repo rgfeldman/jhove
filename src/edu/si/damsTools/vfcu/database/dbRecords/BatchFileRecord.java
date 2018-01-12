@@ -53,9 +53,14 @@ public class BatchFileRecord {
     }
     
     
-    public boolean populateBasicValues (Integer vfcuMediaFileId) {
-        this.vfcuMd5File.populateBasicDbData();
-        
+    public boolean populateBasicValuesFromDeliveryFile (String fileName, String filePathEnding) {
+
+        vfcuMd5File.setVendorMd5FileName(fileName);
+        vfcuMd5File.setFilePathEnding(filePathEnding);
+            
+        vfcuMd5File.setBasePathStaging(DamsTools.getProperty("vfcuStagingForCDIS"));  
+        vfcuMd5File.setBasePathVendor(DamsTools.getProperty("vendorBaseDir"));
+            
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
                     
             if (vfcuMd5File.getFilePathEnding().endsWith(DamsTools.getProperty("vendorMasterFileDir"))) {
@@ -64,8 +69,16 @@ public class BatchFileRecord {
             else if (vfcuMd5File.getFilePathEnding().endsWith(DamsTools.getProperty("vendorSubFileDir"))) {
                 vfcuMd5File.setFileHierarchyCd("S");
             }
-         }
+        }
+        else {
+            vfcuMd5File.setFileHierarchyCd("M");
+        }
 
+        return true;
+    }
+    
+    public boolean populateBasicValuesFromDb() {
+        vfcuMd5File.populateBasicDbData();
         return true;
     }
     

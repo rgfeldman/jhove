@@ -93,7 +93,7 @@ public class VfcuMd5File {
                         "base_path_staging, " +
                         "file_path_ending, " +
                         "md5_file_retrieval_dt, " +
-                        "file_hieracry_cd) " +
+                        "file_hierarchy_cd) " +
                     "VALUES (" +
                         getVfcuMd5FileId() + ", " +
                         "'" + DamsTools.getProjectCd() + "', " +
