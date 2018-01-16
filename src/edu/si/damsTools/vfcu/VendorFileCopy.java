@@ -140,6 +140,9 @@ public class VendorFileCopy extends Operation {
             if (! distinctMd5FileIds.contains(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId())) {
                 distinctMd5FileIds.add(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId());
             }
+            
+            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+             
         }
         
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
@@ -158,6 +161,11 @@ public class VendorFileCopy extends Operation {
             
             //check status of files in the md5 batch to see if any remain incomplete
             parentFileErrorList = returnParChildErrorList(vfcuMd5FileId);
+            
+            if (parentFileErrorList == null || parentFileErrorList.isEmpty()) {
+                //nothing to validate yet
+                return true;
+            }
             
             for (Integer errorMediaFileId : parentFileErrorList) {
                 
@@ -186,13 +194,14 @@ public class VendorFileCopy extends Operation {
         
         //get the count where some records have been primary/secondary validated, but not all have
         
+        //First see if there are any records missing 'PM' status.  If some are missing 'PM' status we cannot expect PS to be ready yet for all of them
         String sql = "SELECT 'X' " +
-                     "FROM vfcu_media_file vmf" +
-                     "WHERE vfcu_md5_file = " + vfcuMd5FileId +
-                     "AND NOT EXISTS (" +
+                     "FROM vfcu_media_file vmf " +
+                     "WHERE vfcu_md5_file_id = " + vfcuMd5FileId +
+                     " AND NOT EXISTS (" +
                         "SELECT 'X' from vfcu_activity_log vfa " +
-                        "WHERE vfa.vfcu_media_file = vfa.vfcu_media_File " +
-                        "AND vfa.activity_log in ('PS') ";
+                        "WHERE vfa.vfcu_media_file_id = vmf.vfcu_media_File_id " +
+                        "AND vfa.vfcu_status_cd in ('PM','ER')) ";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -201,6 +210,7 @@ public class VendorFileCopy extends Operation {
 
             if (rs.next()) {
                  // no need to validate, there have been no parent/child validations, we could be waiting on the other file
+                 logger.log(Level.FINER, "Batch Not complete, all records do not have PM yet");
                  return null;
             }
                 
@@ -209,13 +219,39 @@ public class VendorFileCopy extends Operation {
             return null;
         }
         
-        sql = "SELECT vmf.vfcu_media_file " +
+        //Now see if there are ANY records with 'PS' status.  If there are no records with 'PS' yet, then the associated file has not yet been put in VFCU
+        // note, this is not the best way...and may need some work to detect condition where an assoc md5 has not been processed yet
+        sql = "SELECT 'X' " +
+              "FROM vfcu_media_file vmf " +
+              "WHERE vfcu_md5_file_id = " + vfcuMd5FileId +
+              " AND EXISTS (" +
+                "SELECT 'X' from vfcu_activity_log vfa " +
+                "WHERE vfa.vfcu_media_file_id = vmf.vfcu_media_File_id " +
+                "AND vfa.vfcu_status_cd in ('PS','ER')) ";
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (! rs.next()) {
+                // no need to validate, none of the records have PS yet
+                logger.log(Level.FINER, "Batch Not complete, still awaiting associated records");
+                return null;
+            }
+                
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to check for status of MD5", e );
+            return null;
+        }
+        
+        sql = "SELECT vmf.vfcu_media_file_id " +
                      "FROM vfcu_media_file vmf" +
-                     "WHERE vfcu_md5_file = " + vfcuMd5FileId +
+                     "WHERE vfcu_md5_file_id = " + vfcuMd5FileId +
                      "AND NOT EXISTS (" +
                         "SELECT 'X' from vfcu_activity_log vfa " +
-                        "WHERE vfa.vfcu_media_file = vfa.vfcu_media_File " +
-                        "AND vfa.activity_log in ('ER','PS') ";
+                        "WHERE vfa.vfcu_media_file_id = vmf.vfcu_media_File_id " +
+                        "AND vfa.vfcu_status_cd in ('ER','PS')) ";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
             

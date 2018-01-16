@@ -347,9 +347,11 @@ public class VfcuMediaFile {
         
         String sql = "SELECT  vfcu_media_file_id " +
                      "FROM    vfcu_media_file vmf " +
+                     "INNER JOIN vfcu_md5_file md5 " +
+                     "ON      vmf.vfcu_md5_file_id = md5.vfcu_md5_file_id " +
                      "WHERE   vmf.vfcu_md5_file_id != " + getVfcuMd5FileId() +
                      " AND    media_file_name = '" + getMediaFileName() + "' " +
-                     "AND    project_cd = '" + DamsTools.getProjectCd() + "' " +
+                     "AND    md5.project_cd = '" + DamsTools.getProjectCd() + "' " +
                      "AND NOT EXISTS ( " +
                         "SELECT 'X' FROM vfcu_error_log vel  " +
                         "WHERE vmf.vfcu_media_file_id = vel.vfcu_media_file_id) ";
@@ -611,7 +613,7 @@ public class VfcuMediaFile {
  
         String sql = "UPDATE    vfcu_media_file " +
                      "SET       child_vfcu_media_file_id = " + getChildVfcuMediaFileId() +
-                     "WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
+                     " WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
             
         logger.log(Level.FINEST, "SQL: {0}", sql);       
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
@@ -631,25 +633,24 @@ public class VfcuMediaFile {
         
         HashMap<Integer,String> assocIdList = new HashMap<>();
         
-        String sql = "SELECT  assocvmf.vfcu_media_file_id, assocvmd5.file_hieracry_cd " +
+        String sql = "SELECT  assocvmf.vfcu_media_file_id, assocvmd5.file_hierarchy_cd " +
                      "FROM  vfcu_media_file vmf " +
                      "INNER JOIN vfcu_media_file assocvmf " +
-                     "ON vmf.media_file_name = assocvmf.media_file_name " +
+                     "ON substr(vmf.media_file_name, 1, INSTR(vmf.media_file_name, '.') -1) = " +
+                            "SUBSTR(assocvmf.media_file_name, 1, INSTR(assocvmf.media_file_name, '.') -1) " + 
                      "INNER JOIN vfcu_md5_file vmd5 " +
-                     "ON vmf.vfcu_md5_file_id = vmd5.vfcu_md5_file_id " +
+                     "ON vmf.vfcu_md5_file_id = vmd5.vfcu_md5_file_id " + 
                      "INNER JOIN vfcu_md5_file assocvmd5 " +
-                     "ON assocvmf.vfcu_md5_file_id = assocvmd5.vfcu_md5_file_id " +
-                     "WHERE substr(vmf.media_file_name, 1, instr(vmf.media_file_name, '.') -1) = " + 
-                            "substr(assocvmf.media_file_name, 1, instr(assocvmf.media_file_name, '.') -1)" +
-                     " AND vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() +
-                     " AND assocvmf.file_path_base_path_staging = vmf.file_path_base_path_staging " +
-                     " AND substr(vmf.file_path_ending, 1, instr(vmf.file_path_ending, '/') -1) = " +
-                           "substr(assocvmf.file_path_ending, 1, instr(assocvmf.file_path_ending, '/') -1) = " +
-                     " AND vmf.media_file_name = '" + getMediaFileName() + "' " +
-                     " AND vmf.media_file_name != assocvmf.media_file_name " +
-                     " AND  assocvmd5.project_cd = vmd5.project_cd " + 
-                     " AND  vmd5.project_cd '" + DamsTools.getProjectCd() + "'";
-
+                     "ON substr(vmd5.file_path_ending, 1, INSTR(vmd5.file_path_ending, '/') -1) = " + 
+                            "SUBSTR(assocvmd5.file_path_ending, 1, INSTR(assocvmd5.file_path_ending, '/') -1) " + 
+                     "AND vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() +
+                     " AND assocvmd5.base_path_staging = vmd5.base_path_staging " +
+                     "AND vmf.media_file_name = '" + getMediaFileName() + "' " + 
+                     "AND vmf.media_file_name != assocvmf.media_file_name " +
+                     "AND vmd5.file_path_ending != assocvmd5.file_path_ending " +
+                     "AND  assocvmd5.project_cd = vmd5.project_cd " +
+                     "AND  vmd5.project_cd = '" + DamsTools.getProjectCd() + "'";
+ 
          logger.log(Level.FINEST,"SQL! " + sql); 
              
          try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);

@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import java.sql.ResultSet;
 
 /**
  *
@@ -66,5 +67,30 @@ public class VfcuActivityLog {
         }
         
         return true;
+    }
+    
+    public Boolean doesMediaIdExistWithStatus () {
+        
+        String sql = "SELECT 'X' " +
+                     "FROM vfcu_activity_log " +
+                     "WHERE vfcu_media_file_id = " + getVfcuMediaFileId() +
+                     " AND vfcu_status_cd = '" + getVfcuStatusCd() + "'"; 
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()  ) {
+            
+             if (rs.next()) { 
+                 //no need to insert, it is already there
+                 return true;
+             }
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to determine existence of vfcu_activity_log", e );
+                return null;
+        }
+        
+        return false;
     }
 }

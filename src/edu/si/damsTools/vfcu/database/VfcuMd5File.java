@@ -177,7 +177,7 @@ public class VfcuMd5File {
     
     public void populateBasicDbData () {
         
-        String sql =    "SELECT file_path_ending, base_path_staging" +
+        String sql =    "SELECT base_path_vendor, base_path_staging, file_path_ending, file_hierarchy_cd " +
                         "FROM   vfcu_md5_file " +
                         "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
         
@@ -187,12 +187,14 @@ public class VfcuMd5File {
             ResultSet rs = pStmt.executeQuery() ) {
             
             if (rs.next()) {
-                this.filePathEnding = rs.getString(1);
+                this.basePathVendor = rs.getString(1);
                 this.basePathStaging = rs.getString(2);
+                this.filePathEnding = rs.getString(3);     
+                this.fileHierarchyCd = rs.getString(4);
             }   
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain path ending", e );
+                logger.log(Level.FINER, "Error: unable to Populate basic data for md5 from database", e );
         }
     }
     

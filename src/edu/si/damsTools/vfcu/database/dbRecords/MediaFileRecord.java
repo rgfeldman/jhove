@@ -77,12 +77,20 @@ public class MediaFileRecord {
         
     
     public boolean genAssociations(String currentFileHierarchy) {
-        HashMap<Integer,String> assocIds = new HashMap<>();
-                               
-        for (VfcuMd5File assocMd5File : assocMd5List) {
-            //return comparable record for the Md5FileID provided
-            assocIds = vfcuMediaFile.returnAssocRecords();
+  
+        VfcuActivityLog activityLog = new VfcuActivityLog();
+        activityLog.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
+        activityLog.setVfcuStatusCd("PS");
+        
+        if (activityLog.doesMediaIdExistWithStatus()) {
+            //no need to add association, we already added it
+            return true;
         }
+        
+        HashMap<Integer,String> assocIds = new HashMap<>();
+          
+        //return associated records
+        assocIds = vfcuMediaFile.returnAssocRecords();
                         
         for (Integer accocMediaId: assocIds.keySet()) {
             
@@ -98,7 +106,7 @@ public class MediaFileRecord {
                 assocVfcuMediaFile.updateChildVfcuMediaFileId();
             }
             
-            VfcuActivityLog activityLog = new VfcuActivityLog();
+            activityLog = new VfcuActivityLog();
             activityLog.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
             activityLog.setVfcuStatusCd("PS");
             activityLog.insertRow();
@@ -108,7 +116,6 @@ public class MediaFileRecord {
             activityLog.setVfcuStatusCd("PS");
             activityLog.insertRow();
         }
-        
         return true;
     }
 }
