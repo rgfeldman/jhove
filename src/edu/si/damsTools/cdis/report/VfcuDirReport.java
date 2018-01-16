@@ -37,14 +37,14 @@ public class VfcuDirReport implements DisplayFormat {
         String vendorDir = null;
         
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-            sql = "SELECT SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1), base_path_vendor " +
+            sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8), SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', -1, 1)-1) " +
                     "FROM vfcu_md5_file " +
-                    "WHERE md5_file_id = " + md5FileId;
+                    "WHERE vfcu_md5_file_id = " + md5FileId;
         } 
         else {
-            sql = "SELECT file_path_ending, base_path_vendor " +
+            sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8), file_path_ending " +
                     "FROM vfcu_md5_file " +
-                    "WHERE md5_file_id = " + md5FileId;
+                    "WHERE vfcu_md5_file_id = " + md5FileId;
         }
                 
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -52,18 +52,11 @@ public class VfcuDirReport implements DisplayFormat {
              ResultSet rs = stmt.executeQuery() ) {
 
             if (rs.next()) {
-                if (rs.getString(1) == null) {
-                    vendorDir = rs.getString(2).substring(rs.getString(2).lastIndexOf("/") + 1);
+                if (rs.getString(2) == null) {
+                    vendorDir = rs.getString(1).substring(rs.getString(1).lastIndexOf("/") + 1);
                 }
                 else {
-                    String strFilePathEnding = rs.getString(1);
-                    //Add the records to the masterMd5Id list 
-                    if (strFilePathEnding.contains("/")) {
-                        vendorDir = strFilePathEnding.replace("/", "-");
-                    }
-                    else {
-                        vendorDir = strFilePathEnding;
-                    }
+                    vendorDir = rs.getString(1) + "/" + rs.getString(2);
                 }
             }        
             else {
@@ -76,6 +69,7 @@ public class VfcuDirReport implements DisplayFormat {
         
         return vendorDir;
     }
+
         
     
     public VfcuDirReport() {
@@ -84,7 +78,7 @@ public class VfcuDirReport implements DisplayFormat {
     }
 
     
-    public String returnDocHeader(String multiRptkeyValue) {
+   public String returnDocHeader(String multiRptkeyValue) {
         
         return DamsTools.getProjectCd().toUpperCase() + " CDIS Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue) );
             
@@ -94,10 +88,11 @@ public class VfcuDirReport implements DisplayFormat {
         return DamsTools.getProperty("vfcuDirEmailList");
     }
     
-    public String returnEmailTitle(String multiRptkeyValue) {
+   public String returnEmailTitle(String multiRptkeyValue) {
        return DamsTools.getProjectCd().toUpperCase()+ ": Batch Hot Folder Import Activity Report - " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue) );
 
     }
+   
     
     public boolean returnSupressAttachFlag(String masterMd5FileId) {
         if ( DamsTools.getProperty("vfcuDirRptSupressAttch") != null && DamsTools.getProperty("vfcuDirRptSupressAttch").equals("true")  ) { 
@@ -186,7 +181,7 @@ public class VfcuDirReport implements DisplayFormat {
         
         String sql = "UPDATE vfcu_md5_file " +
                      "SET cdis_rpt_dt = SYSDATE " +
-                     "WHERE md5_file_id = " + md5FileId;
+                     "WHERE vfcu_md5_file_id = " + md5FileId;
         
        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
             
@@ -208,12 +203,12 @@ public class VfcuDirReport implements DisplayFormat {
         String sdir = null;
         
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-            sql = "SELECT base_path_vendor || '/' || SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', 1, 1)-1) " +
+            sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8) || '/' || SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', -1, 1)-1) " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + multiRptkeyValue;
             } 
         else {
-            sql = "SELECT base_path_vendor || '/' || file_path_ending " +
+            sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8) || '/' || file_path_ending " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + multiRptkeyValue;
         }
