@@ -672,8 +672,8 @@ public class VfcuMediaFile {
         Integer subfileId = null;
         
         String sql = "SELECT  child_vfcu_media_file_id " +
-                     "FROM     vfcu_media_file a " +
-                     "WHERE    vfcu_media_file_name = " + getVfcuMediaFileId();
+                     "FROM    vfcu_media_file a " +
+                     "WHERE   vfcu_media_file_id = " + getVfcuMediaFileId();
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -690,7 +690,4 @@ public class VfcuMediaFile {
          
         return subfileId;
     }
-    
-   
-
 }
