@@ -81,7 +81,7 @@ public class DamsRecord {
         }
         if (sql.contains("?BASE_FILE_NAME?")) {
             
-            String baseFileName= getUois().getName().substring(getUois().getName().lastIndexOf(".") + 1);
+            String baseFileName= getUois().getName().substring(0, getUois().getName().lastIndexOf(".") );
             sql = sql.replace("?BASE_FILE_NAME?", baseFileName);
             
         }
