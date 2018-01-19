@@ -80,10 +80,8 @@ public class DamsRecord {
             sql = sql.replace("?FILE_NAME?", getUois().getName());
         }
         if (sql.contains("?BASE_FILE_NAME?")) {
-            
             String baseFileName= getUois().getName().substring(0, getUois().getName().lastIndexOf(".") );
             sql = sql.replace("?BASE_FILE_NAME?", baseFileName);
-            
         }
         if (sql.contains("?SOURCE_SYSTEM_ID?")) {
             sql = sql.replace("?SOURCE_SYSTEM_ID?", getSiAssetMetadata().getSourceSystemId());
