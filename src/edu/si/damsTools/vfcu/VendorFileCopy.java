@@ -120,7 +120,7 @@ public class VendorFileCopy extends Operation {
             if (errorCode != null) {
                 ErrorLog errorLog = new ErrorLog();  
                 errorLog.capture(mediaFileRecord.getVfcuMediaFile(), errorCode, "Validation Failure");
-                return;
+                continue;
             }
             
             //If we validated with jhove, now we need to record this in the datbase
