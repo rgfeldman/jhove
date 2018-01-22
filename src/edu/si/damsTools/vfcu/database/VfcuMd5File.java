@@ -262,14 +262,14 @@ public class VfcuMd5File {
     }
         
     
-    public ArrayList<Integer> returnAssocMd5Ids() {
+    public Integer returnAssocMd5Id() {
         
-        ArrayList<Integer> assocVfcuMd5FileIds = new ArrayList<>();
+        Integer returnVal = null;
         
         String filePathEndingToCheck = getFilePathEnding();
         
         if (filePathEndingToCheck.contains("/")) {
-            filePathEndingToCheck.substring(0, filePathEndingToCheck.lastIndexOf("/")+1);
+            filePathEndingToCheck = filePathEndingToCheck.substring(0, filePathEndingToCheck.lastIndexOf("/")+1);
         }
         else {
             filePathEndingToCheck = "";
@@ -295,14 +295,14 @@ public class VfcuMd5File {
             ResultSet rs = pStmt.executeQuery() ) {
             
             if (rs.next()) {
-                 assocVfcuMd5FileIds.add(rs.getInt(1));
+                 returnVal = rs.getInt(1);
             }   
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain path ending", e );
         }
         
-        return assocVfcuMd5FileIds;
+        return returnVal;
         
     }
     

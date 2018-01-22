@@ -135,7 +135,7 @@ public class Report extends Operation {
     
     public void invoke () {
         
-        VfcuMd5File vfcuMd5File = new VfcuMd5File();
+        
         masterMd5Ids = new ArrayList<> () ;
         
         //get masterMd5FileId to run report for (FROM XML)
@@ -148,6 +148,11 @@ public class Report extends Operation {
         
         // NEED TO LOOP THROUGH MD5 IDs one at a time
         for (Integer masterMd5Id : masterMd5Ids) {
+            
+            VfcuMd5File vfcuMd5File = new VfcuMd5File();
+            vfcuMd5File.setVfcuMd5FileId(masterMd5Id);
+            vfcuMd5File.populateBasicDbData();
+            
             //vfcuMd5File.setMasterMd5FileId(masterMd5Id);
             currentMd5FileId = masterMd5Id;
             this.childMd5Id = null;
@@ -155,7 +160,7 @@ public class Report extends Operation {
             if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
             //get childMd5FileId for the master XML
             
-              //  this.childMd5Id = vfcuMd5File.returnSubFileMd5Id(childMd5Id);
+                this.childMd5Id = vfcuMd5File.returnAssocMd5Id();
                 if (this.childMd5Id == null) {
                     logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
                     continue;
@@ -228,10 +233,6 @@ public class Report extends Operation {
             vfcuMd5File.setVfcuMd5FileId(masterMd5Id);
             vfcuMd5File.updateVfcuRptDt();
         
-            if (! (this.childMd5Id == null))  {
-                vfcuMd5File.setVfcuMd5FileId(this.childMd5Id);
-                vfcuMd5File.updateVfcuRptDt();
-            }
         }
          
         try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -297,11 +298,11 @@ public class Report extends Operation {
                      "WHERE   a.vfcu_media_file_id = b.vfcu_media_file_id " +
                      "AND     b.vfcu_status_cd in ('" + statusToCheck + "','ER')) ";
         
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+        
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
              ResultSet rs = stmt.executeQuery() ) {
-            
-            logger.log(Level.FINEST, "SQL: {0}", sql);
-            
+
             if (rs.next()) {
                 numPendingRecords = rs.getInt(1);
             }
