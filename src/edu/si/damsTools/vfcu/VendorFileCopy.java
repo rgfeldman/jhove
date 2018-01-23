@@ -246,9 +246,9 @@ public class VendorFileCopy extends Operation {
         }
         
         sql = "SELECT vmf.vfcu_media_file_id " +
-                     "FROM vfcu_media_file vmf" +
+                     "FROM vfcu_media_file vmf " +
                      "WHERE vfcu_md5_file_id = " + vfcuMd5FileId +
-                     "AND NOT EXISTS (" +
+                     " AND NOT EXISTS (" +
                         "SELECT 'X' from vfcu_activity_log vfa " +
                         "WHERE vfa.vfcu_media_file_id = vmf.vfcu_media_File_id " +
                         "AND vfa.vfcu_status_cd in ('ER','PS')) ";
