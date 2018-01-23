@@ -5,12 +5,12 @@
  */
 package edu.si.damsTools.cdis.report;
 
-import edu.si.damsTools.cdis.report.attachment.DataSection;
-import edu.si.damsTools.cdis.report.attachment.FailedSection;
-import edu.si.damsTools.cdis.report.attachment.MetaSyncSection;
-import edu.si.damsTools.cdis.report.attachment.MediaCreatedSection;
-import edu.si.damsTools.cdis.report.attachment.LinkedCisSection;
-import edu.si.damsTools.cdis.report.attachment.LinkedDamsSection;
+import edu.si.damsTools.cdis.report.rptFile.DataSection;
+import edu.si.damsTools.cdis.report.rptFile.FailedSection;
+import edu.si.damsTools.cdis.report.rptFile.MetaSyncSection;
+import edu.si.damsTools.cdis.report.rptFile.MediaCreatedSection;
+import edu.si.damsTools.cdis.report.rptFile.LinkedCisSection;
+import edu.si.damsTools.cdis.report.rptFile.LinkedDamsSection;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.XmlQueryData;
 import java.util.ArrayList;

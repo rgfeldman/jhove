@@ -74,6 +74,7 @@ public class Generator extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
+        reqProps.add("rptDeliveryMethod");
         //add more required props here
         return reqProps;    
     }

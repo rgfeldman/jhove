@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools.cdis.report;
 
-import edu.si.damsTools.cdis.report.attachment.DataSection;
+import edu.si.damsTools.cdis.report.rptFile.DataSection;
 import java.util.List;
 import java.util.ArrayList;
 
