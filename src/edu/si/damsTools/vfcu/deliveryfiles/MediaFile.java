@@ -6,7 +6,7 @@
 package edu.si.damsTools.vfcu.deliveryfiles;
 
 import com.twmacinta.util.MD5;
-
+import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.vfcu.utilities.JhoveConnection;
 import java.io.File;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -15,14 +15,12 @@ import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
-import edu.si.damsTools.DamsTools;
-
-
 /**
- *
+ * Class : MediaFile.java
+ * Purpose: This Class holds the  methods relating to MediaFiles that are delivered to VFCU for ingest from the Unit/Vendor
  * @author rfeldman
  */
+
 public class MediaFile extends DeliveryFile {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     

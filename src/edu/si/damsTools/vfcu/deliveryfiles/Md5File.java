@@ -17,7 +17,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 
 /**
- *
+ * Class : Md5File.java
+ * Purpose: This Class holds the  methods relating to Md5Files that are delivered to VFCU from the Unit/Vendor
  * @author rfeldman
  */
 public class Md5File extends DeliveryFile {

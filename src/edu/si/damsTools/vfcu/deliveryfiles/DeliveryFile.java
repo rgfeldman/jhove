@@ -6,7 +6,8 @@
 package edu.si.damsTools.vfcu.deliveryfiles;
 
 /**
- *
+ * Class : DeliveryFile.java
+ * Purpose: This Class holds the common methods of all types of files that are delivered to VFCU from the Unit/Vendor
  * @author rfeldman
  */
 import edu.si.damsTools.DamsTools;
@@ -32,22 +33,38 @@ public class DeliveryFile {
     }
 
     public String getLocalPathEnding() {
-        
+
+        String localPathEnding = "";
+
         logger.log(Level.FINEST, "sourceNameAndPath: " + sourceNameAndPath.toString());
-        
-        return sourceNameAndPath.toString().substring(DamsTools.getProperty("vendorBaseDir").length() +1, 
+
+        //The sourceName and path can have NO localPathEnding.  This is valid condition, and in that case the localPathEnding is an empty string
+        //This occurs when VFCU is pointed directly at a particular directory.  We check to make sure this is not an empty string first or the substr may fail.
+        if (sourceNameAndPath.toString().length() > DamsTools.getProperty("vendorBaseDir").length() + getFileName().length() +1 )  {
+            localPathEnding = sourceNameAndPath.toString().substring(DamsTools.getProperty("vendorBaseDir").length() +1, 
                 sourceNameAndPath.toString().length() - getFileName().length() -1 );
+        }   
+        return localPathEnding;
     }
     
-    public boolean transferToDAMSStaging(XferType xferType, boolean createMissingDir) {
+    /*
+    /* Method: transferToVfcuStaging
+    /* Purpose: Transfers any file from VFCU source area to Vfcu Staging 
+    */
+    public boolean transferToVfcuStaging(XferType xferType, boolean createMissingDir) {
 
-        String destinationDir = DamsTools.getProperty("vfcuStagingForCDIS") + '/' + getLocalPathEnding();
-        String dest = destinationDir + "/" + getFileName();
+        String destinationDir = DamsTools.getProperty("vfcuStaging");
+        if (! getLocalPathEnding().equals("")) {
+            destinationDir = DamsTools.getProperty("vfcuStaging") + '/' + getLocalPathEnding();
+        }
+      
+        String destNameWithPath = destinationDir + "/" + getFileName();
+        
         logger.log(Level.FINEST, "Source: " + getFileName());
-        logger.log(Level.FINEST, "Destination " + dest);
+        logger.log(Level.FINEST, "Destination " + destNameWithPath);
         
         Path source      = sourceNameAndPath;
-        Path destination = Paths.get(dest);
+        Path destination = Paths.get(destNameWithPath);
        
         try {
             if (createMissingDir) {
@@ -65,13 +82,10 @@ public class DeliveryFile {
             
             //Now that we have moved the file, our file of reference is the file we just moved.  point file to the destination area
             this.sourceNameAndPath = destination;
-                
         }
         catch(Exception e) {
              logger.log(Level.FINEST, "Unable to transfer to staging", e);
         }
-        
         return true;
     }
-
 }

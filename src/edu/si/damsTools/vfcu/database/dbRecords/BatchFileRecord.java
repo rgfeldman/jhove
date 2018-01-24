@@ -58,7 +58,7 @@ public class BatchFileRecord {
         vfcuMd5File.setVendorMd5FileName(fileName);
         vfcuMd5File.setFilePathEnding(filePathEnding);
             
-        vfcuMd5File.setBasePathStaging(DamsTools.getProperty("vfcuStagingForCDIS"));  
+        vfcuMd5File.setBasePathStaging(DamsTools.getProperty("vfcuStaging"));  
         vfcuMd5File.setBasePathVendor(DamsTools.getProperty("vendorBaseDir"));
             
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
