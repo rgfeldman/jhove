@@ -5,6 +5,7 @@
  */
 package edu.si.damsTools.cdis.report;
 
+import edu.si.damsTools.cdis.ReportGenerator;
 import edu.si.damsTools.cdis.report.rptFile.RptFile;
 import edu.si.damsTools.cdis.report.delivery.DeliveryMethodFactory;
 import edu.si.damsTools.cdis.report.delivery.DeliveryMethod;
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
  *
  * @author rfeldman
  */
-public class Report extends Generator {
+public class Report extends ReportGenerator {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     protected static String keyValue;

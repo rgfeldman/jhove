@@ -567,7 +567,6 @@ public class Report extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("useMasterSubPairs");
-        reqProps.add("rptDeliveryMethod");
         //add more required props here
         return reqProps;    
     }

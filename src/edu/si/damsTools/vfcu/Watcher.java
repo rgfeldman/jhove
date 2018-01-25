@@ -66,7 +66,7 @@ public class Watcher extends Operation {
             XferType xferType = xferTypeFactory.XferTypeChooser();
             
             // transfer md5 file to staging
-            boolean fileXferred = md5File.transferToDAMSStaging(xferType, true);
+            boolean fileXferred = md5File.transferToVfcuStaging(xferType, true);
             if (!fileXferred) {
                 logger.log(Level.FINEST, "Error, unable to transfer md5 file to staging"); 
                 continue;
@@ -147,7 +147,7 @@ public class Watcher extends Operation {
         
         //add more required props here
         reqProps.add("vendorBaseDir");
-        reqProps.add("vfcuStagingForCDIS");
+        reqProps.add("vfcuStaging");
         reqProps.add("useMasterSubPairs");
         return reqProps;    
     }

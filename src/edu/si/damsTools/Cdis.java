@@ -12,7 +12,7 @@ import edu.si.damsTools.cdis.LinkCisRecord;
 import edu.si.damsTools.cdis.LinkDamsRecord;
 import edu.si.damsTools.cdis.MetaDataSync;
 import edu.si.damsTools.cdis.Operation;
-import edu.si.damsTools.cdis.report.Generator;
+import edu.si.damsTools.cdis.ReportGenerator;
 import edu.si.damsTools.cdis.SendToHotFolder;
 
 import java.util.logging.Level;
@@ -63,7 +63,7 @@ public class Cdis extends App {
                     
             case "vfcuDirReport" :
             case "timeframeReport" :    
-                operation = new Generator();
+                operation = new ReportGenerator();
                 break;
  
             default:     

@@ -93,7 +93,7 @@ public class VendorFileCopy extends Operation {
             
             MediaFile mediaFile = new MediaFile(pathFile);
             
-            boolean mediaTransfered = mediaFile.transferToDAMSStaging(xferType, false);   
+            boolean mediaTransfered = mediaFile.transferToVfcuStaging(xferType, false);   
             
             if (!mediaTransfered) {
                 ErrorLog errorLog = new ErrorLog(); 

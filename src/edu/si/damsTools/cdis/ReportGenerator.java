@@ -3,27 +3,29 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.damsTools.cdis.report;
+package edu.si.damsTools.cdis;
 
 
 import edu.si.damsTools.DamsTools;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
-import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.cdis.report.DisplayFormat;
+import edu.si.damsTools.cdis.report.Report;
+import edu.si.damsTools.cdis.report.TimeFrameReport;
+import edu.si.damsTools.cdis.report.VfcuDirReport;
 
 /**
  *
  * @author rfeldman
  */
-public class Generator extends Operation {
+public class ReportGenerator extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     protected DisplayFormat displayFormat;  
     Report[] reportObjectList;
-    String keyValue;
 
-    public Generator() {   
+    public ReportGenerator() {   
          switch (DamsTools.getOperationType()) {
             case "vfcuDirReport":
                 //Get the bundle of reports
@@ -62,10 +64,6 @@ public class Generator extends Operation {
                 //update the database
                 boolean dbUpdated = displayFormat.updateDbComplete(keyValue);
             
-                if (dbUpdated) {
-                    //create emuReady.txt file
-                
-                }
             }
         }        
     }
