@@ -12,6 +12,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.sftp.SFTPClient;
+import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
+import net.schmizz.sshj.xfer.FileSystemFile;
+import java.io.File;
 
 
 /**
@@ -27,13 +30,13 @@ public class Sftp implements DeliveryMethod{
         SSHClient ssh = new SSHClient();
         
         try (SFTPClient sftp = ssh.newSFTPClient()) {
-                
-            ssh.loadKnownHosts();
-            ssh.connect("host");
-        
-            ssh.authPassword("dpoir_user", "Cb6fdX0Uq1MmdYLI7dvUhA==");
             
-            //sftp.put(new FileSystemFile("/path/of/local/file"), "/path/of/ftp/file");
+            String username = "dpoir";
+            File privateKey = new File("~/.ssh/id_dpoir_ecdsa");
+            KeyProvider keys = ssh.loadKeys(privateKey.getPath());
+            ssh.authPublickey(username, keys);
+            
+            sftp.put(new FileSystemFile("/tmp/test.txt"), "/path/of/ftp/file");
  
         }
         catch (Exception e) {
