@@ -15,7 +15,7 @@ public class DeliveryMethodFactory {
         
     }
     
-    public DeliveryMethod deliveryMeothodChooser() {
+    public DeliveryMethod deliveryMethodChooser() {
         
         DeliveryMethod deliveryMethod = null;
         

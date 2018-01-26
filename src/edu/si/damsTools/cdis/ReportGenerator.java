@@ -59,11 +59,12 @@ public class ReportGenerator extends Operation {
                 //check if all of the files have been physically moved
             
                 //Generate and Send the attachment
-                rpt.generate();
+                boolean reportSuccess = rpt.generate();
             
-                //update the database
-                boolean dbUpdated = displayFormat.updateDbComplete(keyValue);
-            
+                if (reportSuccess) {
+                    //update the database
+                    boolean dbUpdated = displayFormat.updateDbComplete(keyValue);
+                }
             }
         }        
     }

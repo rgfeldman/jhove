@@ -27,6 +27,12 @@ public class VfcuDirReport implements DisplayFormat {
     
     private ArrayList<String> multiReportKeyValues;
    
+    
+    public VfcuDirReport() {
+       multiReportKeyValues = new ArrayList();
+       logger.log(Level.FINEST,"Creating VFCUDir-based object"); 
+    }
+        
     public ArrayList<String> returnKeyValueList() {
         return this.multiReportKeyValues;
     }
@@ -68,13 +74,6 @@ public class VfcuDirReport implements DisplayFormat {
 	}
         
         return vendorDir;
-    }
-
-        
-    
-    public VfcuDirReport() {
-       multiReportKeyValues = new ArrayList();
-       logger.log(Level.FINEST,"Creating VFCUDir-based object"); 
     }
 
     

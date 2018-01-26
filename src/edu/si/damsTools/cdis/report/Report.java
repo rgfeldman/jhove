@@ -49,7 +49,7 @@ public class Report extends ReportGenerator {
         //Set the delivery Method for the the report
         
         DeliveryMethodFactory deliveryMethodFact = new DeliveryMethodFactory();
-        DeliveryMethod deliveryMethod = deliveryMethodFact.deliveryMeothodChooser();
+        DeliveryMethod deliveryMethod = deliveryMethodFact.deliveryMethodChooser();
         
         //Craete the actual email and send the email
         boolean reportDelivered = deliveryMethod.deliver(displayFormat, rptFile);

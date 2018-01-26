@@ -14,7 +14,11 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
 import net.schmizz.sshj.xfer.FileSystemFile;
+import net.schmizz.sshj.Config;
+import net.schmizz.sshj.DefaultConfig;
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 
 /**
@@ -27,7 +31,9 @@ public class Sftp implements DeliveryMethod{
     
     public boolean deliver (DisplayFormat displayFormat, RptFile rptFile) {
         
-        SSHClient ssh = new SSHClient();
+        /*SSHClient ssh = new SSHClient();
+        Config config = new DefaultConfig();
+        
         
         try (SFTPClient sftp = ssh.newSFTPClient()) {
             
@@ -36,17 +42,38 @@ public class Sftp implements DeliveryMethod{
             KeyProvider keys = ssh.loadKeys(privateKey.getPath());
             ssh.authPublickey(username, keys);
             
-            sftp.put(new FileSystemFile("/tmp/test.txt"), "/path/of/ftp/file");
+            logger.log(Level.FINEST, "sFtp'ing file ");    
+            
+            sftp.put(new FileSystemFile("/tmp/test.txt"), "/oss/developers/dpoir/test.txt");
  
         }
         catch (Exception e) {
-            
+            logger.log(Level.FINEST, "Error, unable to sftp file ", e); 
+            return false;
         }
         finally {
             try {ssh.disconnect();} catch (Exception e) {logger.log(Level.SEVERE, "Unable to disconnect from sftp", e);
             }
+        }*/
+        
+        try{
+            //run the script that has the commands in it
+            String returnVal = execCmd ("sftp_test");
+            
+            System.out.println("RETURNVAL: " + returnVal );
+            
         }
+        catch (Exception e) {
+             System.out.println("ERROR");
+        }
+        
              
         return true;
     }
+    
+    public static String execCmd(String cmd) throws java.io.IOException {
+        java.util.Scanner s = new java.util.Scanner(Runtime.getRuntime().exec(cmd).getInputStream()).useDelimiter("\\A");
+    return s.hasNext() ? s.next() : "";
+}
+    
 }
