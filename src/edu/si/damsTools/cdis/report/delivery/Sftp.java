@@ -10,15 +10,8 @@ import edu.si.damsTools.cdis.report.DisplayFormat;
 import edu.si.damsTools.cdis.report.rptFile.RptFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.sftp.SFTPClient;
-import net.schmizz.sshj.userauth.keyprovider.KeyProvider;
-import net.schmizz.sshj.xfer.FileSystemFile;
-import net.schmizz.sshj.Config;
-import net.schmizz.sshj.DefaultConfig;
-import java.io.File;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import edu.si.damsTools.utilities.ExecSystemCmd;
+
 
 
 /**
@@ -31,49 +24,54 @@ public class Sftp implements DeliveryMethod{
     
     public boolean deliver (DisplayFormat displayFormat, RptFile rptFile) {
         
-        /*SSHClient ssh = new SSHClient();
-        Config config = new DefaultConfig();
-        
-        
-        try (SFTPClient sftp = ssh.newSFTPClient()) {
+        try{            
+            String pathName = rptFile.getFileNameLoc().substring(0,rptFile.getFileNameLoc().lastIndexOf("/") );
+            String fileName = rptFile.getFileNameLoc().substring(rptFile.getFileNameLoc().lastIndexOf("/")+1);
+
+            logger.log(Level.FINEST, "Putting Report file " + rptFile.getFileNameLoc().toString() ); 
             
-            String username = "dpoir";
-            File privateKey = new File("~/.ssh/id_dpoir_ecdsa");
-            KeyProvider keys = ssh.loadKeys(privateKey.getPath());
-            ssh.authPublickey(username, keys);
-            
-            logger.log(Level.FINEST, "sFtp'ing file ");    
-            
-            sftp.put(new FileSystemFile("/tmp/test.txt"), "/oss/developers/dpoir/test.txt");
- 
-        }
-        catch (Exception e) {
-            logger.log(Level.FINEST, "Error, unable to sftp file ", e); 
-            return false;
-        }
-        finally {
-            try {ssh.disconnect();} catch (Exception e) {logger.log(Level.SEVERE, "Unable to disconnect from sftp", e);
-            }
-        }*/
-        
-        try{
             //run the script that has the commands in it
-            String returnVal = execCmd ("sftp_test");
+            String returnVal = ExecSystemCmd.execCmd ("sftpRpt.ksh " + pathName + " " + fileName );
             
-            System.out.println("RETURNVAL: " + returnVal );
+            boolean ftpValidated = validateFtpMsg (returnVal, fileName);
+            if (!ftpValidated) {
+                logger.log(Level.FINEST,"Error withing ftp process");
+                return false;
+            }
+            
+            logger.log(Level.FINEST,"Successfully validated ftp send");
             
         }
         catch (Exception e) {
-             System.out.println("ERROR");
+             System.out.println("Error, unable to ftp files");
+             return false;
         }
         
-             
         return true;
     }
     
-    public static String execCmd(String cmd) throws java.io.IOException {
-        java.util.Scanner s = new java.util.Scanner(Runtime.getRuntime().exec(cmd).getInputStream()).useDelimiter("\\A");
-    return s.hasNext() ? s.next() : "";
-}
-    
+    private boolean validateFtpMsg(String ftpMsg, String fileName) {
+        String ftpMsgs[] = ftpMsg.split("\n");
+        
+        int val = 0;
+        
+        for (int i = 0; i < ftpMsgs.length; i++) {
+            
+            if (ftpMsgs[i].startsWith("Uploading")) {
+                val ++;
+            }
+            if (ftpMsgs[i].startsWith("sftp> ls " + fileName)) {
+               val ++;
+            }
+            if (ftpMsgs[i].startsWith(fileName)) {
+                val ++;
+            }
+            if (ftpMsgs[i].startsWith("sftp> bye")) {
+                val ++;
+            }
+
+        }
+        return val == 4;
+    }
+
 }
