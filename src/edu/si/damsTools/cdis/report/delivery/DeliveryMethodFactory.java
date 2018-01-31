@@ -6,8 +6,11 @@
 package edu.si.damsTools.cdis.report.delivery;
 
 import edu.si.damsTools.DamsTools;
+
 /**
- *
+ * Class: DeliveryMethodFactory
+ * Purpose: This sets the delivery method object based on the configuration file
+ * 
  * @author rfeldman
  */
 public class DeliveryMethodFactory {

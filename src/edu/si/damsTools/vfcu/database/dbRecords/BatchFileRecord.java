@@ -94,6 +94,10 @@ public class BatchFileRecord {
         if (fileName.equals("Thumbs.db")) {
             return true;
         }
+        if (fileName.equals(".DS_Store")) {
+            return true;
+        }
+        
         //skip any filenames that end with .md5 extension
         return fileName.endsWith(".md5");
     }

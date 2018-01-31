@@ -25,6 +25,8 @@ import javax.mail.internet.MimeMultipart;
 import java.util.logging.Logger;
 
 /**
+ * Class: Email
+ * Purpose: The contains the methods related to delivering report file via email.
  *
  * @author rfeldman
  */

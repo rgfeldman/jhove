@@ -7,17 +7,13 @@ package edu.si.damsTools.cdis.dams;
 
 import edu.si.damsTools.DamsTools;
 import java.util.logging.Logger;
-import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
-import java.util.logging.Level;
 import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
-import edu.si.damsTools.cdis.dams.database.TeamsLinks;
+import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
+import edu.si.damsTools.utilities.StringUtils;
+
 
 /**
  *
@@ -80,8 +76,7 @@ public class DamsRecord {
             sql = sql.replace("?FILE_NAME?", getUois().getName());
         }
         if (sql.contains("?BASE_FILE_NAME?")) {
-            String baseFileName= getUois().getName().substring(0, getUois().getName().lastIndexOf(".") );
-            sql = sql.replace("?BASE_FILE_NAME?", baseFileName);
+            sql = sql.replace("?BASE_FILE_NAME?", StringUtils.getExtensionlessFileName(getUois().getName()));
         }
         if (sql.contains("?SOURCE_SYSTEM_ID?")) {
             sql = sql.replace("?SOURCE_SYSTEM_ID?", getSiAssetMetadata().getSourceSystemId());
