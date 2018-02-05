@@ -104,7 +104,7 @@ public class CdisActivityLog {
     
     public boolean updateActivityDtCurrent () {
         
-        int rowsUpdated = 0;
+        int rowsUpdated;
         
         String sql = "UPDATE cdis_activity_log " +
                     "SET activity_dt = SYSDATE " +
@@ -125,5 +125,18 @@ public class CdisActivityLog {
         }
         return true;
     }   
+    
+        
+    public boolean updateOrInsertActivityLog () {
      
+        populateIdFromMapIdStat();
+        if (getCdisActivityLogId() != null) {
+            updateActivityDtCurrent();
+        }
+        else {
+            insertActivity();
+        }            
+        
+        return true;
+    }
 }

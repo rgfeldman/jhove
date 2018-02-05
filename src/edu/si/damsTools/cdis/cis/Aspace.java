@@ -8,11 +8,11 @@ package edu.si.damsTools.cdis.cis;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
-import edu.si.damsTools.cdis.database.CdisCisGroupMap;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
+import edu.si.damsTools.cdis.database.CdisCisUNGroupMap;
 import edu.si.damsTools.cdis.database.CdisMap;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,15 +27,14 @@ public class Aspace implements CisRecordAttr {
     private String eadRefId;
     
     public String getCisImageIdentifier () {
-        return eadRefId;
-    }
-    
-    public String getGroupIdentifier () {
         return null;
     }
     
-    public String returnGrpInfoForReport (CdisMap cdisMap) {
-                        
+    public String getGroupIdentifier () {
+        return eadRefId;
+    }
+    
+    public String returnGrpInfoForReport (CdisMap cdisMap) {                
         return null;
     }
     
@@ -48,68 +47,34 @@ public class Aspace implements CisRecordAttr {
     }
 
     public String returnCdisGroupType() {
-        return null;
+        return "un";
     }
-    
-    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap notUsed) {
+     
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
                 
-        ArrayList<CdisMap> cdisMapList = new ArrayList();
-        cdisMapList = returnMappedIdsForEad(damsRecord);
+        //get List of other cdisMapIds that may be on the same RefId (we only send one         
+        CdisCisUNGroupMap cdisCisUNGroupMap = new CdisCisUNGroupMap();
+        cdisCisUNGroupMap.setCdisMapId(cdisMap.getCdisMapId());
+        cdisCisUNGroupMap.setCisGroupCd("ead");
+        cdisCisUNGroupMap.setCisGroupValue(damsRecord.getSiAssetMetadata().getEadRefId());
+        ArrayList<Integer> cdisMapIds = cdisCisUNGroupMap.returnCdisMapIdsForCdValue();
+
+        for (Integer mapId : cdisMapIds) {
+            //Add the other mapids as CPD, all of them should be 
+            if (!Objects.equals(mapId, cdisMap.getCdisMapId())) {
+                logger.log(Level.FINER, "updating mapID " + mapId + " origMapId: " + cdisMap.getCdisMapId()  );
+                
+                CdisActivityLog cdisActivity = new CdisActivityLog();
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd("CPD");
         
-        for (CdisMap cdisMap : cdisMapList) {
-            
-            //See if this row has eadRefId Already
-            CdisCisGroupMap cdisCisGroup = new CdisCisGroupMap();
-            cdisCisGroup.setCdisMapId(cdisMap.getCdisMapId());
-            cdisCisGroup.setCisGroupValue(this.eadRefId);
-            cdisCisGroup.setCisGroupCd("ead");
-            cdisCisGroup.populateIdForCdisMapID();
-            
-            if (cdisCisGroup.getCdisCisGroupMapId() == null) {
-                // insert a new group id
-                boolean cisGroupCreated = cdisCisGroup.createRecord();
-                if (! cisGroupCreated) {
-                    logger.log(Level.FINEST,"Unable to create group record! "); 
-                    return false;
-                }
+                cdisActivity.updateOrInsertActivityLog();         
             }
-            else {
-                //update the new group id
-                cdisCisGroup.updateCisGroupValue();
-            }
-        }
+       }
        
         return true;
     }
-    
-    private ArrayList returnMappedIdsForEad(DamsRecord damsRecord) {
-        
-        ArrayList<CdisMap> cdisMapList = new ArrayList();
-        
-         //Get all the CDIS records that are linked to DAMS that have the given eadRefId;
-        String sql = "SELECT cdm.cdis_map_id " +
-                      "FROM cdis_map cdm " +
-                      "INNER JOIN towner.si_asset_metadata sim " +
-                      "ON cdm.dams_uoi_id = sim.uoi_id " +
-                      "WHERE sim.ead_ref_id = '" + damsRecord.getSiAssetMetadata().getEadRefId() + "'";
-         
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-
-            while (rs != null && rs.next()) {
-                CdisMap cdisMap = new CdisMap();
-                cdisMap.setCdisMapId(rs.getInt(1));
-                cdisMapList.add(cdisMap);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain EadRefId from cdis_map", e );
-                return null;
-        } 
-        return cdisMapList;
-    }
-    
+   
     public String returnCisUpdateCode() {
         return "CPD";
     } 

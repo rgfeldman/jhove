@@ -20,15 +20,14 @@ import java.util.logging.Logger;
 public class AaaCollectionImage implements CisRecordAttr {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
-        
-    private final TblCollectionsOnlineImage imageMediaRecord;
     
+    private final TblCollectionsOnlineImage imageMediaRecord;
     
     public AaaCollectionImage() {
         imageMediaRecord = new TblCollectionsOnlineImage();
     }
     
-    public boolean setBasicValues (String identifier, String uoiId) {
+    public boolean setBasicValues (String identifier, String identifierType) {
         imageMediaRecord.setCollectionOnlineImageId(Integer.parseInt(identifier));
         imageMediaRecord.populateCollectionId();
         return true;
@@ -37,6 +36,10 @@ public class AaaCollectionImage implements CisRecordAttr {
     
     public String getCisImageIdentifier () {
         return this.imageMediaRecord.getCollectionsOnlineImageId().toString();
+    }
+    
+    public String getIdentifierType() {
+        return null;
     }
     
     public String getGroupIdentifier() {

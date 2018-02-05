@@ -18,9 +18,12 @@ import edu.si.damsTools.utilities.XmlQueryData;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import edu.si.damsTools.cdis.database.CdisCisUNGroupMap;
+
 
 /**
  * Class: LinkCisRecord
@@ -35,25 +38,23 @@ public class LinkCisRecord extends Operation {
             
     private final ArrayList<CdisMap> cdisMapList;
     
-    Connection sourceDb;
-    
     public LinkCisRecord() {
         cdisMapList = new ArrayList();
     }
     
-    private void setSourceDb() {
-        if ( DamsTools.getProperty("cis").equals("cdisDb")  ) {
-            sourceDb = DamsTools.getDamsConn();
+    private Connection returnDbConnFromString (String db) {
+        switch (db) {
+            case "dams" :
+              return DamsTools.getDamsConn();
+            case "cis" :
+              return DamsTools.getCisConn();  
         }
-        else {
-            sourceDb = DamsTools.getCisConn();
-        }
+        return null;
     }
-    
     
     public void invoke () {
         
-        setSourceDb();
+        //setSourceDb();
         
         //Obtain a list of all the dams media to link that has never been through VFCU
         boolean idsToLink = populateCdisMapIdsToLink();
@@ -61,25 +62,58 @@ public class LinkCisRecord extends Operation {
         
             for (CdisMap cdisMap  : cdisMapList) {
                 
+                boolean cisRecordRecorded = false;
+                
                 DamsRecord damsRecord = new DamsRecord();
                 damsRecord.setUoiId(cdisMap.getDamsUoiid());
                 damsRecord.setBasicData();
                 
                 //Check if there is a matching record in the CIS for this cdisMap record
-                CisRecordAttr cis = returnCorrespondingCisRecord(damsRecord);
-                
+                CisRecordAttr cis = returnCorrespondingCisRecord(damsRecord);  
                 if (cis == null) {
-                    logger.log(Level.FINEST, "Error, unable to find matching cis record");
-                    continue;
-                }
-                cdisMap.setCisUniqueMediaId(cis.getCisImageIdentifier());
-                boolean cisMediaIdUpdated = cdisMap.updateCisUniqueMediaId();
-                
-                if (! cisMediaIdUpdated) {
-                    logger.log(Level.FINEST, "Error, unable to update CIS record");
+                    logger.log(Level.FINEST, "Error, unable to find matching cis");
                     continue;
                 }
                 
+                if (cis.returnCdisGroupType().equals("un")) {
+                    //use the UNGroupMap Table
+                    //See if this cdis_map_id already exists in the table for any refid
+                    CdisCisUNGroupMap cdisCisGroup = new CdisCisUNGroupMap();
+                    cdisCisGroup.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisCisGroup.setCisGroupCd("ead");
+                    cdisCisGroup.setCisGroupValue(damsRecord.getSiAssetMetadata().getEadRefId());
+                    cdisCisGroup.populateIdForMapIDGroupCdCis();
+                    if (cdisCisGroup.getCdisCisGroupMapId() != null) {
+                        //We can find the groupID for the cdis_map_id.
+                        //update the group_value
+                        cisRecordRecorded = cdisCisGroup.updateCisGroupValue();
+                        if (!cisRecordRecorded) {
+                            ErrorLog errorLog = new ErrorLog ();
+                            errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
+                            continue;
+                        }                 
+                    }
+                    else {
+                        cisRecordRecorded = cdisCisGroup.createRecord();
+                        if (!cisRecordRecorded) {
+                            ErrorLog errorLog = new ErrorLog ();
+                            errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
+                            continue;
+                        }
+                    }    
+                }
+                else {
+                    //support the old stuff as well
+                    cdisMap.setCisUniqueMediaId(cis.getCisImageIdentifier());
+                    cisRecordRecorded = cdisMap.updateCisUniqueMediaId(); 
+             
+                    if (!cisRecordRecorded) {
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
+                        continue;
+                    }
+                }
+
                 ///need to take care of emu here....there is no object level information
                 if (cis.returnCdisGroupType() != null && cis.returnCdisGroupType().equals("cdisObjectMap")) {
                     CdisObjectMap cdisObjectMap = new CdisObjectMap();
@@ -87,7 +121,6 @@ public class LinkCisRecord extends Operation {
                     cdisObjectMap.setCisUniqueObjectId(cis.getGroupIdentifier());
                     boolean cdisObjectCreated = cdisObjectMap.createRecord();
                     if (! cdisObjectCreated) {
-                        logger.log(Level.FINEST, "Error, unable to create cdisObjectMap record");
                         ErrorLog errorLog = new ErrorLog ();
                         errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CDIS object record");
                         continue;
@@ -98,7 +131,6 @@ public class LinkCisRecord extends Operation {
                 if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
                     boolean thumbnailUpdated = updateCisThumbnail(cdisMap.getCdisMapId());
                     if (!thumbnailUpdated) {
-                        logger.log(Level.FINEST, "Error, unable to update CIS Thumbnail");
                         ErrorLog errorLog = new ErrorLog ();
                         errorLog.capture(cdisMap, "CRCIST", "Error, unable to create CIS thumbnail");
                         continue;
@@ -106,7 +138,13 @@ public class LinkCisRecord extends Operation {
                 }
             
                 //Add the status
-                logActivity(cdisMap);
+                boolean statusLogged = logActivity(cdisMap);
+                
+                if (!statusLogged) {
+                     ErrorLog errorLog = new ErrorLog ();
+                     errorLog.capture(cdisMap, "UPCCIS", "Error, unable to update status for record");
+                }
+                
                 
                 try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
@@ -115,11 +153,13 @@ public class LinkCisRecord extends Operation {
     }
     
      private boolean logActivity(CdisMap cdisMap) {
+        
         CdisActivityLog cdisActivity = new CdisActivityLog();
         cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
         cdisActivity.setCdisStatusCd("LCC");
-        cdisActivity.insertActivity();
-                        
+        
+        cdisActivity.updateOrInsertActivityLog();
+        
         return true;
     }
     
@@ -159,16 +199,19 @@ public class LinkCisRecord extends Operation {
     private CisRecordAttr returnCorrespondingCisRecord(DamsRecord damsRecord) {
         
         CisRecordAttr cis = null;
+        String dbConnectionStr = null;
         
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveCisRecord");
+            sql = xmlInfo.getDataForAttribute("type","retrieveCisIds");         
+            dbConnectionStr = xmlInfo.getAttributeData("dbConn");
+            
             if (sql != null) {
                 break;
             }
         }
         if (sql == null) {
-            logger.log(Level.FINEST, "retrieveCisRecord sql not found");
+            logger.log(Level.FINEST, "retrieveCisId sql not found");
             return null;
         }
         
@@ -176,18 +219,21 @@ public class LinkCisRecord extends Operation {
                
         logger.log(Level.FINEST, "SQL: {0}", sql);
 
-        try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
+        Connection dbConn = returnDbConnFromString(dbConnectionStr);
+        try (PreparedStatement stmt = dbConn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
             //Add the value from the database to the list
             if (rs.next()) {
+                ResultSetMetaData rsmd = rs.getMetaData();            
+
                 CisRecordFactory cisFact = new CisRecordFactory();
                 cis = cisFact.cisChooser();
-                cis.setBasicValues(rs.getString(1), "");
+                cis.setBasicValues(rs.getString(1),rsmd.getColumnLabel(1));        
             }
         }
         catch(Exception e) {
-            logger.log(Level.FINEST, "Error, unable to obtain corresponding CIS records", e);
+            logger.log(Level.FINEST, "Error, unable to obtain corresponding CIS Records", e);
             return null;
         }
         return cis;

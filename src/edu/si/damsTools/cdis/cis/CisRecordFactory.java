@@ -33,7 +33,7 @@ public class CisRecordFactory {
                     cisRecord = new AaaCollectionImage();
                 }
                 break;
-            case "aSpace" :
+            case "aspace" :
                 cisRecord = new Aspace();
                 break;
             case "cdisDb" :

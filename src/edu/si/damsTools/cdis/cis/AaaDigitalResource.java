@@ -38,7 +38,7 @@ public class AaaDigitalResource implements CisRecordAttr {
         return this.tblDigitalResource.getCollectionId().toString();
     }
     
-    public boolean setBasicValues (String identifier, String uoiId) {
+    public boolean setBasicValues (String identifier, String identifierType) {
         tblDigitalResource.setDigitalResourceId(Integer.parseInt(identifier));
         tblDigitalResource.populateCollectionId();
         return true;

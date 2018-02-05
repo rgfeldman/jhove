@@ -129,6 +129,10 @@ public class CisUpdate extends Operation {
             cdisMap.populateCisUniqueMediaIdForUoiid();
             
             cis = cisFact.cisChooser();
+            if (cis == null) {
+                logger.log(Level.FINEST, "Error, unable to determine CIS");
+                continue;
+            }
             cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord.getUois().getUoiid());
             
             //populate the Cis
@@ -140,6 +144,10 @@ public class CisUpdate extends Operation {
             cisSql = damsRecord.replaceSqlVars(cisSql);
             if (cisSql.contains("?MEDIA_ID?")) {
                 cisSql = cisSql.replace("?MEDIA_ID?", cis.getCisImageIdentifier());
+                logger.log(Level.FINEST, "New SQL: "+ cisSql);
+            }
+            if (cisSql.contains("?GROUP_ID?")) {
+                cisSql = cisSql.replace("?GROUP_ID?", cis.getGroupIdentifier());
                 logger.log(Level.FINEST, "New SQL: "+ cisSql);
             }
             
@@ -164,7 +172,7 @@ public class CisUpdate extends Operation {
             CdisActivityLog cdisActivity = new CdisActivityLog(); 
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
             cdisActivity.setCdisStatusCd(cis.returnCisUpdateCode()); 
-            boolean activityLogged = cdisActivity.insertActivity();
+            boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
             if (!activityLogged) {
                 logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
             }

@@ -56,7 +56,7 @@ public class Tms implements CisRecordAttr {
     }
     
     
-    public boolean setBasicValues (String identifier, String uoiId) {
+    public boolean setBasicValues (String identifier, String identifierType) {
         
         mediaRendition.setRenditionId(Integer.parseInt(identifier));
         boolean objectIdPopuldated = objectTbl.populateMinObjectIDByRenditionId(Integer.parseInt(identifier));
