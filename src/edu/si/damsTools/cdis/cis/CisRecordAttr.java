@@ -20,7 +20,7 @@ public interface CisRecordAttr {
     
     public String getGroupIdentifier ();
     
-    public boolean setBasicValues(String identifier, String identifierType);
+    public boolean setBasicValues(String identifier,  DamsRecord damsRecord);
     
     public String returnCdisGroupType();
     

@@ -24,7 +24,7 @@ public class CdisDb implements CisRecordAttr {
         
     }
     
-    public boolean setBasicValues (String identifier, String identifierType) {
+    public boolean setBasicValues (String identifier,  DamsRecord damsRecord) {
         cisIdentifier = identifier;
         return true;
     }

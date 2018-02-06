@@ -38,11 +38,8 @@ public class Aspace implements CisRecordAttr {
         return null;
     }
     
-    public boolean setBasicValues (String identifier, String uoiId) {
-        SiAssetMetadata siAsst = new SiAssetMetadata();
-        siAsst.setUoiid(uoiId);
-        siAsst.populateEadRefId();
-        eadRefId = siAsst.getEadRefId();
+    public boolean setBasicValues (String identifier, DamsRecord damsRecord) {
+        eadRefId = damsRecord.getSiAssetMetadata().getEadRefId();
         return true;
     }
 
@@ -65,7 +62,7 @@ public class Aspace implements CisRecordAttr {
                 logger.log(Level.FINER, "updating mapID " + mapId + " origMapId: " + cdisMap.getCdisMapId()  );
                 
                 CdisActivityLog cdisActivity = new CdisActivityLog();
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisMapId(mapId);
                 cdisActivity.setCdisStatusCd("CPD");
         
                 cdisActivity.updateOrInsertActivityLog();         

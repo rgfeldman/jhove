@@ -31,6 +31,7 @@ public class Sftp implements DeliveryMethod{
             String fileName = rptFile.getFileNameLoc().substring(rptFile.getFileNameLoc().lastIndexOf("/")+1);
 
             logger.log(Level.FINEST, "Putting Report file " + rptFile.getFileNameLoc().toString() ); 
+            logger.log(Level.FINEST, "sftpRpt.sh "  + pathName + " " + fileName ); 
             
             //run the script that has the commands in it
             String returnVal = ExecSystemCmd.execCmd ("sftpRpt.sh " + pathName + " " + fileName );

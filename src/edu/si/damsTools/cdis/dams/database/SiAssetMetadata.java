@@ -137,7 +137,12 @@ public class SiAssetMetadata {
     
     public boolean populateSiAsstData () {
         
-        String sql = "SELECT holding_unit, owning_unit_unique_name, is_restricted, max_ids_size, source_system_id, ead_ref_id " +
+        String sql = "SELECT holding_unit, " + 
+                    "owning_unit_unique_name, " + 
+                    "is_restricted, " +
+                    "max_ids_size, " + 
+                    "source_system_id, " +
+                    "ead_ref_id " +
                     "FROM towner.si_asset_metadata " +
                     "WHERE uoi_id = '" + getUoiid() + "'";
         

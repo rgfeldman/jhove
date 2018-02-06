@@ -47,7 +47,7 @@ public class IrisBg implements CisRecordAttr {
         return "Accno: " + cdisObjectMap.getCisUniqueObjectId();    
     }
     
-     public boolean setBasicValues (String identifier, String identifierType) {
+     public boolean setBasicValues (String identifier,  DamsRecord damsRecord) {
          sI_IrisDAMSMetaCore.setImageLibId(identifier);
          sI_IrisDAMSMetaCore.populateItemAccnoFull();
          return true;

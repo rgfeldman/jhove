@@ -229,7 +229,7 @@ public class LinkCisRecord extends Operation {
 
                 CisRecordFactory cisFact = new CisRecordFactory();
                 cis = cisFact.cisChooser();
-                cis.setBasicValues(rs.getString(1),rsmd.getColumnLabel(1));        
+                cis.setBasicValues(rs.getString(1), damsRecord);        
             }
         }
         catch(Exception e) {

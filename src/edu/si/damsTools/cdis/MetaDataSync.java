@@ -450,7 +450,7 @@ public class MetaDataSync extends Operation{
                     if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
                         cdisMapIdsToSync.add(cdisMap.getCdisMapId());
                     }
-                }
+                } 
             }
         }
         catch(Exception e) {

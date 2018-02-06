@@ -27,7 +27,7 @@ public class AaaCollectionImage implements CisRecordAttr {
         imageMediaRecord = new TblCollectionsOnlineImage();
     }
     
-    public boolean setBasicValues (String identifier, String identifierType) {
+    public boolean setBasicValues (String identifier, DamsRecord damsRecord) {
         imageMediaRecord.setCollectionOnlineImageId(Integer.parseInt(identifier));
         imageMediaRecord.populateCollectionId();
         return true;

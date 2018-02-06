@@ -133,7 +133,7 @@ public class CisUpdate extends Operation {
                 logger.log(Level.FINEST, "Error, unable to determine CIS");
                 continue;
             }
-            cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord.getUois().getUoiid());
+            cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord);
             
             //populate the Cis
             String cisSql = generateCisSql(cis);
