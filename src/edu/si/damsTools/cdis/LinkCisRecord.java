@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.CdisCisUNGroupMap;
+import edu.si.damsTools.utilities.DbUtils;
 
 
 /**
@@ -42,22 +43,12 @@ public class LinkCisRecord extends Operation {
         cdisMapList = new ArrayList();
     }
     
-    private Connection returnDbConnFromString (String db) {
-        switch (db) {
-            case "dams" :
-              return DamsTools.getDamsConn();
-            case "cis" :
-              return DamsTools.getCisConn();  
-        }
-        return null;
-    }
-    
+    // Method: invoke()
+    // Purpose: the main 'driver' method for the linkCisReocrd
     public void invoke () {
-        
-        //setSourceDb();
-        
+    
         //Obtain a list of all the dams media to link that has never been through VFCU
-        boolean idsToLink = populateCdisMapIdsToLink();
+        boolean idsToLink = populateCdisMapListToLink();
         if (idsToLink) {
         
             for (CdisMap cdisMap  : cdisMapList) {
@@ -138,7 +129,11 @@ public class LinkCisRecord extends Operation {
                 }
             
                 //Add the status
-                boolean statusLogged = logActivity(cdisMap);
+                CdisActivityLog cdisActivity = new CdisActivityLog();
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd("LCC");
+        
+                boolean statusLogged = cdisActivity.updateOrInsertActivityLog();
                 
                 if (!statusLogged) {
                      ErrorLog errorLog = new ErrorLog ();
@@ -152,18 +147,10 @@ public class LinkCisRecord extends Operation {
         }  
     }
     
-     private boolean logActivity(CdisMap cdisMap) {
+    // Method: populateCdisMapListToLink()
+    // Purpose: Populates the list of CdisMap records that require linking using the criteria in the xml file
+    private boolean populateCdisMapListToLink() {
         
-        CdisActivityLog cdisActivity = new CdisActivityLog();
-        cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-        cdisActivity.setCdisStatusCd("LCC");
-        
-        cdisActivity.updateOrInsertActivityLog();
-        
-        return true;
-    }
-    
-    private boolean populateCdisMapIdsToLink() {
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
             sql = xmlInfo.getDataForAttribute("type","retrieveMapIds");
@@ -195,7 +182,9 @@ public class LinkCisRecord extends Operation {
         return true;
     }
     
-    
+    // Method: returnCorrespondingCisRecord()
+    // Purpose: Returns the associated Cis record that corresponds to the damsRecord passed to it.
+    //          The rules that associate the damsRecord to the CIS record are found in the xml config file
     private CisRecordAttr returnCorrespondingCisRecord(DamsRecord damsRecord) {
         
         CisRecordAttr cis = null;
@@ -219,7 +208,11 @@ public class LinkCisRecord extends Operation {
                
         logger.log(Level.FINEST, "SQL: {0}", sql);
 
-        Connection dbConn = returnDbConnFromString(dbConnectionStr);
+        Connection dbConn = DbUtils.returnDbConnFromString(dbConnectionStr);
+        if (dbConn == null) {
+            logger.log(Level.FINEST, "Error: connection to db not found");
+        }
+        
         try (PreparedStatement stmt = dbConn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
@@ -239,6 +232,8 @@ public class LinkCisRecord extends Operation {
         return cis;
     }
     
+    // Method: updateCisThumbnail()
+    // Purpose: updates the thumbnail in the CIS based on the image that resides in the DAMS repository
     private boolean updateCisThumbnail(int cdisMapId) {
 
         Thumbnail thumbnail = new Thumbnail();
@@ -257,7 +252,8 @@ public class LinkCisRecord extends Operation {
         return true;
     }
     
-
+    // Method: returnRequiredProps()
+    // Purpose: We set the required property list to validate the .ini file
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
