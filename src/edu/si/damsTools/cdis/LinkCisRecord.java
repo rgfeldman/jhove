@@ -48,8 +48,8 @@ public class LinkCisRecord extends Operation {
     public void invoke () {
     
         //Obtain a list of all the dams media to link that has never been through VFCU
-        boolean idsToLink = populateCdisMapListToLink();
-        if (idsToLink) {
+        boolean MapRecordsToLink = populateCdisMapListToLink();
+        if (MapRecordsToLink) {
         
             for (CdisMap cdisMap  : cdisMapList) {
                 
