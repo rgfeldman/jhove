@@ -18,7 +18,7 @@ import java.sql.Connection;
 
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
-import edu.si.damsTools.cdis.database.CdisCisUNGroupMap;
+import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.cis.archiveSpace.CDISUpdates;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.dams.MediaRecord;
@@ -424,13 +424,13 @@ public class MetaDataSyncOld extends Operation{
                 CdisMap cdisMap = new CdisMap();
                     
                 if (DamsTools.getProperty("cis").equals("aspace")){
-                    CdisCisUNGroupMap cdisCisGroupMap = new CdisCisUNGroupMap();
-                    cdisCisGroupMap.setCisGroupValue(sql);
-                    cdisCisGroupMap.setCisGroupValue(rs.getString(1));
-                    cdisCisGroupMap.setCisGroupCd("ead");
+                    CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+                    cdisCisIdentifierMap.setCisIdentifierValue(sql);
+                    cdisCisIdentifierMap.setCisIdentifierValue(rs.getString(1));
+                    cdisCisIdentifierMap.setCisIdentifierCd("ead");
                         
                     ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
-                    mapIdsForRefId =  cdisCisGroupMap.returnCdisMapIdsForCdValue();
+                    mapIdsForRefId =  cdisCisIdentifierMap.returnCdisMapIdsForCdValue();
                         
                     for (Integer mapId : mapIdsForRefId ) {
                         if (!cdisMapIdsToSync.contains(mapId)) {
@@ -644,11 +644,11 @@ public class MetaDataSyncOld extends Operation{
             //For ArchiveSpace, we need to prep the view that we get data from 
             if (DamsTools.getProperty("cis").equals("aspace")){
                 
-                CdisCisUNGroupMap cdisCisGroupMap = new CdisCisUNGroupMap();
+                CdisCisIdentifierMap cdisCisGroupMap = new CdisCisIdentifierMap();
                 cdisCisGroupMap.setCdisMapId(cdisMap.getCdisMapId());
-                cdisCisGroupMap.setCisGroupCd("ead");
-                cdisCisGroupMap.populateCisGroupValueForCdisMapIdType();
-                cdisUpdates.setEadRefId(cdisCisGroupMap.getCisGroupValue());
+                cdisCisGroupMap.setCisIdentifierCd("ead");
+                cdisCisGroupMap.populateCisIdentifierValueForCdisMapIdType();
+                cdisUpdates.setEadRefId(cdisCisGroupMap.getCisIdentifierValue());
                 
                 boolean getDescriptiveDataCalled = cdisUpdates.callGetDescriptiveData();
                 

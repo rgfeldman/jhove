@@ -22,7 +22,7 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.cdis.database.CdisCisUNGroupMap;
+import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.utilities.DbUtils;
 
 
@@ -69,15 +69,15 @@ public class LinkCisRecord extends Operation {
                 if (cis.returnCdisGroupType().equals("un")) {
                     //use the UNGroupMap Table
                     //See if this cdis_map_id already exists in the table for any refid
-                    CdisCisUNGroupMap cdisCisGroup = new CdisCisUNGroupMap();
-                    cdisCisGroup.setCdisMapId(cdisMap.getCdisMapId());
-                    cdisCisGroup.setCisGroupCd("ead");
-                    cdisCisGroup.setCisGroupValue(damsRecord.getSiAssetMetadata().getEadRefId());
-                    cdisCisGroup.populateIdForMapIDGroupCdCis();
-                    if (cdisCisGroup.getCdisCisGroupMapId() != null) {
+                    CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+                    cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisCisIdentifierMap.setCisIdentifierCd("ead");
+                    cdisCisIdentifierMap.setCisIdentifierValue(damsRecord.getSiAssetMetadata().getEadRefId());
+                    cdisCisIdentifierMap.populateIdForMapIDIdentifierCdCis();
+                    if (cdisCisIdentifierMap.getCdisCisIdentifierMapId() != null) {
                         //We can find the groupID for the cdis_map_id.
                         //update the group_value
-                        cisRecordRecorded = cdisCisGroup.updateCisGroupValue();
+                        cisRecordRecorded = cdisCisIdentifierMap.updateCisIdentifierValue();
                         if (!cisRecordRecorded) {
                             ErrorLog errorLog = new ErrorLog ();
                             errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
@@ -85,7 +85,7 @@ public class LinkCisRecord extends Operation {
                         }                 
                     }
                     else {
-                        cisRecordRecorded = cdisCisGroup.createRecord();
+                        cisRecordRecorded = cdisCisIdentifierMap.createRecord();
                         if (!cisRecordRecorded) {
                             ErrorLog errorLog = new ErrorLog ();
                             errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
@@ -188,31 +188,28 @@ public class LinkCisRecord extends Operation {
     private CisRecordAttr returnCorrespondingCisRecord(DamsRecord damsRecord) {
         
         CisRecordAttr cis = null;
-        String dbConnectionStr = null;
+        Connection dbConn = null;
         
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
             sql = xmlInfo.getDataForAttribute("type","retrieveCisIds");         
-            dbConnectionStr = xmlInfo.getAttributeData("dbConn");
-            
+
             if (sql != null) {
+                dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  
                 break;
-            }
+            }       
         }
         if (sql == null) {
             logger.log(Level.FINEST, "retrieveCisId sql not found");
             return null;
-        }
-        
-        sql = damsRecord.replaceSqlVars(sql);
-               
+        }   
+        sql = damsRecord.replaceSqlVars(sql);        
         logger.log(Level.FINEST, "SQL: {0}", sql);
-
-        Connection dbConn = DbUtils.returnDbConnFromString(dbConnectionStr);
+ 
         if (dbConn == null) {
-            logger.log(Level.FINEST, "Error: connection to db not found");
-        }
-        
+                logger.log(Level.FINEST, "Error: connection to db not found");
+                return null;
+        }    
         try (PreparedStatement stmt = dbConn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 

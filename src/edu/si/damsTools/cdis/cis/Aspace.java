@@ -7,9 +7,8 @@ package edu.si.damsTools.cdis.cis;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.dams.DamsRecord;
-import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
-import edu.si.damsTools.cdis.database.CdisCisUNGroupMap;
+import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.database.CdisMap;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -50,11 +49,11 @@ public class Aspace implements CisRecordAttr {
     public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
                 
         //get List of other cdisMapIds that may be on the same RefId (we only send one         
-        CdisCisUNGroupMap cdisCisUNGroupMap = new CdisCisUNGroupMap();
-        cdisCisUNGroupMap.setCdisMapId(cdisMap.getCdisMapId());
-        cdisCisUNGroupMap.setCisGroupCd("ead");
-        cdisCisUNGroupMap.setCisGroupValue(damsRecord.getSiAssetMetadata().getEadRefId());
-        ArrayList<Integer> cdisMapIds = cdisCisUNGroupMap.returnCdisMapIdsForCdValue();
+        CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+        cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
+        cdisCisIdentifierMap.setCisIdentifierCd("ead");
+        cdisCisIdentifierMap.setCisIdentifierValue(damsRecord.getSiAssetMetadata().getEadRefId());
+        ArrayList<Integer> cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCdValue();
 
         for (Integer mapId : cdisMapIds) {
             //Add the other mapids as CPD, all of them should be 
