@@ -38,7 +38,6 @@ public class CdisDb implements CisRecordAttr {
         return null;
     }
     
-    
     public String returnGrpInfoForReport (CdisMap cdisMap) {   
         return null;  
     }

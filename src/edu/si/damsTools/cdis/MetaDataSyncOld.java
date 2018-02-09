@@ -430,7 +430,7 @@ public class MetaDataSyncOld extends Operation{
                     cdisCisIdentifierMap.setCisIdentifierCd("ead");
                         
                     ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
-                    mapIdsForRefId =  cdisCisIdentifierMap.returnCdisMapIdsForCdValue();
+                    mapIdsForRefId =  cdisCisIdentifierMap.returnCdisMapIdsForCisCdValue();
                         
                     for (Integer mapId : mapIdsForRefId ) {
                         if (!cdisMapIdsToSync.contains(mapId)) {

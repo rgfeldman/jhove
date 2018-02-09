@@ -7,7 +7,7 @@ package edu.si.damsTools.cdis;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
-import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.dams.database.MetadataTransaction;
 import edu.si.damsTools.utilities.XmlQueryData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,6 +17,10 @@ import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.utilities.DbUtils;
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+
 
 /**
  *
@@ -25,18 +29,30 @@ import java.sql.Connection;
 public class MetaDataSync extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private final ArrayList<CdisMap> cdisMapList;
+    private final Set<CdisMap> cdisMapList; //unique list of CDIS Map records that require metadata sync
+    private final ArrayList<MetadataTransaction> mdTransList;
      
     public MetaDataSync() {
-        cdisMapList = new ArrayList();
+        cdisMapList = new HashSet<>();
+        mdTransList = new ArrayList<>();
     }
      
     public void invoke() {
-          boolean recordsToSync = populateNeverSyncedMapIds();
+        populateNeverSyncedMapIds();
           
-          recordsToSync = populateCisUpdatedMapIds();
+        populateCisUpdatedMapIds();
+          
+        if (cdisMapList.isEmpty()) {
+            logger.log(Level.FINEST,"No Rows found to sync");
+            return;
+        }
+        
+        populateMetadataTransList();
+                  
     }
     
+    // Method: populateCisUpdatedMapIds()
+    // Purpose: Populates the list of CdisMap records with records that have been updated in the CIS and require a re-sync
     private boolean populateCisUpdatedMapIds() {
         Connection dbConn = null;
         
@@ -54,51 +70,85 @@ public class MetaDataSync extends Operation {
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
-       /* try (PreparedStatement stmt = dbConn.prepareStatement(sql);
+        try (PreparedStatement stmt = dbConn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
-
+            
             while (rs.next()) {
-                CdisMap cdisMap = new CdisMap();
-                    
-                if (DamsTools.getProperty("cis").equals("aspace")){
-                    CdisCisIdentifierMap cdisCisGroupMap = new CdisCisIdentifierMap();
-                    cdisCisGroupMap.setCisGroupValue(sql);
-                    cdisCisGroupMap.setCisGroupValue(rs.getString(1));
-                    cdisCisGroupMap.setCisGroupCd("ead");
-                        
-                    ArrayList<Integer> mapIdsForRefId = new ArrayList<>();;              
-                    mapIdsForRefId =  cdisCisGroupMap.returnCdisMapIdsForCdValue();
-                        
-                    for (Integer mapId : mapIdsForRefId ) {
-                        if (!cdisMapIdsToSync.contains(mapId)) {
-                            cdisMapIdsToSync.add(mapId);
-                        }
-                    }       
-                }
-                else {
+                   
+                if (rs.getString(2) == null) {
+                    //id type should not be null, but need to support the old code
+                    CdisMap cdisMap = new CdisMap();
                     cdisMap.setCisUniqueMediaId(rs.getString(1));
                     boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
                     
                     if (!cisMediaIdObtained) {
                         continue;
                     }
+                    
+                    cdisMap.setCdisMapId(rs.getInt(1));
+                    cdisMap.populateMapInfo();
+                    cdisMapList.add(cdisMap);
+                }
+                else {
+                    CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+                    //The new code...all will end up with identifier types sooner or later
+                    ArrayList<Integer> cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCisCdValue();
                         
-                    //Only add to the list if it is not already in the list. It could be there from never synced record list
-                    if (!cdisMapIdsToSync.contains(cdisMap.getCdisMapId())) {
-                        cdisMapIdsToSync.add(cdisMap.getCdisMapId());
-                    }
-                } 
+                    for (Integer cdisMapId : cdisMapIds) {
+                        CdisMap cdisMap = new CdisMap();
+                        cdisMap.setCdisMapId(rs.getInt(1));
+                        cdisMap.populateMapInfo();
+                        cdisMapList.add(cdisMap);
+                    }                   
+                }
             }
         }
         catch(Exception e) {
             logger.log(Level.FINEST, "Error obtaining list to re-sync", e);
-            return;
-        }    */
+            return false;
+        }    
        return true;
     }
-      
-     // Method: populateCdisMapListToLink()
-    // Purpose: Populates the list of CdisMap records that require linking using the criteria in the xml file
+    
+    /*
+        Method :        populateMetadataTransList
+        Description:    populates object to hold Queries for all DAMS tables involved in metadata sync
+    */
+    private void populateMetadataTransList() {
+        
+        String sql = null;
+        
+        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            if (! xmlInfo.getAttributeData("type").equals("metadataMap")) {    
+                continue;
+            }
+   
+            sql = xmlInfo.getDataValue();
+            logger.log(Level.FINEST, "SQL: {0}", sql); 
+ 
+            if (sql != null) {
+               
+                MetadataTransaction metadataTransaction = new MetadataTransaction();
+                
+                metadataTransaction.setSqlQuery(sql);
+                metadataTransaction.setAppendDelimeter(xmlInfo.getAttributeData("multiResultDelim"));
+                metadataTransaction.setTableName(xmlInfo.getAttributeData("destTableName"));
+                metadataTransaction.setOperationType(xmlInfo.getAttributeData("operationType"));
+                metadataTransaction.setDbName(xmlInfo.getAttributeData("dbConn"));
+               
+                mdTransList.add(metadataTransaction);
+                   
+            }
+        }
+        if (mdTransList == null) {
+            logger.log(Level.FINEST, "Error: metadataMap queries not found in xml file");
+            return;
+        }
+
+    }
+    
+        // Method: populateCdisMapListToLink()
+    // Purpose: Populates the list of CdisMap records that have never been metadata synced and require syncing
     private boolean populateNeverSyncedMapIds() {
         
         String sql = null;
@@ -133,10 +183,14 @@ public class MetaDataSync extends Operation {
         
         return true;
     }
-     
+    
+    /* Member Function: returnRequiredProps
+     * Purpose: Returns a list of required properties that must be set in the properties file in otder to run the cisUpate operation
+     */  
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
+        reqProps.add("metadataSyncXmlFile");
         
         //add more required props here
         return reqProps;    

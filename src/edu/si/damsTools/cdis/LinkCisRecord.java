@@ -66,8 +66,7 @@ public class LinkCisRecord extends Operation {
                     continue;
                 }
                 
-                if (cis.returnCdisGroupType().equals("un")) {
-                    //use the UNGroupMap Table
+                if (DamsTools.getProjectCd().equals("aspace")) {
                     //See if this cdis_map_id already exists in the table for any refid
                     CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
                     cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());

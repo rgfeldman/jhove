@@ -10,7 +10,7 @@ import edu.si.damsTools.cdis.CisUpdate;
 import edu.si.damsTools.cdis.CreateCisMedia;
 import edu.si.damsTools.cdis.LinkCisRecord;
 import edu.si.damsTools.cdis.LinkDamsRecord;
-import edu.si.damsTools.cdis.MetaDataSync;
+import edu.si.damsTools.cdis.MetaDataSyncOld;
 import edu.si.damsTools.cdis.Operation;
 import edu.si.damsTools.cdis.ReportGenerator;
 import edu.si.damsTools.cdis.SendToHotFolder;
@@ -46,7 +46,7 @@ public class Cdis extends App {
                 break;
 
             case "metadataSync" :    
-                operation = new MetaDataSync();
+                operation = new MetaDataSyncOld();
                 break;
                     
             case "createCisMedia" :

@@ -53,7 +53,7 @@ public class Aspace implements CisRecordAttr {
         cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
         cdisCisIdentifierMap.setCisIdentifierCd("ead");
         cdisCisIdentifierMap.setCisIdentifierValue(damsRecord.getSiAssetMetadata().getEadRefId());
-        ArrayList<Integer> cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCdValue();
+        ArrayList<Integer> cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCisCdValue();
 
         for (Integer mapId : cdisMapIds) {
             //Add the other mapids as CPD, all of them should be 
