@@ -5,8 +5,8 @@
  */
 package edu.si.damsTools.cdis.report.rptFile;
 
-import edu.si.damsTools.cdis.cis.CisRecordAttr;
-import edu.si.damsTools.cdis.cis.CisRecordFactory;
+import edu.si.damsTools.cdis.cis.applications.CisRecordAttr;
+import edu.si.damsTools.cdis.cis.applications.CisRecordFactory;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;

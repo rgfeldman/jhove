@@ -6,7 +6,7 @@
 package edu.si.damsTools.cdis.report.delivery;
 
 import edu.si.damsTools.cdis.report.rptFile.RptFile;
-import edu.si.damsTools.cdis.report.DisplayFormat;
+import edu.si.damsTools.cdis.operations.report.DisplayFormat;
 
 /**
  * Interface: DeliveryMethod

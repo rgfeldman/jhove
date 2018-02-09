@@ -35,7 +35,7 @@ import javax.mail.Message;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
-import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.utilities.XmlQueryData;
 
 /*

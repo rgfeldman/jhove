@@ -28,7 +28,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.DefaultParser;
 
-import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.utilities.XmlQueryData;
 import edu.si.damsTools.utilities.XmlReader;
 

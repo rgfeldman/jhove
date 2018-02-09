@@ -133,13 +133,14 @@ public class CdisCisIdentifierMap {
         return true;
     }
     
-    public ArrayList<Integer> returnCdisMapIdsForCdValue() {
+    public ArrayList<Integer> returnCdisMapIdsForCisCdValue() {
 
         ArrayList cdisMapIdsForRefId = new ArrayList<>();
         
         String sql = "SELECT    cdis_map_id " +
                      "FROM      cdis_cis_identifier_map " +
                      "WHERE     cis_identifier_cd = '" + this.cisIdentifierCd + "' " +
+                     "AND       cis_name = '" + DamsTools.getProperty("cis") + "' " +
                      "AND       cis_identifier_value = '" + this.cisIdentifierValue + "'";  
         
         logger.log(Level.FINEST,"SQL! " + sql);

@@ -3,16 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.damsTools;
-
-import edu.si.damsTools.cdis.operations.Operation;
+package edu.si.damsTools.cdis.cis.identifier;
 
 /**
  *
  * @author rfeldman
  */
-public abstract class App {
-    
-    public abstract Operation operationFactiory();
+public interface IdentifierType {
     
 }

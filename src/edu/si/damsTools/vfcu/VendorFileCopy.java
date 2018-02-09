@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools.vfcu;
 
-import edu.si.damsTools.cdis.Operation;
+import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.vfcu.database.VfcuActivityLog;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;

@@ -7,7 +7,7 @@ package edu.si.damsTools.cdis.report.delivery;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.ExecSystemCmd;
-import edu.si.damsTools.cdis.report.DisplayFormat;
+import edu.si.damsTools.cdis.operations.report.DisplayFormat;
 import edu.si.damsTools.cdis.report.rptFile.RptFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;

@@ -3,16 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.damsTools;
+package edu.si.damsTools.cdis.operations;
 
-import edu.si.damsTools.cdis.operations.Operation;
+import java.util.ArrayList;
 
 /**
  *
  * @author rfeldman
  */
-public abstract class App {
+public abstract class Operation {
     
-    public abstract Operation operationFactiory();
+    public abstract ArrayList<String> returnRequiredProps ();
+     
+    public abstract void invoke();
     
 }

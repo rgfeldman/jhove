@@ -3,25 +3,32 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.damsTools.cdis.dams.database;
+package edu.si.damsTools.cdis.operations.metadataSync;
 
+import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlQueryData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author rfeldman
  */
-public class MetadataTransaction {
+public class CisSqlCommand {
    
+    private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
+    
     private String appendDelimiter;
     private String dbName;
     private String sqlQuery;
     private String tableName;
     private String operationType;
     
-    
-    public MetadataTransaction() {
-
+    public CisSqlCommand() {
+        
     }
     
     public String getAppendDelimiter() {
@@ -63,6 +70,15 @@ public class MetadataTransaction {
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-              
     
+    public boolean setValuesFromXml(XmlQueryData xmlInfo) {
+        setSqlQuery(xmlInfo.getDataValue());
+        setAppendDelimeter(xmlInfo.getAttributeData("multiResultDelim"));
+        setTableName(xmlInfo.getAttributeData("destTableName"));
+        setOperationType(xmlInfo.getAttributeData("operationType"));
+        setDbName(xmlInfo.getAttributeData("dbConn"));
+        
+        return true;
+    }
+
 }

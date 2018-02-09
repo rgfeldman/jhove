@@ -18,7 +18,7 @@ import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
 import edu.si.damsTools.DamsTools; 
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.report.DisplayFormat;
+import edu.si.damsTools.cdis.operations.report.DisplayFormat;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.cdis.report.Report;
+import edu.si.damsTools.cdis.operations.report.Report;
 import edu.si.damsTools.utilities.XmlQueryData;
 
 public class RptFile extends Report  {

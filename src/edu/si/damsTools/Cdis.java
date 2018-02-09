@@ -5,15 +5,15 @@
  */
 package edu.si.damsTools;
 
-import edu.si.damsTools.cdis.CISThumbnailSync;
-import edu.si.damsTools.cdis.CisUpdate;
-import edu.si.damsTools.cdis.CreateCisMedia;
-import edu.si.damsTools.cdis.LinkCisRecord;
-import edu.si.damsTools.cdis.LinkDamsRecord;
-import edu.si.damsTools.cdis.MetaDataSyncOld;
-import edu.si.damsTools.cdis.Operation;
-import edu.si.damsTools.cdis.ReportGenerator;
-import edu.si.damsTools.cdis.SendToHotFolder;
+import edu.si.damsTools.cdis.operations.CISThumbnailSync;
+import edu.si.damsTools.cdis.operations.CisUpdate;
+import edu.si.damsTools.cdis.operations.CreateCisMedia;
+import edu.si.damsTools.cdis.operations.LinkCisRecord;
+import edu.si.damsTools.cdis.operations.LinkDamsRecord;
+import edu.si.damsTools.cdis.operations.MetaDataSyncOld;
+import edu.si.damsTools.cdis.operations.Operation;
+import edu.si.damsTools.cdis.operations.ReportGenerator;
+import edu.si.damsTools.cdis.operations.SendToHotFolder;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
