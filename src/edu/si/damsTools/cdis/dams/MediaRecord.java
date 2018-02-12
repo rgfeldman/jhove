@@ -5,10 +5,7 @@
  */
 package edu.si.damsTools.cdis.dams;
 
-import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.dams.database.TeamsLinks;
 import edu.si.damsTools.DamsTools;

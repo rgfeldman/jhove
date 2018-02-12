@@ -9,10 +9,12 @@ import edu.si.damsTools.DamsTools;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
+import edu.si.damsTools.cdis.dams.database.TeamsLinks;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.utilities.StringUtils;
+import java.util.ArrayList;
 
 
 /**
@@ -49,7 +51,7 @@ public class DamsRecord {
         siAsst.populateSiAsstData();
     } 
     
-     public boolean addPreservationData (CdisMap cdisMap) {
+    public boolean addPreservationData (CdisMap cdisMap) {
         
         VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
         vfcuMediaFile.setVfcuMediaFileId(cdisMap.getVfcuMediaFileId());
@@ -84,8 +86,43 @@ public class DamsRecord {
         if (sql.contains("?OWNING_UNIT_UNIQUE_NAME?")) {
             sql = sql.replace("?OWNING_UNIT_UNIQUE_NAME?", getSiAssetMetadata().getOwningUnitUniqueName());
         }
+        if (sql.contains("?UOI_ID?")) {
+            sql = sql.replace("?UOI_ID?", getUois().getUoiid());
+        }
         
         return (sql);
+    }
+    
+    public ArrayList<DamsRecord> returnRelatedDamsRecords () {
+        // See if there are any related parent/children relationships in DAMS. We find the parents whether they were put into DAMS
+        // by CDIS or not.  We get only the direct parent/child for now...later we may want to add more functionality
+                
+        ArrayList<DamsRecord> relatedRecordList = new ArrayList<>();
+         
+        TeamsLinks teamsLinks = new TeamsLinks();
+        teamsLinks.setSrcValue(uois.getUoiid());
+        teamsLinks.setLinkType("PARENT");
+        boolean relatedRecRetrieved = teamsLinks.populateDestValueNotDeleted();
+        
+        if (relatedRecRetrieved ) {
+            DamsRecord childRecord = new DamsRecord();
+            childRecord.setUoiId(teamsLinks.getDestValue());
+            childRecord.setBasicData();
+            relatedRecordList.add(childRecord);
+        }
+        
+        teamsLinks.setLinkType("CHILD");
+        relatedRecRetrieved = teamsLinks.populateDestValueNotDeleted();
+  
+        if (relatedRecRetrieved ) {
+            DamsRecord parentRecord = new DamsRecord();
+            parentRecord.setUoiId(teamsLinks.getDestValue());
+            parentRecord.setBasicData();
+            relatedRecordList.add(parentRecord);
+        }
+        
+        return relatedRecordList;
+        
     }
     
 }

@@ -5,7 +5,9 @@
  */
 package edu.si.damsTools.cdis.operations;
 
+import com.google.common.collect.HashBasedTable;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.operations.metadataSync.CisSqlCommand;
 import edu.si.damsTools.utilities.XmlQueryData;
@@ -15,12 +17,16 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
+import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.DbUtils;
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
 
 
 /**
@@ -57,6 +63,13 @@ public class MetaDataSync extends Operation {
         }
         
         populateDamsTblSpecs();
+        if (damsTblSpecs.isEmpty()) {
+            logger.log(Level.FINEST, "Error: unable to obtain statistics for DAMS tables");
+            return;
+        }
+        
+        
+        processCdisMapListToSync();
                   
     }
     
@@ -70,6 +83,103 @@ public class MetaDataSync extends Operation {
        }
        return true;
     }
+    
+    
+    /*private boolean buildCisQueryPopulateResults(CdisMap cdisMap) {
+        
+        
+        //Loop through all of the queries for the current operation type
+        for (String sql : this.metaDataMapQueries.keySet()) {
+          
+            
+            if (sql.contains("?MEDIA_ID?")) {
+                sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
+            }
+            if (sql.contains("?UOI_ID?")) {
+                sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
+            }
+            if (sql.contains("?OBJECT_ID?")) {
+                CdisObjectMap objectMap = new CdisObjectMap();
+                objectMap.setCdisMapId(cdisMap.getCdisMapId());
+                objectMap.populateCisUniqueObjectIdforCdisId();
+           
+                sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
+            }
+            logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+            setSourceDb();
+            try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery() ) {
+
+                while (rs.next()) {
+                    ResultSetMetaData rsmd = rs.getMetaData();
+                    
+                    for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
+                        
+                        String columnName = rsmd.getColumnLabel(i).toUpperCase();
+                        String resultVal = rs.getString(i);
+                        
+                        logger.log(Level.ALL, "TABL: " + destTableName + " COLM: " + columnName + " VAL: " + resultVal);
+                            
+                        if (resultVal != null) {
+                            //scrub the string to get rid of special characters that may not display properly in DAMS
+                            resultVal = scrubString(resultVal);
+                            
+                            if (! columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {                               
+                                //Truncate the string if the length of the string exceeds the DAMS column width
+                                if (resultVal.length() > columnLengthHashTable.get(destTableName, columnName)) {
+                                    resultVal = resultVal.substring(0,columnLengthHashTable.get(destTableName, columnName));
+                                }
+                            }
+                        }
+                    
+                        switch (operationType) {
+                            case "U":
+                                if (columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {
+                                    String internalSize;
+                                    String externalSize;
+                                            
+                                    externalSize = calculateMaxIdsSize(resultVal);
+                                    if (externalSize != null) {
+                                        internalSize = "3000";
+                                    }
+                                    else {
+                                        internalSize = calculateMaxIdsSize(resultVal, "INTERNAL");
+                                        externalSize = calculateMaxIdsSize(resultVal, "EXTERNAL");
+                                    }
+                                    
+                                    populateUpdateRowForDams(destTableName, "INTERNAL_IDS_SIZE", internalSize, appendDelimter);
+                                    populateUpdateRowForDams(destTableName, "MAX_IDS_SIZE", externalSize, appendDelimter);
+                                }
+                                else {
+                                    populateUpdateRowForDams(destTableName, columnName, resultVal, appendDelimter);
+                                }
+                                break;
+                            case "DI":
+                                deleteRows.add(destTableName);
+                                if (resultVal != null) {
+                                    insertRowForDams.put(destTableName, columnName, resultVal);
+                                }
+                                break;   
+                            default:
+                                //Error, unable to determine sync type
+                                logger.log(Level.SEVERE, "Error: Unable to Determine sync type");
+                                return false;
+                        }
+                        
+                    }   
+                }
+            }
+            catch(Exception e) {
+		logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
+                return false;
+            }   
+        }
+      
+        return true;
+    }
+    
+    */
     
     // Method: populateCisUpdatedMapIds()
     // Purpose: Populates the list of CdisMap records with records that have been updated in the CIS and require a re-sync
@@ -186,6 +296,68 @@ public class MetaDataSync extends Operation {
         }
         
         return true;
+    }
+    
+    private void processCdisMapListToSync() {
+        // for each UOI_ID that was identified for sync
+        for (Iterator<CdisMap> iter = cdisMapList.iterator(); iter.hasNext();) {
+            
+            //commit with each iteration
+            try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            
+            ArrayList<DamsRecord> damsRecordList = new ArrayList<>();
+            CdisMap cdisMap = new CdisMap();
+            
+            //Get the DamsRecord for this cdisMapId, and populate the required values
+            DamsRecord damsRecord = new DamsRecord();
+            damsRecord.setUoiId(cdisMap.getDamsUoiid());
+            damsRecord.setBasicData();
+            
+            //Replace the values based on the damsRecord
+            for (CisSqlCommand sqlCmd : cisSqlCommand) {
+                String sql = sqlCmd.getSqlQuery();
+                sql = damsRecord.replaceSqlVars(sql);
+                
+                if (sql.contains("?MEDIA_ID?")) {
+                    sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
+                }
+                if (sql.contains("?OBJECT_ID?")) {
+                    CdisObjectMap objectMap = new CdisObjectMap();
+                    objectMap.setCdisMapId(cdisMap.getCdisMapId());
+                    objectMap.populateCisUniqueObjectIdforCdisId();
+           
+                    sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
+                }
+                logger.log(Level.FINEST, "SQL: {0}", sql);
+            }
+            
+             processDamsRecord(damsRecord, cdisMap);
+            
+        }
+    }
+    
+    private void processDamsRecord(DamsRecord dRec, CdisMap cdisMap) {
+        
+        //Add the related parent/children records to the list
+            if (DamsTools.getProperty("syncParentChild") != null  && DamsTools.getProperty("syncParentChild").equals("true") ) {
+                
+                ArrayList<DamsRecord> relatedRecordList = new ArrayList<>();
+                 //Get the related damsRcords (Parent/children)
+             //   damsRecordList = damsRecord.returnRelatedDamsRecords ();
+            }
+            
+             //Add the current damsReocord to the list
+           // damsRecordList.add(damsRecord);
+            
+        //Translate the values 
+        // execute the SQL statment to obtain the metadata and populate variables. The key value is the CDIS MAP ID
+        //boolean dataMappedFromCIS = buildCisQueryPopulateResults(cdisMap);
+        //if (! dataMappedFromCIS) {
+            //    ErrorLog errorLog = new ErrorLog ();
+            //    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update uois table with new metadata_state_dt " + cdisMap.getDamsUoiid());   
+            //    noErrorFound = false;
+            //    continue; 
+            //}
     }
 
     /* Member Function: returnRequiredProps
