@@ -21,6 +21,7 @@ import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.DbUtils;
+import edu.si.damsTools.utilities.StringUtils;
 import java.sql.Connection;
 import java.sql.ResultSetMetaData;
 import java.util.HashMap;
@@ -85,101 +86,79 @@ public class MetaDataSync extends Operation {
     }
     
     
-    /*private boolean buildCisQueryPopulateResults(CdisMap cdisMap) {
+    private HashMap<String,String> returnCisQueryResults(String dbName, String sql) {
         
+        HashMap<String,String> columnValHash = new HashMap<>();
         
-        //Loop through all of the queries for the current operation type
-        for (String sql : this.metaDataMapQueries.keySet()) {
-          
-            
-            if (sql.contains("?MEDIA_ID?")) {
-                sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
-            }
-            if (sql.contains("?UOI_ID?")) {
-                sql = sql.replace("?UOI_ID?", String.valueOf(cdisMap.getDamsUoiid()));
-            }
-            if (sql.contains("?OBJECT_ID?")) {
-                CdisObjectMap objectMap = new CdisObjectMap();
-                objectMap.setCdisMapId(cdisMap.getCdisMapId());
-                objectMap.populateCisUniqueObjectIdforCdisId();
-           
-                sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
-            }
-            logger.log(Level.FINEST, "SQL: {0}", sql);
-            
-            setSourceDb();
-            try (PreparedStatement stmt = sourceDb.prepareStatement(sql);
+        try (PreparedStatement stmt = DbUtils.returnDbConnFromString(dbName).prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-                while (rs.next()) {
-                    ResultSetMetaData rsmd = rs.getMetaData();
-                    
-                    for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
-                        
-                        String columnName = rsmd.getColumnLabel(i).toUpperCase();
-                        String resultVal = rs.getString(i);
-                        
-                        logger.log(Level.ALL, "TABL: " + destTableName + " COLM: " + columnName + " VAL: " + resultVal);
-                            
-                        if (resultVal != null) {
-                            //scrub the string to get rid of special characters that may not display properly in DAMS
-                            resultVal = scrubString(resultVal);
-                            
-                            if (! columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {                               
-                                //Truncate the string if the length of the string exceeds the DAMS column width
-                                if (resultVal.length() > columnLengthHashTable.get(destTableName, columnName)) {
-                                    resultVal = resultVal.substring(0,columnLengthHashTable.get(destTableName, columnName));
-                                }
-                            }
-                        }
-                    
-                        switch (operationType) {
-                            case "U":
-                                if (columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {
-                                    String internalSize;
-                                    String externalSize;
-                                            
-                                    externalSize = calculateMaxIdsSize(resultVal);
-                                    if (externalSize != null) {
-                                        internalSize = "3000";
-                                    }
-                                    else {
-                                        internalSize = calculateMaxIdsSize(resultVal, "INTERNAL");
-                                        externalSize = calculateMaxIdsSize(resultVal, "EXTERNAL");
-                                    }
-                                    
-                                    populateUpdateRowForDams(destTableName, "INTERNAL_IDS_SIZE", internalSize, appendDelimter);
-                                    populateUpdateRowForDams(destTableName, "MAX_IDS_SIZE", externalSize, appendDelimter);
-                                }
-                                else {
-                                    populateUpdateRowForDams(destTableName, columnName, resultVal, appendDelimter);
-                                }
-                                break;
-                            case "DI":
-                                deleteRows.add(destTableName);
-                                if (resultVal != null) {
-                                    insertRowForDams.put(destTableName, columnName, resultVal);
-                                }
-                                break;   
-                            default:
-                                //Error, unable to determine sync type
-                                logger.log(Level.SEVERE, "Error: Unable to Determine sync type");
-                                return false;
-                        }
-                        
-                    }   
+            while (rs.next()) {
+                ResultSetMetaData rsmd = rs.getMetaData();
+                for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
+                    String columnName = rsmd.getColumnLabel(i).toUpperCase();
+                    String resultVal = rs.getString(i);
+
+                    columnValHash.put(columnName, resultVal);
                 }
             }
-            catch(Exception e) {
-		logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
-                return false;
-            }   
         }
-      
-        return true;
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
+            return null;
+        }      
+        return columnValHash;
     }
     
-    */
+        //                  if (resultVal != null) {
+                        //scrub the string to get rid of special characters that may not display properly in DAMS
+                      //  resultVal = StringUtils.scrubString(resultVal);
+                     
+        //                    
+        //                    if (! columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {                               
+        //                        //Truncate the string if the length of the string exceeds the DAMS column width
+         //                       if (resultVal.length() > columnLengthHashTable.get(destTableName, columnName)) {
+        //                            resultVal = resultVal.substring(0,columnLengthHashTable.get(destTableName, columnName));
+        //                        }
+         //                   }
+         //               }
+          //          
+         //               switch (operationType) {
+       //                     case "U":
+        //                        if (columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) {
+          //                          String internalSize;
+          //                          String externalSize;
+          //                                  
+          //                          externalSize = calculateMaxIdsSize(resultVal);
+          ////                          if (externalSize != null) {
+          //                              internalSize = "3000";
+          //                          }
+          //                          else {
+          ////                              internalSize = calculateMaxIdsSize(resultVal, "INTERNAL");
+          //                              externalSize = calculateMaxIdsSize(resultVal, "EXTERNAL");
+          ////                          }
+          //                          
+          ////                          populateUpdateRowForDams(destTableName, "INTERNAL_IDS_SIZE", internalSize, appendDelimter);
+          //                          populateUpdateRowForDams(destTableName, "MAX_IDS_SIZE", externalSize, appendDelimter);
+          //                      }
+          //                      else {
+          //                          populateUpdateRowForDams(destTableName, columnName, resultVal, appendDelimter);
+          //                      }
+          //                      break;
+          //                  case "DI":
+          //                      deleteRows.add(destTableName);
+          //                      if (resultVal != null) {
+          //                          insertRowForDams.put(destTableName, columnName, resultVal);
+          //                      }
+          //                      break;   
+          //                  default:
+          ////                      //Error, unable to determine sync type
+          //                      logger.log(Level.SEVERE, "Error: Unable to Determine sync type");
+          ////                      return false;
+          //              }
+          //              
+          //          }   
+          //      }
     
     // Method: populateCisUpdatedMapIds()
     // Purpose: Populates the list of CdisMap records with records that have been updated in the CIS and require a re-sync
@@ -229,7 +208,8 @@ public class MetaDataSync extends Operation {
                         cdisMap.setCdisMapId(rs.getInt(1));
                         cdisMap.populateMapInfo();
                         cdisMapList.add(cdisMap);
-                    }                   
+                    }  
+                    
                 }
             }
         }
@@ -327,30 +307,28 @@ public class MetaDataSync extends Operation {
                     objectMap.populateCisUniqueObjectIdforCdisId();
            
                     sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
+                    
                 }
                 logger.log(Level.FINEST, "SQL: {0}", sql);
+                
+                //Get a Hashmap containing all the columns and the results for the current query
+                HashMap<String,String> columnValHash = new HashMap<>();
+                columnValHash = returnCisQueryResults(sqlCmd.getDbName(), sql);   
+                
+                //Scrub the results of the hash and truncate if necessary
+                
+                //Add to the update, insert or delete row structures (that contains table, column and value
+                
             }
             
-             processDamsRecord(damsRecord, cdisMap);
-            
+            // ALSO need to pass in the delete, insert and update structures
+            processDamsRecord(damsRecord, cdisMap);       
         }
     }
     
     private void processDamsRecord(DamsRecord dRec, CdisMap cdisMap) {
         
-        //Add the related parent/children records to the list
-            if (DamsTools.getProperty("syncParentChild") != null  && DamsTools.getProperty("syncParentChild").equals("true") ) {
-                
-                ArrayList<DamsRecord> relatedRecordList = new ArrayList<>();
-                 //Get the related damsRcords (Parent/children)
-             //   damsRecordList = damsRecord.returnRelatedDamsRecords ();
-            }
-            
-             //Add the current damsReocord to the list
-           // damsRecordList.add(damsRecord);
-            
-        //Translate the values 
-        // execute the SQL statment to obtain the metadata and populate variables. The key value is the CDIS MAP ID
+        // execute the SQL statment to obtain the metadata and populate variables. 
         //boolean dataMappedFromCIS = buildCisQueryPopulateResults(cdisMap);
         //if (! dataMappedFromCIS) {
             //    ErrorLog errorLog = new ErrorLog ();
@@ -358,6 +336,16 @@ public class MetaDataSync extends Operation {
             //    noErrorFound = false;
             //    continue; 
             //}
+        
+        //Add the related parent/children records to the list
+        if (DamsTools.getProperty("syncParentChild") != null  && DamsTools.getProperty("syncParentChild").equals("true") ) {
+                
+            ArrayList<DamsRecord> relatedRecordList = new ArrayList<>();
+            //Get the related damsRcords (Parent/children
+            relatedRecordList = dRec.returnRelatedDamsRecords ();
+        }
+            
+       
     }
 
     /* Member Function: returnRequiredProps
