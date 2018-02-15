@@ -15,11 +15,14 @@ import java.sql.Connection;
 public class DbUtils {
     
     public static Connection returnDbConnFromString (String db) {
-        switch (db) {
-            case "dams" :
-              return DamsTools.getDamsConn();
-            case "cis" :
-              return DamsTools.getCisConn();  
+        
+        if (db!= null) {
+            switch (db) {
+                case "dams" :
+                    return DamsTools.getDamsConn();
+                case "cis" :
+                    return DamsTools.getCisConn();  
+            }
         }
         return null;
     }

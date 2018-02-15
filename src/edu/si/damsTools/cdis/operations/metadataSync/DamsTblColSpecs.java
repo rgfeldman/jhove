@@ -28,6 +28,20 @@ public class DamsTblColSpecs {
     private final String tableName;
     private final HashMap<String,Integer> columnLengthMap;
     
+    public String getTableName() {
+        return this.tableName;
+    }
+    
+    public int getColumnLengthForColumnName(String columnName) {
+        
+        for (String column : columnLengthMap.keySet()) {
+            if (column.equals(columnName)) {
+                return columnLengthMap.get(column);
+            }
+        }
+        return 0;
+    }
+    
     public DamsTblColSpecs(String tableName) {
         this.tableName = tableName;
         this.columnLengthMap = new HashMap<>();

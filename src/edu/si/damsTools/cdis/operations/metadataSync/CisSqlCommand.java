@@ -76,6 +76,11 @@ public class CisSqlCommand {
         setAppendDelimeter(xmlInfo.getAttributeData("multiResultDelim"));
         setTableName(xmlInfo.getAttributeData("destTableName"));
         setOperationType(xmlInfo.getAttributeData("operationType"));
+        
+        if (xmlInfo.getAttributeData("dbConn") == null) {
+            logger.log(Level.SEVERE, "Error: Unable to determine database to update");
+            return false;
+        }
         setDbName(xmlInfo.getAttributeData("dbConn"));
         
         return true;

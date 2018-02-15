@@ -18,14 +18,14 @@ public class CisRecordFactory {
     }
     
     public CisRecordAttr cisChooser() {
-        
+     
         CisRecordAttr cisRecord = null;
         
         switch (DamsTools.getProperty("cis")) {
             case "aaa" :
                 if (DamsTools.getProperty("mediaTypeConfigId").equals("6")) {
                     cisRecord = new AaaDigitalResource();
-                }
+}
                 if (DamsTools.getProperty("mediaTypeConfigId").equals("9,10,11")) {
                     cisRecord = new AaaDigitalMediaResource();
                 }
