@@ -370,39 +370,7 @@ public class MetaDataSync extends Operation {
         for (String column : columnValHash.keySet()) {
             String columnVal = columnValHash.get(column);
             
-            //Handle nulls
-            if (columnVal == null) {
-                newHash.put(column, "");
-                continue;
-            } 
-            
-            //Replace special chars and quotes 
-            columnVal = StringUtils.scrubString(columnVal);
-            
-            if (! column.equals("CDIS_TRANSLATE_IDS_SIZES") ) { 
-                if (newHash.containsKey(column)) {
-                    if (cisSqlCmd.getAppendDelimiter() != null ) {
-                        //This column is already in map, append two results together
-                        columnVal = newHash.get(column) + cisSqlCmd.getAppendDelimiter() + columnVal;
-                    }
-                    else {
-                        logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
-                    }
-                }
-               
-                //truncate the end of the value based on the column length of the DAMS table
-                for (DamsTblColSpecs tblSpec : damsTblSpecs) {
-                    if (tblSpec.getTableName().equals(cisSqlCmd.getTableName())) {
-                        
-                        if (columnVal.length() > tblSpec.getColumnLengthForColumnName(column))  {
-                            columnVal = columnVal.substring(0,tblSpec.getColumnLengthForColumnName(column));
-                        }
-                    }  
-                }    
-                
-                newHash.put(column, columnVal);
-            }
-            else {
+            if (column.equals("CDIS_TRANSLATE_IDS_SIZES") ) { 
                 String internalSize;
                 String externalSize;
                                             
@@ -416,9 +384,41 @@ public class MetaDataSync extends Operation {
                 }
                 newHash.put("INTERNAL_IDS_SIZE", internalSize);
                 newHash.put("MAX_IDS_SIZE", externalSize);
+                
+                logger.log(Level.FINEST, "COL INTERNAL_IDS_SIZE VAL: " +  internalSize );
+                logger.log(Level.FINEST, "COL MAX_IDS_SIZE VAL: " +  externalSize ); 
+                continue;
             }
-            logger.log(Level.FINEST, "COL " + column + " VAL: " +  columnVal );  
-    
+            
+            //Handle nulls
+            if (columnVal == null) {
+                newHash.put(column, "");
+                continue;
+            } 
+            
+            //Replace special chars and quotes 
+            columnVal = StringUtils.scrubString(columnVal);
+           
+            if (newHash.containsKey(column)) {
+                if (cisSqlCmd.getAppendDelimiter() != null ) {
+                    //This column is already in map, append two results together
+                    columnVal = newHash.get(column) + cisSqlCmd.getAppendDelimiter() + columnVal;
+                }
+                else {
+                    logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
+                }
+            }
+
+            //truncate the end of the value based on the column length of the DAMS table
+            for (DamsTblColSpecs tblSpec : damsTblSpecs) {
+                if (tblSpec.getTableName().equals(cisSqlCmd.getTableName())) {         
+                    columnVal = StringUtils.truncateByByteSize(columnVal, tblSpec.getColumnLengthForColumnName(column));
+                }  
+            }    
+              
+            newHash.put(column, columnVal);
+            logger.log(Level.FINEST, "COL " + column + " VAL: " +  columnVal );               
+            
         }
      
         return newHash;
