@@ -5,11 +5,11 @@
  */
 package edu.si.damsTools.cdis.operations;
 
-import com.google.common.collect.Table;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
-import edu.si.damsTools.cdis.operations.metadataSync.CisSqlCommand;
+import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
@@ -39,7 +39,7 @@ public class MetaDataSync extends Operation {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private final Set<CdisMap> cdisMapList; //unique list of CDIS Map records that require metadata sync
-    private final ArrayList<CisSqlCommand> cisSqlCommand;
+    private final ArrayList<XmlCisSqlCommand> cisSqlCommands;
     private final Set<DamsTblColSpecs> damsTblSpecs;  //we want to make sure to avoid duplicate entries here too.
     
     private ArrayList<String> deletesForDamsRecord;
@@ -49,7 +49,7 @@ public class MetaDataSync extends Operation {
      
     public MetaDataSync() {
         cdisMapList = new HashSet<>();
-        cisSqlCommand = new ArrayList<>();
+        cisSqlCommands = new ArrayList<>();
         damsTblSpecs = new HashSet<>();
     }
      
@@ -64,7 +64,7 @@ public class MetaDataSync extends Operation {
         }
         
         populateCisSqlList();
-        if (cisSqlCommand.isEmpty()) {
+        if (cisSqlCommands.isEmpty()) {
             logger.log(Level.FINEST, "Error: metadataMap queries not found in xml file");
             return;
         }
@@ -86,7 +86,7 @@ public class MetaDataSync extends Operation {
         //Add the tablename to a list to make sure we dont query the database for the same table twice
         ArrayList <String> tableRecorded = new ArrayList <>();
         
-        for (CisSqlCommand sqlCommand : cisSqlCommand) {
+        for (XmlCisSqlCommand sqlCommand : cisSqlCommands) {
            
             //If we dont have the specs for this table yet, add the specs to the list
             if (! tableRecorded.contains(sqlCommand.getTableName() ) ) {
@@ -100,33 +100,7 @@ public class MetaDataSync extends Operation {
             }
        }
        return true;
-    }
-    
-    
-    private HashMap<String,String> returnCisQueryResults(String dbName, String sql) {
-        
-        HashMap<String,String> columnValHash = new HashMap<>();
-        
-        try (PreparedStatement stmt = DbUtils.returnDbConnFromString(dbName).prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery() ) {
-
-            while (rs.next()) {
-                ResultSetMetaData rsmd = rs.getMetaData();
-                for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
-                    String columnName = rsmd.getColumnLabel(i).toUpperCase();
-                    String resultVal = rs.getString(i);
-
-                    columnValHash.put(columnName, resultVal);
-                }
-            }
-        }
-        catch(Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
-            return null;
-        }      
-        return columnValHash;
-    }
-    
+    }    
     
     // Method: populateCisUpdatedMapIds()
     // Purpose: Populates the list of CdisMap records with records that have been updated in the CIS and require a re-sync
@@ -176,8 +150,7 @@ public class MetaDataSync extends Operation {
                         cdisMap.setCdisMapId(rs.getInt(1));
                         cdisMap.populateMapInfo();
                         cdisMapList.add(cdisMap);
-                    }  
-                    
+                    }          
                 }
             }
         }
@@ -201,14 +174,14 @@ public class MetaDataSync extends Operation {
    
             if (xmlInfo.getDataValue() != null) {
                 logger.log(Level.FINEST, "SQL: {0}", xmlInfo.getDataValue());  
-                CisSqlCommand cisSqlCmd = new CisSqlCommand();
+                XmlCisSqlCommand cisSqlCmd = new XmlCisSqlCommand();
                 cisSqlCmd.setValuesFromXml(xmlInfo);
-                cisSqlCommand.add(cisSqlCmd);
+                cisSqlCommands.add(cisSqlCmd);
             }
         }
     }
     
-        // Method: populateCdisMapListToLink()
+    // Method: populateCdisMapListToLink()
     // Purpose: Populates the list of CdisMap records that have never been metadata synced and require syncing
     private boolean populateNeverSyncedMapIds() {
         
@@ -244,6 +217,8 @@ public class MetaDataSync extends Operation {
         return true;
     }
     
+    //Method: processCdisMapListToSync
+    //Purpose: Goes through the list of CdisMap records that require syncing, pull each one out, one at a time and process
     private void processCdisMapListToSync() {
         // for each UOI_ID that was identified for sync
         for (Iterator<CdisMap> iter = cdisMapList.iterator(); iter.hasNext();) {
@@ -251,7 +226,7 @@ public class MetaDataSync extends Operation {
             
             //commit with each iteration
             try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-
+ 
             //Get the DamsRecord for this cdisMapId, and populate the required values
             DamsRecord damsRecord = new DamsRecord();
             damsRecord.setUoiId(cdisMap.getDamsUoiid());
@@ -260,10 +235,10 @@ public class MetaDataSync extends Operation {
             deletesForDamsRecord = new ArrayList<>();
             insertsByDamsRecord = new HashMap<>();
             updatesForDamsRecord =  new HashMap<>();
-        
+            
             //Replace the values based on the damsRecord
-            for (CisSqlCommand sqlCmd : cisSqlCommand) {
-                String sql = sqlCmd.getSqlQuery();
+            for (XmlCisSqlCommand xmlSqlCmd : cisSqlCommands) {
+                String sql = xmlSqlCmd.getSqlQuery();
                 sql = damsRecord.replaceSqlVars(sql);
                 
                 if (sql.contains("?MEDIA_ID?")) {
@@ -279,19 +254,22 @@ public class MetaDataSync extends Operation {
                 }
                 logger.log(Level.FINEST, "SQL: {0}", sql);
                 
-                //Get a Hashmap containing all the columns and the results for the current query
-                HashMap<String,String> columnValHash = new HashMap<>();
-                columnValHash = returnCisQueryResults(sqlCmd.getDbName(), sql);   
+                //Create hashmap containing column names and values for the current record
+                HashMap<String, String> damsColumnValue = new HashMap<>();
+                damsColumnValue = populateCisQueryResults(xmlSqlCmd, sql);
                 
-                //Scrub the results of the hash and truncate if necessary
-                columnValHash = cleanQueryResultsForDb(columnValHash, sqlCmd);
-                
-                // ALSO need to pass in the delete, insert and update structures
-                createQueryLists(damsRecord, columnValHash, sqlCmd); 
-            
+                // populate the query lists (deletesForDamsRecord, insertsByDamsRecord and updatesForDamsRecord
+                populateSyncCmds(damsRecord, damsColumnValue, xmlSqlCmd);     
             }
             
-            metadataSyncRecords(cdisMap, damsRecord);
+            //Perform the actual metadata sync
+            boolean recordsSynced = metadataSyncRecords(cdisMap, damsRecord);
+            if (recordsSynced) {
+                CdisActivityLog activityLog = new CdisActivityLog();
+                activityLog.setCdisMapId(cdisMap.getCdisMapId());
+                activityLog.setCdisStatusCd("MDS");
+                activityLog.insertActivity();
+            }
             
             //This is not supported at current time
            // if (DamsTools.getProperty("syncParentChild") != null  && DamsTools.getProperty("syncParentChild").equals("true") ) {
@@ -307,6 +285,82 @@ public class MetaDataSync extends Operation {
 
         }
     }
+    //Method: populateCisQueryResults
+    //Purpose: Populates the query results from the CIS into a structure that holds the dams column name and column name
+    private  HashMap<String, String> populateCisQueryResults(XmlCisSqlCommand xmlSqlCmd, String sql ) {
+
+        HashMap<String, String> damsColumnValue = new HashMap<>();
+
+        try (PreparedStatement stmt = DbUtils.returnDbConnFromString(xmlSqlCmd.getDbName()).prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery() ) {
+
+            while (rs.next()) {
+                ResultSetMetaData rsmd = rs.getMetaData();
+                for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
+                    
+                    String columnName = rsmd.getColumnLabel(i).toUpperCase();
+                    String columnValue = rs.getString(i);
+                    
+                    if (columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) { 
+                        String internalSize;
+                        String externalSize;
+                                            
+                        externalSize = calculateMaxIdsSize(columnValue);
+                        if (externalSize != null) {
+                            internalSize = "3000";
+                        }
+                        else {
+                            internalSize = calculateMaxIdsSize(columnValue, "INTERNAL");
+                            externalSize = calculateMaxIdsSize(columnValue, "EXTERNAL");
+                        }
+                        
+                        damsColumnValue.put("INTERNAL_IDS_SIZE", internalSize);
+                        damsColumnValue.put("MAX_IDS_SIZE", externalSize);
+                
+                        logger.log(Level.FINEST, "COL INTERNAL_IDS_SIZE VAL: " +  internalSize );
+                        logger.log(Level.FINEST, "COL MAX_IDS_SIZE VAL: " +  externalSize ); 
+                        continue;
+                    }
+                    
+                    if (columnValue == null) {
+                        damsColumnValue.put(columnName,"");
+                        continue;
+                    } 
+                    //Replace special chars and quotes 
+                    columnValue = StringUtils.scrubString(columnValue);
+                    
+                    
+                    if (damsColumnValue.containsKey(columnName)) {
+                        if (xmlSqlCmd.getAppendDelimiter() != null ) {
+                            columnValue = damsColumnValue.get(columnName) + xmlSqlCmd.getAppendDelimiter() + columnValue;                    
+                        }  
+                        else {
+                            logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
+                        }
+                    }
+
+                    //truncate the end of the value based on the column length of the DAMS table
+                    for (DamsTblColSpecs tblSpec : damsTblSpecs) {
+                        if (tblSpec.getTableName().equals(xmlSqlCmd.getTableName())) {         
+                            columnValue = StringUtils.truncateByByteSize(columnValue, tblSpec.getColumnLengthForColumnName(columnName));
+                        }  
+                    }
+                    
+                    logger.log(Level.FINEST, "COL " + columnName + " VAL: " +  columnValue );   
+                    damsColumnValue.put(columnName,columnValue);
+
+                }
+            }        
+        }
+        catch(Exception e) {
+            logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
+            return null;
+        }      
+        return damsColumnValue;
+    }    
+        
+    //Method: metadataSyncRecords
+    //Purpose: performs the actual metadata sync
     
     private boolean metadataSyncRecords(CdisMap cdisMap, DamsRecord dRec) {
         //Perform any deletes that need to be run on the current DAMSID
@@ -363,67 +417,8 @@ public class MetaDataSync extends Operation {
         return true;
     }
     
-    private HashMap<String,String>  cleanQueryResultsForDb(HashMap<String,String> columnValHash, CisSqlCommand cisSqlCmd) {
-        
-        HashMap<String,String> newHash = new HashMap<>();
-        
-        for (String column : columnValHash.keySet()) {
-            String columnVal = columnValHash.get(column);
-            
-            if (column.equals("CDIS_TRANSLATE_IDS_SIZES") ) { 
-                String internalSize;
-                String externalSize;
-                                            
-                externalSize = calculateMaxIdsSize(columnVal);
-                if (externalSize != null) {
-                    internalSize = "3000";
-                }
-                else {
-                    internalSize = calculateMaxIdsSize(columnVal, "INTERNAL");
-                    externalSize = calculateMaxIdsSize(columnVal, "EXTERNAL");
-                }
-                newHash.put("INTERNAL_IDS_SIZE", internalSize);
-                newHash.put("MAX_IDS_SIZE", externalSize);
-                
-                logger.log(Level.FINEST, "COL INTERNAL_IDS_SIZE VAL: " +  internalSize );
-                logger.log(Level.FINEST, "COL MAX_IDS_SIZE VAL: " +  externalSize ); 
-                continue;
-            }
-            
-            //Handle nulls
-            if (columnVal == null) {
-                newHash.put(column, "");
-                continue;
-            } 
-            
-            //Replace special chars and quotes 
-            columnVal = StringUtils.scrubString(columnVal);
-           
-            if (newHash.containsKey(column)) {
-                if (cisSqlCmd.getAppendDelimiter() != null ) {
-                    //This column is already in map, append two results together
-                    columnVal = newHash.get(column) + cisSqlCmd.getAppendDelimiter() + columnVal;
-                }
-                else {
-                    logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
-                }
-            }
-
-            //truncate the end of the value based on the column length of the DAMS table
-            for (DamsTblColSpecs tblSpec : damsTblSpecs) {
-                if (tblSpec.getTableName().equals(cisSqlCmd.getTableName())) {         
-                    columnVal = StringUtils.truncateByByteSize(columnVal, tblSpec.getColumnLengthForColumnName(column));
-                }  
-            }    
-              
-            newHash.put(column, columnVal);
-            logger.log(Level.FINEST, "COL " + column + " VAL: " +  columnVal );               
-            
-        }
-     
-        return newHash;
-    }
-    
+    //Method: calculateMaxIdsSize
+    //Purpose: calculates the MaxIdsSize (this is specific for TMS and shouls likely be moved)
     private String calculateMaxIdsSize (String tmsRemarks, String idsType) {
         
         String idsSize = null;
@@ -459,6 +454,8 @@ public class MetaDataSync extends Operation {
         return idsSize;
     }
     
+    //Method: calculateMaxIdsSize
+    //Purpose: calculates the MaxIdsSize (this is specific for TMS and shouls likely be moved)
     private String calculateMaxIdsSize (String tmsRemarks) {
         
         String idsSize = null;
@@ -490,13 +487,12 @@ public class MetaDataSync extends Operation {
         return idsSize;
     }
     
-    private boolean createQueryLists(DamsRecord dRec, HashMap<String,String> columnValueHash, CisSqlCommand sqlCmd) {
-            
- 
-        
-        for (String column : columnValueHash.keySet()) {
-            
-            String value = columnValueHash.get(column);
+    //Method: populateSyncCmds
+    //Purpose: populates the delete, insert and update lists for metadata sync
+    private boolean populateSyncCmds(DamsRecord dRec, HashMap<String, String> damsColumnValue, XmlCisSqlCommand sqlCmd) {
+
+          for (String columnName : damsColumnValue.keySet()) {
+            String columnValue =  damsColumnValue.get(columnName);
             
             if (sqlCmd.getOperationType().equals("DI")) {
                 
@@ -504,11 +500,11 @@ public class MetaDataSync extends Operation {
             
                 ArrayList<String> sqlVals = new ArrayList<String>();
             
-                if (value.contains("^MULTILINE_LIST_SEP^")) {
+                if (columnValue.contains("^MULTILINE_LIST_SEP^")) {
                      // If the value contains "^MULTILINE_LIST_SEP^" then we need to break that result down and perform two or more insert statements 
                     Pattern delim = Pattern.compile("^MULTILINE_LIST_SEP^");
                 
-                    String valuesToInsert[] = value.split(delim.quote("^") );
+                    String valuesToInsert[] = columnValue.split(delim.quote("^") );
                                                                  
                     //We can have multiple inserts for a single table, the first column of the map holds the tablename,
                     //the list contains the insert statements
@@ -516,7 +512,7 @@ public class MetaDataSync extends Operation {
                     
                         if ( ! (valuesToInsert[i].equals("MULTILINE_LIST_SEP") ) ) {
                             sqlVals.add ("INSERT INTO towner." + sqlCmd.getTableName() + 
-                            " (UOI_ID, " + column + ") VALUES ('" + 
+                            " (UOI_ID, " + columnName + ") VALUES ('" + 
                             dRec.getUois().getUoiid() + "','" + valuesToInsert[i] + "')");
                         }
                     
@@ -526,8 +522,8 @@ public class MetaDataSync extends Operation {
                 else {
                     //We only have a single row to insert into the table specified.
                     sqlVals.add  ("INSERT INTO towner." + sqlCmd.getTableName() + 
-                        " (UOI_ID, " + column + ") VALUES ('" + 
-                        dRec.getUois().getUoiid() + "','" + value + "')");
+                        " (UOI_ID, " + columnValue + ") VALUES ('" + 
+                        dRec.getUois().getUoiid() + "','" + columnValue + "')");
                 
                     insertsByDamsRecord.put(sqlCmd.getTableName(), sqlVals);               
                 }    
@@ -551,10 +547,10 @@ public class MetaDataSync extends Operation {
       
                 
                 if (updatesForDamsRecord.isEmpty() || updatesForDamsRecord.get(sqlCmd.getTableName()) == null) {             
-                    updatesForDamsRecord.put(sqlCmd.getTableName(), "UPDATE towner." + sqlCmd.getTableName() + " SET " + column + "= '" + value + "'");               
+                    updatesForDamsRecord.put(sqlCmd.getTableName(), "UPDATE towner." + sqlCmd.getTableName() + " SET " + columnName + "= '" + columnValue + "'");               
                 }
                 else {
-                    updatesForDamsRecord.put(sqlCmd.getTableName(), updatesForDamsRecord.get(sqlCmd.getTableName()) + ", " + column + "= '" + value + "'");
+                    updatesForDamsRecord.put(sqlCmd.getTableName(), updatesForDamsRecord.get(sqlCmd.getTableName()) + ", " + columnName + "= '" + columnValue + "'");
                 }
             }   
         }
@@ -599,6 +595,5 @@ public class MetaDataSync extends Operation {
         } 
         
         return recordsUpdated;
-
     }
 }
