@@ -35,8 +35,9 @@ public class IdentifierFactory {
             case "ead" :
                 identifierType = new EadRefId();
                 break;
-            case "ohn" :
+            case "ohm" :
                 identifierType = new OralHistoryMediaResourceId();
+                break;
             case "obj" :
                 identifierType = null;
                 break;
