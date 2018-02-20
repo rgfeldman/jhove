@@ -13,8 +13,12 @@ public class AccessionNo implements IdentifierType {
     
     private String accessionNo;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "acc";
+    }
+    
+    public String getIdentifierValue() {
+        return accessionNo;
     }
     
     public void setIdentifierValue(String identifierValue) {

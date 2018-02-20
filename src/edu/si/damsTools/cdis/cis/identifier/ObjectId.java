@@ -13,8 +13,12 @@ public class ObjectId implements IdentifierType {
     
     private String objectId;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "obj";
+    }
+    
+    public String getIdentifierValue() {
+        return objectId;
     }
     
     public void setIdentifierValue(String identifierValue) {

@@ -11,7 +11,9 @@ package edu.si.damsTools.cdis.cis.identifier;
  */
 public interface IdentifierType {
     
-    public String returnIdentifierCd();
+    public String getIdentifierCd();
+    
+    public String getIdentifierValue();
     
     public void setIdentifierValue(String identifierValue);
     

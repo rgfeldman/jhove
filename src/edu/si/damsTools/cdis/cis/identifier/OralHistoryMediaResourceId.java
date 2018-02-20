@@ -13,8 +13,12 @@ public class OralHistoryMediaResourceId implements IdentifierType {
     
     private String digitalMediaResourceId;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "ohm";
+    }
+    
+    public String getIdentifierValue() {
+        return digitalMediaResourceId;
     }
     
     public void setIdentifierValue(String identifierValue) {

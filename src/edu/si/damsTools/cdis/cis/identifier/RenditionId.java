@@ -13,8 +13,12 @@ public class RenditionId implements IdentifierType {
     
     private String renditionId;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "ren";
+    }
+    
+    public String getIdentifierValue() {
+        return renditionId;
     }
     
     public void setIdentifierValue(String identifierValue) {

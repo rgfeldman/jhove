@@ -13,8 +13,12 @@ public class DigitalMediaResourceId implements IdentifierType {
     
     private String digitalMediaResourceId;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "dmi";
+    }
+    
+    public String getIdentifierValue() {
+        return digitalMediaResourceId;
     }
     
     public void setIdentifierValue(String identifierValue) {

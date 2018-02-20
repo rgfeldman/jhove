@@ -13,8 +13,12 @@ public class CollectionsOnlineImageId implements IdentifierType {
     
     private String collectionsOnlineImageId;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "coi";
+    }
+    
+    public String getIdentifierValue() {
+        return collectionsOnlineImageId;
     }
    
     public void setIdentifierValue(String identifierValue) {

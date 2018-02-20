@@ -67,8 +67,8 @@ public class LinkCisRecord extends Operation {
                     //See if this cdis_map_id already exists in the table for any refid
                     CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
                     cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
-                    cdisCisIdentifierMap.setCisIdentifierCd(identType.returnIdentifierCd());
-                    cdisCisIdentifierMap.setCisIdentifierValue(damsRecord.getSiAssetMetadata().getEadRefId());
+                    cdisCisIdentifierMap.setCisIdentifierCd(identType.getIdentifierCd());        
+                    cdisCisIdentifierMap.setCisIdentifierValue(identType.getIdentifierValue());
                     
                     if (identType.overwriteExistingLinkId()) {
                         //for ead we can update the group_value to the new one if we find it
@@ -229,7 +229,7 @@ public class LinkCisRecord extends Operation {
 
                 IdentifierFactory cisIdentFact = new IdentifierFactory();
                 cisIdentifierType = cisIdentFact.identifierChooser(rsmd.getColumnLabel(1).toLowerCase());
-                //cisIdentFact.setBasicValues(rs.getString(1), damsRecord);        
+                cisIdentifierType.setIdentifierValue(rs.getString(1));        
             }
         }
         catch(Exception e) {

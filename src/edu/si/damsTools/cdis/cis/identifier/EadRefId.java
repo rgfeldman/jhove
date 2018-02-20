@@ -13,8 +13,12 @@ public class EadRefId implements IdentifierType {
     
     private String eadRefId;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "ead";
+    }
+    
+    public String getIdentifierValue() {
+        return eadRefId;
     }
     
     public void setIdentifierValue(String identifierValue) {

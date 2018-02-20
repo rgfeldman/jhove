@@ -13,8 +13,12 @@ public class DigitalResourceId implements IdentifierType {
     
     private String digitalResourceId;
     
-    public String returnIdentifierCd() {
+    public String getIdentifierCd() {
         return "dri";
+    }
+    
+    public String getIdentifierValue() {
+        return digitalResourceId;
     }
     
     public void setIdentifierValue(String identifierValue) {
