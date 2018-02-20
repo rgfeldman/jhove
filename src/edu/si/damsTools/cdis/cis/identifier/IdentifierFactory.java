@@ -20,8 +20,28 @@ public class IdentifierFactory {
         IdentifierType identifierType = null;
         
         switch (identifier) {
+            case "acc" :
+                identifierType = null;
+                break;
+            case "coi" :
+                identifierType = null;
+                break;
+            case "dmi" :
+                identifierType = null;
+                break;
+            case "dri" :
+                identifierType = null;
+                break;
             case "ead" :
                 identifierType = new EadRefId();
+                break;
+            case "ohn" :
+                identifierType = new OralHistoryMediaResourceId();
+            case "obj" :
+                identifierType = null;
+                break;
+            case "ren" :
+                identifierType = null;
                 break;
         }
         

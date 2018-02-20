@@ -11,4 +11,10 @@ package edu.si.damsTools.cdis.cis.identifier;
  */
 public interface IdentifierType {
     
+    public String returnIdentifierCd();
+    
+    public void setIdentifierValue(String identifierValue);
+    
+    public boolean overwriteExistingLinkId();
+    
 }

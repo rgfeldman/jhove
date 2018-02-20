@@ -9,20 +9,19 @@ package edu.si.damsTools.cdis.cis.identifier;
  *
  * @author rfeldman
  */
-public class EadRefId implements IdentifierType {
+public class CollectionsOnlineImageId implements IdentifierType {
     
-    private String eadRefId;
+    private String collectionsOnlineImageId;
     
     public String returnIdentifierCd() {
-        return "ead";
+        return "coi";
     }
-    
+   
     public void setIdentifierValue(String identifierValue) {
-        eadRefId = identifierValue;
+        collectionsOnlineImageId = identifierValue;
     }
     
     public boolean overwriteExistingLinkId() {
-        return true;
+        return false;
     }
-        
 }
