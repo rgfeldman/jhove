@@ -10,9 +10,6 @@ import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.cis.iris.database.SI_IrisDAMSMetaCore;
 import edu.si.damsTools.cdis.dams.DamsRecord;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

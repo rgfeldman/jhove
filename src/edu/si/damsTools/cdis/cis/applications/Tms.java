@@ -12,7 +12,6 @@ import edu.si.damsTools.cdis.cis.tms.database.MediaRenditions;
 import edu.si.damsTools.cdis.cis.tms.database.Objects;
 import edu.si.damsTools.cdis.dams.DamsRecord;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
