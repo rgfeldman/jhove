@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author rfeldman
+ * This class holds the specifications for the DAMS tables...The tableName, the columns and the length of the columns
  */
 public class DamsTblColSpecs {
 

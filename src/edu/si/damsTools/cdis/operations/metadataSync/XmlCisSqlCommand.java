@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author rfeldman
+ * This class holds the SQL command and associated information retrieved from the SQL-XML configuration file
  */
 public class XmlCisSqlCommand {
    
