@@ -7,9 +7,6 @@ package edu.si.damsTools.cdis.operations.metadataSync;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.XmlQueryData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

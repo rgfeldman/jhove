@@ -498,13 +498,13 @@ public class MetaDataSync extends Operation {
                 
                 deletesForDamsRecord.add("DELETE FROM towner." + sqlCmd.getTableName() + " WHERE UOI_ID = '" + dRec.getUois().getUoiid() + "'");
             
-                ArrayList<String> sqlVals = new ArrayList<String>();
+                ArrayList<String> sqlVals = new ArrayList<>();
             
                 if (columnValue.contains("^MULTILINE_LIST_SEP^")) {
                      // If the value contains "^MULTILINE_LIST_SEP^" then we need to break that result down and perform two or more insert statements 
                     Pattern delim = Pattern.compile("^MULTILINE_LIST_SEP^");
                 
-                    String valuesToInsert[] = columnValue.split(delim.quote("^") );
+                    String valuesToInsert[] = columnValue.split(Pattern.quote("^") );
                                                                  
                     //We can have multiple inserts for a single table, the first column of the map holds the tablename,
                     //the list contains the insert statements
@@ -577,7 +577,7 @@ public class MetaDataSync extends Operation {
     */
     private int updateDamsData(String sqlUpdate) {
 
-        Integer recordsUpdated = 0;
+        int recordsUpdated;
         
         sqlUpdate = sqlUpdate.replaceAll("null", "");
                 
