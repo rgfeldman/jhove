@@ -123,10 +123,13 @@ public class MetaDataSync extends Operation {
             
         try (PreparedStatement stmt = dbConn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
+            ResultSetMetaData rsmd = rs.getMetaData();
+            
+            String columnName = rsmd.getColumnLabel(1).toLowerCase();
             
             while (rs.next()) {
                    
-                if (rs.getString(2) == null) {
+                if (columnName.equals("legacy")) {
                     //id type should not be null, but need to support the old code
                     CdisMap cdisMap = new CdisMap();
                     cdisMap.setCisUniqueMediaId(rs.getString(1));
@@ -135,19 +138,22 @@ public class MetaDataSync extends Operation {
                     if (!cisMediaIdObtained) {
                         continue;
                     }
-                    
-                    cdisMap.setCdisMapId(rs.getInt(1));
+
                     cdisMap.populateMapInfo();
                     cdisMapList.add(cdisMap);
                 }
                 else {
+                    ArrayList<Integer> cdisMapIds = new ArrayList<>();
+                    
                     CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
                     //The new code...all will end up with identifier types sooner or later
-                    ArrayList<Integer> cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCisCdValue();
+                    cdisCisIdentifierMap.setCisIdentifierCd(columnName);
+                    cdisCisIdentifierMap.setCisIdentifierValue(rs.getString(1));
+                    cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCisCdValue();
                         
                     for (Integer cdisMapId : cdisMapIds) {
                         CdisMap cdisMap = new CdisMap();
-                        cdisMap.setCdisMapId(rs.getInt(1));
+                        cdisMap.setCdisMapId(cdisMapId);
                         cdisMap.populateMapInfo();
                         cdisMapList.add(cdisMap);
                     }          
@@ -496,6 +502,8 @@ public class MetaDataSync extends Operation {
             
             if (sqlCmd.getOperationType().equals("DI")) {
                 
+                logger.log(Level.ALL, "HEREX:" + columnValue);
+                
                 deletesForDamsRecord.add("DELETE FROM towner." + sqlCmd.getTableName() + " WHERE UOI_ID = '" + dRec.getUois().getUoiid() + "'");
             
                 ArrayList<String> sqlVals = new ArrayList<>();
@@ -508,23 +516,39 @@ public class MetaDataSync extends Operation {
                                                                  
                     //We can have multiple inserts for a single table, the first column of the map holds the tablename,
                     //the list contains the insert statements
+                   
                     for (int i =0; i < valuesToInsert.length; i++ ) {
+                        
+                        String insertString = null;
                     
                         if ( ! (valuesToInsert[i].equals("MULTILINE_LIST_SEP") ) ) {
-                            sqlVals.add ("INSERT INTO towner." + sqlCmd.getTableName() + 
+
+                            insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
                             " (UOI_ID, " + columnName + ") VALUES ('" + 
-                            dRec.getUois().getUoiid() + "','" + valuesToInsert[i] + "')");
+                            dRec.getUois().getUoiid() + "','" + valuesToInsert[i] + "')";
+                            
+                            sqlVals.add(insertString);
+                            
+                            logger.log(Level.ALL, "HERE:" + insertString);
                         }
                     
                         insertsByDamsRecord.put(sqlCmd.getTableName(), sqlVals);   
                     }
                 }
                 else {
+                    String insertString = null;
+                    
+                    
+                    
                     //We only have a single row to insert into the table specified.
-                    sqlVals.add  ("INSERT INTO towner." + sqlCmd.getTableName() + 
+                    insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
                         " (UOI_ID, " + columnValue + ") VALUES ('" + 
-                        dRec.getUois().getUoiid() + "','" + columnValue + "')");
+                        dRec.getUois().getUoiid() + "','" + columnValue + "')";
+                    
+                    logger.log(Level.ALL, "HERE2:" + insertString);
                 
+                    sqlVals.add(insertString);
+                    
                     insertsByDamsRecord.put(sqlCmd.getTableName(), sqlVals);               
                 }    
             }
