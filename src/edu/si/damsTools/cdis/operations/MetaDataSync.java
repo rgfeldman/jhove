@@ -119,6 +119,10 @@ public class MetaDataSync extends Operation {
             logger.log(Level.SEVERE, "Error: Required sql getRecordsForResync not found");
             return false;
         }
+        if (dbConn == null) {
+            logger.log(Level.SEVERE, "Error: :qDatabase to run query from is not specified");
+            return false;
+        }
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
         try (PreparedStatement stmt = dbConn.prepareStatement(sql);
