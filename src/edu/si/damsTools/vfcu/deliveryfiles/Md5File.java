@@ -54,6 +54,11 @@ public class Md5File extends DeliveryFile {
                     Matcher m = r.matcher(line);
                 
                     if (m.matches()) {
+                        boolean excludeFile = excludeMediaFiles(m.group(2).trim());
+                            if (excludeFile) {
+                            logger.log(Level.FINEST, "File Excluded: " + m.group(2).trim()); 
+                            continue;
+                        }
                         contentsMap.put(m.group(1).toLowerCase(),m.group(2).trim());
 
                     }
@@ -72,5 +77,18 @@ public class Md5File extends DeliveryFile {
             }
         }
         return true;        
+    }
+    
+    public boolean excludeMediaFiles(String fileName) {
+        //Skip the line if he filename is Thumbs.Db.  It is a temp windows generated file Do not even add it to Database
+        if (fileName.equals("Thumbs.db")) {
+            return true;
+        }
+        if (fileName.equals(".DS_Store")) {
+            return true;
+        }
+        
+        //skip any filenames that end with .md5 extension
+        return fileName.endsWith(".md5");
     }
 }
