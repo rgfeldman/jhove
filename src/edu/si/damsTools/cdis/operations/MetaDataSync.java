@@ -9,24 +9,24 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
-import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
+import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.XmlQueryData;
 import edu.si.damsTools.utilities.DbUtils;
 import edu.si.damsTools.utilities.StringUtils;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
-import java.sql.ResultSetMetaData;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,7 +44,7 @@ public class MetaDataSync extends Operation {
     
     private ArrayList<String> deletesForDamsRecord;
     private HashMap<String, String> updatesForDamsRecord; //DAMS Table Name and the actual sql to run 
-    private HashMap<String, ArrayList<String>> insertsByDamsRecord; 
+    private ArrayList<String> insertsForDamsRecord; 
     
      
     public MetaDataSync() {
@@ -239,7 +239,7 @@ public class MetaDataSync extends Operation {
             damsRecord.setBasicData();
             
             deletesForDamsRecord = new ArrayList<>();
-            insertsByDamsRecord = new HashMap<>();
+            insertsForDamsRecord = new ArrayList<>();
             updatesForDamsRecord =  new HashMap<>();
             
             //Replace the values based on the damsRecord
@@ -265,7 +265,8 @@ public class MetaDataSync extends Operation {
                 damsColumnValue = populateCisQueryResults(xmlSqlCmd, sql);
                 
                 // populate the query lists (deletesForDamsRecord, insertsByDamsRecord and updatesForDamsRecord
-                populateSyncCmds(damsRecord, damsColumnValue, xmlSqlCmd);     
+                populateSyncCmds(damsRecord, damsColumnValue, xmlSqlCmd); 
+                
             }
             
             //Perform the actual metadata sync
@@ -274,7 +275,7 @@ public class MetaDataSync extends Operation {
                 CdisActivityLog activityLog = new CdisActivityLog();
                 activityLog.setCdisMapId(cdisMap.getCdisMapId());
                 activityLog.setCdisStatusCd("MDS");
-                activityLog.insertActivity();
+                activityLog.updateOrInsertActivityLog();
             }
             
             //This is not supported at current time
@@ -373,46 +374,34 @@ public class MetaDataSync extends Operation {
         for (String sqlToDelete :deletesForDamsRecord) {
             updateDamsData(sqlToDelete);
         }
-            
-        //Perform any Inserts that need to be run on the current DAMSID
-        for (String tableName : insertsByDamsRecord.keySet()) {
-            ///NEED TO DO DB INSERTS!
-            ArrayList<String> sqlToInsert = new ArrayList<String>();
-            
-            sqlToInsert = insertsByDamsRecord.get(tableName);
-            for (String sqlStmnt :sqlToInsert  ) {
-                int insertCount = updateDamsData(sqlStmnt);
-                
-                if (insertCount != 1) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    //Get CDISMAPID by uoiId
-                    errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + dRec.getUois().getUoiid() );    
-                    return false;    
-                }
-            }   
-        }      
         
-        //Perform any updates that need to be run on the current DAMSID
+        for (String sqlToInsert :insertsForDamsRecord) {
+            int insertCount = updateDamsData(sqlToInsert);
+            
+            if (insertCount != 1) {
+                ErrorLog errorLog = new ErrorLog ();
+                //Get CDISMAPID by uoiId
+                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + dRec.getUois().getUoiid() );    
+                return false;    
+            }
+        }
+        
         for (String tableName : updatesForDamsRecord.keySet()) {
-            String sqlToUpdate = updatesForDamsRecord.get(tableName);
-            sqlToUpdate = sqlToUpdate + " WHERE uoi_id  = '" +  cdisMap.getDamsUoiid() + "'";
+            String sqlToUpdate =  updatesForDamsRecord.get(tableName);
+            
+            sqlToUpdate = sqlToUpdate + " WHERE uoi_id  = '" +  cdisMap.getDamsUoiid() + "'";          
             int updateCount = updateDamsData(sqlToUpdate);
-                
-            // If we successfully updated the metadata table in DAMS, record the transaction in the log table, and flag for IDS
+            
             if (updateCount != 1) {
                 ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " +  dRec.getUois().getUoiid() ); 
-                return false;
-            } 
+                //Get CDISMAPID by uoiId
+                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to update DAMS metadata " + dRec.getUois().getUoiid() );    
+                return false;    
+            }   
         }
-    
-        if (DamsTools.getProperty("overrideUpdtDt") != null) {
-             dRec.getUois().setMetadataStateDt(DamsTools.getProperty("overrideUpdtDt"));
-        }
-        else {
-            dRec.getUois().setMetadataStateDt("SYSDATE");
-        }
-        
+     
+        dRec.getUois().setMetadataStateDt(DamsTools.getProperty("mdsUpdtDt"));
+ 
         int updateCount = dRec.getUois().updateMetaDataStateDate();
         if (updateCount != 1) {
             ErrorLog errorLog = new ErrorLog ();
@@ -500,56 +489,44 @@ public class MetaDataSync extends Operation {
           for (String columnName : damsColumnValue.keySet()) {
             String columnValue =  damsColumnValue.get(columnName);
             
+            logger.log(Level.FINEST, "DEBUG Column name: " + columnName);
+            logger.log(Level.FINEST, "DEBUG Column value: " + columnValue);
+            
             if (sqlCmd.getOperationType().equals("DI")) {
-                
-                logger.log(Level.ALL, "HEREX:" + columnValue);
-                
+                  
                 deletesForDamsRecord.add("DELETE FROM towner." + sqlCmd.getTableName() + " WHERE UOI_ID = '" + dRec.getUois().getUoiid() + "'");
-            
-                ArrayList<String> sqlVals = new ArrayList<>();
-            
+               
+                if (columnValue.equals("")) {
+                    //empty string from source database, nothing to insert
+                    continue;
+                }
                 if (columnValue.contains("^MULTILINE_LIST_SEP^")) {
                      // If the value contains "^MULTILINE_LIST_SEP^" then we need to break that result down and perform two or more insert statements 
-                    Pattern delim = Pattern.compile("^MULTILINE_LIST_SEP^");
-                
+                    Pattern.compile("^MULTILINE_LIST_SEP^");        
                     String valuesToInsert[] = columnValue.split(Pattern.quote("^") );
                                                                  
                     //We can have multiple inserts for a single table, the first column of the map holds the tablename,
                     //the list contains the insert statements
                    
                     for (int i =0; i < valuesToInsert.length; i++ ) {
-                        
-                        String insertString = null;
-                    
+                 
                         if ( ! (valuesToInsert[i].equals("MULTILINE_LIST_SEP") ) ) {
 
-                            insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
+                            String insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
                             " (UOI_ID, " + columnName + ") VALUES ('" + 
                             dRec.getUois().getUoiid() + "','" + valuesToInsert[i] + "')";
                             
-                            sqlVals.add(insertString);
-                            
-                            logger.log(Level.ALL, "HERE:" + insertString);
-                        }
-                    
-                        insertsByDamsRecord.put(sqlCmd.getTableName(), sqlVals);   
+                            insertsForDamsRecord.add(insertString);               
+                        }          
                     }
                 }
                 else {
-                    String insertString = null;
-                    
-                    
-                    
                     //We only have a single row to insert into the table specified.
-                    insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
+                    String insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
                         " (UOI_ID, " + columnValue + ") VALUES ('" + 
                         dRec.getUois().getUoiid() + "','" + columnValue + "')";
                     
-                    logger.log(Level.ALL, "HERE2:" + insertString);
-                
-                    sqlVals.add(insertString);
-                    
-                    insertsByDamsRecord.put(sqlCmd.getTableName(), sqlVals);               
+                    insertsForDamsRecord.add(insertString);               
                 }    
             }
             else {
@@ -589,6 +566,7 @@ public class MetaDataSync extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("metadataSyncXmlFile");
+        reqProps.add("mdsUpdtDt");
         
         //add more required props here
         return reqProps;    
