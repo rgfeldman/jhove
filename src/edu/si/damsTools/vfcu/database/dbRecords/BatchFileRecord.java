@@ -88,18 +88,5 @@ public class BatchFileRecord {
         boolean recordInserted = vfcuMd5File.insertRecord();
         return recordInserted;
     }
-    
-    boolean excludeMediaFiles(String fileName) {
-        //Skip the line if he filename is Thumbs.Db.  It is a temp windows generated file Do not even add it to Database
-        if (fileName.equals("Thumbs.db")) {
-            return true;
-        }
-        if (fileName.equals(".DS_Store")) {
-            return true;
-        }
-        
-        //skip any filenames that end with .md5 extension
-        return fileName.endsWith(".md5");
-    }
 
 }
