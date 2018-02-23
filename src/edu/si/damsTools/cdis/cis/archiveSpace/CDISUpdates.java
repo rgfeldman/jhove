@@ -68,27 +68,4 @@ public class CDISUpdates {
         return true;
      }
      
-   
-     
-    
-    public boolean callGetDescriptiveData () {
-       
-        String sql = "CALL getDescriptiveData (\"" + getEadRefId() + "\")";
-        
-        logger.log(Level.FINEST,"SQL:" + sql );
-        
-        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql)) {
-            //This only needs to happen in one place.  It gets set every time here which is not needed.
-            
-            pStmt.executeQuery();
-       
-        } catch (Exception e) {
-               logger.log(Level.FINER, "Error in getDescriptiveData", e );
-               return false;
-        } 
-       
-       return true; 
-                 
-     }
-     
 }
