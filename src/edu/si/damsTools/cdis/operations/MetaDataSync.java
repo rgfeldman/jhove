@@ -54,8 +54,10 @@ public class MetaDataSync extends Operation {
     }
      
     public void invoke() {
+        //get list of CDIS reocrds that have never been synced
         populateNeverSyncedMapIds();
           
+        //get list of CDIS records that need re-syncing
         populateCisUpdatedMapIds();
           
         if (cdisMapList.isEmpty()) {
@@ -63,18 +65,21 @@ public class MetaDataSync extends Operation {
             return;
         }
         
+        //get list of SQL commands to get the metadata from the CIS
         populateCisSqlList();
         if (cisSqlCommands.isEmpty()) {
             logger.log(Level.FINEST, "Error: metadataMap queries not found in xml file");
             return;
         }
         
+        //get specifications of DAMS tables that we are inserting/updateing./deleting into as part of the metadata sync
         populateDamsTblSpecs();
         if (damsTblSpecs.isEmpty()) {
             logger.log(Level.FINEST, "Error: unable to obtain statistics for DAMS tables");
             return;
         }
 
+        //perform the sync
         processCdisMapListToSync();
                   
     }
@@ -173,7 +178,7 @@ public class MetaDataSync extends Operation {
     
     /*
         Method :        populateMetadataSqlList
-        Description:    populates object to hold Queries for all DAMS tables involved in metadata sync
+        Description:    populates object to hold CIs command to get metadata
     */
     private void populateCisSqlList() {
         
@@ -266,7 +271,7 @@ public class MetaDataSync extends Operation {
                 
                 //Create hashmap containing column names and values for the current record
                 HashMap<String, String> damsColumnValue = new HashMap<>();
-                damsColumnValue = populateCisQueryResults(xmlSqlCmd, sql);
+                damsColumnValue = populateCisQueryResults(xmlSqlCmd, sql, damsRecord);
                 
                 // populate the query lists (deletesForDamsRecord, insertsByDamsRecord and updatesForDamsRecord
                 populateSyncCmds(damsRecord, damsColumnValue, xmlSqlCmd); 
@@ -298,8 +303,12 @@ public class MetaDataSync extends Operation {
     }
     //Method: populateCisQueryResults
     //Purpose: Populates the query results from the CIS into a structure that holds the dams column name and column name
-    private  HashMap<String, String> populateCisQueryResults(XmlCisSqlCommand xmlSqlCmd, String sql ) {
+    private  HashMap<String, String> populateCisQueryResults(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) {
 
+        if (DamsTools.getProjectCd().equals("aspace")) {
+            callGetDescriptiveData(damsRecord.getSiAssetMetadata().getEadRefId());
+        }
+        
         HashMap<String, String> damsColumnValue = new HashMap<>();
 
         try (PreparedStatement stmt = DbUtils.returnDbConnFromString(xmlSqlCmd.getDbName()).prepareStatement(sql);
@@ -527,7 +536,7 @@ public class MetaDataSync extends Operation {
                 else {
                     //We only have a single row to insert into the table specified.
                     String insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
-                        " (UOI_ID, " + columnValue + ") VALUES ('" + 
+                        " (UOI_ID, " + columnName + ") VALUES ('" + 
                         dRec.getUois().getUoiid() + "','" + columnValue + "')";
                     
                     insertsForDamsRecord.add(insertString);               
@@ -602,4 +611,26 @@ public class MetaDataSync extends Operation {
         
         return recordsUpdated;
     }
+    
+    //Note...this needs to be moved to xml file. 
+    private boolean callGetDescriptiveData (String eadRefId) {
+       
+        String sql = "CALL getDescriptiveData (\"" + eadRefId + "\")";
+        
+        logger.log(Level.FINEST,"SQL:" + sql );
+        
+        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql)) {
+            //This only needs to happen in one place.  It gets set every time here which is not needed.
+            
+            pStmt.executeQuery();
+       
+        } catch (Exception e) {
+               logger.log(Level.FINER, "Error in getDescriptiveData", e );
+               return false;
+        } 
+       
+       return true; 
+                 
+     }
 }
+
