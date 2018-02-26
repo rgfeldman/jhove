@@ -255,20 +255,8 @@ public class MetaDataSync extends Operation {
             for (XmlCisSqlCommand xmlSqlCmd : cisSqlCommands) {
                 String sql = xmlSqlCmd.getSqlQuery();
                 sql = damsRecord.replaceSqlVars(sql);
-                
-                if (sql.contains("?MEDIA_ID?")) {
-                    sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
-                }
-                if (sql.contains("?OBJECT_ID?")) {
-                    CdisObjectMap objectMap = new CdisObjectMap();
-                    objectMap.setCdisMapId(cdisMap.getCdisMapId());
-                    objectMap.populateCisUniqueObjectIdforCdisId();
-           
-                    sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));
-                    
-                }
-                logger.log(Level.FINEST, "SQL: {0}", sql);
-                
+                sql = replaceCisVars(sql, cdisMap);
+
                 //Create hashmap containing column names and values for the current record
                 HashMap<String, String> damsColumnValue = new HashMap<>();
                 damsColumnValue = populateCisQueryResults(xmlSqlCmd, sql, damsRecord);
@@ -301,6 +289,46 @@ public class MetaDataSync extends Operation {
 
         }
     }
+    
+    private String replaceCisVars(String sql, CdisMap cdisMap) {
+
+        //First we take care of legacy stuff, this to be removed when legacy is converted
+        if (sql.contains("?MEDIA_ID?")) {
+            sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
+        }
+        if (sql.contains("?OBJECT_ID?")) {
+            CdisObjectMap objectMap = new CdisObjectMap();
+            objectMap.setCdisMapId(cdisMap.getCdisMapId());
+            objectMap.populateCisUniqueObjectIdforCdisId();
+           
+            sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));            
+        }
+       
+        //now we take care of new stuff
+        if (sql.contains("?CISID")) {
+            Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
+            Matcher m = p.matcher(sql);
+            
+            if (m.find()) {
+                
+                CdisCisIdentifierMap cdisCisIdentifier = new CdisCisIdentifierMap();
+                cdisCisIdentifier.setCdisMapId(cdisMap.getCdisMapId());
+                cdisCisIdentifier.setCisIdentifierCd(m.group(1).toLowerCase());
+                cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
+     
+                sql = sql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());            
+            }
+           
+        }
+       
+        logger.log(Level.FINEST, "FIXED SQL: {0}", sql);
+        
+        return sql;
+        
+    }
+    
+    
+    
     //Method: populateCisQueryResults
     //Purpose: Populates the query results from the CIS into a structure that holds the dams column name and column name
     private  HashMap<String, String> populateCisQueryResults(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) {
