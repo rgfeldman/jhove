@@ -255,7 +255,7 @@ public class MetaDataSync extends Operation {
             for (XmlCisSqlCommand xmlSqlCmd : cisSqlCommands) {
                 String sql = xmlSqlCmd.getSqlQuery();
                 sql = damsRecord.replaceSqlVars(sql);
-                sql = replaceCisVars(sql, cdisMap);
+                sql = replaceCisVarsInString(sql, cdisMap);
 
                 //Create hashmap containing column names and values for the current record
                 HashMap<String, String> damsColumnValue = new HashMap<>();
@@ -290,7 +290,8 @@ public class MetaDataSync extends Operation {
         }
     }
     
-    private String replaceCisVars(String sql, CdisMap cdisMap) {
+    //*THIS SHOUKD BE MOVED TO CDISRECORD
+    private String replaceCisVarsInString(String sql, CdisMap cdisMap) {
 
         //First we take care of legacy stuff, this to be removed when legacy is converted
         if (sql.contains("?MEDIA_ID?")) {

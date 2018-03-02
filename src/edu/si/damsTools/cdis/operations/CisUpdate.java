@@ -11,6 +11,8 @@ import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
+import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
+import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.utilities.XmlQueryData;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.sql.PreparedStatement;
@@ -18,6 +20,8 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /*
@@ -39,7 +43,7 @@ public class CisUpdate extends Operation {
     /* Member Funtion: generateCisSql
      * Purpose: obtains the SQL to perform the update on the CIS sourced from the XML file
      */
-    private String generateCisSql(CisRecordAttr cis) {
+    private String generateCisSql() {
         
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
@@ -126,61 +130,102 @@ public class CisUpdate extends Operation {
             CdisMap cdisMap = new CdisMap();
             cdisMap.setDamsUoiid(damsRecord.getUois().getUoiid());
             cdisMap.populateIdFromUoiid();
-            cdisMap.populateCisUniqueMediaIdForUoiid();
+            cdisMap.populateMapInfo();
+
+            //populate the Cis
+            String cisSql = generateCisSql();
+            if (cisSql == null) {
+                 //unable to generate SQL, generate error
+                continue;
+            }
             
             cis = cisFact.cisChooser();
             if (cis == null) {
-                logger.log(Level.FINEST, "Error, unable to determine CIS");
-                continue;
-            }
-            cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord);
+                logger.log(Level.FINEST, "Warning, unable to determine CIS, but we dont need to...in new code");
+                if (cisSql.contains("?CISID")) {
+                    Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
+                    Matcher m = p.matcher(cisSql);
             
-            //populate the Cis
-            String cisSql = generateCisSql(cis);
-            if (cisSql == null) {
-                //unable to generate SQL, generate error
-                continue;
-            }
-            cisSql = damsRecord.replaceSqlVars(cisSql);
-            if (cisSql.contains("?MEDIA_ID?")) {
-                cisSql = cisSql.replace("?MEDIA_ID?", cis.getCisImageIdentifier());
+                    if (m.find()) {
+                
+                        CdisCisIdentifierMap cdisCisIdentifier = new CdisCisIdentifierMap();
+                        cdisCisIdentifier.setCdisMapId(cdisMap.getCdisMapId());
+                        cdisCisIdentifier.setCisIdentifierCd(m.group(1).toLowerCase());
+                        cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
+     
+                        cisSql = cisSql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());            
+                    }
+                }
+                
+                cisSql = damsRecord.replaceSqlVars(cisSql);
+                
                 logger.log(Level.FINEST, "New SQL: "+ cisSql);
+                
+                int numRowsUpdate = updateCis(cisSql);
+                if (! (numRowsUpdate > 0)) {
+                    //unable to generate SQL, generate error
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPCISI", "Error, update of CIS info failed");
+                    continue;
+                } 
+                
+                //Populate Activity Log
+                //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
+                CdisActivityLog cdisActivity = new CdisActivityLog(); 
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd("CPS"); 
+                boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
+                if (!activityLogged) {
+                    logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+                }
+
             }
-            if (cisSql.contains("?GROUP_ID?")) {
-                cisSql = cisSql.replace("?GROUP_ID?", cis.getGroupIdentifier());
-                logger.log(Level.FINEST, "New SQL: "+ cisSql);
-            }
+            else {
+                cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord);
+
+                
+                cisSql = damsRecord.replaceSqlVars(cisSql);
+                if (cisSql.contains("?MEDIA_ID?")) {
+                    cisSql = cisSql.replace("?MEDIA_ID?", cis.getCisImageIdentifier());
+                    logger.log(Level.FINEST, "New SQL: "+ cisSql);
+                }
+                if (cisSql.contains("?GROUP_ID?")) {
+                    cisSql = cisSql.replace("?GROUP_ID?", cis.getGroupIdentifier());
+                    logger.log(Level.FINEST, "New SQL: "+ cisSql);
+                }
             
-            int numRowsUpdate = updateCis(cisSql);
-            if (! (numRowsUpdate > 0)) {
-                //unable to generate SQL, generate error
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPCISI", "Error, update of CIS info failed");
-                continue;
-            } 
+                int numRowsUpdate = updateCis(cisSql);
+                if (! (numRowsUpdate > 0)) {
+                    //unable to generate SQL, generate error
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPCISI", "Error, update of CIS info failed");
+                    continue;
+                } 
             
-            //IF successful, populate ead_ref_id_log
-            boolean addtlUpdatesDone = cis.additionalCisUpdateActivity(damsRecord, cdisMap);
-            if (! addtlUpdatesDone) {
-                ErrorLog errorLog = new ErrorLog ();
-                errorLog.capture(cdisMap, "UPCISI", "Error, update of additional CIS info failed");
-                continue;
-            }
+                //IF successful, populate ead_ref_id_log
+                boolean addtlUpdatesDone = cis.additionalCisUpdateActivity(damsRecord, cdisMap);
+                if (! addtlUpdatesDone) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPCISI", "Error, update of additional CIS info failed");
+                    continue;
+                }
             
-            //Populate Activity Log
-            //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
-            CdisActivityLog cdisActivity = new CdisActivityLog(); 
-            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd(cis.returnCisUpdateCode()); 
-            boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
-            if (!activityLogged) {
-                logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+                //Populate Activity Log
+                //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
+                CdisActivityLog cdisActivity = new CdisActivityLog(); 
+                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+                cdisActivity.setCdisStatusCd(cis.returnCisUpdateCode()); 
+                boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
+                if (!activityLogged) {
+                    logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+                }
             }
             
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
         }
     }    
+    
     
     /* Member Function: returnRequiredProps
      * Purpose: Returns a list of required properties that must be set in the properties file in otder to run the cisUpate operation
