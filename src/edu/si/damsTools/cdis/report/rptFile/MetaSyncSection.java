@@ -46,16 +46,16 @@ public class MetaSyncSection implements DataSection {
         SiAssetMetadata siAsst = new SiAssetMetadata();
         
         siAsst.setUoiid(cdisMap.getDamsUoiid());
-        siAsst.populateOwningUnitUniqueName();
-        
-        siAsst.setUoiid(cdisMap.getDamsUoiid());
-        siAsst.populateOwningUnitUniqueName();
+        siAsst.populateSiAsstData();
         
         CisRecordFactory cisFactory = new CisRecordFactory();
         CisRecordAttr cisAttr = cisFactory.cisChooser();
-        
-        sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + cisAttr.returnGrpInfoForReport(cdisMap));
-
+        if (cisAttr == null) {
+            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + siAsst.getSourceSystemId());
+        }
+        else {
+            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + cisAttr.returnGrpInfoForReport(cdisMap));
+        }
         return true;
         
     }

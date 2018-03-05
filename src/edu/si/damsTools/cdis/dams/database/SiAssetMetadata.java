@@ -88,32 +88,6 @@ public class SiAssetMetadata {
         RFeldman 2/2015
     */
     
-    public boolean updateDAMSSourceSystemID () {
-        int recordsUpdated = 0;
-
-        String sql = "update towner.SI_ASSET_METADATA set source_system_id = '" + getSourceSystemId() + "' " +
-                    "where UOI_ID = '" + getUoiid() + "'";
-
-        logger.log(Level.FINEST, "SQL! {0}", sql);
-        
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
-             
-            recordsUpdated = pStmt.executeUpdate();
-              
-            logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
-            
-            if (recordsUpdated != 1) {
-                throw new Exception();
-            }
-            return true;
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error updating source_system_id ", e);
-            return false;
-        }
-             
-    }
-    
     public boolean populateEadRefId () {
         
         String sql = "SELECT ead_ref_id " +

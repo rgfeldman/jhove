@@ -32,6 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.operations.report.Report;
 import edu.si.damsTools.utilities.XmlQueryData;
+import java.util.Random;
 
 public class RptFile extends Report  {
         
@@ -80,18 +81,18 @@ public class RptFile extends Report  {
     }
     
     public boolean createFileAndHeader (DisplayFormat displayFormat) {
-        
-        String timeStamp;
-        String timeStampWords;
-        
+       
+        String timeStampWords;       
         //get the date timestamp for use in the report file
-        DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmmss");
-        timeStamp = df.format(new Date());
+        DateFormat df = new SimpleDateFormat("yyyyMMdd-kkmmssSSS");
+        
+        Random rand = new Random();
+        String fileDtNum = df.format(new Date()) + rand.nextInt(100);
         
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
         
-        this.fileNameLoc =  DamsTools.getDirectoryName()+ "/rpt/CDISRPT-" + DamsTools.getProjectCd().toUpperCase() + "-" + timeStamp + ".rtf";
+        this.fileNameLoc =  DamsTools.getDirectoryName()+ "/rpt/CDISRPT-" + DamsTools.getProjectCd().toUpperCase() + "-" + fileDtNum + ".rtf";
         this.document = new Document();
          
         try {
