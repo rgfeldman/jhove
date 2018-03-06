@@ -25,9 +25,6 @@ public class CisRecordFactory {
             case "aaa" :
                 if (DamsTools.getProperty("mediaTypeConfigId").equals("6")) {
                     cisRecord = new AaaDigitalResource();
-}
-                if (DamsTools.getProperty("mediaTypeConfigId").equals("9,10,11")) {
-                    cisRecord = new AaaDigitalMediaResource();
                 }
                 if (DamsTools.getProperty("mediaTypeConfigId").equals("16")) {
                     cisRecord = new AaaCollectionImage();
