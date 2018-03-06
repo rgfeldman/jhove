@@ -27,7 +27,7 @@ public class IdentifierFactory {
                 identifierType = null;
                 break;
             case "dmi" :
-                identifierType = null;
+                identifierType = new DigitalMediaResourceId();
                 break;
             case "dri" :
                 identifierType = null;
