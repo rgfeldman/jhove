@@ -219,7 +219,7 @@ public class LinkCisRecord extends Operation {
         if (dbConn == null) {
                 logger.log(Level.FINEST, "Error: connection to db not found");
                 return null;
-        }    
+        } 
         try (PreparedStatement stmt = dbConn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 

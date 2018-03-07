@@ -86,12 +86,6 @@ public class LinkDamsRecord extends Operation {
         damsRecord.setUoiId(cdisMap.getDamsUoiid());
         damsRecord.setBasicData();
                 
-        //THE NEXT SHOULD BE DONE TO THE DAMS RECORD, not HERE
-        //link parent and child records if necessary
-        if ( DamsTools.getProperty("linkHierarchyInDams").equals("true") ) {
-            establishParentChildLink(cdisMap);
-        }
-                
         //Add the preservation information
         boolean preservationAdded = damsRecord.addPreservationData(cdisMap);
         if (!preservationAdded) {
@@ -238,69 +232,10 @@ public class LinkDamsRecord extends Operation {
      public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        reqProps.add("linkHierarchyInDams");
         reqProps.add("retainFilesPostIngest");
         reqProps.add("linkDamsRecordXmlFile");
         //add more required props here
         return reqProps;    
     }
      
-     //THIS NEEDS TO BE RE-WRITTEDN IN OO 
-    public boolean establishParentChildLink (CdisMap cdisMap) {
-        
-        //populate the Parent ID from the db
-        MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
-        mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
-        
-        //populate the parent and child ID from the db
-        mediaTypeConfigR.populateChildAndParentOfId();
-          
-        CdisMap childCdisMap = new CdisMap();
-        
-        if (mediaTypeConfigR.getChildOfId() > 0 ) {
-            
-            CdisMap parentCdisMap = new CdisMap();
-            
-            boolean parentInfoPopulated = parentCdisMap.populateParentFileInfo(cdisMap.getCdisMapId() );
-            if (parentInfoPopulated) {
-                TeamsLinks teamsLinks = new TeamsLinks();
-                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
-                teamsLinks.setDestValue(parentCdisMap.getDamsUoiid());
-                teamsLinks.setLinkType("CHILD");
-                teamsLinks.createRecord();
-        
-                teamsLinks = new TeamsLinks();
-                teamsLinks.setSrcValue(parentCdisMap.getDamsUoiid());
-                teamsLinks.setDestValue(cdisMap.getDamsUoiid());
-                teamsLinks.setLinkType("PARENT");
-                teamsLinks.createRecord();
-            }
-            else {
-                logger.log(Level.FINER, "unable to obtain parent info ");
-            }
-        }
-        
-        if (mediaTypeConfigR.getParentOfId() > 0 ) {
-            boolean childInfoPopulated = childCdisMap.populateChldFileInfo(cdisMap.getCdisMapId() );
-            
-            if (childInfoPopulated) {
-                TeamsLinks teamsLinks = new TeamsLinks();
-                teamsLinks.setSrcValue(childCdisMap.getDamsUoiid());
-                teamsLinks.setDestValue(cdisMap.getDamsUoiid());
-                teamsLinks.setLinkType("CHILD");
-                teamsLinks.createRecord();
-        
-                teamsLinks = new TeamsLinks();
-                teamsLinks.setSrcValue(cdisMap.getDamsUoiid());
-                teamsLinks.setDestValue(childCdisMap.getDamsUoiid());
-                teamsLinks.setLinkType("PARENT");
-                teamsLinks.createRecord();
-            }
-            else {
-                logger.log(Level.FINER, "unable to obtain child info ");
-            }       
-        }
-        
-        return true;
-    }
 }

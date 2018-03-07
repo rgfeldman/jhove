@@ -55,15 +55,16 @@ public class LinkedCisSection implements DataSection {
         siAsst.setUoiid(cdisMap.getDamsUoiid());
         siAsst.populateOwningUnitUniqueName();  
         
-        if (DamsTools.getProjectCd().equals("aaa_oh")) {
+        CisRecordFactory cisFactory = new CisRecordFactory();
+        CisRecordAttr cisAttr = cisFactory.cisChooser();
+        
+        if (cisAttr == null) {
             String rptInfo = getCisHierReportInfo(cdisMap);
             if (rptInfo != null ) {
                 sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To " + rptInfo);
             }
         }
         else {
-            CisRecordFactory cisFactory = new CisRecordFactory();
-            CisRecordAttr cisAttr = cisFactory.cisChooser();
             sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Linked To " + cisAttr.returnGrpInfoForReport(cdisMap));
         }
             

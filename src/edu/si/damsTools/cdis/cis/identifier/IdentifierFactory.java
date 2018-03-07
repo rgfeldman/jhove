@@ -38,6 +38,9 @@ public class IdentifierFactory {
             case "ohm" :
                 identifierType = new OralHistoryMediaResourceId();
                 break;
+            case "oht" :
+                identifierType = new OralHistoryTranscriptId();
+                break;   
             case "obj" :
                 identifierType = null;
                 break;
