@@ -141,7 +141,7 @@ public class LinkCisRecord extends Operation {
                 //Add the status
                 CdisActivityLog cdisActivity = new CdisActivityLog();
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("LCC");
+                cdisActivity.setCdisStatusCd("LCC-" + DamsTools.getProperty("lccIdType").toUpperCase());
         
                 boolean statusLogged = cdisActivity.updateOrInsertActivityLog();
                 
@@ -313,6 +313,7 @@ public class LinkCisRecord extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("linkCisRecordXmlFile");
+        reqProps.add("lccIdType");
         reqProps.add("cis");
         
         //add more required props here

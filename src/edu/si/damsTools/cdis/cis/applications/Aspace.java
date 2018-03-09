@@ -62,7 +62,7 @@ public class Aspace implements CisRecordAttr {
                 
                 CdisActivityLog cdisActivity = new CdisActivityLog();
                 cdisActivity.setCdisMapId(mapId);
-                cdisActivity.setCdisStatusCd("CPD");
+                cdisActivity.setCdisStatusCd("CSU-ASPACE");
         
                 cdisActivity.updateOrInsertActivityLog();         
             }
@@ -72,7 +72,7 @@ public class Aspace implements CisRecordAttr {
     }
    
     public String returnCisUpdateCode() {
-        return "CPD";
+        return "CSU-ASPACE";
     } 
     
 }

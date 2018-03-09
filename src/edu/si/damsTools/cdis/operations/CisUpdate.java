@@ -173,7 +173,7 @@ public class CisUpdate extends Operation {
                 //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
                 CdisActivityLog cdisActivity = new CdisActivityLog(); 
                 cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("CPS"); 
+                cdisActivity.setCdisStatusCd("CSU-" + DamsTools.getProperty("cis").toUpperCase()); 
                 boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
@@ -183,7 +183,6 @@ public class CisUpdate extends Operation {
             else {
                 cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord);
 
-                
                 cisSql = damsRecord.replaceSqlVars(cisSql);
                 if (cisSql.contains("?MEDIA_ID?")) {
                     cisSql = cisSql.replace("?MEDIA_ID?", cis.getCisImageIdentifier());

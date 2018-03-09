@@ -271,7 +271,7 @@ public class MetaDataSync extends Operation {
             if (recordsSynced) {
                 CdisActivityLog activityLog = new CdisActivityLog();
                 activityLog.setCdisMapId(cdisMap.getCdisMapId());
-                activityLog.setCdisStatusCd("MDS");
+                activityLog.setCdisStatusCd("MDS-" + DamsTools.getProperty("cis").toUpperCase());
                 activityLog.updateOrInsertActivityLog();
             }
             

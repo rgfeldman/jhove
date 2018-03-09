@@ -156,7 +156,7 @@ public class CreateCisMedia extends Operation {
         // Add activity record indicating Media Has been Linked
         activityLog = new CdisActivityLog();
         activityLog.setCdisMapId(cdisMap.getCdisMapId());
-        activityLog.setCdisStatusCd("LCC");
+        activityLog.setCdisStatusCd("LCC-" + DamsTools.getProperty("lccIdType").toUpperCase());
         activityLog.insertActivity();
             
         // Add activity record indicating Media Has been Thumbnail Synced
