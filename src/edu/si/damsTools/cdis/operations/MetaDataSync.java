@@ -44,7 +44,7 @@ public class MetaDataSync extends Operation {
     
     private ArrayList<String> deletesForDamsRecord;
     private HashMap<String, String> updatesForDamsRecord; //DAMS Table Name and the actual sql to run 
-    private ArrayList<String> insertsForDamsRecord; 
+    private ArrayList<String> insertsForDamsRecord;  
     
      
     public MetaDataSync() {
