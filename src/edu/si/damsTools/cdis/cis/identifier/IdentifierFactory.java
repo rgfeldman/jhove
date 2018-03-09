@@ -30,7 +30,7 @@ public class IdentifierFactory {
                 identifierType = new DigitalMediaResourceId();
                 break;
             case "dri" :
-                identifierType = null;
+                identifierType = new DigitalResourceId();
                 break;
             case "ead" :
                 identifierType = new EadRefId();
