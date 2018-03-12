@@ -24,7 +24,7 @@ public class IdentifierFactory {
                 identifierType = null;
                 break;
             case "coi" :
-                identifierType = null;
+                identifierType = new CollectionsOnlineImageId();
                 break;
             case "dmi" :
                 identifierType = new DigitalMediaResourceId();

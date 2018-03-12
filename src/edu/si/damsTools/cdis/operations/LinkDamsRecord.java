@@ -16,7 +16,6 @@ import java.util.logging.Level;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.dams.StagedFile;
-import edu.si.damsTools.cdis.dams.database.TeamsLinks;
 import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 

@@ -22,11 +22,6 @@ public class CisRecordFactory {
         CisRecordAttr cisRecord = null;
         
         switch (DamsTools.getProperty("cis")) {
-            case "aaa" :
-                if (DamsTools.getProperty("mediaTypeConfigId").equals("16")) {
-                    cisRecord = new AaaCollectionImage();
-                }
-                break;
             case "aspace" :
                 cisRecord = new Aspace();
                 break;
