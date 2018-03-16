@@ -28,12 +28,6 @@ public class CisRecordFactory {
             case "cdisDb" :
                 cisRecord = new CdisDb();
                 break;
-            case "iris" :
-                cisRecord = new IrisBg();
-                break;
-            case "tms" :
-                cisRecord = new Tms();
-                break;
         }
         
         return cisRecord;

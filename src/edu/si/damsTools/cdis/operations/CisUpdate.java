@@ -12,7 +12,6 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
-import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.utilities.XmlQueryData;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.sql.PreparedStatement;

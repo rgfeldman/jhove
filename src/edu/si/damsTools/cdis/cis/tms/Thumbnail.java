@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IMOperation;
+import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 
 import edu.si.damsTools.cdis.database.CdisMap;
 
@@ -122,7 +123,11 @@ public class Thumbnail {
         }
         
         logger.log(Level.FINER, "Updating Thumbnail for MapId: " + mapId);
-        boolean thumbUpdated = update(Integer.parseInt(cdisMap.getCisUniqueMediaId()) );
+        CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+        cdisCisIdentifierMap.setCdisMapId(mapId);
+        cdisCisIdentifierMap.setCisIdentifierCd("rnd");
+        cdisCisIdentifierMap.populateCisIdentifierValueForCdisMapIdType();
+        boolean thumbUpdated = update(Integer.parseInt(cdisCisIdentifierMap.getCisIdentifierValue() ) );
             
         if (! thumbUpdated ) {
             return false;

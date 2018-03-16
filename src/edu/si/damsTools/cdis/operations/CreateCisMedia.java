@@ -10,6 +10,7 @@ import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
+import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -123,10 +124,14 @@ public class CreateCisMedia extends Operation {
                         
         logger.log(Level.FINER, "Media Creation complete, RenditionNumber for newly created media: " + mediaRendition.getRenditionNumber() );
 
-        // Update the CDISMAP record with the cis_id 
-        cdisMap.setCisUniqueMediaId(Integer.toString (mediaRendition.getRenditionId()) );
-        cdisMap.updateCisUniqueMediaId() ;
-            
+        // Update the record with the cis_id 
+        CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+        cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
+        cdisCisIdentifierMap.setCisIdentifierCd("rnd");
+        cdisCisIdentifierMap.setCisIdentifierValue(Integer.toString (mediaRendition.getRenditionId() ));
+        cdisCisIdentifierMap.createRecord();
+        
+  
         // Create the thumbnail in the CIS
         Thumbnail thumbnail = new Thumbnail();
         boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
@@ -137,6 +142,7 @@ public class CreateCisMedia extends Operation {
             return;
         }
             
+        /*
         CdisObjectMap cdisObjectMap = new CdisObjectMap ();
         cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
         cdisObjectMap.setCisUniqueObjectId(Integer.toString (objectId) );
@@ -145,7 +151,7 @@ public class CreateCisMedia extends Operation {
             ErrorLog errorLog = new ErrorLog ();
             errorLog.capture(cdisMap, "CRCDOB", "ERROR: ObjectMap Creation Failed"); 
             return;
-        }
+        }*/
             
         // Add activity record indicating Media Has been created
         CdisActivityLog activityLog = new CdisActivityLog();
@@ -202,6 +208,7 @@ public class CreateCisMedia extends Operation {
         reqProps.add("cisConnString");
         reqProps.add("cisUser");
         reqProps.add("cisPass");
+        reqProps.add("lccIdType");
         reqProps.add("mediaTypeConfigId");
         
         //add more required props here

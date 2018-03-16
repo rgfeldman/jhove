@@ -20,9 +20,6 @@ public class IdentifierFactory {
         IdentifierType identifierType = null;
         
         switch (identifier) {
-            case "acc" :
-                identifierType = null;
-                break;
             case "coi" :
                 identifierType = new CollectionsOnlineImageId();
                 break;
@@ -44,8 +41,11 @@ public class IdentifierFactory {
             case "obj" :
                 identifierType = null;
                 break;
-            case "ren" :
-                identifierType = null;
+            case "rnd" :
+                identifierType = new RenditionId();
+                break;
+            case "uan" :
+                identifierType = new Uan();
                 break;
         }
         

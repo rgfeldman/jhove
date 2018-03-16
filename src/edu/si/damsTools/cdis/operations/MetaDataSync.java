@@ -384,7 +384,8 @@ public class MetaDataSync extends Operation {
                             columnValue = damsColumnValue.get(columnName) + xmlSqlCmd.getAppendDelimiter() + columnValue;                    
                         }  
                         else {
-                            logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. populating with only one value");
+                            logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. ignoring new value, populating with only first value");
+                            continue;
                         }
                     }
 
