@@ -92,22 +92,28 @@ public class LinkedCisSection implements DataSection {
             logger.log(Level.FINEST, "getCisLinkedRptInfo sql not found");
             return null;
         }
-        logger.log(Level.FINEST, "SQL: {0}", sql);
         
         if (sql.contains("?CISID")) {
             Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
             Matcher m = p.matcher(sql);
             
-            if (m.find()) {
+            while (m.find()) {
                 
                 CdisCisIdentifierMap cdisCisIdentifier = new CdisCisIdentifierMap();
                 cdisCisIdentifier.setCdisMapId(cdisMap.getCdisMapId());
                 cdisCisIdentifier.setCisIdentifierCd(m.group(1).toLowerCase());
                 cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
      
-                sql = sql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());            
+                if (cdisCisIdentifier.getCisIdentifierValue() != null) {
+                    sql = sql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());       
+                }
+                else {
+                    sql = sql.replace("?CISID-" + m.group(1) + "?", "");   
+                }
             }
         }
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
         
         try (PreparedStatement stmt = DamsTools.getCisConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
