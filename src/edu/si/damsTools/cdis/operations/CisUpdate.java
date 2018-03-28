@@ -9,6 +9,8 @@ import edu.si.damsTools.cdis.cis.applications.CisRecordAttr;
 import edu.si.damsTools.cdis.cis.applications.CisRecordFactory;
 import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.cis.identifier.IdentifierFactory;
+import edu.si.damsTools.cdis.cis.identifier.IdentifierType;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
@@ -31,6 +33,7 @@ import java.util.regex.Pattern;
  */
 
 public class CisUpdate extends Operation {
+    
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private final ArrayList<DamsRecord> damsRecordList;
@@ -55,7 +58,6 @@ public class CisUpdate extends Operation {
             logger.log(Level.FINEST, "Cis Update sql not found");
             return null;
         }
-        
 
         return (sql);
     }
@@ -138,48 +140,56 @@ public class CisUpdate extends Operation {
                 continue;
             }
             
-            cis = cisFact.cisChooser();
-            if (cis == null) {
-                logger.log(Level.FINEST, "Warning, unable to determine CIS, but we dont need to...in new code");
-                if (cisSql.contains("?CISID")) {
-                    Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
-                    Matcher m = p.matcher(cisSql);
+            IdentifierFactory cisIdentFact = new IdentifierFactory();
+            IdentifierType cisIdentifierType = cisIdentFact.identifierChooser(DamsTools.getProperty("lccIdType"));
             
-                    if (m.find()) {
+            logger.log(Level.FINEST, "Warning, unable to determine CIS, but we dont need to...in new code");
+            if (cisSql.contains("?CISID")) {
+                Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
+                Matcher m = p.matcher(cisSql);
+            
+                if (m.find()) {
                 
-                        CdisCisIdentifierMap cdisCisIdentifier = new CdisCisIdentifierMap();
-                        cdisCisIdentifier.setCdisMapId(cdisMap.getCdisMapId());
-                        cdisCisIdentifier.setCisIdentifierCd(m.group(1).toLowerCase());
-                        cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
+                    CdisCisIdentifierMap cdisCisIdentifier = new CdisCisIdentifierMap();
+                    cdisCisIdentifier.setCdisMapId(cdisMap.getCdisMapId());
+                    cdisCisIdentifier.setCisIdentifierCd(m.group(1).toLowerCase());
+                    cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
      
-                        cisSql = cisSql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());            
-                    }
+                    cisSql = cisSql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());            
                 }
+            }
                 
-                cisSql = damsRecord.replaceSqlVars(cisSql);
+            cisSql = damsRecord.replaceSqlVars(cisSql);
                 
-                logger.log(Level.FINEST, "New SQL: "+ cisSql);
+            logger.log(Level.FINEST, "New SQL: "+ cisSql);
                 
-                int numRowsUpdate = updateCis(cisSql);
-                if (! (numRowsUpdate > 0)) {
+            int numRowsUpdate = updateCis(cisSql);
+            if (! (numRowsUpdate > 0)) {
                     //unable to generate SQL, generate error
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "UPCISI", "Error, update of CIS info failed");
                     continue;
-                } 
+            } 
                 
-                //Populate Activity Log
-                //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
-                CdisActivityLog cdisActivity = new CdisActivityLog(); 
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("CSU-" + DamsTools.getProperty("cis").toUpperCase()); 
-                boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
-                if (!activityLogged) {
-                    logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
-                }
-
+            //IF successful, do other steps as required
+            boolean addtlUpdatesDone = cisIdentifierType.additionalCisUpdateActivity(damsRecord, cdisMap);
+            if (! addtlUpdatesDone) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "UPCISI", "Error, update of additional CIS info failed");
+                continue;
             }
-            else {
+                
+            //Populate Activity Log
+            //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
+            CdisActivityLog cdisActivity = new CdisActivityLog(); 
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("CSU-" + DamsTools.getProperty("cis").toUpperCase()); 
+            boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
+            if (!activityLogged) {
+                logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
+            }
+        
+            /*else {
                 cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord);
 
                 cisSql = damsRecord.replaceSqlVars(cisSql);
@@ -217,7 +227,7 @@ public class CisUpdate extends Operation {
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
                 }
-            }
+            }*/
             
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }

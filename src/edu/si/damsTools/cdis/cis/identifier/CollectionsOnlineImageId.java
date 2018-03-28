@@ -5,6 +5,9 @@
  */
 package edu.si.damsTools.cdis.cis.identifier;
 
+import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.cdis.database.CdisMap;
+
 /**
  *
  * @author rfeldman
@@ -27,5 +30,9 @@ public class CollectionsOnlineImageId implements IdentifierType {
     
     public boolean overwriteExistingLinkId() {
         return false;
+    }
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
+        return true;
     }
 }

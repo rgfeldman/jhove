@@ -1,5 +1,8 @@
 package edu.si.damsTools.cdis.cis.identifier;
 
+import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.cdis.database.CdisMap;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -28,5 +31,9 @@ public class OralHistoryTranscriptId implements IdentifierType {
     
     public boolean overwriteExistingLinkId() {
         return false;
+    }
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap) {
+        return true;
     }
 }

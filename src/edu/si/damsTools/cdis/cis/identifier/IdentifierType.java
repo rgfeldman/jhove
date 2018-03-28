@@ -5,6 +5,9 @@
  */
 package edu.si.damsTools.cdis.cis.identifier;
 
+import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.cdis.database.CdisMap;
+
 /**
  *
  * @author rfeldman
@@ -18,5 +21,7 @@ public interface IdentifierType {
     public void setIdentifierValue(String identifierValue);
     
     public boolean overwriteExistingLinkId();
+    
+    public boolean additionalCisUpdateActivity(DamsRecord damsRecord, CdisMap cdisMap);
     
 }
