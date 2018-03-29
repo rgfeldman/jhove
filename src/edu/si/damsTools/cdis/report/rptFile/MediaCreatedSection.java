@@ -5,8 +5,6 @@
  */
 package edu.si.damsTools.cdis.report.rptFile;
 
-import edu.si.damsTools.cdis.cis.applications.CisRecordAttr;
-import edu.si.damsTools.cdis.cis.applications.CisRecordFactory;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
@@ -57,17 +55,9 @@ public class MediaCreatedSection implements DataSection {
         siAsst.setUoiid(cdisMap.getDamsUoiid());
         siAsst.populateOwningUnitUniqueName();
         
-        CisRecordFactory cisFactory = new CisRecordFactory();
-        CisRecordAttr cisAttr = cisFactory.cisChooser();
-        
-        if (cisAttr == null) {
-            String rptInfo = getCisHierReportInfo(cdisMap);
-            if (rptInfo != null ) {
-                sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Created On " + rptInfo);
-            }
-        }
-        else {
-            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Created On " + cisAttr.returnGrpInfoForReport(cdisMap));
+        String rptInfo = getCisHierReportInfo(cdisMap);
+        if (rptInfo != null ) {
+            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Created On " + rptInfo);      
         }
         
         return true;

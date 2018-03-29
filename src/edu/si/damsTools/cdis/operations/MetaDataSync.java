@@ -10,7 +10,6 @@ import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
 import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -293,19 +292,6 @@ public class MetaDataSync extends Operation {
     //*THIS SHOUKD BE MOVED TO CDISRECORD
     private String replaceCisVarsInString(String sql, CdisMap cdisMap) {
 
-        //First we take care of legacy stuff, this to be removed when legacy is converted
-        if (sql.contains("?MEDIA_ID?")) {
-            sql = sql.replace("?MEDIA_ID?", String.valueOf(cdisMap.getCisUniqueMediaId()));
-        }
-        if (sql.contains("?OBJECT_ID?")) {
-            CdisObjectMap objectMap = new CdisObjectMap();
-            objectMap.setCdisMapId(cdisMap.getCdisMapId());
-            objectMap.populateCisUniqueObjectIdforCdisId();
-           
-            sql = sql.replace("?OBJECT_ID?", String.valueOf(objectMap.getCisUniqueObjectId()));            
-        }
-       
-        //now we take care of new stuff
         if (sql.contains("?CISID")) {
             Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
             Matcher m = p.matcher(sql);
@@ -318,8 +304,7 @@ public class MetaDataSync extends Operation {
                 cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
      
                 sql = sql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());            
-            }
-           
+            }      
         }
        
         logger.log(Level.FINEST, "FIXED SQL: {0}", sql);

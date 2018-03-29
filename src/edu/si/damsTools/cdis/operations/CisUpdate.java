@@ -5,8 +5,6 @@
  */
 package edu.si.damsTools.cdis.operations;
 
-import edu.si.damsTools.cdis.cis.applications.CisRecordAttr;
-import edu.si.damsTools.cdis.cis.applications.CisRecordFactory;
 import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.cis.identifier.IdentifierFactory;
@@ -122,9 +120,6 @@ public class CisUpdate extends Operation {
      * Purpose: Steps through the list of records that must be updated, and delegates work to be done...one record at a time.
      */
     private void processRecordList () {
-        
-        CisRecordAttr cis;
-        CisRecordFactory cisFact = new CisRecordFactory();
             
         for (DamsRecord damsRecord : this.damsRecordList) {
         

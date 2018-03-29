@@ -6,13 +6,10 @@
 package edu.si.damsTools.cdis.operations;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.cdis.cis.applications.CisRecordFactory;
-import edu.si.damsTools.cdis.cis.applications.CisRecordAttr;
 import edu.si.damsTools.cdis.cis.identifier.IdentifierFactory;
 import edu.si.damsTools.cdis.cis.identifier.IdentifierType;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
 import edu.si.damsTools.cdis.dams.DamsRecord;
-import edu.si.damsTools.cdis.database.CdisObjectMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
@@ -89,46 +86,10 @@ public class LinkCisRecord extends Operation {
                         ErrorLog errorLog = new ErrorLog ();
                         errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
                         continue;
-                    }
-                        
-                }
-                else {//try the old code
-                
-                    //Check if there is a matching record in the CIS for this cdisMap record
-                    CisRecordAttr cis = returnCorrespondingCisRecordOld(damsRecord);  
-                    if (cis == null) {
-                        logger.log(Level.FINEST, "Error, unable to find matching cis");
-                        continue;
-                    }
-                    
-                    //support the old stuff as well
-                    cdisMap.setCisUniqueMediaId(cis.getCisImageIdentifier());
-                    cisRecordRecorded = cdisMap.updateCisUniqueMediaId(); 
-             
-                    if (!cisRecordRecorded) {
-                        ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
-                        continue;
-                    }
-                
-
-                    ///need to take care of emu here....there is no object level information
-                    if (cis.returnCdisGroupType() != null && cis.returnCdisGroupType().equals("cdisObjectMap")) {
-                        CdisObjectMap cdisObjectMap = new CdisObjectMap();
-                        cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
-                        cdisObjectMap.setCisUniqueObjectId(cis.getGroupIdentifier());
-                        boolean cdisObjectCreated = cdisObjectMap.createRecord();
-                        if (! cdisObjectCreated) {
-                            ErrorLog errorLog = new ErrorLog ();
-                            errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CDIS object record");
-                            continue;
-                        }
-                    }
-                
+                    }               
                 }
 
-                
-                //update the thumbnail if needed.  This should probably belong in CIS Update tool
+               //update the thumbnail if needed.  This should probably belong in CIS Update tool
                 if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
                     boolean thumbnailUpdated = updateCisThumbnail(cdisMap.getCdisMapId());
                     if (!thumbnailUpdated) {
@@ -237,53 +198,6 @@ public class LinkCisRecord extends Operation {
             return null;
         }
         return cisIdentifierType;
-    }
-    
-    // Method: returnCorrespondingCisRecord()
-    // Purpose: Returns the associated Cis record that corresponds to the damsRecord passed to it.
-    //          The rules that associate the damsRecord to the CIS record are found in the xml config file
-    private CisRecordAttr returnCorrespondingCisRecordOld(DamsRecord damsRecord) {
-        
-        CisRecordAttr cis = null;
-        Connection dbConn = null;
-        
-        String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveCisIds");         
-
-            if (sql != null) {
-                dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  
-                break;
-            }       
-        }
-        if (sql == null) {
-            logger.log(Level.FINEST, "retrieveCisId sql not found");
-            return null;
-        }   
-        sql = damsRecord.replaceSqlVars(sql);        
-        logger.log(Level.FINEST, "SQL: {0}", sql);
- 
-        if (dbConn == null) {
-                logger.log(Level.FINEST, "Error: connection to db not found");
-                return null;
-        }    
-        try (PreparedStatement stmt = dbConn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery() ) {
-
-            //Add the value from the database to the list
-            if (rs.next()) {
-                ResultSetMetaData rsmd = rs.getMetaData();            
-
-                CisRecordFactory cisFact = new CisRecordFactory();
-                cis = cisFact.cisChooser();
-                cis.setBasicValues(rs.getString(1), damsRecord);        
-            }
-        }
-        catch(Exception e) {
-            logger.log(Level.FINEST, "Error, unable to obtain corresponding CIS Records", e);
-            return null;
-        }
-        return cis;
     }
     
     

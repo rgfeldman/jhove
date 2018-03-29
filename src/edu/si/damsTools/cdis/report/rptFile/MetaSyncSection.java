@@ -5,8 +5,6 @@
  */
 package edu.si.damsTools.cdis.report.rptFile;
 
-import edu.si.damsTools.cdis.cis.applications.CisRecordAttr;
-import edu.si.damsTools.cdis.cis.applications.CisRecordFactory;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
@@ -48,14 +46,8 @@ public class MetaSyncSection implements DataSection {
         siAsst.setUoiid(cdisMap.getDamsUoiid());
         siAsst.populateSiAsstData();
         
-        CisRecordFactory cisFactory = new CisRecordFactory();
-        CisRecordAttr cisAttr = cisFactory.cisChooser();
-        if (cisAttr == null) {
-            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + siAsst.getSourceSystemId());
-        }
-        else {
-            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + cisAttr.returnGrpInfoForReport(cdisMap));
-        }
+        sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + siAsst.getSourceSystemId());
+
         return true;
         
     }
