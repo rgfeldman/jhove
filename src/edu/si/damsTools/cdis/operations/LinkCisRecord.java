@@ -88,6 +88,9 @@ public class LinkCisRecord extends Operation {
                         continue;
                     }               
                 }
+                else {
+                    continue;
+                }
 
                //update the thumbnail if needed.  This should probably belong in CIS Update tool
                 if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
@@ -191,6 +194,9 @@ public class LinkCisRecord extends Operation {
                 IdentifierFactory cisIdentFact = new IdentifierFactory();
                 cisIdentifierType = cisIdentFact.identifierChooser(rsmd.getColumnLabel(1).toLowerCase());
                 cisIdentifierType.setIdentifierValue(rs.getString(1));        
+            }
+            else {
+                return null;
             }
         }
         catch(Exception e) {
