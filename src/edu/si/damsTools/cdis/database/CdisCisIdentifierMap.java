@@ -137,11 +137,14 @@ public class CdisCisIdentifierMap {
 
         ArrayList cdisMapIdsForRefId = new ArrayList<>();
         
-        String sql = "SELECT    cdis_map_id " +
-                     "FROM      cdis_cis_identifier_map " +
-                     "WHERE     cis_identifier_cd = '" + this.cisIdentifierCd + "' " +
-                     "AND       cis_name = '" + DamsTools.getProperty("cis") + "' " +
-                     "AND       cis_identifier_value = '" + this.cisIdentifierValue + "'";  
+        String sql = "SELECT    cdm.cdis_map_id " +
+                     "FROM      cdis_cis_identifier_map ccim " +
+                     "INNER JOIN cdis_map cdm " +
+                     "ON        cdm.cdis_map_id = ccim.cdis_map_id " +
+                     "WHERE     ccim.cis_identifier_cd = '" + this.cisIdentifierCd + "' " +
+                     "AND       ccim.cis_name = '" + DamsTools.getProperty("cis") + "' " +
+                     "AND       ccim.cis_identifier_value = '" + this.cisIdentifierValue + "'" +
+                     "AND       cdm.project_cd = '"  + DamsTools.getProperty("projectCd") +"'" ;
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);

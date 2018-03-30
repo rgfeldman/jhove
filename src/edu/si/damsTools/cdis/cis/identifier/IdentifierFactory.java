@@ -29,6 +29,9 @@ public class IdentifierFactory {
             case "dri" :
                 identifierType = new DigitalResourceId();
                 break;
+            case "irn" :
+                identifierType = new EadRefId();
+                break;    
             case "ead" :
                 identifierType = new EadRefId();
                 break;
@@ -38,9 +41,6 @@ public class IdentifierFactory {
             case "oht" :
                 identifierType = new OralHistoryTranscriptId();
                 break;   
-            case "obj" :
-                identifierType = null;
-                break;
             case "rnd" :
                 identifierType = new RenditionId();
                 break;
