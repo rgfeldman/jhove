@@ -24,7 +24,7 @@ public class RenditionId implements IdentifierType {
     private String renditionId;
     
     public String getIdentifierCd() {
-        return "ren";
+        return "rnd";
     }
     
     public String getIdentifierValue() {
