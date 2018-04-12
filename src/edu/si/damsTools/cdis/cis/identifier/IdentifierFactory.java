@@ -30,7 +30,7 @@ public class IdentifierFactory {
                 identifierType = new DigitalResourceId();
                 break;
             case "irn" :
-                identifierType = new EadRefId();
+                identifierType = new Irn();
                 break;    
             case "ead" :
                 identifierType = new EadRefId();
