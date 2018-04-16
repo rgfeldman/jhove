@@ -48,76 +48,90 @@ public class LinkCisRecord extends Operation {
     
         //Obtain a list of all the dams media to link that has never been through VFCU
         boolean MapRecordsToLink = populateCdisMapListToLink();
-        if (MapRecordsToLink) {
+        if (! MapRecordsToLink) {
+            return;
+        }
         
-            for (CdisMap cdisMap  : cdisMapList) {
+        for (CdisMap cdisMap  : cdisMapList) {
                 
-                boolean cisRecordRecorded = false;
+            boolean cisRecordRecorded = false;
                 
-                DamsRecord damsRecord = new DamsRecord();
-                damsRecord.setUoiId(cdisMap.getDamsUoiid());
-                damsRecord.setBasicData();
+            DamsRecord damsRecord = new DamsRecord();
+            damsRecord.setUoiId(cdisMap.getDamsUoiid());
+            damsRecord.setBasicData();
                 
-                IdentifierType identType = returnCorrespondingCisRecord(damsRecord);
+            IdentifierType identType = returnCorrespondingCisRecord(damsRecord);
                 
-                if (identType != null) {
-                    //See if this cdis_map_id already exists in the table for any refid
-                    CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
-                    cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
-                    cdisCisIdentifierMap.setCisIdentifierCd(identType.getIdentifierCd());        
-                    cdisCisIdentifierMap.setCisIdentifierValue(identType.getIdentifierValue());
+            logger.log(Level.FINEST, "Here Bingo");
+                
+            if (identType == null) {
+                logger.log(Level.FINEST, "Invalid identifier Type");
+                continue;
+            }
                     
-                    if (identType.overwriteExistingLinkId()) {
-                        //for ead we can update the group_value to the new one if we find it
-                        cdisCisIdentifierMap.populateIdForMapIDIdentifierCdCis();
-                        if (cdisCisIdentifierMap.getCdisCisIdentifierMapId() != null) {
-                            //We found an existing groupID for the cdis_map_id. We overwite existing link rather than create a new one
-                            cisRecordRecorded = cdisCisIdentifierMap.updateCisIdentifierValue();
-                            if (!cisRecordRecorded) {
-                                ErrorLog errorLog = new ErrorLog ();
-                                errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
-                            }  
-                            continue;
-                        }
-                    }
+            logger.log(Level.FINEST, "Here yay");
+                    
+            //See if this cdis_map_id already exists in the table for any refid
+            CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+            cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
+            cdisCisIdentifierMap.setCisIdentifierCd(identType.getIdentifierCd());        
+            cdisCisIdentifierMap.setCisIdentifierValue(identType.getIdentifierValue());
                    
-                    cisRecordRecorded = cdisCisIdentifierMap.createRecord();
+            if (identType.overwriteExistingLinkId()) {
+                
+                logger.log(Level.FINEST, "Here triple yay");
+                
+                //for ead we can update the group_value to the new one if we find it
+                cdisCisIdentifierMap.populateIdForMapIDIdentifierCdCis();
+                if (cdisCisIdentifierMap.getCdisCisIdentifierMapId() != null) {
+                    //We found an existing groupID for the cdis_map_id. We overwite existing link rather than create a new one
+                    cisRecordRecorded = cdisCisIdentifierMap.updateCisIdentifierValue();
                     if (!cisRecordRecorded) {
                         ErrorLog errorLog = new ErrorLog ();
                         errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
                         continue;
-                    }               
+                    }  
                 }
-                else {
+            } 
+            else {     
+                logger.log(Level.FINEST, "Here double yay");
+                   
+                cisRecordRecorded = cdisCisIdentifierMap.createRecord();
+                if (!cisRecordRecorded) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
+                    continue;
+                }               
+            }    
+            logger.log(Level.FINEST, "Here Again");
+
+            //update the thumbnail if needed.  This should probably belong in CIS Update tool
+            if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
+            boolean thumbnailUpdated = updateCisThumbnail(cdisMap.getCdisMapId());
+                if (!thumbnailUpdated) {
+                    ErrorLog errorLog = new ErrorLog ();
+                    errorLog.capture(cdisMap, "CRCIST", "Error, unable to create CIS thumbnail");
                     continue;
                 }
-
-               //update the thumbnail if needed.  This should probably belong in CIS Update tool
-                if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
-                    boolean thumbnailUpdated = updateCisThumbnail(cdisMap.getCdisMapId());
-                    if (!thumbnailUpdated) {
-                        ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMap, "CRCIST", "Error, unable to create CIS thumbnail");
-                        continue;
-                    }
-                }
+            }
             
-                //Add the status
-                CdisActivityLog cdisActivity = new CdisActivityLog();
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd("LCC-" + DamsTools.getProperty("lccIdType").toUpperCase());
+            logger.log(Level.FINEST, "Here");
+               
+            //Add the status
+            CdisActivityLog cdisActivity = new CdisActivityLog();
+            cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
+            cdisActivity.setCdisStatusCd("LCC-" + DamsTools.getProperty("lccIdType").toUpperCase());
         
-                boolean statusLogged = cdisActivity.updateOrInsertActivityLog();
-                
-                if (!statusLogged) {
-                     ErrorLog errorLog = new ErrorLog ();
-                     errorLog.capture(cdisMap, "UPCCIS", "Error, unable to update status for record");
-                }
-                
-                
-                try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-                try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-            }   
+            boolean statusLogged = cdisActivity.updateOrInsertActivityLog();
+               
+            if (!statusLogged) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "UPCCIS", "Error, unable to update status for record");
+            }
+                    
+            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }   
+            
         }  
     }
     
@@ -235,6 +249,7 @@ public class LinkCisRecord extends Operation {
         reqProps.add("linkCisRecordXmlFile");
         reqProps.add("lccIdType");
         reqProps.add("cis");
+        reqProps.add("cisInstance");
         
         //add more required props here
         return reqProps;    

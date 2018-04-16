@@ -203,6 +203,7 @@ public class CreateCisMedia extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("cis");
+        reqProps.add("cisInstance");
         reqProps.add("cisDriver");
         reqProps.add("cisConnString");
         reqProps.add("cisUser");

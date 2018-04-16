@@ -22,7 +22,6 @@ public class CdisMap {
     private Integer mediaTypeConfigId;
     private String fileName;
     private String damsUoiid;
-    private String cisUniqueMediaId;
     private Integer vfcuMediaFileId;
     private char errorInd;
     
@@ -32,10 +31,6 @@ public class CdisMap {
     
     public Integer getMediaTypeConfigId () {
         return this.mediaTypeConfigId;
-    }
-    
-    public String getCisUniqueMediaId () {
-        return this.cisUniqueMediaId == null ? "" : this.cisUniqueMediaId;
     }
     
     public String getDamsUoiid () {
@@ -64,10 +59,6 @@ public class CdisMap {
     
     public void setFileName (String fileName) {
         this.fileName = fileName;
-    }
-    
-    public void setCisUniqueMediaId (String cisUniqueMediaId) {
-        this.cisUniqueMediaId = cisUniqueMediaId;
     }
     
     public void setCdisCisMediaTypeId (Integer mediaTypeConfigId) {
@@ -102,7 +93,6 @@ public class CdisMap {
         sql =  "INSERT INTO cdis_map (" +
                     "cdis_map_id, " +
                     "project_cd, " +
-                    "cis_unique_media_id, " +
                     "dams_uoi_id, " +
                     "file_name, " +
                     "batch_number, " +
@@ -111,7 +101,6 @@ public class CdisMap {
                 "VALUES (" +
                     getCdisMapId() + ", " +
                     "'" + DamsTools.getProjectCd() + "', " +
-                    "'" + getCisUniqueMediaId() + "', " +
                     "'" + getDamsUoiid() + "', " +
                     "'" + getFileName() + "', " +
                     DamsTools.getBatchNumber() + ", " +
@@ -154,33 +143,7 @@ public class CdisMap {
                 logger.log(Level.FINER, "Error: unable to obtain cdisMediaType ", e );
                 return false;
         }
-        return true;
-        
-    }
-    
-    public boolean populateCisUniqueMediaIdForUoiid () {
-
-        String sql = "SELECT cis_unique_media_id " +
-                    "FROM cdis_map " +
-                    "WHERE dams_uoi_id = '" + getDamsUoiid() + "' ";
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-               ResultSet rs = pStmt.executeQuery()) {
-            
-            if (rs.next()) {
-                setCisUniqueMediaId (rs.getString(1));
-            }   
-            else {
-                // we need a map id, if we cant find one then raise error
-                throw new Exception();
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain map_id for cis ID", e );
-                return false;
-        }
-        return true;
+        return true;   
     }
     
      public boolean populateMediaTypeId(){
@@ -204,57 +167,6 @@ public class CdisMap {
                 logger.log(Level.FINER, "Error: unable to get mediaTypeId", e );
                 return false;
         }
-    }
-    
-     public boolean populateIdFromCisMediaId () {
-
-        String sql = "SELECT cdis_map_id FROM cdis_map " +
-                    "WHERE cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                    "AND project_cd = '" + DamsTools.getProjectCd() + "' ";
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-               ResultSet rs = pStmt.executeQuery()) {
-            
-            if (rs.next()) {
-                setCdisMapId (rs.getInt(1));
-            }   
-            else {
-                // we need a map id, if we cant find one then raise error
-                throw new Exception();
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain map_id for cis ID", e );
-                return false;
-        }
-        return true;
-    }
-     
-    public boolean populateIdForNameNullUoiidandCisId () {
-
-        String sql = "SELECT cdis_map_id FROM cdis_map " +
-                    "WHERE file_name = '" + getFileName() + "' " +
-                    "AND project_cd = '" + DamsTools.getProjectCd() + "' " +
-                    "AND dams_uoi_id IS NULL " +
-                    "AND cis_unique_media_id IS NULL ";
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ){
- 
-            if (rs != null && rs.next()) {
-                setCdisMapId (rs.getInt(1));
-            }   
-            else {
-                return false;
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain map_id for file/null uoiid", e );
-                return false;
-        }
-        return true; 
     }
     
     public boolean populateIdForNameNullUoiid () {
@@ -351,8 +263,7 @@ public class CdisMap {
     
     public boolean populateMapInfo () {
         
-        String sql = "SELECT cis_unique_media_id, " + 
-                            "dams_uoi_id, " +
+        String sql = "SELECT dams_uoi_id, " +
                             "file_name, " +
                             "media_type_config_id " +
                     "FROM cdis_map " +
@@ -363,10 +274,9 @@ public class CdisMap {
              ResultSet rs = pStmt.executeQuery()){                   
             
             if (rs != null && rs.next()) {
-                setCisUniqueMediaId (rs.getString(1));
-                setDamsUoiid (rs.getString(2));
-                setFileName (rs.getString(3));
-                setCdisCisMediaTypeId (rs.getInt(4));
+                setDamsUoiid (rs.getString(1));
+                setFileName (rs.getString(2));
+                setCdisCisMediaTypeId (rs.getInt(3));
             }   
             
         } catch (Exception e) {
@@ -525,31 +435,6 @@ public class CdisMap {
         
         return true;
     }
-    
-    
-    public boolean updateCisUniqueMediaId() {
-        
-        int rowsUpdated = 0;
-        String sql =  "UPDATE cdis_map " +
-                      "SET cis_unique_media_id = '" + getCisUniqueMediaId() + "' " +
-                      "WHERE cdis_map_id = " + getCdisMapId();
-        
-        logger.log(Level.FINEST,"SQL! " + sql);     
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql)) {
-            
-            rowsUpdated = pStmt.executeUpdate();
-            
-            if (rowsUpdated != 1) {
-                throw new Exception();
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_MAP table with cis_unique_media_id", e );
-                return false;
-        } 
-        return true;
-    }
-    
     
     public boolean updateUoiid() {
         

@@ -136,36 +136,21 @@ public class MetaDataSync extends Operation {
             String columnName = rsmd.getColumnLabel(1).toLowerCase();
             
             while (rs.next()) {
-                   
-                if (columnName.equals("legacy")) {
-                    //id type should not be null, but need to support the old code
-                    CdisMap cdisMap = new CdisMap();
-                    cdisMap.setCisUniqueMediaId(rs.getString(1));
-                    boolean cisMediaIdObtained = cdisMap.populateIdFromCisMediaId();
-                    
-                    if (!cisMediaIdObtained) {
-                        continue;
-                    }
 
+                ArrayList<Integer> cdisMapIds = new ArrayList<>();
+                    
+                CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
+                //The new code...all will end up with identifier types sooner or later
+                cdisCisIdentifierMap.setCisIdentifierCd(columnName);
+                cdisCisIdentifierMap.setCisIdentifierValue(rs.getString(1));
+                cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCisCdValue();
+                        
+                for (Integer cdisMapId : cdisMapIds) {
+                    CdisMap cdisMap = new CdisMap();
+                    cdisMap.setCdisMapId(cdisMapId);
                     cdisMap.populateMapInfo();
                     cdisMapList.add(cdisMap);
-                }
-                else {
-                    ArrayList<Integer> cdisMapIds = new ArrayList<>();
-                    
-                    CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
-                    //The new code...all will end up with identifier types sooner or later
-                    cdisCisIdentifierMap.setCisIdentifierCd(columnName);
-                    cdisCisIdentifierMap.setCisIdentifierValue(rs.getString(1));
-                    cdisMapIds = cdisCisIdentifierMap.returnCdisMapIdsForCisCdValue();
-                        
-                    for (Integer cdisMapId : cdisMapIds) {
-                        CdisMap cdisMap = new CdisMap();
-                        cdisMap.setCdisMapId(cdisMapId);
-                        cdisMap.populateMapInfo();
-                        cdisMapList.add(cdisMap);
-                    }          
-                }
+                }          
             }
         }
         catch(Exception e) {

@@ -65,13 +65,15 @@ public class CdisCisIdentifierMap {
                         "cdis_map_id, " +
                         "cis_name, " +
                         "cis_identifier_cd, " +
-                        "cis_identifier_value )" +
+                        "cis_identifier_value, " +
+                        "cis_instance )" +
                     "VALUES (" +
                         "cdis_cis_identifier_map_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
                         "'" + DamsTools.getProperty("cis") + "', " +
                         "'" + getCisIdentifierCd() + "', " +
-                        "'" + getCisIdentifierValue () + "')";
+                        "'" + getCisIdentifierValue () + "'," +
+                        "'" + DamsTools.getProperty("cisInstance") + "')";
                  
         logger.log(Level.FINEST,"SQL! " + sql);      
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql)) {
@@ -137,14 +139,12 @@ public class CdisCisIdentifierMap {
 
         ArrayList cdisMapIdsForRefId = new ArrayList<>();
         
-        String sql = "SELECT    cdm.cdis_map_id " +
+        String sql = "SELECT    ccim.cdis_map_id " +
                      "FROM      cdis_cis_identifier_map ccim " +
-                     "INNER JOIN cdis_map cdm " +
-                     "ON        cdm.cdis_map_id = ccim.cdis_map_id " +
                      "WHERE     ccim.cis_identifier_cd = '" + this.cisIdentifierCd + "' " +
                      "AND       ccim.cis_name = '" + DamsTools.getProperty("cis") + "' " +
                      "AND       ccim.cis_identifier_value = '" + this.cisIdentifierValue + "'" +
-                     "AND       cdm.project_cd = '"  + DamsTools.getProperty("projectCd") +"'" ;
+                     "AND       ccim.cis_instance = '"  + DamsTools.getProperty("cisInstance") +"'" ;
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
