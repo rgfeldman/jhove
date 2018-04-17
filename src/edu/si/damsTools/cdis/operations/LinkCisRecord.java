@@ -62,14 +62,10 @@ public class LinkCisRecord extends Operation {
                 
             IdentifierType identType = returnCorrespondingCisRecord(damsRecord);
                 
-            logger.log(Level.FINEST, "Here Bingo");
-                
             if (identType == null) {
                 logger.log(Level.FINEST, "Invalid identifier Type");
                 continue;
             }
-                    
-            logger.log(Level.FINEST, "Here yay");
                     
             //See if this cdis_map_id already exists in the table for any refid
             CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
@@ -78,8 +74,6 @@ public class LinkCisRecord extends Operation {
             cdisCisIdentifierMap.setCisIdentifierValue(identType.getIdentifierValue());
                    
             if (identType.overwriteExistingLinkId()) {
-                
-                logger.log(Level.FINEST, "Here triple yay");
                 
                 //for ead we can update the group_value to the new one if we find it
                 cdisCisIdentifierMap.populateIdForMapIDIdentifierCdCis();
@@ -93,17 +87,15 @@ public class LinkCisRecord extends Operation {
                     }  
                 }
             } 
-            else {     
-                logger.log(Level.FINEST, "Here double yay");
-                   
+            
+            if (cdisCisIdentifierMap.getCdisCisIdentifierMapId() == null) {
                 cisRecordRecorded = cdisCisIdentifierMap.createRecord();
                 if (!cisRecordRecorded) {
                     ErrorLog errorLog = new ErrorLog ();
                     errorLog.capture(cdisMap, "UPCCIS", "Error, unable to create CIS record");
                     continue;
-                }               
-            }    
-            logger.log(Level.FINEST, "Here Again");
+                }       
+            }
 
             //update the thumbnail if needed.  This should probably belong in CIS Update tool
             if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
@@ -114,8 +106,6 @@ public class LinkCisRecord extends Operation {
                     continue;
                 }
             }
-            
-            logger.log(Level.FINEST, "Here");
                
             //Add the status
             CdisActivityLog cdisActivity = new CdisActivityLog();
