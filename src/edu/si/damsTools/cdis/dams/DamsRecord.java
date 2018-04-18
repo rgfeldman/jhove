@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.dams.database.SiPreservationMetadata;
 import edu.si.damsTools.cdis.dams.database.TeamsLinks;
+import edu.si.damsTools.cdis.dams.database.FileSizeView;
 import edu.si.damsTools.cdis.dams.database.Uois;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
@@ -30,7 +31,7 @@ public class DamsRecord {
     
     public DamsRecord() {
         uois = new Uois();
-        siAsst = new SiAssetMetadata();
+        siAsst = new SiAssetMetadata(); 
     }
     
     public SiAssetMetadata getSiAssetMetadata () {
@@ -88,6 +89,12 @@ public class DamsRecord {
         }
         if (sql.contains("?UOI_ID?")) {
             sql = sql.replace("?UOI_ID?", getUois().getUoiid());
+        }
+        if (sql.contains("?FILE_SIZE?")) {
+            FileSizeView fileSizeView = new FileSizeView();
+            fileSizeView.setUoiId(getUois().getUoiid());
+            fileSizeView.populateFileSizeInfo();
+            sql = sql.replace("?FILE_SIZE?", fileSizeView.getContentSize());
         }
         
         return (sql);
