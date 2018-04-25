@@ -148,7 +148,12 @@ public class CisUpdate extends Operation {
                     CdisCisIdentifierMap cdisCisIdentifier = new CdisCisIdentifierMap();
                     cdisCisIdentifier.setCdisMapId(cdisMap.getCdisMapId());
                     cdisCisIdentifier.setCisIdentifierCd(m.group(1).toLowerCase());
-                    cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
+                    boolean cisIdentiiferPopulated = cdisCisIdentifier.populateCisIdentifierValueForCdisMapIdType(); 
+                    if (cdisCisIdentifier.getCisIdentifierValue() == null) {
+                         ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(cdisMap, "UPCISI", "Error, update of CIS info failed");
+                        continue;
+                    }
      
                     cisSql = cisSql.replace("?CISID-" + m.group(1) + "?", cdisCisIdentifier.getCisIdentifierValue());            
                 }
