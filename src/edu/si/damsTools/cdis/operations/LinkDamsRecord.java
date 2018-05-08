@@ -67,7 +67,7 @@ public class LinkDamsRecord extends Operation {
                 boolean recordLinked = linkRecordFromVfcu(cdisMap);  
                 if(! recordLinked) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPCCIS", "Error, update of CIS info in CDIS failed");
+                    errorLog.capture(cdisMap, "UPCDAM", "Error, update of CDIS with DAMS info failed");
                     continue;
                 }
                 logActivity(cdisMap);

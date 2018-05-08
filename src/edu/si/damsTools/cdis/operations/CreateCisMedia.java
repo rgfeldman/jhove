@@ -208,6 +208,7 @@ public class CreateCisMedia extends Operation {
         reqProps.add("cisConnString");
         reqProps.add("cisUser");
         reqProps.add("cisPass");
+        reqProps.add("createCisMediaXmlFile");
         reqProps.add("lccIdType");
         reqProps.add("mediaTypeConfigId");
         

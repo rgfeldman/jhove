@@ -46,7 +46,6 @@ public class DamsTools {
     private static String directoryName;
     private static String configFile;
     private static String application;
-    private static String subOperation;
     private static ArrayList <XmlQueryData> xmlQueryDataObjList;
     
     private App app;
@@ -388,12 +387,6 @@ public class DamsTools {
             .build();
         options.addOption( option );
         
-        option = Option.builder("s")
-            .hasArg()
-            .argName("subOperation")
-            .build();
-        options.addOption( option );
-        
         // create the parser
         CommandLineParser parser = new DefaultParser();
         try {
@@ -404,7 +397,6 @@ public class DamsTools {
             DamsTools.configFile = line.getOptionValue( "c" );
             DamsTools.directoryName = line.getOptionValue( "d" );
             DamsTools.operationType = line.getOptionValue("o");
-            DamsTools.subOperation = line.getOptionValue( "s" );
         }
         catch( Exception e ) {
             // oops, something went wrong

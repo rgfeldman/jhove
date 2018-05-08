@@ -39,7 +39,7 @@ public class Sftp implements DeliveryMethod{
             // make sure the sftp was successful
             boolean ftpValidated = validateFtpMsg (returnVal, fileName);
             if (!ftpValidated) {
-                logger.log(Level.FINEST,"Error withing ftp process");
+                logger.log(Level.FINEST,"Error within ftp process");
                 return false;
             }
             
