@@ -180,7 +180,7 @@ public class CdisCisIdentifierMap {
             }
             
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to update CDIS_MAP table with cis_unique_media_id", e );
+                logger.log(Level.FINER, "Error: unable to update cdis_cis_identifier_map table with unique_media_id", e );
                 return false;
         } 
         return true;
