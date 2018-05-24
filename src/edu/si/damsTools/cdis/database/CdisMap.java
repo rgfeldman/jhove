@@ -103,7 +103,7 @@ public class CdisMap {
                     "'" + DamsTools.getProjectCd() + "', " +
                     "'" + getDamsUoiid() + "', " +
                     "'" + getFileName() + "', " +
-                    DamsTools.getBatchNumber() + ", " +
+                    DamsTools.getBatchExecutionNumber() + ", " +
                     getVfcuMediaFileId() + ", " +
                     getMediaTypeConfigId() + ")";
                  
@@ -219,7 +219,7 @@ public class CdisMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE vfcu_media_file_id = " + getVfcuMediaFileId() +
-                    " AND batch_number = " + DamsTools.getBatchNumber();
+                    " AND batch_number = " + DamsTools.getBatchExecutionNumber();
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
@@ -244,7 +244,7 @@ public class CdisMap {
   
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "'" +
-                    "AND batch_number = " + DamsTools.getBatchNumber();
+                    "AND batch_number = " + DamsTools.getBatchExecutionNumber();
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);

@@ -8,7 +8,7 @@ package edu.si.damsTools;
 import edu.si.damsTools.vfcu.Report;
 import edu.si.damsTools.vfcu.Watcher; 
 import edu.si.damsTools.cdis.operations.Operation;
-import edu.si.damsTools.vfcu.VendorFileCopy;
+import edu.si.damsTools.vfcu.MediaPickupValidate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,7 +35,7 @@ public class Vfcu extends App {
                 break;
             
             case "copyValidate" :      
-                operation = new VendorFileCopy();
+                operation = new MediaPickupValidate();
                 break;
                     
             default:     

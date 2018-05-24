@@ -37,7 +37,7 @@ public class DamsTools {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
    
-    private static Long batchNumber;
+    private static Long batchExecutionNumber;
     private static Connection cisConn;
     private static Connection damsConn;
     private static String projectCd;
@@ -63,8 +63,8 @@ public class DamsTools {
         return DamsTools.damsConn;
     }
         
-    public static Long getBatchNumber() {
-        return DamsTools.batchNumber;
+    public static Long getBatchExecutionNumber() {
+        return DamsTools.batchExecutionNumber;
     }
     
     public static String getOperationType() {
@@ -87,8 +87,8 @@ public class DamsTools {
        return DamsTools.directoryName;
     }
 
-    private void setBatchNumber (Long batchNumber) {
-        DamsTools.batchNumber = batchNumber;
+    private void setBatchExecutionNumber (Long batchExecutionNumber) {
+        DamsTools.batchExecutionNumber = batchExecutionNumber;
     }
     
     
@@ -138,7 +138,7 @@ public class DamsTools {
         Handler fh;
             
         try {
-            fh = new FileHandler(DamsTools.directoryName + "/log/" + DamsTools.application + "Log-" + DamsTools.operationType + "_" + DamsTools.configFile + "_" + DamsTools.batchNumber + ".txt");
+            fh = new FileHandler(DamsTools.directoryName + "/log/" + DamsTools.application + "Log-" + DamsTools.operationType + "_" + DamsTools.configFile + "_" + DamsTools.batchExecutionNumber + ".txt");
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -185,12 +185,12 @@ public class DamsTools {
         return true;
     }
     
-    /*  Method :        calcBatchNumber
+    /*  Method :        calcBatchExecutionNumber
         Arguments:      
-        Description:    calculates and assigns a batch number based on date/time to uniquely define this execution batch
+        Description:    calculates and assigns a batch Execution number based on date/time to uniquely define this execution batch
         RFeldman 7/2015
     */
-    private boolean calcBatchNumber () {    
+    private boolean calcBatchExecutionNumber () {    
         try {
         
             DateFormat df = new SimpleDateFormat("yyyyMMddkkmmssSSS");
@@ -198,10 +198,10 @@ public class DamsTools {
             Random rand = new Random();
             String batchNum = df.format(new Date()) + rand.nextInt(100);
             
-            setBatchNumber (Long.parseLong(batchNum));
+            setBatchExecutionNumber (Long.parseLong(batchNum));
             
         } catch (Exception e) {
-              System.out.println("Error: obtaining Batch number" + e );
+              System.out.println("Error: obtaining Batch Execution number" + e );
              return false;
         }
         return true;
@@ -293,9 +293,9 @@ public class DamsTools {
         try {
             DamsTools.properties = new Properties();
             
-            boolean batchNumberSet = damsTool.calcBatchNumber();
-            if (! batchNumberSet) {
-                System.out.println("Fatal Error: Batch number could not be generated");
+            boolean batchExecutionNumberSet = damsTool.calcBatchExecutionNumber();
+            if (! batchExecutionNumberSet) {
+                System.out.println("Fatal Error: Batch Execution number could not be generated");
                 return;
             }
             
