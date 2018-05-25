@@ -26,7 +26,6 @@ public class VfcuMd5File {
     private String filePathEnding;
     private String vendorMd5FileName;
     private Integer vfcuMd5FileId;
-    private String fileHierarchyCd;
     
     public VfcuMd5File() {
 
@@ -51,12 +50,7 @@ public class VfcuMd5File {
     public Integer getVfcuMd5FileId () {
         return this.vfcuMd5FileId;
     }
-    
-    public String getFileHierarchyCd() {
-        return this.fileHierarchyCd;
-    }
    
-    
     public void setBasePathStaging (String basePathStaging) {
         this.basePathStaging = basePathStaging;
     }
@@ -67,10 +61,6 @@ public class VfcuMd5File {
     
     public void setFilePathEnding (String filePathEnding) {
         this.filePathEnding = filePathEnding;
-    }
-    
-      public void setFileHierarchyCd (String fileHierarchyCd) {
-        this.fileHierarchyCd = fileHierarchyCd;
     }
    
     public void setVendorMd5FileName (String vendorMd5FileName) {
@@ -92,8 +82,7 @@ public class VfcuMd5File {
                         "base_path_vendor, " +
                         "base_path_staging, " +
                         "file_path_ending, " +
-                        "md5_file_retrieval_dt, " +
-                        "file_hierarchy_cd) " +
+                        "md5_file_retrieval_dt) " +
                     "VALUES (" +
                         getVfcuMd5FileId() + ", " +
                         "'" + DamsTools.getProjectCd() + "', " +
@@ -101,8 +90,7 @@ public class VfcuMd5File {
                         "'" + getBasePathVendor() + "', " +
                         "'" + getBasePathStaging() + "', " +
                         "'" + getFilePathEnding()  + "', " +
-                        "SYSDATE, " +
-                        "'" + getFileHierarchyCd() + "')";
+                        "SYSDATE)";
             
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql)) {
@@ -190,7 +178,6 @@ public class VfcuMd5File {
                 this.basePathVendor = rs.getString(1);
                 this.basePathStaging = rs.getString(2);
                 this.filePathEnding = rs.getString(3);     
-                this.fileHierarchyCd = rs.getString(4);
             }   
             
         } catch (Exception e) {
@@ -239,29 +226,7 @@ public class VfcuMd5File {
         }
         
     }
-    
-        public void populateFileHierarchyCd () {
-        
-        String sql =    "SELECT file_hieararchy_cd " +
-                        "FROM   vfcu_md5_file " +
-                        "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
-        
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-            ResultSet rs = pStmt.executeQuery() ) {
-            
-            if (rs.next()) {
-                this.fileHierarchyCd = rs.getString(1);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain path ending", e );
-        }
-        
-    }
-        
-    
+      
     public Integer returnAssocMd5Id() {
         
         Integer returnVal = null;
@@ -275,21 +240,21 @@ public class VfcuMd5File {
             filePathEndingToCheck = "";
         }
         
-        if (getFileHierarchyCd().equals("M")) {
-            filePathEndingToCheck = filePathEndingToCheck + DamsTools.getProperty("vendorSubFileDir");
-        }
-        else {
-             filePathEndingToCheck = filePathEndingToCheck + DamsTools.getProperty("vendorMasterFileDir");
-        }
+        //if (getFileHierarchyCd().equals("M")) {
+       //     filePathEndingToCheck = filePathEndingToCheck + DamsTools.getProperty("vendorSubFileDir");
+       // }
+       // else {
+        //     filePathEndingToCheck = filePathEndingToCheck + DamsTools.getProperty("vendorMasterFileDir");
+       // }
                
-        String sql =    "SELECT vfcu_md5_file_id " +
+        /*String sql =    "SELECT vfcu_md5_file_id " +
                         "FROM   vfcu_md5_file " +
                         "WHERE  base_path_vendor = '" + getBasePathVendor() + "' " +
                         "AND    file_path_ending = '" + filePathEndingToCheck + "' " +
                         "AND    file_hierarchy_cd != '" + getFileHierarchyCd() + "' " +
                         "AND    vfcu_md5_file_id != " + this.vfcuMd5FileId;
-        
-        logger.log(Level.FINEST,"SQL! " + sql); 
+        */
+        /*logger.log(Level.FINEST,"SQL! " + sql); 
         
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = pStmt.executeQuery() ) {
@@ -300,7 +265,7 @@ public class VfcuMd5File {
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain path ending", e );
-        }
+        }*/
         
         return returnVal;
         

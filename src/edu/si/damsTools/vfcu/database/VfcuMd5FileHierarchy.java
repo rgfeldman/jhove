@@ -45,11 +45,10 @@ public class VfcuMd5FileHierarchy {
     public void setSubSubFileVfcuMd5FileId(Integer subFileVfcuMd5FileId) {
         this.subSubFileVfcuMd5FileId = subSubFileVfcuMd5FileId;
     }
-       
-            
+              
     public boolean insertRow () {
         
-        String sql = "INSERT INTO vfcu_md5_hierarchy ( " +
+        String sql = "INSERT INTO vfcu_md5_file_hierarchy ( " +
                         "vfcu_md5_file_hierarchy_id, " +
                         "masterfile_vfcu_md5_file_id, " +
                         "subfile_vfcu_md5_file_id, " +
@@ -70,7 +69,7 @@ public class VfcuMd5FileHierarchy {
             }
                 
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to insert into vfcu_md5_hierarchy", e );
+                logger.log(Level.FINER, "Error: unable to insert into vfcu_md5_file_hierarchy", e );
                 return false;
         }
         return true;

@@ -184,7 +184,7 @@ public class Watcher extends Operation {
         //add more required props here
         reqProps.add("sourceBaseDir");
         reqProps.add("vfcuStaging");
-        reqProps.add("useFileHierachyPairs");
+        reqProps.add("useMasterSubPairs");
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
             reqProps.add("masterFileDir");
             reqProps.add("subFileDir");

@@ -131,7 +131,7 @@ public class MediaPickupValidate extends Operation {
             }
   
             if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-                mediaFileRecord.genAssociations(batchFileRecord.getVfcuMd5File().getFileHierarchyCd());
+            //    mediaFileRecord.genAssociations(batchFileRecord.getVfcuMd5File().getFileHierarchyCd());
             }
             
             //Perform validations on the database Record
@@ -176,12 +176,12 @@ public class MediaPickupValidate extends Operation {
                 batchFileRecord.getVfcuMd5File().setVfcuMd5FileId(vfcuMd5FileId);
                 mediaFileRecord.getVfcuMediaFile().setVfcuMediaFileId(errorMediaFileId);
                 
-                if(batchFileRecord.getVfcuMd5File().getFileHierarchyCd().equals("M")) {
-                    errorLog.capture(mediaFileRecord.getVfcuMediaFile(), "VMS", "Master has no subfile");
-                }
-                else if(batchFileRecord.getVfcuMd5File().getFileHierarchyCd().equals("S")) {  
-                    errorLog.capture(mediaFileRecord.getVfcuMediaFile(), "VSM", "Subfile has no master");
-                } 
+               // if(batchFileRecord.getVfcuMd5File().getFileHierarchyCd().equals("M")) {
+                //    errorLog.capture(mediaFileRecord.getVfcuMediaFile(), "VMS", "Master has no subfile");
+               // }
+               // else if(batchFileRecord.getVfcuMd5File().getFileHierarchyCd().equals("S")) {  
+                //    errorLog.capture(mediaFileRecord.getVfcuMediaFile(), "VSM", "Subfile has no master");
+                //} 
             }
         }
         

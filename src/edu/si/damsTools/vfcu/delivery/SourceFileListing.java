@@ -63,11 +63,9 @@ public class SourceFileListing {
         }    
         return true;          
     }
-    
-    
+       
 //    public boolean populateBasicValuesFromDeliveryFile (String fileName, String filePathEnding) {
     public boolean populateBasicValuesFromDeliveryFile (Path nameAndPath) {
-
 
         md5File = new Md5File(nameAndPath);
 
@@ -77,19 +75,6 @@ public class SourceFileListing {
         vfcuMd5File.setBasePathStaging(DamsTools.getProperty("vfcuStaging"));  
         vfcuMd5File.setBasePathVendor(DamsTools.getProperty("sourceBaseDir"));
             
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-                    
-            if (vfcuMd5File.getFilePathEnding().endsWith(DamsTools.getProperty("vendorMasterFileDir"))) {
-                vfcuMd5File.setFileHierarchyCd("M");
-            }
-            else if (vfcuMd5File.getFilePathEnding().endsWith(DamsTools.getProperty("vendorSubFileDir"))) {
-                vfcuMd5File.setFileHierarchyCd("S");
-            }
-        }
-        else {
-            vfcuMd5File.setFileHierarchyCd("M");
-        }
-
         return true;
     }
     
