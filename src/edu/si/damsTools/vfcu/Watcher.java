@@ -40,12 +40,18 @@ public class Watcher extends Operation {
     
     private final ArrayList <SourceFileListing> sourceMasterFileListingArr; 
     private final ArrayList <SourceFileListing> sourceSubFileListingArr; 
-    private final ArrayList <SourceFileListing> sourceSubSubFileListingArr; 
+    private final ArrayList <SourceFileListing> sourceSubSubFileListingArr;
+    private final XferTypeFactory xferTypeFactory;
+    private final XferType xferType;
     
     public Watcher() {
         sourceMasterFileListingArr = new ArrayList();
         sourceSubFileListingArr = new ArrayList();
         sourceSubSubFileListingArr = new ArrayList();
+        
+        xferTypeFactory = new XferTypeFactory();
+        xferType = xferTypeFactory.XferTypeChooser();
+        
     }
     
     /**
@@ -55,11 +61,11 @@ public class Watcher extends Operation {
     public void invoke() {  
         
         // We need to obtain a list of md5Files by traversing through the directory tree
+        //  Each file we could potentially process is added into a list that we process later on
         traversePopulateSourceBatchList();
         
-        XferTypeFactory xferTypeFactory = new XferTypeFactory();
-        XferType xferType = xferTypeFactory.XferTypeChooser();
-            
+        //Set the fileTransfer type (move or copy)
+ 
         //loop through the MASTER files in the md5 master path list
         for (SourceFileListing sourceMasterFileListing : sourceMasterFileListingArr) {
             boolean fileListingRecorded = sourceMasterFileListing.retrieveAndRecord(xferType);
@@ -68,44 +74,16 @@ public class Watcher extends Operation {
                 continue;
             }
             
-            //Populate the FileHierarchy table
+            //Populate the FileHierarchy table with the master info
             VfcuMd5FileHierarchy vfcuMd5FileHierarchy = new VfcuMd5FileHierarchy();
             vfcuMd5FileHierarchy.setMasterFileVfcuMd5FileId(sourceMasterFileListing.getVfcuMd5File().getVfcuMd5FileId());
             vfcuMd5FileHierarchy.insertRow();
 
-            //Now that we have the masterfile recorded in the database, get the subfile record and record that.
-            //We do that by comparing the directories.  if the directory one level back is the same, 
-            for (SourceFileListing sourceSubFileListing : sourceSubFileListingArr) {
-                Path masterPath = sourceMasterFileListing.getMd5File().getLocalPathEndingPath().getRoot();
-                Path subFilePath = sourceSubFileListing.getMd5File().getLocalPathEndingPath().getRoot();
-                
-                if (masterPath.equals(subFilePath)) {
-                    //Paths are the same one level up, record in the table
-                    fileListingRecorded = sourceSubFileListing.retrieveAndRecord(xferType);
-                    if (! fileListingRecorded) {
-                        logger.log(Level.FINEST, "Error, unable to record SubFile"); 
-                        continue;
-                    }
-                    vfcuMd5FileHierarchy.setSubFileVfcuMd5FileId(sourceSubFileListing.getVfcuMd5File().getVfcuMd5FileId());
-                }
+            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+                //record subFileInfo
+                insertSubfileInfo(sourceMasterFileListing, vfcuMd5FileHierarchy);
             }
-            
-            //Now that we have the subFile recorded in the database, get the subSubfile record and record that.
-            for (SourceFileListing sourceSubSubFileListing : sourceSubSubFileListingArr) {
-                Path masterPath = sourceMasterFileListing.getMd5File().getLocalPathEndingPath().getRoot();
-                Path subFilePath = sourceSubSubFileListing.getMd5File().getLocalPathEndingPath().getRoot();
-                
-                if (masterPath.equals(subFilePath)) {
-                    //Paths are the same one level up, record in the table
-                    fileListingRecorded = sourceSubSubFileListing.retrieveAndRecord(xferType);
-                    if (! fileListingRecorded) {
-                        logger.log(Level.FINEST, "Error, unable to record SubSubFile"); 
-                    continue;
-                    }
-                    vfcuMd5FileHierarchy.setSubSubFileVfcuMd5FileId(sourceSubSubFileListing.getVfcuMd5File().getVfcuMd5FileId());
-                }
-            }
-              
+
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
            
         }
@@ -114,6 +92,56 @@ public class Watcher extends Operation {
         
     }   
     
+    /**
+    * Method: insertSubfileInfo
+    * Purpose: Looks for subfiles, and sub-subfiles for the given MasterFile listing, and inserts that info into the database
+    */
+    private boolean insertSubfileInfo(SourceFileListing sourceMasterFileListing, VfcuMd5FileHierarchy vfcuMd5FileHierarchy) {
+        
+        //Now that we have the masterfile recorded in the database, get the subfile record and record that.
+        //We do that by comparing the directories.  if the directory one level back is the same, 
+        for (SourceFileListing sourceSubFileListing : sourceSubFileListingArr) {
+            Path masterPath = sourceMasterFileListing.getMd5File().getLocalPathEndingPath().getRoot();
+            Path subFilePath = sourceSubFileListing.getMd5File().getLocalPathEndingPath().getRoot();
+                
+            if (masterPath.equals(subFilePath)) {
+                //Paths are the same one level up, record in the table
+                boolean fileListingRecorded = sourceSubFileListing.retrieveAndRecord(xferType);
+                if (! fileListingRecorded) {
+                    logger.log(Level.FINEST, "Error, unable to record SubFile"); 
+                    continue;
+                }
+                //Update the FileHierarchy table by adding this record
+                vfcuMd5FileHierarchy.setSubFileVfcuMd5FileId(sourceSubFileListing.getVfcuMd5File().getVfcuMd5FileId());
+                vfcuMd5FileHierarchy.updateSubFileVfcuMd5FileId();
+            }
+        }
+            
+        //Now that we have the subFile recorded in the database, get the subSubfile record and record that.
+        for (SourceFileListing sourceSubSubFileListing : sourceSubSubFileListingArr) {
+            Path masterPath = sourceMasterFileListing.getMd5File().getLocalPathEndingPath().getRoot();
+            Path subFilePath = sourceSubSubFileListing.getMd5File().getLocalPathEndingPath().getRoot();
+                
+            if (masterPath.equals(subFilePath)) {
+                //Paths are the same one level up, record in the table
+                boolean fileListingRecorded = sourceSubSubFileListing.retrieveAndRecord(xferType);
+                if (! fileListingRecorded) {
+                    logger.log(Level.FINEST, "Error, unable to record SubSubFile"); 
+                    continue;
+                }
+                //Update the FileHierarchy table by adding this record
+                vfcuMd5FileHierarchy.setSubSubFileVfcuMd5FileId(sourceSubSubFileListing.getVfcuMd5File().getVfcuMd5FileId());
+                vfcuMd5FileHierarchy.updateSubSubFileVfcuMd5FileId();
+            }
+        }    
+        return true;
+    }
+    
+    /**
+    * Method: populateFileListingArr
+    * Description: Populates the filename and path information into one of three arrays. 
+    *               Each array representing a different file hierarchy level in DAMS (master/subfile/subSubfile)
+    */
     public void populateFileListingArr(Path nameAndPath) {
         
         //If we are not using master/subfile pairs, we set all files to master
@@ -142,6 +170,11 @@ public class Watcher extends Operation {
         }
     }
     
+    /**
+    * Method: traversePopulateSourceBatchList
+    * Description: obtain a list of md5Files by traversing through the directory tree
+    *  Each file we could potentially process is added into a list that we process later on
+    */
     public boolean traversePopulateSourceBatchList () {
        
         // walk directory tree starting at the directory specified in config file
