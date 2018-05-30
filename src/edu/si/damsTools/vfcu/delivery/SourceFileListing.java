@@ -12,6 +12,7 @@ import edu.si.damsTools.vfcu.files.xferType.XferType;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 /**
  *
  * @author rfeldman
@@ -43,15 +44,6 @@ public class SourceFileListing {
         return this.md5File;
     }
     
-    public String returnStringBatchDir() {
-        String dirName = vfcuMd5File.getBasePathVendor() + "/" + vfcuMd5File.getFilePathEnding();
-        
-        //In case there is no filePathEnding we will have a '/' at the end.  get rid of the final '/'
-        dirName = dirName.replaceAll("/$", "");
-        
-        return dirName;
-    }
-    
     public boolean checkIfExistsInDb () {
             
         //see if this file is tracked in the database yet                    
@@ -69,7 +61,7 @@ public class SourceFileListing {
 
         md5File = new Md5File(nameAndPath);
 
-        vfcuMd5File.setVendorMd5FileName(md5File.getFileName());
+        vfcuMd5File.setVendorMd5FileName(md5File.getFileNameString());
         vfcuMd5File.setFilePathEnding(md5File.getLocalPathEnding());
             
         vfcuMd5File.setBasePathStaging(DamsTools.getProperty("vfcuStaging"));  
@@ -122,8 +114,13 @@ public class SourceFileListing {
         return true;
     }
     
-    public boolean populateBasicValuesFromDb() {
+    public boolean populateBasicValuesFromDbStaging() {
+        
         vfcuMd5File.populateBasicDbData();
+        
+        String fileNamePath = vfcuMd5File.getBasePathStaging()+ "/" + vfcuMd5File.getFilePathEnding() + "/" + vfcuMd5File.getVendorMd5FileName();   
+        md5File = new Md5File(Paths.get(fileNamePath));
+       
         return true;
     }
     

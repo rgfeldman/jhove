@@ -165,7 +165,7 @@ public class VfcuMd5File {
     
     public void populateBasicDbData () {
         
-        String sql =    "SELECT base_path_vendor, base_path_staging, file_path_ending, file_hierarchy_cd " +
+        String sql =    "SELECT base_path_vendor, base_path_staging, file_path_ending, vendor_md5_file_name " +
                         "FROM   vfcu_md5_file " +
                         "WHERE  vfcu_md5_file_id = " + this.vfcuMd5FileId;
         
@@ -178,6 +178,7 @@ public class VfcuMd5File {
                 this.basePathVendor = rs.getString(1);
                 this.basePathStaging = rs.getString(2);
                 this.filePathEnding = rs.getString(3);     
+                this.vendorMd5FileName = rs.getString(4);
             }   
             
         } catch (Exception e) {

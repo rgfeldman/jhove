@@ -26,7 +26,7 @@ public class VfcuMediaFile {
     private String  mediaFileSize;
     private String  vendorChecksum;
     private String  vfcuChecksum;
-    private Long    copyValidateBatch;
+    private Long    vfcuBatchNumber;
     private Integer vfcuMediaFileId;
     private Integer vfcuMd5FileId; 
     private Integer childVfcuMediaFileId;
@@ -60,8 +60,8 @@ public class VfcuMediaFile {
         return this.vfcuChecksum;
     }
     
-    public Long getCopyValidateBatch () {
-        return this.copyValidateBatch;
+    public Long getVfcuBatchNumber () {
+        return this.vfcuBatchNumber;
     }
     
     public Integer getVfcuMediaFileId () {
@@ -93,8 +93,8 @@ public class VfcuMediaFile {
         this.vendorChecksum = vendorCheckSum;
     }
     
-    public void setCopyValidateBatch (Long copyValidateBatch) {
-        this.copyValidateBatch = copyValidateBatch;
+    public void setVfcuBatchNumber (Long vfcuBatchNumber) {
+        this.vfcuBatchNumber = vfcuBatchNumber;
     }
     
     public void setVfcuChecksum (String vfcuChecksum) {
@@ -324,7 +324,7 @@ public class VfcuMediaFile {
         ArrayList<Integer> filesIdsForBatch = new ArrayList<>();  
         String sql = "SELECT    vfcu_media_file_id " +
                      "FROM      vfcu_media_file " +
-                     "WHERE     copy_validate_batch = " + getCopyValidateBatch() + " ";
+                     "WHERE     vfcu_batch_number = " + getVfcuBatchNumber() + " ";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -551,26 +551,29 @@ public class VfcuMediaFile {
     }
        
       
-    public int updateCopyValidateBatch () {
+    public int updatePickupValidateBatch () {
         
         int rowsUpdated = 0;
         
-        //order by filename so each process has an even distribution of raws and .tifs.
+        //order by md5 file so if we have a lot of files to process from a lot of folders, 
+        //at least we can see some completing before too long
         //Need multiple subqueries for order by with rownum clause
         String sql = 
-            "UPDATE vfcu_media_file a " +
-            "SET    a.copy_validate_batch = " + getCopyValidateBatch() + " " +
-            "WHERE  a.vfcu_media_file_id IN ( " +
+            "UPDATE vfcu_media_file vmf " +
+            "SET    vmf.vfcu_batch_number = " + getVfcuBatchNumber() + " " +
+            "WHERE  vmf.vfcu_media_file_id IN ( " +
                 "SELECT vfcu_media_file_id " + 
                 "FROM ( " +
-                    "Select * " +
-                    "FROM vfcu_media_file b, " +
-                    "     vfcu_md5_file c " +
-                    "WHERE b.vfcu_md5_file_id = c.vfcu_md5_file_id " +
-                    "AND   c.project_cd = '" + DamsTools.getProjectCd() + "' " +
-                    "AND b.copy_validate_batch IS NULL " +
-                    "ORDER BY b.media_file_name ) " +
-                    " where rownum < " + this.maxFiles + "+ 1) ";
+                    "SELECT * " +
+                    "FROM vfcu_media_file vmf2 " +
+                    "INNER JOIN vfcu_md5_file vmd " +
+                    "ON vmf2.vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
+                    "INNER JOIN vfcu_md5_file_hierarchy vmdh " +
+                    "ON vmdh.masterFile_vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
+                    "AND vmd.project_cd = '" + DamsTools.getProjectCd() + "' " +
+                    "AND vmf2.vfcu_batch_number IS NULL " +
+                    "ORDER BY vmf2.vfcu_md5_file_id ) " +
+                "WHERE ROWNUM < " + this.maxFiles + "+ 1) ";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);     
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {

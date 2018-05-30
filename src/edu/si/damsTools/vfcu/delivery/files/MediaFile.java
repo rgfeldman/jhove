@@ -7,6 +7,9 @@ package edu.si.damsTools.vfcu.delivery.files;
 
 import com.twmacinta.util.MD5;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.vfcu.database.VfcuActivityLog;
+import edu.si.damsTools.vfcu.delivery.SourceFileListing;
+import edu.si.damsTools.vfcu.utilities.ErrorLog;
 import edu.si.damsTools.vfcu.utilities.JhoveConnection;
 import java.io.File;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -98,7 +101,6 @@ public class MediaFile extends DeliveryFile {
             jhoveValidated = true;
         }
             
-        return null;
-       
+        return null;       
     }
 }

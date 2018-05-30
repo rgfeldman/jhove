@@ -14,6 +14,9 @@ import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import java.util.HashMap;
 import java.util.logging.Level;
 import edu.si.damsTools.vfcu.database.VfcuActivityLog;
+import edu.si.damsTools.vfcu.delivery.files.MediaFile;
+import edu.si.damsTools.vfcu.files.xferType.XferType;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 /**
@@ -116,6 +119,68 @@ public class MediaFileRecord {
             activityLog.setVfcuStatusCd("PS");
             activityLog.insertRow();
         }
+        return true;
+    }
+    
+    
+    public boolean validateAndTransfer(XferType xferType) {
+        
+        SourceFileListing sourceFileListing = new SourceFileListing(getVfcuMediaFile().getVfcuMd5FileId());
+        sourceFileListing.populateBasicValuesFromDbStaging();
+            
+        //Get the filename and path based on the path from the md5File
+        Path pathFile = sourceFileListing.getMd5File().getFileNameWithPath().resolveSibling(getVfcuMediaFile().getMediaFileName());      
+        logger.log(Level.FINER, "fileLoc:" + pathFile.toString());
+
+            MediaFile mediaFile = new MediaFile(pathFile);
+            
+            boolean mediaTransfered = mediaFile.transferToVfcuStaging(xferType, false);   
+            
+            if (!mediaTransfered) {
+                ErrorLog errorLog = new ErrorLog(); 
+                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), "Failure to xfer Vendor File");        
+                return false;
+            }
+                
+            //Insert the code indicating that the file was just transferred
+            VfcuActivityLog activityLog = new VfcuActivityLog();
+            activityLog.setVfcuMediaFileId(getVfcuMediaFile().getVfcuMediaFileId());
+            activityLog.setVfcuStatusCd(xferType.returnCompleteXferCode());
+            activityLog.insertRow();
+                
+            //Populate attributes post-file transfer
+            mediaFile.populateAttributes();
+            getVfcuMediaFile().setVfcuChecksum(mediaFile.getMd5Hash());
+            getVfcuMediaFile().setMediaFileSize(mediaFile.getMediaFileSize());
+            getVfcuMediaFile().setMediaFileDate(mediaFile.getMediaFileDate());
+            getVfcuMediaFile().updateVfcuMediaAttributes();           
+            
+            //Perform validations on the physical files
+            String errorCode = mediaFile.validate();
+            if (errorCode != null) {
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(getVfcuMediaFile(), errorCode, "Validation Failure");
+                return false;
+            }
+            
+            //If we validated with jhove, now we need to record this in the datbase
+            if (mediaFile.retJhoveValidated()) {
+                activityLog.setVfcuMediaFileId(getVfcuMediaFile().getVfcuMediaFileId());
+                activityLog.setVfcuStatusCd("JH");
+                activityLog.insertRow();
+            }
+  
+            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            //    mediaFileRecord.genAssociations(batchFileRecord.getVfcuMd5File().getFileHierarchyCd());
+            }
+            
+            //Perform validations on the database Record
+            validate();
+            
+            //if (! distinctMd5FileIds.contains(getVfcuMediaFile().getVfcuMd5FileId())) {
+            //    distinctMd5FileIds.add(getVfcuMediaFile().getVfcuMd5FileId());
+           /// }
+            
         return true;
     }
 }

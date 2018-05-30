@@ -31,127 +31,96 @@ public class MediaPickupValidate extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());    
     
-    private final ArrayList<MediaFileRecord> fileListForBatch;
+    private final ArrayList<MediaFileRecord> masterListForBatch;
     private final ArrayList<Integer> distinctMd5FileIds;
+    private final XferTypeFactory xferTypeFactory;
+    private final XferType xferType;
     
     public MediaPickupValidate() {
-        fileListForBatch = new ArrayList<>();
+        masterListForBatch = new ArrayList<>();
         distinctMd5FileIds = new ArrayList<>();
+        xferTypeFactory = new XferTypeFactory();
+        xferType = xferTypeFactory.XferTypeChooser();
+        
     }
     
-    private boolean assignToCopyValidateBatch() {
+    /*Method: assignToPickupValidateBatch 
+      Description: Assigns a set of records in the Database to the current batch.
+                    We keep it simple and only update the database, we want the code to go through this 
+                    part of the code as quickly as possible to lock these files from other processes
+    */
+    private boolean assignToPickupValidateBatch() {
         
         //Assign database entry rows to a batch
         VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-        vfcuMediaFile.setMaxFiles(Integer.parseInt(DamsTools.getProperty("maxFilesCopyValidate")));
-        vfcuMediaFile.setCopyValidateBatch(DamsTools.getBatchExecutionNumber());
+        vfcuMediaFile.setMaxFiles(Integer.parseInt(DamsTools.getProperty("maxMasterFilesBatch")));
+        vfcuMediaFile.setVfcuBatchNumber(DamsTools.getBatchNumber());
         
-        int rowsUpdated = vfcuMediaFile.updateCopyValidateBatch();
+        int rowsUpdated = vfcuMediaFile.updatePickupValidateBatch();
         return rowsUpdated >= 1;
     }
     
+    /*Method: populateMediaFilesForBatch 
+      Description: Creates the Array holding the mediaFile information for each of the files in the current batch
+    */
     private boolean populateMediaFilesForBatch() {
     
         VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-        vfcuMediaFile.setCopyValidateBatch(DamsTools.getBatchExecutionNumber());
+        vfcuMediaFile.setVfcuBatchNumber(DamsTools.getBatchNumber());
         ArrayList<Integer> fileIdsForBatch = new ArrayList<>();  
         fileIdsForBatch = vfcuMediaFile.returnFileIdsForBatch();
         
         for (Integer fileId: fileIdsForBatch) {
             MediaFileRecord mediaFileRecord = new MediaFileRecord(fileId);
             mediaFileRecord.populateBasicValuesFromDb();
-            fileListForBatch.add(mediaFileRecord);
+            masterListForBatch.add(mediaFileRecord);
         }
         return true;
     }
     
     public void invoke () {
     
-        //setBatchNumber for current batch
-        boolean filesAssignedToBatch = assignToCopyValidateBatch();
+        //lock a set of records into this batch in the database.
+        boolean filesAssignedToBatch = assignToPickupValidateBatch();
         if (! filesAssignedToBatch) {
             //no files found that can be assigned to a validate and copy batch.  We have no need to go further
             logger.log(Level.FINER, "No files found to process");
             return;
         }
-        //Now we updated the files and assigned to current batch, commit so we lock them into current batch
+        //commit is what lock them into current batch so other processes dont grab them
         try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-      
-        XferTypeFactory xferTypeFactory = new XferTypeFactory();
-        XferType xferType = xferTypeFactory.XferTypeChooser();
-        
-        //create array of MediaFiles just assigned to batch     
+
+        //create array of MediaFiles just locked into this batch     
         populateMediaFilesForBatch();
         
-        for (MediaFileRecord mediaFileRecord: fileListForBatch) {
+        for (MediaFileRecord mediaFileRecord: masterListForBatch) {
             
-            SourceFileListing batchFileRecord = new SourceFileListing(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId());
-            batchFileRecord.populateBasicValuesFromDb();
-            String fileLoc = batchFileRecord.returnStringBatchDir() + "/" + mediaFileRecord.getVfcuMediaFile().getMediaFileName();
-             logger.log(Level.FINER, "fileLoc:" + fileLoc);
-            Path pathFile = Paths.get(fileLoc);
-            
-            MediaFile mediaFile = new MediaFile(pathFile);
-            
-            boolean mediaTransfered = mediaFile.transferToVfcuStaging(xferType, false);   
-            
-            if (!mediaTransfered) {
-                ErrorLog errorLog = new ErrorLog(); 
-                errorLog.capture(mediaFileRecord.getVfcuMediaFile(), xferType.returnXferErrorCode(), "Failure to xfer Vendor File");        
-                continue;
-            }
-                
-            //Insert the code indicating that the file was just transferred
-            VfcuActivityLog activityLog = new VfcuActivityLog();
-            activityLog.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
-            activityLog.setVfcuStatusCd(xferType.returnCompleteXferCode());
-            activityLog.insertRow();
-                
-                
-            //Populate attributes post-file transfer
-            mediaFile.populateAttributes();
-            mediaFileRecord.getVfcuMediaFile().setVfcuChecksum(mediaFile.getMd5Hash());
-            mediaFileRecord.getVfcuMediaFile().setMediaFileSize(mediaFile.getMediaFileSize());
-            mediaFileRecord.getVfcuMediaFile().setMediaFileDate(mediaFile.getMediaFileDate());
-            mediaFileRecord.getVfcuMediaFile().updateVfcuMediaAttributes();           
-            
-            //Perform validations on the physical files
-            String errorCode = mediaFile.validate();
-            if (errorCode != null) {
-                ErrorLog errorLog = new ErrorLog();  
-                errorLog.capture(mediaFileRecord.getVfcuMediaFile(), errorCode, "Validation Failure");
+            boolean validXferred = mediaFileRecord.validateAndTransfer(xferType);
+            if (! validXferred) {
+                //error encountered and logged
+                logger.log(Level.FINER, "logged error that was encountered with file");
                 continue;
             }
             
-            //If we validated with jhove, now we need to record this in the datbase
-            if (mediaFile.retJhoveValidated()) {
-                activityLog.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
-                activityLog.setVfcuStatusCd("JH");
-                activityLog.insertRow();
-            }
-  
+            // Now must do the same for the subfile...and sub-subfile
             if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-            //    mediaFileRecord.genAssociations(batchFileRecord.getVfcuMd5File().getFileHierarchyCd());
-            }
             
-            //Perform validations on the database Record
-            mediaFileRecord.validate();
-            
-            if (! distinctMd5FileIds.contains(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId())) {
-                distinctMd5FileIds.add(mediaFileRecord.getVfcuMediaFile().getVfcuMd5FileId());
             }
+                
             
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
              
         }
         
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-            masterSubfileValidation();
-        }
+       //if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+       //     masterSubfileValidation();
+        //}
            
         try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                   
     }       
+    
+    
     
     private boolean masterSubfileValidation() {
         
@@ -273,7 +242,7 @@ public class MediaPickupValidate extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
-        reqProps.add("maxFilesCopyValidate");
+        reqProps.add("maxMasterFilesBatch");
         reqProps.add("fileXferType");
         reqProps.add("dupFileNmCheck");
         reqProps.add("useMasterSubPairs");

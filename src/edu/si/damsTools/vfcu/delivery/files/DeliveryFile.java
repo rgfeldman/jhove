@@ -28,11 +28,19 @@ public class DeliveryFile {
         this.sourceNameAndPath = sourceNameAndPath;
     }
     
-    public String getFileName() {
+    public String getFileNameString() {
         return this.sourceNameAndPath.getFileName().toString();
     }
     
-    public Path getFileNamePath() {
+    public Path getFileNameWithPath() {
+        return sourceNameAndPath;
+    }
+        
+    public Path getDirectoryPath() {
+        return sourceNameAndPath.getParent();
+    }
+    
+    public Path getFileName() {
         return sourceNameAndPath.getFileName();
     }
 
@@ -44,9 +52,9 @@ public class DeliveryFile {
                 
         //The sourceName and path can have NO localPathEnding.  This is valid condition, and in that case the localPathEnding is an empty string
         //This occurs when VFCU is pointed directly at a particular directory.  We check to make sure this is not an empty string first or the substr may fail.
-        if (sourceNameAndPath.toString().length() > DamsTools.getProperty("sourceBaseDir").length() + getFileName().length() +1 )  {
+        if (sourceNameAndPath.toString().length() > DamsTools.getProperty("sourceBaseDir").length() + getFileNameString().length() +1 )  {
             localPathEnding = sourceNameAndPath.toString().substring(DamsTools.getProperty("sourceBaseDir").length() +1, 
-                sourceNameAndPath.toString().length() - getFileName().length() -1 );
+                sourceNameAndPath.toString().length() - getFileNameString().length() -1 );
         }   
         
         return localPathEnding;
@@ -78,9 +86,9 @@ public class DeliveryFile {
             destinationDir = DamsTools.getProperty("vfcuStaging") + '/' + getLocalPathEnding();
         }
       
-        String destNameWithPath = destinationDir + "/" + getFileName();
+        String destNameWithPath = destinationDir + "/" + getFileNameString();
         
-        logger.log(Level.FINEST, "Source: " + getFileName());
+        logger.log(Level.FINEST, "Source: " + getFileNameString());
         logger.log(Level.FINEST, "Destination " + destNameWithPath);
         
         Path source      = sourceNameAndPath;
