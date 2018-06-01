@@ -77,7 +77,7 @@ public class VfcuMd5FileHierarchy {
     
      public boolean updateSubFileVfcuMd5FileId () {
         
-        String sql = "UPDATE vfcu_md5_hierarchy " +
+        String sql = "UPDATE vfcu_md5_file_hierarchy " +
                         "SET subfile_vfcu_md5_file_id = " + getSubFileVfcuMd5FileId() +
                         " WHERE masterfile_vfcu_md5_file_id = " + getMasterFileVfcuMd5FileId();
     
@@ -91,7 +91,7 @@ public class VfcuMd5FileHierarchy {
             }
                 
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to insert into vfcu_md5_hierarchy", e );
+                logger.log(Level.FINER, "Error: unable to update vfcu_md5_file_hierarchy", e );
                 return false;
         }
         return true;
@@ -99,7 +99,7 @@ public class VfcuMd5FileHierarchy {
      
     public boolean updateSubSubFileVfcuMd5FileId () {
         
-        String sql = "UPDATE vfcu_md5_hierarchy " +
+        String sql = "UPDATE vfcu_md5_file_hierarchy " +
                         "SET sub_subfile_vfcu_md5_file_id = " + getSubSubFileVfcuMd5FileId() +
                         " WHERE masterfile_vfcu_md5_file_id = " + getMasterFileVfcuMd5FileId();
     
@@ -113,7 +113,7 @@ public class VfcuMd5FileHierarchy {
             }
                 
         } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to insert into vfcu_md5_hierarchy", e );
+                logger.log(Level.FINER, "Error: unable to update vfcu_md5_file_hierarchy", e );
                 return false;
         }
         return true;

@@ -22,56 +22,50 @@ public class DeliveryFile {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    Path sourceNameAndPath;
+    Path fileNameAndPath;
 
     public DeliveryFile(Path sourceNameAndPath) {
-        this.sourceNameAndPath = sourceNameAndPath;
-    }
-    
-    public String getFileNameString() {
-        return this.sourceNameAndPath.getFileName().toString();
+        this.fileNameAndPath = sourceNameAndPath;
     }
     
     public Path getFileNameWithPath() {
-        return sourceNameAndPath;
+        return fileNameAndPath;
     }
         
     public Path getDirectoryPath() {
-        return sourceNameAndPath.getParent();
+        return fileNameAndPath.getParent();
     }
     
     public Path getFileName() {
-        return sourceNameAndPath.getFileName();
-    }
-
-    public String getLocalPathEnding() {
-
-        String localPathEnding = "";
-
-        logger.log(Level.FINEST, "sourceNameAndPath: " + sourceNameAndPath.toString());
-                
-        //The sourceName and path can have NO localPathEnding.  This is valid condition, and in that case the localPathEnding is an empty string
-        //This occurs when VFCU is pointed directly at a particular directory.  We check to make sure this is not an empty string first or the substr may fail.
-        if (sourceNameAndPath.toString().length() > DamsTools.getProperty("sourceBaseDir").length() + getFileNameString().length() +1 )  {
-            localPathEnding = sourceNameAndPath.toString().substring(DamsTools.getProperty("sourceBaseDir").length() +1, 
-                sourceNameAndPath.toString().length() - getFileNameString().length() -1 );
-        }   
-        
-        return localPathEnding;
+        return fileNameAndPath.getFileName();
     }
     
-    public Path getLocalPathEndingPath() {
-        Path localPathEnding = null;
+    //Gets the filepathending from the file location when the file is in staging
+    public Path getFilePathEnding(String locationArea) {
+
+        Path filePathEnding = Paths.get("");
+        logger.log(Level.FINEST, "fileNameAndPath: " + fileNameAndPath.toString());
         
-        logger.log(Level.FINEST, "sourceNameAndPath: " + sourceNameAndPath.toString());
+        int vfcuBaseCount = 0;
+        
+        switch (locationArea) {            
+            case "source" :
+                vfcuBaseCount = Paths.get(DamsTools.getProperty("sourceBaseDir")).getNameCount();
+                break;
+            case "staging" :
+                vfcuBaseCount = Paths.get(DamsTools.getProperty("vfcuStaging")).getNameCount();
+        }
+        
+        int fileNameAndPathCount = fileNameAndPath.getNameCount();
+        
         //The sourceName and path can have NO localPathEnding.  This is valid condition, and in that case the localPathEnding is an empty string
         //This occurs when VFCU is pointed directly at a particular directory.  We check to make sure this is not an empty string first or the substr may fail.
-        if (sourceNameAndPath != null) {
-            int numLevelsInBaseDir = sourceNameAndPath.getRoot().getNameCount(); 
-            localPathEnding = sourceNameAndPath.subpath(numLevelsInBaseDir,-1);
-        }  
+        if (fileNameAndPath.getNameCount() > vfcuBaseCount + 1 )  {
+            filePathEnding = fileNameAndPath.subpath(vfcuBaseCount, fileNameAndPathCount -1);
+            logger.log(Level.FINEST, "filePathEnding: " + filePathEnding);
+        }   
         
-        return localPathEnding;
+        return filePathEnding;
     }
     
     
@@ -81,35 +75,30 @@ public class DeliveryFile {
     */
     public boolean transferToVfcuStaging(XferType xferType, boolean createMissingDir) {
 
-        String destinationDir = DamsTools.getProperty("vfcuStaging");
-        if (! getLocalPathEnding().equals("")) {
-            destinationDir = DamsTools.getProperty("vfcuStaging") + '/' + getLocalPathEnding();
+        Path destinationDir = Paths.get(DamsTools.getProperty("vfcuStaging"));
+        if ( getFilePathEnding("source").getNameCount() > 0) {
+            destinationDir = destinationDir.resolve(getFilePathEnding("source"));
         }
-      
-        String destNameWithPath = destinationDir + "/" + getFileNameString();
         
-        logger.log(Level.FINEST, "Source: " + getFileNameString());
-        logger.log(Level.FINEST, "Destination " + destNameWithPath);
-        
-        Path source      = sourceNameAndPath;
-        Path destination = Paths.get(destNameWithPath);
+        logger.log(Level.FINEST, "Source: " + fileNameAndPath);
+        logger.log(Level.FINEST, "Destination " + destinationDir.toString());
        
         try {
             if (createMissingDir) {
            
-                Path newDirectory = Paths.get(destinationDir);  
-                logger.log(Level.FINEST, "New Folder  " + destinationDir);
+                Path newDirectory = destinationDir;  
+                logger.log(Level.FINEST, "New Folder  " + destinationDir.toString());
              
                 Files.createDirectories(newDirectory);
             }
            
-            boolean fileXfered = xferType.xferFile(source, destination);
+            boolean fileXfered = xferType.xferFile(fileNameAndPath, destinationDir.resolve(getFileName()));
                 if (!fileXfered) {
                 return false;
             }
             
             //Now that we have moved the file, our file of reference is the file we just moved.  point file to the destination area
-            this.sourceNameAndPath = destination;
+            this.fileNameAndPath = destinationDir.resolve(getFileName());
         }
         catch(Exception e) {
              logger.log(Level.FINEST, "Unable to transfer to staging", e);

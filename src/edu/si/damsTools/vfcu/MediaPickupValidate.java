@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
 /**
  *
  * @author rfeldman
@@ -68,7 +69,7 @@ public class MediaPickupValidate extends Operation {
         VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
         vfcuMediaFile.setVfcuBatchNumber(DamsTools.getBatchNumber());
         ArrayList<Integer> fileIdsForBatch = new ArrayList<>();  
-        fileIdsForBatch = vfcuMediaFile.returnFileIdsForBatch();
+        fileIdsForBatch = vfcuMediaFile.returnVfcuFileIdsForBatch();
         
         for (Integer fileId: fileIdsForBatch) {
             MediaFileRecord mediaFileRecord = new MediaFileRecord(fileId);
@@ -93,9 +94,9 @@ public class MediaPickupValidate extends Operation {
         //create array of MediaFiles just locked into this batch     
         populateMediaFilesForBatch();
         
-        for (MediaFileRecord mediaFileRecord: masterListForBatch) {
+        for (MediaFileRecord masterMediaFileRecord: masterListForBatch) {
             
-            boolean validXferred = mediaFileRecord.validateAndTransfer(xferType);
+            boolean validXferred = masterMediaFileRecord.validateAndTransfer(xferType);
             if (! validXferred) {
                 //error encountered and logged
                 logger.log(Level.FINER, "logged error that was encountered with file");
@@ -104,7 +105,27 @@ public class MediaPickupValidate extends Operation {
             
             // Now must do the same for the subfile...and sub-subfile
             if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-            
+               Integer assocVfcuMediaFileId = masterMediaFileRecord.getVfcuMediaFile().returnAssociatedFileId();
+               if (assocVfcuMediaFileId == null) {
+                   logger.log(Level.FINER, "Error, master found with no subfile");
+                   ErrorLog errorLog = new ErrorLog();
+                   errorLog.capture(masterMediaFileRecord.getVfcuMediaFile(), "VMS", "Master has no subfile");
+                   continue;
+                }
+                masterMediaFileRecord.getVfcuMediaFile().setChildVfcuMediaFileId(assocVfcuMediaFileId);
+                masterMediaFileRecord.getVfcuMediaFile().updateChildVfcuMediaFileId();
+               
+                MediaFileRecord subFileMediaRecord = new MediaFileRecord(assocVfcuMediaFileId); 
+                subFileMediaRecord.populateBasicValuesFromDb();
+                subFileMediaRecord.getVfcuMediaFile().updateVfcuBatchNumber();
+                
+                validXferred = subFileMediaRecord.validateAndTransfer(xferType);
+                    if (! validXferred) {
+                    //error encountered and logged
+                    logger.log(Level.FINER, "logged error that was encountered with file");
+                    continue;
+                }
+               
             }
                 
             
@@ -123,6 +144,10 @@ public class MediaPickupValidate extends Operation {
     
     
     private boolean masterSubfileValidation() {
+        
+        
+        // ALREADY DID VMS, need to look for VSM
+        
         
         for (Integer vfcuMd5FileId : distinctMd5FileIds) {
            

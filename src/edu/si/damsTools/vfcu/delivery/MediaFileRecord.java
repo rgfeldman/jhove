@@ -126,7 +126,7 @@ public class MediaFileRecord {
     public boolean validateAndTransfer(XferType xferType) {
         
         SourceFileListing sourceFileListing = new SourceFileListing(getVfcuMediaFile().getVfcuMd5FileId());
-        sourceFileListing.populateBasicValuesFromDbStaging();
+        sourceFileListing.populateBasicValuesFromDbVendor();
             
         //Get the filename and path based on the path from the md5File
         Path pathFile = sourceFileListing.getMd5File().getFileNameWithPath().resolveSibling(getVfcuMediaFile().getMediaFileName());      
@@ -149,7 +149,12 @@ public class MediaFileRecord {
             activityLog.insertRow();
                 
             //Populate attributes post-file transfer
-            mediaFile.populateAttributes();
+            boolean attributesGathered = mediaFile.populateAttributes();
+            if (!attributesGathered) {
+                ErrorLog errorLog = new ErrorLog(); 
+                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), "Attribute gathering failed");        
+                return false;
+            }
             getVfcuMediaFile().setVfcuChecksum(mediaFile.getMd5Hash());
             getVfcuMediaFile().setMediaFileSize(mediaFile.getMediaFileSize());
             getVfcuMediaFile().setMediaFileDate(mediaFile.getMediaFileDate());

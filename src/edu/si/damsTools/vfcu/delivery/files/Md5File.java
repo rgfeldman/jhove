@@ -39,7 +39,7 @@ public class Md5File extends DeliveryFile {
     public boolean populateContentsHashMap() {
     
         LineIterator lt = null;
-        try (FileInputStream fin= new FileInputStream(super.sourceNameAndPath.toString())) {
+        try (FileInputStream fin= new FileInputStream(super.fileNameAndPath.toString())) {
             
             lt = IOUtils.lineIterator(fin, "utf-8");
             
@@ -63,13 +63,13 @@ public class Md5File extends DeliveryFile {
 
                     }
                 } catch (Exception e) {
-                    logger.log(Level.FINEST, "Error reading line from md5 file " + super.sourceNameAndPath.toString() + e);
+                    logger.log(Level.FINEST, "Error reading line from md5 file " + super.fileNameAndPath.toString() + e);
                     return false;
                 }
             }
         
         } catch (Exception e) {
-            logger.log(Level.FINEST, "Error reading md5 file " + super.sourceNameAndPath.toString() + e);
+            logger.log(Level.FINEST, "Error reading md5 file " + super.fileNameAndPath.toString() + e);
             return false;
         } finally {
             if (lt!= null) {

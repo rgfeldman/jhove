@@ -54,7 +54,7 @@ public class MediaFile extends DeliveryFile {
 
     public boolean populateAttributes () {
         
-        Path mediaFile      = super.sourceNameAndPath;
+        Path mediaFile      = super.fileNameAndPath;
         
         try {
             BasicFileAttributes attr = Files.readAttributes(mediaFile, BasicFileAttributes.class);    
@@ -89,11 +89,11 @@ public class MediaFile extends DeliveryFile {
         }
  
         JhoveConnection jhoveConnection = new JhoveConnection();
-        boolean jhoveCheckRequired = jhoveConnection.populateRequiredData(super.sourceNameAndPath.toString());  
+        boolean jhoveCheckRequired = jhoveConnection.populateRequiredData(super.fileNameAndPath.toString());  
         // perform jhove validation if needed 
         if (jhoveCheckRequired) {          
             
-            boolean jhoveValidationSuccess = jhoveConnection.jhoveValidate(super.sourceNameAndPath.toString());
+            boolean jhoveValidationSuccess = jhoveConnection.jhoveValidate(super.fileNameAndPath.toString());
             
             if (!jhoveValidationSuccess) {
                 return "JHV";

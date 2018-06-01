@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
+import edu.si.damsTools.utilities.StringUtils;
 
 
 
@@ -30,6 +31,7 @@ public class VfcuMediaFile {
     private Integer vfcuMediaFileId;
     private Integer vfcuMd5FileId; 
     private Integer childVfcuMediaFileId;
+    
     
         
     public Integer getChildVfcuMediaFileId () {
@@ -318,8 +320,40 @@ public class VfcuMediaFile {
         
     }
     
+     public Integer returnAssociatedFileId () {
+        Integer assocVfcuFileId = null;
+        
+        String sql = "SELECT    subvmf.vfcu_media_file_id " +
+                     "FROM      vfcu_media_file vmf " +
+                     "INNER JOIN vfcu_md5_file vmd " +
+                     "ON vmf.vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
+                     "INNER JOIN vfcu_md5_file_hierarchy vmfh " + 
+                     "ON vmd.vfcu_md5_file_id = vmfh.masterfile_vfcu_md5_file_id " +
+                     "INNER JOIN vfcu_media_file subvmf " +
+                     "ON subvmf.vfcu_md5_File_id = vmfh.subfile_vfcu_md5_file_id " +
+                     "WHERE vmf.vfcu_media_file_id = " + getVfcuMediaFileId() +
+                     " AND SUBSTR(subvmf.media_file_name,1,INSTR(subvmf.media_file_name,'.') -1)  = "
+                            + "'" + StringUtils.getExtensionlessFileName(getMediaFileName()) +"'" ;
+        
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+                    
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+            
+           if (rs.next()) {
+                //found a matching filename
+                assocVfcuFileId = rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to return Associated File Id", e );
+        }
+        
+        return assocVfcuFileId;
+    }
     
-    public ArrayList<Integer> returnFileIdsForBatch () {
+    
+    public ArrayList<Integer> returnVfcuFileIdsForBatch () {
     
         ArrayList<Integer> filesIdsForBatch = new ArrayList<>();  
         String sql = "SELECT    vfcu_media_file_id " +
@@ -612,10 +646,30 @@ public class VfcuMediaFile {
         return true;
     }
     
-        public boolean updateChildVfcuMediaFileId () {
+    public boolean updateChildVfcuMediaFileId () {
  
         String sql = "UPDATE    vfcu_media_file " +
                      "SET       child_vfcu_media_file_id = " + getChildVfcuMediaFileId() +
+                     " WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);       
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
+
+            int rowsUpdated= pStmt.executeUpdate();        
+            logger.log(Level.FINER, "Rows updated for current batch: " + rowsUpdated );
+                    
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to update child vfcuMediaFile_id", e );
+                return false;
+        }
+        
+        return true;
+    }
+    
+     public boolean updateVfcuBatchNumber () {
+ 
+        String sql = "UPDATE    vfcu_media_file " +
+                     "SET       vfcu_batch_number = '" + DamsTools.getBatchNumber() + "' " +
                      " WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
             
         logger.log(Level.FINEST, "SQL: {0}", sql);       

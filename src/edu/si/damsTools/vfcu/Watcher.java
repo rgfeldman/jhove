@@ -79,10 +79,12 @@ public class Watcher extends Operation {
             vfcuMd5FileHierarchy.setMasterFileVfcuMd5FileId(sourceMasterFileListing.getVfcuMd5File().getVfcuMd5FileId());
             vfcuMd5FileHierarchy.insertRow();
 
+            
             if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
                 //record subFileInfo
                 insertSubfileInfo(sourceMasterFileListing, vfcuMd5FileHierarchy);
             }
+            
 
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
            
@@ -101,9 +103,12 @@ public class Watcher extends Operation {
         //Now that we have the masterfile recorded in the database, get the subfile record and record that.
         //We do that by comparing the directories.  if the directory one level back is the same, 
         for (SourceFileListing sourceSubFileListing : sourceSubFileListingArr) {
-            Path masterPath = sourceMasterFileListing.getMd5File().getLocalPathEndingPath().getRoot();
-            Path subFilePath = sourceSubFileListing.getMd5File().getLocalPathEndingPath().getRoot();
+            Path masterPath = sourceMasterFileListing.getMd5File().getFilePathEnding("staging").getParent();
+            Path subFilePath = sourceSubFileListing.getMd5File().getFilePathEnding("source").getParent();
                 
+            logger.log(Level.FINEST, "DEBUG: masterPath " + masterPath.toString()); 
+            logger.log(Level.FINEST, "DEBUG: subFilePath " + subFilePath.toString()); 
+            
             if (masterPath.equals(subFilePath)) {
                 //Paths are the same one level up, record in the table
                 boolean fileListingRecorded = sourceSubFileListing.retrieveAndRecord(xferType);
@@ -119,8 +124,8 @@ public class Watcher extends Operation {
             
         //Now that we have the subFile recorded in the database, get the subSubfile record and record that.
         for (SourceFileListing sourceSubSubFileListing : sourceSubSubFileListingArr) {
-            Path masterPath = sourceMasterFileListing.getMd5File().getLocalPathEndingPath().getRoot();
-            Path subFilePath = sourceSubSubFileListing.getMd5File().getLocalPathEndingPath().getRoot();
+            Path masterPath = sourceMasterFileListing.getMd5File().getDirectoryPath().getParent();
+            Path subFilePath = sourceSubSubFileListing.getMd5File().getDirectoryPath().getParent();
                 
             if (masterPath.equals(subFilePath)) {
                 //Paths are the same one level up, record in the table

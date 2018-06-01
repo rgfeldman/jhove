@@ -61,8 +61,8 @@ public class SourceFileListing {
 
         md5File = new Md5File(nameAndPath);
 
-        vfcuMd5File.setVendorMd5FileName(md5File.getFileNameString());
-        vfcuMd5File.setFilePathEnding(md5File.getLocalPathEnding());
+        vfcuMd5File.setVendorMd5FileName(md5File.getFileName().toString());
+        vfcuMd5File.setFilePathEnding(md5File.getFilePathEnding("source").toString() );
             
         vfcuMd5File.setBasePathStaging(DamsTools.getProperty("vfcuStaging"));  
         vfcuMd5File.setBasePathVendor(DamsTools.getProperty("sourceBaseDir"));
@@ -114,11 +114,11 @@ public class SourceFileListing {
         return true;
     }
     
-    public boolean populateBasicValuesFromDbStaging() {
+    public boolean populateBasicValuesFromDbVendor() {
         
         vfcuMd5File.populateBasicDbData();
         
-        String fileNamePath = vfcuMd5File.getBasePathStaging()+ "/" + vfcuMd5File.getFilePathEnding() + "/" + vfcuMd5File.getVendorMd5FileName();   
+        String fileNamePath = vfcuMd5File.getBasePathVendor()+ "/" + vfcuMd5File.getFilePathEnding() + "/" + vfcuMd5File.getVendorMd5FileName();   
         md5File = new Md5File(Paths.get(fileNamePath));
        
         return true;
