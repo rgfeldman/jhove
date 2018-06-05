@@ -433,12 +433,11 @@ public class VfcuMediaFile {
     }
     
     
-    public HashMap retrieveSuccessFileNmsIdForMd5Id () {
+    public ArrayList retrieveNoErrorIdsForMd5Id () {
         
-        HashMap<Integer, String> fileNameId;
-        fileNameId = new HashMap<> ();
+        ArrayList<Integer> ids = new ArrayList<>();
         
-        String sql = "SELECT  vfcu_media_file_id, media_file_name " +
+        String sql = "SELECT  vfcu_media_file_id " +
                      "FROM     vfcu_media_file a " +
                      "WHERE    vfcu_md5_file_id = " + getVfcuMd5FileId() + 
                      " AND NOT EXISTS ( " +
@@ -452,14 +451,14 @@ public class VfcuMediaFile {
              ResultSet rs = pStmt.executeQuery() ) {
 
             while (rs.next()) {
-                 fileNameId.put(rs.getInt(1), rs.getString(2));
+                 ids.add(rs.getInt(1));
             }
                 
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain vfcu_media_file_ids for current batch", e );
         }
          
-        return fileNameId;
+        return ids;
     }
     
     public boolean populateVendorChecksum () {

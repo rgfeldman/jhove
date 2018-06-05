@@ -59,7 +59,7 @@ public class Md5File extends DeliveryFile {
                             logger.log(Level.FINEST, "File Excluded: " + m.group(2).trim()); 
                             continue;
                         }
-                        contentsMap.put(m.group(1).toLowerCase(),m.group(2).trim());
+                        contentsMap.put(m.group(2).trim(),m.group(1).toLowerCase());
 
                     }
                 } catch (Exception e) {

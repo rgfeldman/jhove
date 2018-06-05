@@ -101,11 +101,11 @@ public class SourceFileListing {
                 return false;
         }
             
-        for (String md5Value : getMd5File().getContentsMap().keySet()) {
+        for (String filename : getMd5File().getContentsMap().keySet()) {
             MediaFileRecord mediaFileRecord = new MediaFileRecord();
             mediaFileRecord.getVfcuMediaFile().setVfcuMd5FileId(getVfcuMd5File().getVfcuMd5FileId());
-            mediaFileRecord.getVfcuMediaFile().setVendorCheckSum(md5Value);
-            mediaFileRecord.getVfcuMediaFile().setMediaFileName(getMd5File().getContentsMap().get(md5Value) );
+            mediaFileRecord.getVfcuMediaFile().setMediaFileName(filename);
+            mediaFileRecord.getVfcuMediaFile().setVendorCheckSum(getMd5File().getContentsMap().get(filename) );
             boolean dbRecordInserted = mediaFileRecord.getVfcuMediaFile().insertRow();
             if (!dbRecordInserted) {
                 logger.log(Level.FINEST, "Error, unable to insert mediaFile row"); 

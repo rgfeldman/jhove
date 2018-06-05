@@ -44,7 +44,7 @@ public class MediaFileRecord {
         return this.vfcuMediaFile;
     }
      
-    public boolean validate() {
+    public boolean validateDbRecord() {
         //validate the filename (duplicate check)
         if (DamsTools.getProperty("dupFileNmCheck").equals("true")) {
             //look to see if the file already exists that is not in error state
@@ -69,6 +69,39 @@ public class MediaFileRecord {
             errorLog.capture(vfcuMediaFile, "VMD", "MD5 checksum validation failure");
             return false;
         }           
+        
+        return true;
+    }
+    
+    public boolean validateForCompletion(String hierarchyType) {
+         //confirm 'PS' status exists
+        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            
+            // if one member of a pair was an error, mark the other of the pair an error as well
+            if(! hierarchyType.equals("master")) {
+                //get the associated master, and check for error code 'ER' on it
+            }
+            else {
+                //get the associated subfile, and check for error code 'ER' on it
+            }
+            
+            //Check to make sure the PS status exists
+            VfcuActivityLog vfcuActivityLog = new VfcuActivityLog();
+            vfcuActivityLog.setVfcuMediaFileId(getVfcuMediaFile().getVfcuMediaFileId());
+            vfcuActivityLog.setVfcuStatusCd("PS");
+            boolean statusFound = vfcuActivityLog.doesMediaIdExistWithStatus();
+            
+            if (!statusFound ) {
+                String errorCode = "VMS";
+                if(! hierarchyType.equals("master")) {
+                   errorCode = "VSM";
+                }
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(vfcuMediaFile, errorCode, "Associated file not found");
+                return false;
+            }
+
+        }
         
         return true;
     }
@@ -174,17 +207,9 @@ public class MediaFileRecord {
                 activityLog.setVfcuStatusCd("JH");
                 activityLog.insertRow();
             }
-  
-            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-            //    mediaFileRecord.genAssociations(batchFileRecord.getVfcuMd5File().getFileHierarchyCd());
-            }
             
             //Perform validations on the database Record
-            validate();
-            
-            //if (! distinctMd5FileIds.contains(getVfcuMediaFile().getVfcuMd5FileId())) {
-            //    distinctMd5FileIds.add(getVfcuMediaFile().getVfcuMd5FileId());
-           /// }
+            validateDbRecord();
             
         return true;
     }
