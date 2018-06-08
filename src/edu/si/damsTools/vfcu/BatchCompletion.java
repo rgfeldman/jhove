@@ -33,13 +33,9 @@ public class BatchCompletion extends Operation {
         reqProps = new ArrayList<>();
     }
     
-    private void examineMediaFile (MediaFileRecord mediaFileRecord) {
-        
-
+    public void determineIfComplete() {
         
     }
-    
-    
     
     public void invoke () {
         
@@ -59,22 +55,34 @@ public class BatchCompletion extends Operation {
                 mediaFileRecord.populateBasicValuesFromDb();
                 mediaFileRecord.validateForCompletion("master");
 
-                examineMediaFile(mediaFileRecord);
-                
-                //get the associated subfile md5, and do the same validation
-                
+                 if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+                    //get the associated subfile md5, and do the same validation
+                    Integer subFileId = vfcuMediaFile.retrieveSubFileId();
+                    MediaFileRecord submediaFileRecord = new MediaFileRecord(subFileId);
+                    submediaFileRecord.populateBasicValuesFromDb();
+                    submediaFileRecord.validateForCompletion("master");
+                 }                
+            }
+        
+            
+            int NumFilesComplete = sourceFileListing.retrieveCountComplete();
+            
+            int NumFilesInBatch = sourceFileListing.retrieveCountInBatch();
+            
+            if (NumFilesComplete == NumFilesInBatch) {
+                 //Mark batch as completed
+                 
             }
             
-           
+            //Look for any files 'left behind' on the file server
             
+
         }
         
         
-        //Look for Any files in the master or subfile that do not have 'PS' status and mark as error.
         
-        //Look for any files 'left behind' on the file server
         
-        //Mark batch as completed
+        
         
     }
     

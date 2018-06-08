@@ -80,9 +80,30 @@ public class MediaFileRecord {
             // if one member of a pair was an error, mark the other of the pair an error as well
             if(! hierarchyType.equals("master")) {
                 //get the associated master, and check for error code 'ER' on it
+                VfcuActivityLog subfileActivityLog = new VfcuActivityLog();
+                subfileActivityLog.setVfcuMediaFileId(vfcuMediaFile.getChildVfcuMediaFileId());
+                subfileActivityLog.setVfcuStatusCd("ER");
+                boolean subfileInError = subfileActivityLog.doesMediaIdExistWithStatus();
+                if (subfileInError) {
+                    //Mark the master as an error as well
+                    ErrorLog errorLog = new ErrorLog();  
+                    errorLog.capture(vfcuMediaFile, "CFF", "Associated child File failed");
+                    return false;
+                }
+                
             }
             else {
-                //get the associated subfile, and check for error code 'ER' on it
+                //get the associated master, and check for error code 'ER' on it
+                VfcuActivityLog masterfileActivityLog = new VfcuActivityLog();
+                masterfileActivityLog.setVfcuMediaFileId(vfcuMediaFile.retrieveVfcuMediafileIdForChild());
+                masterfileActivityLog.setVfcuStatusCd("ER");
+                boolean masterfileInError = masterfileActivityLog.doesMediaIdExistWithStatus();
+                if (masterfileInError) {
+                    //Mark the master as an error as well
+                    ErrorLog errorLog = new ErrorLog();  
+                    errorLog.capture(vfcuMediaFile, "MFF", "Associated master File failed");
+                    return false;
+                }
             }
             
             //Check to make sure the PS status exists
@@ -108,50 +129,6 @@ public class MediaFileRecord {
     
     public boolean populateBasicValuesFromDb() {
         vfcuMediaFile.populateBasicDbData();
-        return true;
-    }
-        
-    
-    public boolean genAssociations(String currentFileHierarchy) {
-  
-        VfcuActivityLog activityLog = new VfcuActivityLog();
-        activityLog.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
-        activityLog.setVfcuStatusCd("PS");
-        
-        if (activityLog.doesMediaIdExistWithStatus()) {
-            //no need to add association, we already added it
-            return true;
-        }
-        
-        HashMap<Integer,String> assocIds = new HashMap<>();
-          
-        //return associated records
-        assocIds = vfcuMediaFile.returnAssocRecords();
-                        
-        for (Integer accocMediaId: assocIds.keySet()) {
-            
-            VfcuMediaFile assocVfcuMediaFile = new VfcuMediaFile();
-            assocVfcuMediaFile.setVfcuMediaFileId(accocMediaId);
-            
-            if (currentFileHierarchy.equals("M") && assocIds.get(accocMediaId).equals("S") ) {         
-                vfcuMediaFile.setChildVfcuMediaFileId(accocMediaId);
-                vfcuMediaFile.updateChildVfcuMediaFileId();
-            }
-            else if (currentFileHierarchy.equals("S") && assocIds.get(accocMediaId).equals("M")) {
-                assocVfcuMediaFile.setChildVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
-                assocVfcuMediaFile.updateChildVfcuMediaFileId();
-            }
-            
-            activityLog = new VfcuActivityLog();
-            activityLog.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
-            activityLog.setVfcuStatusCd("PS");
-            activityLog.insertRow();
-                
-            activityLog = new VfcuActivityLog();
-            activityLog.setVfcuMediaFileId(assocVfcuMediaFile.getVfcuMediaFileId());
-            activityLog.setVfcuStatusCd("PS");
-            activityLog.insertRow();
-        }
         return true;
     }
     

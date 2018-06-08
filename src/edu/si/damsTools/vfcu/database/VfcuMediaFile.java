@@ -613,7 +613,7 @@ public class VfcuMediaFile {
 
             rowsUpdated= pStmt.executeUpdate(); 
             
-            logger.log(Level.FINER, "Rows updated for current batch" + rowsUpdated );
+            logger.log(Level.FINER, "Rows updated for current batch: " + rowsUpdated );
                 
         } catch (Exception e) {
             logger.log(Level.FINER, "Error: unable to update batch number in vfcu_file_batch", e );
@@ -635,7 +635,7 @@ public class VfcuMediaFile {
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
 
             int rowsUpdated= pStmt.executeUpdate();        
-            logger.log(Level.FINER, "Rows updated for current batch: " + rowsUpdated );
+            logger.log(Level.FINER, "Rows updated: " + rowsUpdated );
                     
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update checksum in vfcu_file_batch", e );
@@ -655,7 +655,7 @@ public class VfcuMediaFile {
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
 
             int rowsUpdated= pStmt.executeUpdate();        
-            logger.log(Level.FINER, "Rows updated for current batch: " + rowsUpdated );
+            logger.log(Level.FINER, "Rows updated: " + rowsUpdated );
                     
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update child vfcuMediaFile_id", e );
@@ -675,7 +675,7 @@ public class VfcuMediaFile {
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
 
             int rowsUpdated= pStmt.executeUpdate();        
-            logger.log(Level.FINER, "Rows updated for current batch: " + rowsUpdated );
+            logger.log(Level.FINER, "Rows updated: " + rowsUpdated );
                     
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to update child vfcuMediaFile_id", e );
@@ -721,6 +721,30 @@ public class VfcuMediaFile {
         }
          
         return assocIdList;
+    }
+    
+    public Integer retrieveVfcuMediafileIdForChild() {
+        
+        Integer subfileId = null;
+        
+        String sql = "SELECT  vfcu_media_file_id " +
+                     "FROM    vfcu_media_file a " +
+                     "WHERE   child_fcu_media_file_id = " + this.childVfcuMediaFileId;
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);
+            
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+
+            if (rs.next()) {
+                 subfileId = rs.getInt(1);
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain Master File Id for child", e );
+        }
+         
+        return subfileId;
     }
     
     public Integer retrieveSubFileId() {

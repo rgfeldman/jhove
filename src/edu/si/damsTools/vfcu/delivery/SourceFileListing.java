@@ -13,6 +13,8 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 /**
  *
  * @author rfeldman
@@ -129,6 +131,44 @@ public class SourceFileListing {
 
         boolean recordInserted = vfcuMd5File.insertRecord();
         return recordInserted;
+    }
+    
+    public int retrieveCountComplete() {
+        int numComplete = 0;
+        String statusToCheck = "PM";
+        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+             statusToCheck = "PS";
+        }
+        
+        String sql = "SELECT count(*) " +
+                     "FROM vfcu_media_file vmf " +
+                     "INNER JOIN vfcu_activity_log val " +
+                     "ON vmf.vfcu_media_file_id = val.vfcu_media_file_id " +
+                     "WHERE val.vfcu_status_cd in ('ER','" + statusToCheck + "')" +
+                     "AND vfcu_md5_file_id = " + this.vfcuMd5File.getVfcuMd5FileId() ;
+                     
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            if (rs.next()) {
+                numComplete = rs.getInt(1);
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to get count of completed records", e );
+        }
+
+        return numComplete;
+    }
+    
+    public int retrieveCountInBatch() {
+        
+        int numComplete = 0;
+        
+        
+        return numComplete;
     }
 
 }
