@@ -55,6 +55,7 @@ public class JhoveConnection {
                 module = new AiffModule();
                 logger.log(Level.FINEST, "Module set to aiff" );
                 break;
+            case "dng" :
             case "tif" :
             case "tiff" :
                 module = new TiffModule();
