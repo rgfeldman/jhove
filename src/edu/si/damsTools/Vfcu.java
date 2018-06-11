@@ -9,6 +9,7 @@ import edu.si.damsTools.vfcu.Report;
 import edu.si.damsTools.vfcu.Watcher; 
 import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.vfcu.MediaPickupValidate;
+import edu.si.damsTools.vfcu.BatchCompletion;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +27,14 @@ public class Vfcu extends App {
         
         switch (DamsTools.getOperationType()) {
             
+            case "batchCompletion" :      
+                operation = new BatchCompletion();
+                break;
+                
+            case "copyValidate" :      
+                operation = new MediaPickupValidate();
+                break;
+            
             case "report" :  
                 operation = new Report();       
                 break;
@@ -33,11 +42,7 @@ public class Vfcu extends App {
             case "watcher" :
                 operation = new Watcher();
                 break;
-            
-            case "copyValidate" :      
-                operation = new MediaPickupValidate();
-                break;
-                    
+         
             default:     
                 logger.log(Level.SEVERE, "Fatal Error: Invalid Operation Type, exiting"); 
         }

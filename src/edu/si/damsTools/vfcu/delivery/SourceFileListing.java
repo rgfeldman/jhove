@@ -133,8 +133,8 @@ public class SourceFileListing {
         return recordInserted;
     }
     
-    public int retrieveCountComplete() {
-        int numComplete = 0;
+    public int retrieveCountProcessed() {
+        int numProcessed = 0;
         String statusToCheck = "PM";
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
              statusToCheck = "PS";
@@ -153,22 +153,43 @@ public class SourceFileListing {
              ResultSet rs = pStmt.executeQuery();   ){
             
             if (rs.next()) {
-                numComplete = rs.getInt(1);
+                numProcessed = rs.getInt(1);
             }
             
         } catch (Exception e) {
             logger.log(Level.FINER, "Error: unable to get count of completed records", e );
         }
 
-        return numComplete;
+        return numProcessed;
     }
     
     public int retrieveCountInBatch() {
         
-        int numComplete = 0;
+        int totalCount = 0;
+        String statusToCheck = "PM";
+        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+             statusToCheck = "PS";
+        }
         
+        String sql = "SELECT count(*) " +
+                     "FROM vfcu_media_file vmf " +
+                     "WHERE vfcu_md5_file_id = " + this.vfcuMd5File.getVfcuMd5FileId() ;
+                     
         
-        return numComplete;
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            if (rs.next()) {
+                totalCount = rs.getInt(1);
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to get count of completed records", e );
+        }
+
+        return totalCount;
+        
     }
 
 }

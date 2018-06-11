@@ -729,7 +729,7 @@ public class VfcuMediaFile {
         
         String sql = "SELECT  vfcu_media_file_id " +
                      "FROM    vfcu_media_file a " +
-                     "WHERE   child_fcu_media_file_id = " + this.childVfcuMediaFileId;
+                     "WHERE   child_vfcu_media_file_id = " + this.childVfcuMediaFileId;
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
