@@ -57,16 +57,17 @@ public class BatchCompletion extends Operation {
             //  whether the batch is completed or not
             mediaIds = vfcuMediaFile.retrieveNoErrorIdsForMd5Id();
             for (Integer mediaId : mediaIds) {
-                MediaFileRecord mediaFileRecord = new MediaFileRecord(mediaId);
-                mediaFileRecord.populateBasicValuesFromDb();
-                mediaFileRecord.validateForCompletion("master");
+                MediaFileRecord masterMediaFileRecord = new MediaFileRecord(mediaId);
+                masterMediaFileRecord.populateBasicValuesFromDb();
+                masterMediaFileRecord.validateForCompletion("master");
 
                  if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
                     //get the associated subfile md5, and do the same validation
-                    Integer subFileId = vfcuMediaFile.retrieveSubFileId();
-                    MediaFileRecord submediaFileRecord = new MediaFileRecord(subFileId);
-                    submediaFileRecord.populateBasicValuesFromDb();
-                    submediaFileRecord.validateForCompletion("master");
+                    if (masterMediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId() != null ) {
+                        MediaFileRecord submediaFileRecord = new MediaFileRecord(masterMediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId());
+                        submediaFileRecord.populateBasicValuesFromDb();
+                        submediaFileRecord.validateForCompletion("subfile");
+                    }
                  }                
             }
         
@@ -74,27 +75,23 @@ public class BatchCompletion extends Operation {
             int NumFilesInBatch = sourceFileListing.retrieveCountInBatch();
             int NumFilesProcessed = vfcuMediaFile.returnCountFilesForMd5Id();
 
+            //All files in the database were processed
             if (NumFilesInBatch == NumFilesProcessed) {
+                
                 //Look for any files 'left behind' on the file server
                 if (DamsTools.getProperty("vldtAllMediaXfered").equals("true")) {
-                 
-                    int filesInDir = returnFilesInDir();
-                    if (filesInDir != NumFilesProcessed) {
-                        //STILL HAVE TO DO THIS
-                    }
+                    int countInSourceLocation = sourceFileListing.retrieveCountInVendorFileSystem();
+                    logger.log(Level.FINEST,"Count in SourceLocation! " + countInSourceLocation); 
+                    
                 }
 
                 //Mark batch as completed
                 VfcuMd5ActivityLog vfcuMd5ActivityLog = new VfcuMd5ActivityLog();
                 vfcuMd5ActivityLog.setVfcuMd5FileId(sourceFileListing.getVfcuMd5File().getVfcuMd5FileId());
-                vfcuMd5ActivityLog.setVfcuStatusCd("bC");
+                vfcuMd5ActivityLog.setVfcuMd5StatusCd("BC");
                 vfcuMd5ActivityLog.insertRecord();
             }
         }            
-    }
-    
-    private int returnFilesInDir() {
-        return 0;
     }
 
     
@@ -108,7 +105,7 @@ public class BatchCompletion extends Operation {
                      "AND NOT EXISTS ( " +
                         "SELECT 'X' from vfcu_md5_file_activity_log vmal " +
                         "WHERE vmal.vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
-                        "AND vmal.vfcu_status_cd = 'BC') ";
+                        "AND vmal.vfcu_md5_status_cd = 'BC') ";
         
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
@@ -131,6 +128,7 @@ public class BatchCompletion extends Operation {
 
         reqProps.add("useMasterSubPairs");
         reqProps.add("vldtAllMediaXfered");
+        reqProps.add("fileXferType");
         
         return reqProps;
     }

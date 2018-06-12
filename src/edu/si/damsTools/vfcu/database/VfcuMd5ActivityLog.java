@@ -20,7 +20,7 @@ public class VfcuMd5ActivityLog {
      
     Integer vfcuMd5ActivityLogId;
     Integer vfcuMd5FileId;
-    String vfcuStatusCd;
+    String vfcuMd5StatusCd;
     
     public void setVfcuMd5ActivityLogId (Integer vfcuMd5ActivityLogId) {
         this.vfcuMd5ActivityLogId = vfcuMd5ActivityLogId;
@@ -30,8 +30,8 @@ public class VfcuMd5ActivityLog {
         this.vfcuMd5FileId = vfcuMd5FileId;
     }
         
-    public void setVfcuStatusCd (String vfcuStatusCd) {
-        this.vfcuStatusCd = vfcuStatusCd;
+    public void setVfcuMd5StatusCd (String vfcuMd5StatusCd) {
+        this.vfcuMd5StatusCd = vfcuMd5StatusCd;
     }
     
     
@@ -41,12 +41,12 @@ public class VfcuMd5ActivityLog {
         String sql = "INSERT INTO vfcu_md5_activity_log ( " +
                         "vfcu_md5_activity_log_id, " +
                         "vfcu_md5_file_id, " +
-                        "vfcu_status_cd, " +
+                        "vfcu_md5_status_cd, " +
                         "vfcu_md5_file_status_dt) " +
                     "VALUES (" +
                         " vfcu_md5_activity_log_seq.NextVal, " +
                         this.vfcuMd5FileId + ", " +
-                        "'" + this.vfcuStatusCd + "'," +
+                        "'" + this.vfcuMd5StatusCd + "'," +
                         "SYSDATE ) ";
             
         logger.log(Level.FINEST,"SQL! " + sql);

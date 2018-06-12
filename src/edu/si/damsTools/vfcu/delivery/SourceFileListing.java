@@ -15,6 +15,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.nio.file.Files;
+import java.nio.file.DirectoryStream;
+import java.util.ArrayList;
+import java.util.List;
 /**
  *
  * @author rfeldman
@@ -161,6 +165,32 @@ public class SourceFileListing {
         }
 
         return numProcessed;
+    }
+    
+    public int retrieveCountInVendorFileSystem() {
+        String vendorFileSystemDir = null;
+        
+        if (vfcuMd5File.getFilePathEnding() != null) {
+            vendorFileSystemDir = this.vfcuMd5File.getBasePathVendor() + "/" + vfcuMd5File.getFilePathEnding();
+        }
+        else {
+            vendorFileSystemDir = this.vfcuMd5File.getBasePathVendor();
+        }
+        
+        List<String> fileNames = new ArrayList<>();
+        
+        try {
+            DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(vendorFileSystemDir));
+            for (Path path : directoryStream) {
+                fileNames.add(path.toString());
+            }
+        } catch (Exception e) {
+           logger.log(Level.FINER, "Error: unable to get count of files", e );
+        }
+    
+        logger.log(Level.FINER, "ENumber of files in vendor filesystem: " + fileNames.size());
+        
+        return fileNames.size();
     }
     
     public int retrieveCountInBatch() {

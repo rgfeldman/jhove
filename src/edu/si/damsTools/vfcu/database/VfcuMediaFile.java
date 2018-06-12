@@ -506,7 +506,7 @@ public class VfcuMediaFile {
     
      public boolean populateBasicDbData () {
     
-        String sql = "SELECT  vfcu_md5_file_id, media_file_name, vendor_checksum " +
+        String sql = "SELECT  vfcu_md5_file_id, media_file_name, vendor_checksum, child_vfcu_media_file_id " +
                      "FROM     vfcu_media_file " +
                      "WHERE    vfcu_media_file_id = " + getVfcuMediaFileId() + " ";
             
@@ -518,6 +518,7 @@ public class VfcuMediaFile {
                  setVfcuMd5FileId(rs.getInt(1));
                  setMediaFileName(rs.getString(2));
                  setVendorCheckSum(rs.getString(3));
+                 setChildVfcuMediaFileId(rs.getInt(4));
             } 
             else {
                 logger.log(Level.FINER, "unable get Media FileName");
