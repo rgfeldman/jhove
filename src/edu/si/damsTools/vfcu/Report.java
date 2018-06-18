@@ -37,6 +37,8 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileHierarchy;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -135,7 +137,6 @@ public class Report extends Operation {
     
     public void invoke () {
         
-        
         masterMd5Ids = new ArrayList<> () ;
         
         //get masterMd5FileId to run report for (FROM XML)
@@ -160,19 +161,15 @@ public class Report extends Operation {
             if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
             //get childMd5FileId for the master XML
             
-                this.childMd5Id = vfcuMd5File.returnAssocMd5Id();
+                VfcuMd5FileHierarchy vfcuMd5FileHierarchy = new  VfcuMd5FileHierarchy();
+                vfcuMd5FileHierarchy.setMasterFileVfcuMd5FileId(masterMd5Id);
+                vfcuMd5FileHierarchy.populateSubfileIdForMasterId();
+                
+                this.childMd5Id = vfcuMd5FileHierarchy.getSubFileVfcuMd5FileId();
                 if (this.childMd5Id == null) {
                     logger.log(Level.FINEST, "No child md5 file obtained, or none to report meeting condition...cannot generate report.");
                     continue;
                 }
-            }
-            
-            //check for completion/errors (counts) of md5 file
-            int numPendingRecords = countPendingRecords();
-            
-            if (! (numPendingRecords == 0)) {
-                logger.log(Level.FINEST, "Some records are in pending state...holding off for report generation.");
-                continue;
             }
             
             //get the vendordir name for the report
@@ -230,9 +227,17 @@ public class Report extends Operation {
             }
         
             //set the report generated flag to indicate report was generated
-            vfcuMd5File.setVfcuMd5FileId(masterMd5Id);
-            vfcuMd5File.updateVfcuRptDt();
-        
+            VfcuMd5FileActivityLog vfcuMd5FileActivityLog = new VfcuMd5FileActivityLog();
+            vfcuMd5FileActivityLog.setVfcuMd5FileId(currentMd5FileId);
+            vfcuMd5FileActivityLog.setVfcuMd5StatusCd("RE");
+            vfcuMd5FileActivityLog.insertRecord();
+            
+            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+                vfcuMd5FileActivityLog = new VfcuMd5FileActivityLog();
+                vfcuMd5FileActivityLog.setVfcuMd5FileId(this.childMd5Id);
+                vfcuMd5FileActivityLog.setVfcuMd5StatusCd("RE");
+                vfcuMd5FileActivityLog.insertRecord();
+            }
         }
          
         try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }

@@ -10,7 +10,8 @@ import edu.si.damsTools.cdis.operations.Operation;
 import java.util.ArrayList;
 import edu.si.damsTools.vfcu.delivery.SourceFileListing;
 import edu.si.damsTools.vfcu.delivery.MediaFileRecord;
-import edu.si.damsTools.vfcu.database.VfcuMd5ActivityLog;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileHierarchy;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,57 +40,92 @@ public class BatchCompletion extends Operation {
     
     public void invoke () {
         
-  
-        
-        /*get a listing of all master md5 files and associated subfiles
-        //where all the associated  are completed (MD5 validation complete) from batches that are not yet marked as complete */  
+        //get a listing of all master md5 files that have yet to be marked complete in the database
         populateMasterMd5ListNotComplete();
         
-        
-        //Examine each md5 file
+        //Examine each master md5 file
         for (SourceFileListing sourceFileListing : masterMd5FileList ) {
+                    
+            VfcuMediaFile masterVfcuMediaFile = new VfcuMediaFile();
+            VfcuMediaFile subfileVfcuMediaFile = new VfcuMediaFile();
+            
             //Examine each listing within each md5 file for completeness
-            VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-            ArrayList<Integer> mediaIds = new ArrayList<>();
-            vfcuMediaFile.setVfcuMd5FileId(sourceFileListing.getVfcuMd5File().getVfcuMd5FileId());
+            ArrayList<Integer> masterMediaIds = new ArrayList<>();
+            masterVfcuMediaFile.setVfcuMd5FileId(sourceFileListing.getVfcuMd5File().getVfcuMd5FileId());
+            
+            int totalFilesInDbBatch =  masterVfcuMediaFile.returnCountFilesForMd5Id();
+            int numFilesProcessed = masterVfcuMediaFile.getNumCompleteFilesForMd5FileId();
             
             //We go through all the incomplete batches, and add additional error codes on some records as need be...
             //  whether the batch is completed or not
-            mediaIds = vfcuMediaFile.retrieveNoErrorIdsForMd5Id();
-            for (Integer mediaId : mediaIds) {
+            masterMediaIds = masterVfcuMediaFile.retrieveNoErrorIdsForMd5Id();
+            for (Integer mediaId : masterMediaIds) {
+                //Check to see if 'PM' status has been done yet, if not skip this record.
                 MediaFileRecord masterMediaFileRecord = new MediaFileRecord(mediaId);
-                masterMediaFileRecord.populateBasicValuesFromDb();
-                masterMediaFileRecord.validateForCompletion("master");
-
-                 if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-                    //get the associated subfile md5, and do the same validation
-                    if (masterMediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId() != null ) {
-                        MediaFileRecord submediaFileRecord = new MediaFileRecord(masterMediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId());
-                        submediaFileRecord.populateBasicValuesFromDb();
-                        submediaFileRecord.validateForCompletion("subfile");
-                    }
-                 }                
+                masterMediaFileRecord.checkAssociatedFiles("master");         
             }
-        
+
+            //look to see if we should expect associated subfiles for the masters 
+            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+                
+                //Check to see if master is complete, we only validate subfile if master is complete (or errored)
+                if (totalFilesInDbBatch != numFilesProcessed ) {
+                    logger.log(Level.FINEST,"Still processing Md5 file: " + numFilesProcessed + " / " + totalFilesInDbBatch);         
+                    continue;
+                }
+                
+                //get the subfild id from the database
+                VfcuMd5FileHierarchy vfcuMd5FileHierarchy = new VfcuMd5FileHierarchy();
+                vfcuMd5FileHierarchy.setMasterFileVfcuMd5FileId(masterVfcuMediaFile.getVfcuMd5FileId());
+                vfcuMd5FileHierarchy.populateSubfileIdForMasterId();
+                
+                subfileVfcuMediaFile.setVfcuMd5FileId(vfcuMd5FileHierarchy.getSubFileVfcuMd5FileId());
+                
+                //We go through all the incomplete batches, and add additional error codes on some records as need be...
+                //  whether the batch is completed or not
+                ArrayList<Integer> subMediaIds = new ArrayList<>();
+                subMediaIds = subfileVfcuMediaFile.retrieveNoErrorIdsForMd5Id();
+                for (Integer subMediaId : subMediaIds) {
+                    MediaFileRecord masterMediaFileRecord = new MediaFileRecord(subMediaId);
+                    masterMediaFileRecord.checkAssociatedFiles("subfile");         
+                }
+            }
+      
             //Check to see if the batch is complete
-            int NumFilesInBatch = sourceFileListing.retrieveCountInBatch();
-            int NumFilesProcessed = vfcuMediaFile.returnCountFilesForMd5Id();
+            //Get the subfile from the database
+            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+
+                totalFilesInDbBatch = totalFilesInDbBatch + subfileVfcuMediaFile.returnCountFilesForMd5Id();
+                numFilesProcessed = numFilesProcessed + subfileVfcuMediaFile.getNumCompleteFilesForMd5FileId();           
+            }
 
             //All files in the database were processed
-            if (NumFilesInBatch == NumFilesProcessed) {
+            if (totalFilesInDbBatch == numFilesProcessed) {
                 
                 //Look for any files 'left behind' on the file server
                 if (DamsTools.getProperty("vldtAllMediaXfered").equals("true")) {
                     int countInSourceLocation = sourceFileListing.retrieveCountInVendorFileSystem();
-                    logger.log(Level.FINEST,"Count in SourceLocation! " + countInSourceLocation); 
-                    
+                    logger.log(Level.FINEST,"Count in SourceLocation! " + countInSourceLocation);                    
                 }
 
-                //Mark batch as completed
-                VfcuMd5ActivityLog vfcuMd5ActivityLog = new VfcuMd5ActivityLog();
+                //Mark Master batch as completed
+                VfcuMd5FileActivityLog vfcuMd5ActivityLog = new VfcuMd5FileActivityLog();
                 vfcuMd5ActivityLog.setVfcuMd5FileId(sourceFileListing.getVfcuMd5File().getVfcuMd5FileId());
                 vfcuMd5ActivityLog.setVfcuMd5StatusCd("BC");
                 vfcuMd5ActivityLog.insertRecord();
+                
+                //Mark child as completed as well
+                if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+  
+                    vfcuMd5ActivityLog = new VfcuMd5FileActivityLog();
+                    vfcuMd5ActivityLog.setVfcuMd5FileId(subfileVfcuMediaFile.getVfcuMd5FileId());
+                    vfcuMd5ActivityLog.setVfcuMd5StatusCd("BC");
+                    vfcuMd5ActivityLog.insertRecord();
+                }
+            }
+            else {
+                logger.log(Level.FINEST,"Md5 ID Not complete, DB Batch: " + totalFilesInDbBatch); 
+                logger.log(Level.FINEST,"Md5 ID Not complete, Processed count: " + numFilesProcessed); 
             }
         }            
     }
@@ -123,7 +159,7 @@ public class BatchCompletion extends Operation {
    
         return true;
     }
-    
+        
     public ArrayList<String> returnRequiredProps () {
 
         reqProps.add("useMasterSubPairs");

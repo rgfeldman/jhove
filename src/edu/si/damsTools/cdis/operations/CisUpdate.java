@@ -138,7 +138,6 @@ public class CisUpdate extends Operation {
             IdentifierFactory cisIdentFact = new IdentifierFactory();
             IdentifierType cisIdentifierType = cisIdentFact.identifierChooser(DamsTools.getProperty("lccIdType"));
             
-            logger.log(Level.FINEST, "Warning, unable to determine CIS, but we dont need to...in new code");
             if (cisSql.contains("?CISID")) {
                 Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
                 Matcher m = p.matcher(cisSql);

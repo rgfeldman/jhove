@@ -7,6 +7,7 @@ package edu.si.damsTools.vfcu.database;
 
 import edu.si.damsTools.DamsTools;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,7 +76,30 @@ public class VfcuMd5FileHierarchy {
         return true;
     }
     
-     public boolean updateSubFileVfcuMd5FileId () {
+    public boolean populateSubfileIdForMasterId () {
+          String sql = "SELECT  subfile_vfcu_md5_file_id " +
+                     "FROM    vfcu_md5_file_hierarchy " +
+                     "WHERE   masterfile_vfcu_md5_file_id = " + getMasterFileVfcuMd5FileId();
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);    
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                 setSubFileVfcuMd5FileId(rs.getInt(1));
+            }
+            else {
+                return false;
+            }
+                
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable get SubfileID from masterID", e );
+                return false;
+        } 
+        return true;
+    }
+    
+    public boolean updateSubFileVfcuMd5FileId () {
         
         String sql = "UPDATE vfcu_md5_file_hierarchy " +
                         "SET subfile_vfcu_md5_file_id = " + getSubFileVfcuMd5FileId() +

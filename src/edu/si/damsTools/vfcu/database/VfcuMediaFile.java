@@ -194,6 +194,11 @@ public class VfcuMediaFile {
     public Integer getNumCompleteFilesForMd5FileId () {
         Integer numFiles = 0;
         
+        String completedStatus = "PM";
+        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            completedStatus = "PS";
+        }
+              
         String sql =    "SELECT count(*) " +
                             "FROM vfcu_media_file a " +
                             "WHERE a.vfcu_md5_file_id = " + getVfcuMd5FileId() + " " +
@@ -201,7 +206,7 @@ public class VfcuMediaFile {
                             "   SELECT 'X' " +
                             "   FROM vfcu_activity_log b " +
                             "   WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                            "   AND b.vfcu_status_cd in ('PM','ER'))";
+                            "   AND b.vfcu_status_cd in ('" + completedStatus + "','ER'))";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -583,6 +588,31 @@ public class VfcuMediaFile {
         } 
         return true;
     }
+    
+    public int returnCountForMd5FileId() {
+        
+        int totalCount = 0;
+        
+        String sql = "SELECT count(*) " +
+                     "FROM vfcu_media_file vmf " +
+                     "WHERE vfcu_md5_file_id = " + getVfcuMd5FileId() ;
+                     
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            if (rs.next()) {
+                totalCount = rs.getInt(1);
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to get count of completed records", e );
+        }
+
+        return totalCount;
+        
+    }
        
       
     public int updatePickupValidateBatch () {
@@ -724,13 +754,13 @@ public class VfcuMediaFile {
         return assocIdList;
     }
     
-    public Integer retrieveVfcuMediafileIdForChild() {
+    public Integer retrieveParentVfcuMediafileId() {
         
         Integer subfileId = null;
         
         String sql = "SELECT  vfcu_media_file_id " +
                      "FROM    vfcu_media_file a " +
-                     "WHERE   child_vfcu_media_file_id = " + this.childVfcuMediaFileId;
+                     "WHERE   child_vfcu_media_file_id = " + this.vfcuMediaFileId;
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             

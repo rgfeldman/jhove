@@ -71,10 +71,15 @@ public class MediaFileRecord {
         return true;
     }
     
-    public boolean validateForCompletion(String hierarchyType) {
+    public boolean checkAssociatedFiles(String hierarchyType) {
+        
+        logger.log(Level.FINEST,"Validating: " + hierarchyType); 
 
+        populateBasicValuesFromDb();
+        
+        //Look to see if the associated file is in error, if it is then mark the current one as an error as well.        
         if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-            logger.log(Level.FINEST,"Validating Master "); 
+        
             // if one member of a pair was an error, mark the other of the pair an error as well
             if(hierarchyType.equals("master")) {
                 //get the associated child, and check for error code 'ER' on it
@@ -90,10 +95,14 @@ public class MediaFileRecord {
                 }
             }
             else {
-                logger.log(Level.FINEST,"Validating Subfile "); 
-                //get the associated master, and check for error code 'ER' on it
+                //we are looking at subfile, get the associated master, and check for error code 'ER' on it
                 VfcuActivityLog masterfileActivityLog = new VfcuActivityLog();
-                masterfileActivityLog.setVfcuMediaFileId(vfcuMediaFile.retrieveVfcuMediafileIdForChild());
+                masterfileActivityLog.setVfcuMediaFileId(vfcuMediaFile.retrieveParentVfcuMediafileId());
+                if (masterfileActivityLog.getVfcuMediaFileId() == null) {
+                    ErrorLog errorLog = new ErrorLog();  
+                    errorLog.capture(vfcuMediaFile, "VSM", "Associated file not found");
+                    return false;
+                }
                 masterfileActivityLog.setVfcuStatusCd("ER");
                 boolean masterfileInError = masterfileActivityLog.doesMediaIdExistWithStatus();
                 if (masterfileInError) {
@@ -102,19 +111,9 @@ public class MediaFileRecord {
                     errorLog.capture(vfcuMediaFile, "MFF", "Associated master File failed");
                     return false;
                 }
-                
-                //Check to make sure the PS status exists
-                VfcuActivityLog vfcuActivityLog = new VfcuActivityLog();
-                vfcuActivityLog.setVfcuMediaFileId(getVfcuMediaFile().getVfcuMediaFileId());
-                vfcuActivityLog.setVfcuStatusCd("PS");
-                boolean statusFound = vfcuActivityLog.doesMediaIdExistWithStatus();
-                if (!statusFound ) {
-                    ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(vfcuMediaFile, "VSM", "Associated file not found");
-                    return false;
-                }
  
             }
+            
         }
         
         return true;

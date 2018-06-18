@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  *
  * @author rfeldman
  */
-public class VfcuMd5ActivityLog {
+public class VfcuMd5FileActivityLog {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
      
@@ -38,13 +38,13 @@ public class VfcuMd5ActivityLog {
     
     public boolean insertRecord () {
         
-        String sql = "INSERT INTO vfcu_md5_activity_log ( " +
-                        "vfcu_md5_activity_log_id, " +
+        String sql = "INSERT INTO vfcu_md5_file_activity_log ( " +
+                        "vfcu_md5_file_activity_log_id, " +
                         "vfcu_md5_file_id, " +
                         "vfcu_md5_status_cd, " +
                         "vfcu_md5_file_status_dt) " +
                     "VALUES (" +
-                        " vfcu_md5_activity_log_seq.NextVal, " +
+                        " vfcu_md5_file_act_log_id_seq.NextVal, " +
                         this.vfcuMd5FileId + ", " +
                         "'" + this.vfcuMd5StatusCd + "'," +
                         "SYSDATE ) ";

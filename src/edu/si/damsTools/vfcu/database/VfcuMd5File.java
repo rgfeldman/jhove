@@ -227,50 +227,6 @@ public class VfcuMd5File {
         }
         
     }
-      
-    public Integer returnAssocMd5Id() {
-        
-        Integer returnVal = null;
-        
-        String filePathEndingToCheck = getFilePathEnding();
-        
-        if (filePathEndingToCheck.contains("/")) {
-            filePathEndingToCheck = filePathEndingToCheck.substring(0, filePathEndingToCheck.lastIndexOf("/")+1);
-        }
-        else {
-            filePathEndingToCheck = "";
-        }
-        
-        //if (getFileHierarchyCd().equals("M")) {
-       //     filePathEndingToCheck = filePathEndingToCheck + DamsTools.getProperty("vendorSubFileDir");
-       // }
-       // else {
-        //     filePathEndingToCheck = filePathEndingToCheck + DamsTools.getProperty("vendorMasterFileDir");
-       // }
-               
-        /*String sql =    "SELECT vfcu_md5_file_id " +
-                        "FROM   vfcu_md5_file " +
-                        "WHERE  base_path_vendor = '" + getBasePathVendor() + "' " +
-                        "AND    file_path_ending = '" + filePathEndingToCheck + "' " +
-                        "AND    file_hierarchy_cd != '" + getFileHierarchyCd() + "' " +
-                        "AND    vfcu_md5_file_id != " + this.vfcuMd5FileId;
-        */
-        /*logger.log(Level.FINEST,"SQL! " + sql); 
-        
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-            ResultSet rs = pStmt.executeQuery() ) {
-            
-            if (rs.next()) {
-                 returnVal = rs.getInt(1);
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain path ending", e );
-        }*/
-        
-        return returnVal;
-        
-    }
     
     
     public int updateCdisRptDt () {
