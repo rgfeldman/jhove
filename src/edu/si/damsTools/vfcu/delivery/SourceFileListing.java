@@ -192,34 +192,5 @@ public class SourceFileListing {
         
         return fileNames.size();
     }
-    
-    public int retrieveCountInBatch() {
-        
-        int totalCount = 0;
-        String statusToCheck = "PM";
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
-             statusToCheck = "PS";
-        }
-        
-        String sql = "SELECT count(*) " +
-                     "FROM vfcu_media_file vmf " +
-                     "WHERE vfcu_md5_file_id = " + this.vfcuMd5File.getVfcuMd5FileId() ;
-                     
-        
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery();   ){
-            
-            if (rs.next()) {
-                totalCount = rs.getInt(1);
-            }
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to get count of completed records", e );
-        }
-
-        return totalCount;
-        
-    }
 
 }
