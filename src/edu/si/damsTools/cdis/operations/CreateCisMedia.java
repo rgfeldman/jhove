@@ -141,17 +141,6 @@ public class CreateCisMedia extends Operation {
             return;
         }
             
-        /*
-        CdisObjectMap cdisObjectMap = new CdisObjectMap ();
-        cdisObjectMap.setCdisMapId(cdisMap.getCdisMapId());
-        cdisObjectMap.setCisUniqueObjectId(Integer.toString (objectId) );
-        boolean objectMapCreated = cdisObjectMap.createRecord();
-        if (! objectMapCreated) {
-            ErrorLog errorLog = new ErrorLog ();
-            errorLog.capture(cdisMap, "CRCDOB", "ERROR: ObjectMap Creation Failed"); 
-            return;
-        }*/
-            
         // Add activity record indicating Media Has been created
         CdisActivityLog activityLog = new CdisActivityLog();
         activityLog.setCdisMapId(cdisMap.getCdisMapId());
