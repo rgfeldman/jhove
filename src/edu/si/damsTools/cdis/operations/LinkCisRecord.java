@@ -63,7 +63,7 @@ public class LinkCisRecord extends Operation {
             IdentifierType identType = returnCorrespondingCisRecord(damsRecord);
                 
             if (identType == null) {
-                logger.log(Level.FINEST, "Invalid identifier Type");
+                logger.log(Level.FINEST, "Assoicated record cannot be found in CIS");
                 continue;
             }
                     
