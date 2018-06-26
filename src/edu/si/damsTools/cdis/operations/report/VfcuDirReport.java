@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.List;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
 
 /**
  *
@@ -98,7 +99,7 @@ public class VfcuDirReport implements DisplayFormat {
            
             int numErrors = 0;
             
-            //Check to see if there are any Failures.  IF there are any failures then do not supress
+            //Check to see if there are any Failures on the master or subfile.
             String sql = "SELECT count(*) " +
                     "FROM vfcu_media_file a, " +
                     "     vfcu_error_log b " +
@@ -176,22 +177,10 @@ public class VfcuDirReport implements DisplayFormat {
     
     public boolean updateDbComplete (String md5FileId) {
         
-        int recordsUpdated;
-        
-        String sql = "UPDATE vfcu_md5_file " +
-                     "SET cdis_rpt_dt = SYSDATE " +
-                     "WHERE vfcu_md5_file_id = " + md5FileId;
-        
-       try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
-            
-            recordsUpdated = pStmt.executeUpdate();
-            
-            logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to update reportData", e );
-            return false;
-        }
+        VfcuMd5FileActivityLog vfcuMd5FileActivityLog = new VfcuMd5FileActivityLog();
+        vfcuMd5FileActivityLog.setVfcuMd5FileId(Integer.parseInt(md5FileId));
+        vfcuMd5FileActivityLog.setVfcuMd5StatusCd("CE");
+        boolean rowInserted = vfcuMd5FileActivityLog.insertRecord();
         
         return true;
                 
