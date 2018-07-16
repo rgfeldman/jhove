@@ -185,7 +185,12 @@ public class VfcuDirReport implements DisplayFormat {
         
         VfcuMd5FileActivityLog vfcuMd5FileActivityLog = new VfcuMd5FileActivityLog();
         vfcuMd5FileActivityLog.setVfcuMd5FileId(Integer.parseInt(md5FileId));
-        vfcuMd5FileActivityLog.setVfcuMd5StatusCd("CE");
+        if (DamsTools.getProperty("rptDeliveryMethod").equals("email")) {
+            vfcuMd5FileActivityLog.setVfcuMd5StatusCd("CE");
+        }
+        else {
+            vfcuMd5FileActivityLog.setVfcuMd5StatusCd("RF");
+        }
         boolean rowInserted = vfcuMd5FileActivityLog.insertRecord();
         
         return true;
