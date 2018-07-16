@@ -70,7 +70,7 @@ public class Watcher extends Operation {
         for (SourceFileListing sourceMasterFileListing : sourceMasterFileListingArr) {
             boolean fileListingRecorded = sourceMasterFileListing.retrieveAndRecord(xferType);
             if (! fileListingRecorded) {
-                logger.log(Level.FINEST, "Error, unable to record MasterFile"); 
+                logger.log(Level.FINEST, "unable to record MasterFile due to error, or because file previously recorded"); 
                 continue;
             }
             

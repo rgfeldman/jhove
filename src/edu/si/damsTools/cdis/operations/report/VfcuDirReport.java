@@ -99,12 +99,19 @@ public class VfcuDirReport implements DisplayFormat {
            
             int numErrors = 0;
             
-            //Check to see if there are any Failures on the master or subfile.
+            //Check to see if there are any CDIS Failures on the master or subfile.
             String sql = "SELECT count(*) " +
-                    "FROM vfcu_media_file a, " +
-                    "     vfcu_error_log b " +
-                    "WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                    "AND b.vfcu_md5_file_id = " + masterMd5FileId;
+                         "FROM cdis_map cdm " +
+                         "INNER JOIN vfcu_media_file vmf " +
+                         "ON cdm.vfcu_media_file_id = vmf.vfcu_media_file_id " +
+                         "INNER JOIN cdis_error_log cel " +
+                         "ON cdm.cdis_map_id = cel.cdis_map_id " +   
+                         "WHERE (vmf.vfcu_md5_file_id = " + masterMd5FileId +
+                         " OR vmf.vfcu_md5_file_id = ( " +
+                            "SELECT vmfh.subfile_vfcu_md5_file_id " +
+                            "FROM vfcu_md5_file_hierarchy vmfh " +
+                            "WHERE vmf.vfcu_md5_file_id = vmfh.masterfile_vfcu_md5_file_id " +
+                            "AND vmfh.masterfile_vfcu_md5_file_id = " + masterMd5FileId + " ))";
             
             logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -118,8 +125,7 @@ public class VfcuDirReport implements DisplayFormat {
                 }        
                 else {
                     throw new Exception();
-                }
-              
+                }         
             }
             catch(Exception e) {
 		logger.log(Level.SEVERE, "Error: Unable to count errors for report", e);

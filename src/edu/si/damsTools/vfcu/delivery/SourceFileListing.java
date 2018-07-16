@@ -188,7 +188,7 @@ public class SourceFileListing {
            logger.log(Level.FINER, "Error: unable to get count of files", e );
         }
     
-        logger.log(Level.FINER, "ENumber of files in vendor filesystem: " + fileNames.size());
+        logger.log(Level.FINER, "Number of files in vendor filesystem: " + fileNames.size());
         
         return fileNames.size();
     }

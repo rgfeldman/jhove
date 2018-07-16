@@ -716,44 +716,6 @@ public class VfcuMediaFile {
         return true;
     }
     
-    public HashMap<Integer, String> returnAssocRecords() {
-        
-        HashMap<Integer,String> assocIdList = new HashMap<>();
-        
-        String sql = "SELECT  assocvmf.vfcu_media_file_id, assocvmd5.file_hierarchy_cd " +
-                     "FROM  vfcu_media_file vmf " +
-                     "INNER JOIN vfcu_media_file assocvmf " +
-                     "ON substr(vmf.media_file_name, 1, INSTR(vmf.media_file_name, '.') -1) = " +
-                            "SUBSTR(assocvmf.media_file_name, 1, INSTR(assocvmf.media_file_name, '.') -1) " + 
-                     "INNER JOIN vfcu_md5_file vmd5 " +
-                     "ON vmf.vfcu_md5_file_id = vmd5.vfcu_md5_file_id " + 
-                     "INNER JOIN vfcu_md5_file assocvmd5 " +
-                     "ON substr(vmd5.file_path_ending, 1, INSTR(vmd5.file_path_ending, '/') -1) = " + 
-                            "SUBSTR(assocvmd5.file_path_ending, 1, INSTR(assocvmd5.file_path_ending, '/') -1) " + 
-                     "AND vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() +
-                     " AND assocvmd5.base_path_staging = vmd5.base_path_staging " +
-                     "AND vmf.media_file_name = '" + getMediaFileName() + "' " + 
-                     "AND vmf.media_file_name != assocvmf.media_file_name " +
-                     "AND vmd5.file_path_ending != assocvmd5.file_path_ending " +
-                     "AND  assocvmd5.project_cd = vmd5.project_cd " +
-                     "AND  vmd5.project_cd = '" + DamsTools.getProjectCd() + "'";
- 
-         logger.log(Level.FINEST,"SQL! " + sql); 
-             
-         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-    
-            while (rs.next()) {
-                assocIdList.put(rs.getInt(1),rs.getString(2));
-            }   
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to check for child media ID in DB", e );
-        }
-         
-        return assocIdList;
-    }
-    
     public Integer retrieveParentVfcuMediafileId() {
         
         Integer subfileId = null;

@@ -340,7 +340,7 @@ public class SendToHotFolder extends Operation {
                     boolean infoPopulated = stagedFile.populateNameStagingPathFromId(childVfcuMediaFileId);
                     if (! infoPopulated) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMapChild, "CPHOTF", "Error, unable to populate name and path from database for subfile ");
+                        errorLog.capture(cdisMapChild, "XFHOTF ", "Error, unable to populate name and path from database for subfile ");
                         continue;
                     }
                 

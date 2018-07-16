@@ -19,6 +19,9 @@ import com.lowagie.text.rtf.style.RtfFont;
 import edu.si.damsTools.DamsTools; 
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.operations.report.DisplayFormat;
+import edu.si.damsTools.cdis.operations.report.Report;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileHierarchy;
+import edu.si.damsTools.utilities.XmlQueryData;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,8 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.cdis.operations.report.Report;
-import edu.si.damsTools.utilities.XmlQueryData;
 import java.util.Random;
 
 public class RptFile extends Report  {
@@ -234,7 +235,18 @@ public class RptFile extends Report  {
             sql = sql.replace("?RPT_HOURS?", DamsTools.getProperty("rptHours"));
         }
         if (sql.contains("?MULTIRPT_KEYVAL?")) {
-            sql = sql.replace("?MULTIRPT_KEYVAL?", keyValue);
+            
+            if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
+                VfcuMd5FileHierarchy vfcuMd5FileHierarchy = new VfcuMd5FileHierarchy();
+                vfcuMd5FileHierarchy.setMasterFileVfcuMd5FileId(Integer.parseInt(keyValue));
+                vfcuMd5FileHierarchy.populateSubfileIdForMasterId();
+                
+                keyValue = keyValue + "," + vfcuMd5FileHierarchy.getSubFileVfcuMd5FileId();
+                sql = sql.replace("?MULTIRPT_KEYVAL?", keyValue);      
+            }
+            else {
+                sql = sql.replace("?MULTIRPT_KEYVAL?", keyValue);
+            }
         }
             
         logger.log(Level.FINEST, "SQL: {0}", sql);

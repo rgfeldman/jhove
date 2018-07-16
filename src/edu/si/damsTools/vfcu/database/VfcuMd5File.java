@@ -228,33 +228,6 @@ public class VfcuMd5File {
         
     }
     
-    
-    public int updateCdisRptDt () {
-        
-        int rowsUpdated = 0;
-        
-        //order by filename so each process has an even distribution of raws and .tifs.
-        //Need multiple subqueries for order by with rownum clause
-        String sql = 
-            "UPDATE vfcu_md5_file " +
-            "SET    cdis_rpt_dt = SYSDATE " +
-            "WHERE  vfcu_md5_file_id = " + getVfcuMd5FileId();
-            
-        logger.log(Level.FINEST, "SQL: {0}", sql);     
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
-
-            rowsUpdated= pStmt.executeUpdate(); 
-            
-            logger.log(Level.FINER, "Rows updated", rowsUpdated );
-                
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to update vfcu_md5_File with report date", e );
-            return -1;
-        }
-        return rowsUpdated;
-        
-    }
-    
     public Integer returnIdForNamePath () {
 
         Integer md5Id = null;
@@ -286,32 +259,6 @@ public class VfcuMd5File {
                 logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
                 return -1;
         }  
-    }
-    
-    
-    public int updateVfcuRptDt () {
-        
-        int rowsUpdated = 0;
-        
-        //order by filename so each process has an even distribution of raws and .tifs.
-        //Need multiple subqueries for order by with rownum clause
-        String sql = 
-            "UPDATE vfcu_md5_file " +
-            "SET    vfcu_rpt_dt = SYSDATE " +
-            "WHERE  vfcu_md5_file_id = " + getVfcuMd5FileId();
-            
-        logger.log(Level.FINEST, "SQL: {0}", sql);     
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
-
-            rowsUpdated= pStmt.executeUpdate(); 
-            
-            logger.log(Level.FINER, "Rows updated" + rowsUpdated );
-                
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to update vfcu_md5_File with report date", e );
-            return -1;
-        }
-        return rowsUpdated;
     }
     
      private boolean generateVfcuMd5FileId () {
