@@ -12,6 +12,7 @@ import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
 import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
+import edu.si.damsTools.cdis.operations.metadataSync.MetadataColumnData;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.XmlQueryData;
 import edu.si.damsTools.utilities.DbUtils;
@@ -242,11 +243,14 @@ public class MetaDataSync extends Operation {
                 sql = replaceCisVarsInString(sql, cdisMap);
 
                 //Create hashmap containing column names and values for the current record
-                HashMap<String, String> damsColumnValue = new HashMap<>();
-                damsColumnValue = populateCisQueryResults(xmlSqlCmd, sql, damsRecord);
+                //MetadataColumnData metadataColumnDate = new ArrayList();
+                ArrayList<MetadataColumnData> metadataColumnDataArr = new ArrayList();
+                
+                //HashMap<String, String> damsColumnValue = new HashMap<>();
+                metadataColumnDataArr = retrieveCisColumnValueData(xmlSqlCmd, sql, damsRecord);
                 
                 // populate the query lists (deletesForDamsRecord, insertsByDamsRecord and updatesForDamsRecord
-                populateSyncCmds(damsRecord, damsColumnValue, xmlSqlCmd); 
+                populateSyncCmds(damsRecord, metadataColumnDataArr, xmlSqlCmd); 
                 
             }
             
@@ -258,18 +262,6 @@ public class MetaDataSync extends Operation {
                 activityLog.setCdisStatusCd("MDS-" + DamsTools.getProperty("cis").toUpperCase());
                 activityLog.updateOrInsertActivityLog();
             }
-            
-            //This is not supported at current time
-           // if (DamsTools.getProperty("syncParentChild") != null  && DamsTools.getProperty("syncParentChild").equals("true") ) {
-
-                //ArrayList<DamsRecord> dRecList = new ArrayList<>();
-                
-            //    dRecList = damsRecord.returnRelatedDamsRecords();
-            
-            //    for (DamsRecord dRecord : dRecList) {
-            //        metadataSyncRecords(cdisMap, damsRecord);
-            //    }
-           // }
 
         }
     }
@@ -302,73 +294,91 @@ public class MetaDataSync extends Operation {
     
     //Method: populateCisQueryResults
     //Purpose: Populates the query results from the CIS into a structure that holds the dams column name and column name
-    private  HashMap<String, String> populateCisQueryResults(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) {
+    private ArrayList<MetadataColumnData> retrieveCisColumnValueData(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) {
 
         if (DamsTools.getProjectCd().equals("aspace")) {
             callGetDescriptiveData(damsRecord.getSiAssetMetadata().getEadRefId());
         }
         
-        HashMap<String, String> damsColumnValue = new HashMap<>();
+        //HashMap<String, String> damsColumnValue = new HashMap<>();
+        ArrayList<MetadataColumnData> metadataColumnDataArr = new ArrayList();
 
         try (PreparedStatement stmt = DbUtils.returnDbConnFromString(xmlSqlCmd.getDbName()).prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
             while (rs.next()) {
                 ResultSetMetaData rsmd = rs.getMetaData();
+                
                 for (int i = 1; i <= rsmd.getColumnCount(); i ++) {
                     
-                    String columnName = rsmd.getColumnLabel(i).toUpperCase();
-                    String columnValue = rs.getString(i);
+                    String columnNm = rsmd.getColumnLabel(i).toUpperCase();
+                    String columnVal = rs.getString(i);
+                    MetadataColumnData metadataColumnData;
                     
-                    if (columnName.equals("CDIS_TRANSLATE_IDS_SIZES") ) { 
-                        String internalSize;
-                        String externalSize;
-                                            
-                        externalSize = calculateMaxIdsSize(columnValue);
-                        if (externalSize != null) {
-                            internalSize = "3000";
-                        }
-                        else {
-                            internalSize = calculateMaxIdsSize(columnValue, "INTERNAL");
-                            externalSize = calculateMaxIdsSize(columnValue, "EXTERNAL");
-                        }
-                        
-                        damsColumnValue.put("INTERNAL_IDS_SIZE", internalSize);
-                        damsColumnValue.put("MAX_IDS_SIZE", externalSize);
-                
-                        logger.log(Level.FINEST, "COL INTERNAL_IDS_SIZE VAL: " +  internalSize );
-                        logger.log(Level.FINEST, "COL MAX_IDS_SIZE VAL: " +  externalSize ); 
-                        continue;
-                    }
-                    
-                    if (columnValue == null) {
-                        damsColumnValue.put(columnName,"");
+                    if (columnNm == null) {
+                        metadataColumnData = new MetadataColumnData(columnNm,"");
+                        metadataColumnDataArr.add(metadataColumnData);
                         continue;
                     } 
-                    //Replace special chars and quotes 
-                    columnValue = StringUtils.scrubString(columnValue);
                     
+                    switch  (columnNm) {
+                        case "CDIS_TRANSLATE_IDS_SIZES" :
+                            String internalSize;
+                            String externalSize;
+                                            
+                            //First try old style comments where external size was only option
+                            externalSize = calculateMaxIdsSize(columnVal);
+                            if (externalSize != null) {
+                                internalSize = "3000";
+                            }
+                            else {
+                                //We did not find old style comments, try 'new style' comments
+                                internalSize = calculateMaxIdsSize(columnVal, "INTERNAL");
+                                externalSize = calculateMaxIdsSize(columnVal, "EXTERNAL");
+                            }
+                            
+                            metadataColumnData = new MetadataColumnData("INTERNAL_IDS_SIZE",internalSize);
+                            metadataColumnDataArr.add(metadataColumnData);
+                            
+                            metadataColumnData = new MetadataColumnData("MAX_IDS_SIZE",externalSize);
+                            metadataColumnDataArr.add(metadataColumnData);
+                            break;
                     
-                    if (damsColumnValue.containsKey(columnName)) {
-                        if (xmlSqlCmd.getAppendDelimiter() != null ) {
-                            columnValue = damsColumnValue.get(columnName) + xmlSqlCmd.getAppendDelimiter() + columnValue;                    
-                        }  
-                        else {
-                            logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. ignoring new value, populating with only first value");
-                            continue;
-                        }
-                    }
+                        case "CDIS_TRANSLATE_SOURCE_SYSTEM_ID" :  
+                            
+                            
+                                // If there already is THAT SAME source_system_id with NO source, update that source (CONDITONAL UPDATE)
+                                 
+                            
+                            // insert a source_system_id for the current source
+                            
+                            break;
+                            
+                        default :
+                            //Replace special chars and quotes 
+                            columnVal = StringUtils.scrubString(columnVal);
+                    
+                            for (MetadataColumnData mcd : metadataColumnDataArr) {
+                                if (mcd.getColumnName().equals(columnNm)) {
+                                    if (xmlSqlCmd.getAppendDelimiter() != null ) {
+                                        columnVal = mcd.getColumnName() + xmlSqlCmd.getAppendDelimiter() + columnVal; 
+                                        metadataColumnDataArr.remove(metadataColumnDataArr.indexOf(mcd));
+                                    }  
+                                else {
+                                    logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. ignoring new value, populating with only first value");
+                                    continue;
+                                    }
+                                }
+                            }
 
-                    //truncate the end of the value based on the column length of the DAMS table
-                    for (DamsTblColSpecs tblSpec : damsTblSpecs) {
-                        if (tblSpec.getTableName().equals(xmlSqlCmd.getTableName())) {         
-                            columnValue = StringUtils.truncateByByteSize(columnValue, tblSpec.getColumnLengthForColumnName(columnName));
-                        }  
+                            //truncate the end of the value based on the column length of the DAMS table
+                            for (DamsTblColSpecs tblSpec : damsTblSpecs) {
+                                if (tblSpec.getTableName().equals(xmlSqlCmd.getTableName())) {    
+                                    columnVal = StringUtils.truncateByByteSize(columnVal, tblSpec.getColumnLengthForColumnName(columnNm));  
+                                }  
+                            }           
+                            metadataColumnData = new MetadataColumnData(columnNm,columnVal);
                     }
-                    
-                    logger.log(Level.FINEST, "COL " + columnName + " VAL: " +  columnValue );   
-                    damsColumnValue.put(columnName,columnValue);
-
                 }
             }        
         }
@@ -376,7 +386,7 @@ public class MetaDataSync extends Operation {
             logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
             return null;
         }      
-        return damsColumnValue;
+        return metadataColumnDataArr;
     }    
         
     //Method: metadataSyncRecords
@@ -497,26 +507,25 @@ public class MetaDataSync extends Operation {
     
     //Method: populateSyncCmds
     //Purpose: populates the delete, insert and update lists for metadata sync
-    private boolean populateSyncCmds(DamsRecord dRec, HashMap<String, String> damsColumnValue, XmlCisSqlCommand sqlCmd) {
+    private boolean populateSyncCmds(DamsRecord dRec, ArrayList<MetadataColumnData> metadataColumnDataArr, XmlCisSqlCommand sqlCmd) {
 
-          for (String columnName : damsColumnValue.keySet()) {
-            String columnValue =  damsColumnValue.get(columnName);
+          for(MetadataColumnData metadataColumnData : metadataColumnDataArr) {
             
-            logger.log(Level.FINEST, "DEBUG Column name: " + columnName);
-            logger.log(Level.FINEST, "DEBUG Column value: " + columnValue);
+            logger.log(Level.FINEST, "DEBUG Column name: " + metadataColumnData.getColumnName());
+            logger.log(Level.FINEST, "DEBUG Column value: " + metadataColumnData.getColumnValue());
             
             if (sqlCmd.getOperationType().equals("DI")) {
                   
                 deletesForDamsRecord.add("DELETE FROM towner." + sqlCmd.getTableName() + " WHERE UOI_ID = '" + dRec.getUois().getUoiid() + "'");
                
-                if (columnValue.equals("")) {
+                if (metadataColumnData.getColumnValue().equals("")) {
                     //empty string from source database, nothing to insert
                     continue;
                 }
-                if (columnValue.contains("^MULTILINE_LIST_SEP^")) {
+                if (metadataColumnData.getColumnValue().contains("^MULTILINE_LIST_SEP^")) {
                      // If the value contains "^MULTILINE_LIST_SEP^" then we need to break that result down and perform two or more insert statements 
                     Pattern.compile("^MULTILINE_LIST_SEP^");        
-                    String valuesToInsert[] = columnValue.split(Pattern.quote("^") );
+                    String valuesToInsert[] = metadataColumnData.getColumnValue().split(Pattern.quote("^") );
                                                                  
                     //We can have multiple inserts for a single table, the first column of the map holds the tablename,
                     //the list contains the insert statements
@@ -526,7 +535,7 @@ public class MetaDataSync extends Operation {
                         if ( ! (valuesToInsert[i].equals("MULTILINE_LIST_SEP") ) ) {
 
                             String insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
-                            " (UOI_ID, " + columnName + ") VALUES ('" + 
+                            " (UOI_ID, " + metadataColumnData.getColumnName() + ") VALUES ('" + 
                             dRec.getUois().getUoiid() + "','" + valuesToInsert[i] + "')";
                             
                             insertsForDamsRecord.add(insertString);               
@@ -536,8 +545,8 @@ public class MetaDataSync extends Operation {
                 else {
                     //We only have a single row to insert into the table specified.
                     String insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
-                        " (UOI_ID, " + columnName + ") VALUES ('" + 
-                        dRec.getUois().getUoiid() + "','" + columnValue + "')";
+                        " (UOI_ID, " + metadataColumnData.getColumnName() + ") VALUES ('" + 
+                        dRec.getUois().getUoiid() + "','" + metadataColumnData.getColumnValue() + "')";
                     
                     insertsForDamsRecord.add(insertString);               
                 }    
@@ -561,10 +570,10 @@ public class MetaDataSync extends Operation {
       
                 
                 if (updatesForDamsRecord.isEmpty() || updatesForDamsRecord.get(sqlCmd.getTableName()) == null) {             
-                    updatesForDamsRecord.put(sqlCmd.getTableName(), "UPDATE towner." + sqlCmd.getTableName() + " SET " + columnName + "= '" + columnValue + "'");               
+                    updatesForDamsRecord.put(sqlCmd.getTableName(), "UPDATE towner." + sqlCmd.getTableName() + " SET " + metadataColumnData.getColumnName() + "= '" + metadataColumnData.getColumnValue() + "'");               
                 }
                 else {
-                    updatesForDamsRecord.put(sqlCmd.getTableName(), updatesForDamsRecord.get(sqlCmd.getTableName()) + ", " + columnName + "= '" + columnValue + "'");
+                    updatesForDamsRecord.put(sqlCmd.getTableName(), updatesForDamsRecord.get(sqlCmd.getTableName()) + ", " + metadataColumnData.getColumnName() + "= '" + metadataColumnData.getColumnValue() + "'");
                 }
             }   
         }
