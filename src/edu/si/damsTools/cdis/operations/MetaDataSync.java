@@ -13,6 +13,10 @@ import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
 import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
 import edu.si.damsTools.cdis.operations.metadataSync.MetadataColumnData;
+import edu.si.damsTools.cdis.operations.metadataSync.damsModifications.ModificationsForDams;
+import edu.si.damsTools.cdis.operations.metadataSync.damsModifications.Deletion;
+import edu.si.damsTools.cdis.operations.metadataSync.damsModifications.Insertion;
+import edu.si.damsTools.cdis.operations.metadataSync.damsModifications.Update;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.XmlQueryData;
 import edu.si.damsTools.utilities.DbUtils;
@@ -42,9 +46,9 @@ public class MetaDataSync extends Operation {
     private final ArrayList<XmlCisSqlCommand> cisSqlCommands;
     private final Set<DamsTblColSpecs> damsTblSpecs;  //we want to make sure to avoid duplicate entries here too.
     
-    private ArrayList<String> deletesForDamsRecord;
-    private HashMap<String, String> updatesForDamsRecord; //DAMS Table Name and the actual sql to run 
-    private ArrayList<String> insertsForDamsRecord; 
+    private ArrayList<Deletion> deletesForDamsRecord;
+    private ArrayList<Insertion> insertsForDamsRecord; 
+    private ArrayList<Update> updatesForDamsRecord; 
     
      
     public MetaDataSync() {
@@ -234,7 +238,7 @@ public class MetaDataSync extends Operation {
             
             deletesForDamsRecord = new ArrayList<>();
             insertsForDamsRecord = new ArrayList<>();
-            updatesForDamsRecord =  new HashMap<>();
+            updatesForDamsRecord =  new ArrayList<>();
             
             //Replace the values based on the damsRecord
             for (XmlCisSqlCommand xmlSqlCmd : cisSqlCommands) {
@@ -343,16 +347,6 @@ public class MetaDataSync extends Operation {
                             metadataColumnData = new MetadataColumnData("MAX_IDS_SIZE",externalSize);
                             metadataColumnDataArr.add(metadataColumnData);
                             break;
-                    
-                        case "CDIS_TRANSLATE_SOURCE_SYSTEM_ID" :  
-                            
-                            
-                                // If there already is THAT SAME source_system_id with NO source, update that source (CONDITONAL UPDATE)
-                                 
-                            
-                            // insert a source_system_id for the current source
-                            
-                            break;
                             
                         default :
                             //Replace special chars and quotes 
@@ -394,12 +388,12 @@ public class MetaDataSync extends Operation {
     
     private boolean metadataSyncRecords(CdisMap cdisMap, DamsRecord dRec) {
         //Perform any deletes that need to be run on the current DAMSID
-        for (String sqlToDelete :deletesForDamsRecord) {
-            updateDamsData(sqlToDelete);
+        for (ModificationsForDams modsToDelete :deletesForDamsRecord) {
+            modsToDelete.updateDamsData();
         }
         
-        for (String sqlToInsert :insertsForDamsRecord) {
-            int insertCount = updateDamsData(sqlToInsert);
+        for (Insertion modsToInsert : insertsForDamsRecord) {
+            int insertCount = modsToInsert.updateDamsData();
             
             if (insertCount != 1) {
                 ErrorLog errorLog = new ErrorLog ();
@@ -409,11 +403,10 @@ public class MetaDataSync extends Operation {
             }
         }
         
-        for (String tableName : updatesForDamsRecord.keySet()) {
-            String sqlToUpdate =  updatesForDamsRecord.get(tableName);
+        for (Update modsToUpdate : updatesForDamsRecord) {
             
-            sqlToUpdate = sqlToUpdate + " WHERE uoi_id  = '" +  cdisMap.getDamsUoiid() + "'";          
-            int updateCount = updateDamsData(sqlToUpdate);
+            modsToUpdate.setSql(modsToUpdate.getSql() + " WHERE uoi_id  = '" +  cdisMap.getDamsUoiid() + "'" );
+            int updateCount = modsToUpdate.updateDamsData();
             
             if (updateCount != 1) {
                 ErrorLog errorLog = new ErrorLog ();
@@ -515,65 +508,42 @@ public class MetaDataSync extends Operation {
             logger.log(Level.FINEST, "DEBUG Column value: " + metadataColumnData.getColumnValue());
             
             if (sqlCmd.getOperationType().equals("DI")) {
-                  
-                deletesForDamsRecord.add("DELETE FROM towner." + sqlCmd.getTableName() + " WHERE UOI_ID = '" + dRec.getUois().getUoiid() + "'");
-               
-                if (metadataColumnData.getColumnValue().equals("")) {
-                    //empty string from source database, nothing to insert
-                    continue;
-                }
-                if (metadataColumnData.getColumnValue().contains("^MULTILINE_LIST_SEP^")) {
-                     // If the value contains "^MULTILINE_LIST_SEP^" then we need to break that result down and perform two or more insert statements 
-                    Pattern.compile("^MULTILINE_LIST_SEP^");        
-                    String valuesToInsert[] = metadataColumnData.getColumnValue().split(Pattern.quote("^") );
-                                                                 
-                    //We can have multiple inserts for a single table, the first column of the map holds the tablename,
-                    //the list contains the insert statements
-                   
-                    for (int i =0; i < valuesToInsert.length; i++ ) {
-                 
-                        if ( ! (valuesToInsert[i].equals("MULTILINE_LIST_SEP") ) ) {
 
-                            String insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
-                            " (UOI_ID, " + metadataColumnData.getColumnName() + ") VALUES ('" + 
-                            dRec.getUois().getUoiid() + "','" + valuesToInsert[i] + "')";
-                            
-                            insertsForDamsRecord.add(insertString);               
-                        }          
-                    }
-                }
-                else {
-                    //We only have a single row to insert into the table specified.
-                    String insertString = "INSERT INTO towner." + sqlCmd.getTableName() + 
-                        " (UOI_ID, " + metadataColumnData.getColumnName() + ") VALUES ('" + 
-                        dRec.getUois().getUoiid() + "','" + metadataColumnData.getColumnValue() + "')";
-                    
-                    insertsForDamsRecord.add(insertString);               
-                }    
+                //First add deletion to delete list
+                Deletion deletion = new Deletion(dRec.getUois().getUoiid(),sqlCmd.getTableName());   
+                deletion.populateSql();
+                deletesForDamsRecord.add(deletion);
+
+                //Now add insertion to insert list.
+                // It may be possible to add more than one insert into DAMS for a single CIS      
+                String valuesToInsert[] = metadataColumnData.getColumnValue().split(Pattern.quote("^MULTILINE_LIST_SEP^") );
+            
+                for (int i =0; i < valuesToInsert.length; i++ ) {
+                    Insertion insertion = new Insertion (dRec.getUois().getUoiid(), sqlCmd.getTableName());
+                    insertion.populateSql(metadataColumnData.getColumnName(),  valuesToInsert[i]);
+                    insertsForDamsRecord.add(insertion);
+                }                
             }
             else {
-        
-                //never update these special fields in parent/child sync
-                //if (parentChildSync) {
-                //    switch (columnName) {
-                //        case "ADMIN_CONTENT_TYPE" :
-                //        case "IS_RESTRICTED" :
-                //        case "MANAGING_UNIT" :
-                //       case "MAX_IDS_SIZE" :
-                //        case "INTERNAL_IDS_SIZE" :
-                //        case "PUBLIC_USE" :                  
-                //        case "SEC_POLICY_ID" :
-                //        case "SI_DEL_RESTS" :
-                //            continue;
-                //    }
-                // }
-      
                 
-                if (updatesForDamsRecord.isEmpty() || updatesForDamsRecord.get(sqlCmd.getTableName()) == null) {             
-                    updatesForDamsRecord.put(sqlCmd.getTableName(), "UPDATE towner." + sqlCmd.getTableName() + " SET " + metadataColumnData.getColumnName() + "= '" + metadataColumnData.getColumnValue() + "'");               
+                boolean existingRecordAppended = false;
+                for (Iterator<Update> it = updatesForDamsRecord.iterator(); it.hasNext();) {
+                    Update update = it.next();
+                    // see if the destincation table is already accounted for, if so add it the the existing update statement
+                    if (update.getTableName().equals(sqlCmd.getTableName())) {
+                        //remove then update existing record, then re-add to array
+                        it.remove();
+                        update.appendToExistingSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue());
+                        updatesForDamsRecord.add(update);
+                        existingRecordAppended = true;
+                        break;
+                    }
                 }
-                else {
-                    updatesForDamsRecord.put(sqlCmd.getTableName(), updatesForDamsRecord.get(sqlCmd.getTableName()) + ", " + metadataColumnData.getColumnName() + "= '" + metadataColumnData.getColumnValue() + "'");
+                
+                if (!existingRecordAppended) {
+                    Update update = new Update(dRec.getUois().getUoiid(), sqlCmd.getTableName());
+                    update.populateSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue() );
+                    updatesForDamsRecord.add(update);
                 }
             }   
         }
@@ -594,32 +564,6 @@ public class MetaDataSync extends Operation {
         return reqProps;    
     }
     
-     /*  Method :        updateDamsData
-        Arguments:      
-        Description:    Updates the DAMS with the metadata changes 
-        RFeldman 2/2015
-    */
-    private int updateDamsData(String sqlUpdate) {
-
-        int recordsUpdated;
-        
-        sqlUpdate = sqlUpdate.replaceAll("null", "");
-                
-        logger.log(Level.FINEST,"SQL TO UPDATE: " + sqlUpdate);
-        
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sqlUpdate)) {
- 
-            recordsUpdated = pStmt.executeUpdate(sqlUpdate);
-            
-            logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
-            
-        } catch (Exception e) {
-            logger.log(Level.FINEST,"Error updating DAMS data", e);
-            return -1;    
-        } 
-        
-        return recordsUpdated;
-    }
     
     //Note...this needs to be moved to xml file. 
     private boolean callGetDescriptiveData (String eadRefId) {
