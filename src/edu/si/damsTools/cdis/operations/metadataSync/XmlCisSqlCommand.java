@@ -24,6 +24,7 @@ public class XmlCisSqlCommand {
     private String sqlQuery;
     private String tableName;
     private String operationType;
+    private String delClause;
     
     public XmlCisSqlCommand() {
     
@@ -33,6 +34,10 @@ public class XmlCisSqlCommand {
         return this.appendDelimiter;
     }
     
+    public String getDelClause() {
+        return this.delClause;
+    }
+        
     public String getDbName() {
         return this.dbName;
     }
@@ -51,6 +56,10 @@ public class XmlCisSqlCommand {
    
     public void setDbName(String dbName) {
         this.dbName = dbName;
+    }
+    
+    public void setDelClause(String delClause) {
+        this.delClause = delClause;
     }
     
     public void setAppendDelimeter(String appendDelimiter) {
@@ -74,6 +83,7 @@ public class XmlCisSqlCommand {
         setAppendDelimeter(xmlInfo.getAttributeData("multiResultDelim"));
         setTableName(xmlInfo.getAttributeData("destTableName"));
         setOperationType(xmlInfo.getAttributeData("operationType"));
+        setDelClause(xmlInfo.getAttributeData("delClause"));
         
         if (xmlInfo.getAttributeData("dbConn") == null) {
             logger.log(Level.SEVERE, "Error: Unable to determine database to update");

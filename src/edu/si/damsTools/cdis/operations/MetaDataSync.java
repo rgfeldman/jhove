@@ -507,44 +507,65 @@ public class MetaDataSync extends Operation {
             logger.log(Level.FINEST, "DEBUG Column name: " + metadataColumnData.getColumnName());
             logger.log(Level.FINEST, "DEBUG Column value: " + metadataColumnData.getColumnValue());
             
-            if (sqlCmd.getOperationType().equals("DI")) {
+            switch (sqlCmd.getOperationType()) {
+                case "DI" :
+                    //First add deletion to delete list
+                    Deletion deletion = new Deletion(dRec.getUois().getUoiid(),sqlCmd.getTableName());   
+                    deletion.populateSql(sqlCmd.getDelClause());
+                    deletesForDamsRecord.add(deletion);
 
-                //First add deletion to delete list
-                Deletion deletion = new Deletion(dRec.getUois().getUoiid(),sqlCmd.getTableName());   
-                deletion.populateSql();
-                deletesForDamsRecord.add(deletion);
-
-                //Now add insertion to insert list.
-                // It may be possible to add more than one insert into DAMS for a single CIS      
-                String valuesToInsert[] = metadataColumnData.getColumnValue().split(Pattern.quote("^MULTILINE_LIST_SEP^") );
-            
-                for (int i =0; i < valuesToInsert.length; i++ ) {
-                    Insertion insertion = new Insertion (dRec.getUois().getUoiid(), sqlCmd.getTableName());
-                    insertion.populateSql(metadataColumnData.getColumnName(),  valuesToInsert[i]);
-                    insertsForDamsRecord.add(insertion);
-                }                
-            }
-            else {
-                
-                boolean existingRecordAppended = false;
-                for (Iterator<Update> it = updatesForDamsRecord.iterator(); it.hasNext();) {
-                    Update update = it.next();
-                    // see if the destincation table is already accounted for, if so add it the the existing update statement
-                    if (update.getTableName().equals(sqlCmd.getTableName())) {
-                        //remove then update existing record, then re-add to array
-                        it.remove();
-                        update.appendToExistingSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue());
-                        updatesForDamsRecord.add(update);
-                        existingRecordAppended = true;
-                        break;
+                    boolean existingRecordAppended = false;
+                    for (Iterator<Insertion> it = insertsForDamsRecord.iterator(); it.hasNext();) {
+                        Insertion insertion = it.next();
+                         // see if the destination table is already accounted for, if so add to the existing insert statement
+                         if (insertion.getTableName().equals(sqlCmd.getTableName())) {
+                             it.remove();
+                            insertion.appendToExistingSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue());
+                            insertsForDamsRecord.add(insertion);
+                            existingRecordAppended = true;
+                            break;
+                         }
                     }
-                }
+                    
+                    if (!existingRecordAppended) {  
+                        //Now add insertion to insert list.
+                        // It may be possible to add more than one insert into DAMS for a single CIS      
+                        String valuesToInsert[] = metadataColumnData.getColumnValue().split(Pattern.quote("^MULTILINE_LIST_SEP^") );
+            
+                        for (int i =0; i < valuesToInsert.length; i++ ) {
+                            Insertion insertion = new Insertion (dRec.getUois().getUoiid(), sqlCmd.getTableName());
+                            insertion.populateSql(metadataColumnData.getColumnName(),  valuesToInsert[i]);
+                            insertsForDamsRecord.add(insertion);
+                        }                
+                    }
+                    break;
                 
-                if (!existingRecordAppended) {
-                    Update update = new Update(dRec.getUois().getUoiid(), sqlCmd.getTableName());
-                    update.populateSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue() );
-                    updatesForDamsRecord.add(update);
-                }
+                case "U" :
+                  
+                    existingRecordAppended = false;
+                    for (Iterator<Update> it = updatesForDamsRecord.iterator(); it.hasNext();) {
+                        Update update = it.next();
+                        // see if the destincation table is already accounted for, if so add it to the existing update statement
+                        if (update.getTableName().equals(sqlCmd.getTableName())) {
+                            //remove then update existing record, then re-add to array
+                            it.remove();
+                            update.appendToExistingSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue());
+                            updatesForDamsRecord.add(update);
+                            existingRecordAppended = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!existingRecordAppended) {
+                        Update update = new Update(dRec.getUois().getUoiid(), sqlCmd.getTableName());
+                        update.populateSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue() );
+                        updatesForDamsRecord.add(update);
+                    }
+                    break;
+                
+                default :
+                    return false;
+               
             }   
         }
         return true;

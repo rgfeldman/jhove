@@ -22,4 +22,12 @@ public class Insertion extends ModificationsForDams {
             " (UOI_ID, " + columnName + ") VALUES ('" + 
                 uoiId + "','" + valuesToInsert + "')"; 
     }
+    
+    public void appendToExistingSql(String columnName, String dataValue) {
+
+       sql = sql.replace(") VALUES (", ", columnName ) VALUES");
+       sql = sql.replaceAll(")$","," + dataValue + ")");
+       
+    }
+        
 }

@@ -15,8 +15,14 @@ public class Deletion extends ModificationsForDams {
         super(uoiId, tableName);
     }
     
-    public void populateSql() {
-        sql = "DELETE FROM towner." + tableName + " WHERE UOI_ID = '" + uoiId + "'";
+    public void populateSql(String delClause) {
+        
+        if (delClause != null) {
+            sql = "DELETE FROM towner." + tableName + " WHERE UOI_ID = '" + uoiId + "' AND " + delClause;
+        }
+        else {
+            sql = "DELETE FROM towner." + tableName + " WHERE UOI_ID = '" + uoiId + "'";
+        }
     }
     
 }
