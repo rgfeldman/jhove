@@ -337,7 +337,7 @@ public class VfcuMediaFile {
                      "INNER JOIN vfcu_media_file subvmf " +
                      "ON subvmf.vfcu_md5_File_id = vmfh.subfile_vfcu_md5_file_id " +
                      "WHERE vmf.vfcu_media_file_id = " + getVfcuMediaFileId() +
-                     " AND SUBSTR(subvmf.media_file_name,1,INSTR(subvmf.media_file_name,'.') -1)  = "
+                     " AND SUBSTR(subvmf.media_file_name,1,INSTR(subvmf.media_file_name,'.', -1) -1)  = "
                             + "'" + StringUtils.getExtensionlessFileName(getMediaFileName()) +"'" ;
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
