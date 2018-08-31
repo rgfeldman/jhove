@@ -187,46 +187,6 @@ public class CisUpdate extends Operation {
             if (!activityLogged) {
                 logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
             }
-        
-            /*else {
-                cis.setBasicValues(cdisMap.getCisUniqueMediaId(), damsRecord);
-
-                cisSql = damsRecord.replaceSqlVars(cisSql);
-                if (cisSql.contains("?MEDIA_ID?")) {
-                    cisSql = cisSql.replace("?MEDIA_ID?", cis.getCisImageIdentifier());
-                    logger.log(Level.FINEST, "New SQL: "+ cisSql);
-                }
-                if (cisSql.contains("?GROUP_ID?")) {
-                    cisSql = cisSql.replace("?GROUP_ID?", cis.getGroupIdentifier());
-                    logger.log(Level.FINEST, "New SQL: "+ cisSql);
-                }
-            
-                int numRowsUpdate = updateCis(cisSql);
-                if (! (numRowsUpdate > 0)) {
-                    //unable to generate SQL, generate error
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPCISI", "Error, update of CIS info failed");
-                    continue;
-                } 
-            
-                //IF successful, populate ead_ref_id_log
-                boolean addtlUpdatesDone = cis.additionalCisUpdateActivity(damsRecord, cdisMap);
-                if (! addtlUpdatesDone) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "UPCISI", "Error, update of additional CIS info failed");
-                    continue;
-                }
-            
-                //Populate Activity Log
-                //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
-                CdisActivityLog cdisActivity = new CdisActivityLog(); 
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-                cdisActivity.setCdisStatusCd(cis.returnCisUpdateCode()); 
-                boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
-                if (!activityLogged) {
-                    logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
-                }
-            }*/
             
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }

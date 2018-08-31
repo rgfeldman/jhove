@@ -18,6 +18,10 @@ public class Deletion extends ModificationsForDams {
     public void populateSql(String delClause) {
         
         if (delClause != null) {
+            
+            if (delClause.startsWith("WHERE ")) {
+                delClause = delClause.replace("WHERE", "");
+            }
             sql = "DELETE FROM towner." + tableName + " WHERE UOI_ID = '" + uoiId + "' AND " + delClause;
         }
         else {

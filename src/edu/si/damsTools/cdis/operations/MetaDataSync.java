@@ -372,6 +372,7 @@ public class MetaDataSync extends Operation {
                                 }  
                             }           
                             metadataColumnData = new MetadataColumnData(columnNm,columnVal);
+                            metadataColumnDataArr.add(metadataColumnData);
                     }
                 }
             }        
