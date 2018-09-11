@@ -62,7 +62,9 @@ public class JhoveConnection {
                 paramList.add("byteoffset=true");
                 logger.log(Level.FINEST, "Module set to tif" );
                 break;
-            case "jp2" : 
+            case "jp2" :
+            case "jpf" :
+            case "jpx" :
                 module = new Jpeg2000Module();
                 logger.log(Level.FINEST, "Module set to jpeg2000" );
                 break;
