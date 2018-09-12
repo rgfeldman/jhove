@@ -20,6 +20,7 @@ public class IdentifierFactory {
         IdentifierType identifierType = null;
         
         switch (identifier) {
+
             case "coi" :
                 identifierType = new CollectionsOnlineImageId();
                 break;
@@ -29,12 +30,15 @@ public class IdentifierFactory {
             case "dri" :
                 identifierType = new DigitalResourceId();
                 break;
-            case "irn" :
-                identifierType = new Irn();
-                break;    
             case "ead" :
                 identifierType = new EadRefId();
                 break;
+            case "hcr" :
+                identifierType = new ControlRecordId();
+                break;
+            case "irn" :
+                identifierType = new Irn();
+                break;    
             case "mky" :
                 identifierType = new MediaKey();
                 break;
@@ -43,7 +47,7 @@ public class IdentifierFactory {
                 break;
             case "oht" :
                 identifierType = new OralHistoryTranscriptId();
-                break;   
+                break;
             case "rnd" :
                 identifierType = new RenditionId();
                 break;
