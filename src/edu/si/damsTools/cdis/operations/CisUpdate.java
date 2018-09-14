@@ -189,7 +189,7 @@ public class CisUpdate extends Operation {
             }
             
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-            try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
+            try { if ( DamsTools.getCisConn() != null && !DamsTools.getCisConn().getAutoCommit() )  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
         }
     }    
     
