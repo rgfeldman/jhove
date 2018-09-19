@@ -111,10 +111,17 @@ public class DamsTools {
                 dbConn = DriverManager.getConnection(DamsTools.getProperty(dbName + "ConnString"), 
                                 DamsTools.getProperty(dbName +"User"), passwd);
             
-                dbConn.setAutoCommit(false);
-                
-                logger.log(Level.INFO, "Connection to " + dbName + " database established.");
+                if (DamsTools.getProperty("cisDbAutoCommit") != null && 
+                        DamsTools.getProperty("cisDbAutoCommit").equals("true") && 
+                        dbName.equals("cis") ) {
+                    dbConn.setAutoCommit(true);
+                    logger.log(Level.INFO, "Setting autocommit to true");
+                }
+                else {
+                    dbConn.setAutoCommit(false);
+                }
 
+                logger.log(Level.INFO, "Connection to " + dbName + " database established.");
         }
             
 	catch (Exception e) 
