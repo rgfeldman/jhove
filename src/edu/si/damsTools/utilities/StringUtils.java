@@ -27,7 +27,10 @@ public class StringUtils {
     }
     
     public static String scrubString(String inputString) {
-          
+        
+        if (inputString == null) {
+            return "";
+        }
         String newString;
         
         // remove & for easy insert into db
