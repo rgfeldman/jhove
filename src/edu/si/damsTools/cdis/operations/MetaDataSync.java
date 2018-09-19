@@ -351,28 +351,31 @@ public class MetaDataSync extends Operation {
                         default :
                             //Replace special chars and quotes 
                             columnVal = StringUtils.scrubString(columnVal);
-                    
-                            for (MetadataColumnData mcd : metadataColumnDataArr) {
-                                if (mcd.getColumnName().equals(columnNm)) {
-                                    if (xmlSqlCmd.getAppendDelimiter() != null ) {
-                                        columnVal = mcd.getColumnName() + xmlSqlCmd.getAppendDelimiter() + columnVal; 
-                                        metadataColumnDataArr.remove(metadataColumnDataArr.indexOf(mcd));
-                                    }  
-                                else {
-                                    logger.log(Level.ALL, "Warning: Select statement expected to return single row, returned multiple rows. ignoring new value, populating with only first value");
-                                    continue;
-                                    }
+                            
+                            String existingDataValue = retValIfColumnAlreadyInSync(metadataColumnDataArr, columnNm);
+                            
+                            if (existingDataValue != null) {
+                                if (xmlSqlCmd.getAppendDelimiter() != null ) {
+                                    String newDataValue = returnAppendedColumnData(existingDataValue, columnVal, xmlSqlCmd.getAppendDelimiter());
+                                    metadataColumnData = new MetadataColumnData(columnNm,newDataValue);
+                                    metadataColumnDataArr.set(metadataColumnData.getColumnName().indexOf(columnNm), metadataColumnData);
                                 }
-                            }
-
+                                else {
+                                    logger.log(Level.ALL, "Error: Select statement expected to return single row, returned multiple rows.");
+                                    throw new Exception("Error recorded");
+                                }
+                            }    
+                                    
                             //truncate the end of the value based on the column length of the DAMS table
                             for (DamsTblColSpecs tblSpec : damsTblSpecs) {
                                 if (tblSpec.getTableName().equals(xmlSqlCmd.getTableName())) {    
                                     columnVal = StringUtils.truncateByByteSize(columnVal, tblSpec.getColumnLengthForColumnName(columnNm));  
                                 }  
-                            }           
-                            metadataColumnData = new MetadataColumnData(columnNm,columnVal);
-                            metadataColumnDataArr.add(metadataColumnData);
+                            }          
+                            if (existingDataValue == null) {
+                                metadataColumnData = new MetadataColumnData(columnNm,columnVal);
+                                metadataColumnDataArr.add(metadataColumnData);
+                            }
                     }
                 }
             }        
@@ -383,6 +386,21 @@ public class MetaDataSync extends Operation {
         }      
         return metadataColumnDataArr;
     }    
+    
+    private String retValIfColumnAlreadyInSync (ArrayList<MetadataColumnData> metadataColumnDataArr, String columnNm) {
+        
+        for (MetadataColumnData mcd : metadataColumnDataArr) {
+            if (mcd.getColumnName().equals(columnNm)) {
+                return mcd.getColumnValue();
+            }
+        }
+        return null;
+        
+    }
+    
+    private String returnAppendedColumnData(String existingData, String dataToAppend, String delimiter) {
+        return  existingData + delimiter + dataToAppend;   
+    }
         
     //Method: metadataSyncRecords
     //Purpose: performs the actual metadata sync
