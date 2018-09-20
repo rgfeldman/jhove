@@ -26,7 +26,10 @@ public class StringUtils {
         return fileName;
     }
     
-    public static String scrubString(String inputString) {
+    /*Method: scrubSpecialChars
+    Purpose: returns the input string with certain special characters replaced
+    */
+    public static String scrubSpecialChars(String inputString) {
         
         if (inputString == null) {
             return "";
@@ -48,15 +51,30 @@ public class StringUtils {
         newString = newString.replaceAll("\u201d", "\"");
         
         newString = newString.replaceAll("\r", "");
-        
-	//double any single quotes
-	newString = newString.replaceAll("'", "''");
-        
 
         // remove leading and trailing spaces
         newString = newString.trim();
                   
         
+        return newString;
+        
+    }
+    
+    /*Method: doubleQuotes
+    Purpose: returns a string value that replaces all single quotes from the input string with double quotes.
+    */
+    public static String doubleQuotes(String inputString) {
+        
+        if (inputString == null) {
+            return "";
+        }
+
+	//double any single quotes
+	String newString = inputString.replaceAll("'", "''");
+        
+        // remove leading and trailing spaces
+        newString = newString.trim();
+                  
         return newString;
         
     }

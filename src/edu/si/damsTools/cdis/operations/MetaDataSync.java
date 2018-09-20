@@ -350,7 +350,7 @@ public class MetaDataSync extends Operation {
                             
                         default :
                             //Replace special chars and quotes 
-                            columnVal = StringUtils.scrubString(columnVal);
+                            columnVal = StringUtils.scrubSpecialChars(columnVal);
                             
                             String existingDataValue = retValIfColumnAlreadyInSync(metadataColumnDataArr, columnNm);
                             
@@ -370,6 +370,11 @@ public class MetaDataSync extends Operation {
                             for (DamsTblColSpecs tblSpec : damsTblSpecs) {
                                 if (tblSpec.getTableName().equals(xmlSqlCmd.getTableName())) {    
                                     columnVal = StringUtils.truncateByByteSize(columnVal, tblSpec.getColumnLengthForColumnName(columnNm));  
+                                    
+                                    //change single quotes to double quotes or we cannot perform insert correctly.
+                                    // NOTE: We cannot use the scrubSpecialChars for this purpose, because this has impact on string length, and it is possible to truncate
+                                    // one of the quotes and not the other with truncateByByteSize, so we need to do this AFTER the truncate
+                                    columnVal = StringUtils.doubleQuotes(columnVal);
                                 }  
                             }          
                             if (existingDataValue == null) {
