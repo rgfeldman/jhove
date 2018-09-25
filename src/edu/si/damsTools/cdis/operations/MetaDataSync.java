@@ -258,6 +258,12 @@ public class MetaDataSync extends Operation {
                 
             }
             
+            if (deletesForDamsRecord.isEmpty() && deletesForDamsRecord.isEmpty() && updatesForDamsRecord.isEmpty()) {
+                logger.log(Level.FINEST, "Nothing to modify for this record in DAMS, no need to continue ");
+                //get the next record
+                continue;
+            }
+            
             //Perform the actual metadata sync
             boolean recordsSynced = metadataSyncRecords(cdisMap, damsRecord);
             if (recordsSynced) {
@@ -356,30 +362,28 @@ public class MetaDataSync extends Operation {
                             
                             if (existingDataValue != null) {
                                 if (xmlSqlCmd.getAppendDelimiter() != null ) {
-                                    String newDataValue = returnAppendedColumnData(existingDataValue, columnVal, xmlSqlCmd.getAppendDelimiter());
-                                    metadataColumnData = new MetadataColumnData(columnNm,newDataValue);
-                                    metadataColumnDataArr.set(metadataColumnData.getColumnName().indexOf(columnNm), metadataColumnData);
+                                    columnVal = returnAppendedColumnData(existingDataValue, columnVal, xmlSqlCmd.getAppendDelimiter());
                                 }
                                 else {
                                     logger.log(Level.ALL, "Error: Select statement expected to return single row, returned multiple rows.");
                                     throw new Exception("Error recorded");
                                 }
                             }    
-                                    
-                            //truncate the end of the value based on the column length of the DAMS table
+                               
+                             //truncate the end of the value based on the column length of the DAMS table
                             for (DamsTblColSpecs tblSpec : damsTblSpecs) {
-                                if (tblSpec.getTableName().equals(xmlSqlCmd.getTableName())) {    
-                                    columnVal = StringUtils.truncateByByteSize(columnVal, tblSpec.getColumnLengthForColumnName(columnNm));  
-                                    
-                                    //change single quotes to double quotes or we cannot perform insert correctly.
-                                    // NOTE: We cannot use the scrubSpecialChars for this purpose, because this has impact on string length, and it is possible to truncate
-                                    // one of the quotes and not the other with truncateByByteSize, so we need to do this AFTER the truncate
-                                    columnVal = StringUtils.doubleQuotes(columnVal);
-                                }  
-                            }          
-                            if (existingDataValue == null) {
+                                    if (tblSpec.getTableName().equals(xmlSqlCmd.getTableName())) {    
+                                        columnVal = StringUtils.truncateByByteSize(columnVal, tblSpec.getColumnLengthForColumnName(columnNm));  
+                                    }  
+                            }    
+                            
+                            if (existingDataValue == null) {  
                                 metadataColumnData = new MetadataColumnData(columnNm,columnVal);
                                 metadataColumnDataArr.add(metadataColumnData);
+                            }
+                            else {
+                                metadataColumnData = new MetadataColumnData(columnNm,columnVal);
+                                metadataColumnDataArr.set(metadataColumnData.getColumnName().indexOf(columnNm), metadataColumnData);
                             }
                     }
                 }
@@ -441,7 +445,7 @@ public class MetaDataSync extends Operation {
         }
      
         dRec.getUois().setMetadataStateDt(DamsTools.getProperty("mdsUpdtDt"));
- 
+                
         int updateCount = dRec.getUois().updateMetaDataStateDate();
         if (updateCount != 1) {
             ErrorLog errorLog = new ErrorLog ();
@@ -531,6 +535,11 @@ public class MetaDataSync extends Operation {
             logger.log(Level.FINEST, "DEBUG Column name: " + metadataColumnData.getColumnName());
             logger.log(Level.FINEST, "DEBUG Column value: " + metadataColumnData.getColumnValue());
             
+            //change single quotes to double quotes or we cannot perform insert correctly.
+            // NOTE: We cannot use the scrubSpecialChars for this purpose, because this has impact on string length, and it is possible to truncate
+            // one of the quotes and not the other with truncateByByteSize, so we need to do this AFTER the truncate.  This is common place for it
+            String dataValue = StringUtils.doubleQuotes(metadataColumnData.getColumnValue());
+            
             switch (sqlCmd.getOperationType()) {
                 case "DI" :
                     //First add deletion to delete list
@@ -544,7 +553,7 @@ public class MetaDataSync extends Operation {
                          // see if the destination table is already accounted for, if so add to the existing insert statement
                          if (insertion.getTableName().equals(sqlCmd.getTableName())) {
                              it.remove();
-                            insertion.appendToExistingSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue());
+                            insertion.appendToExistingSql(metadataColumnData.getColumnName(),  dataValue);
                             insertsForDamsRecord.add(insertion);
                             existingRecordAppended = true;
                             break;
@@ -554,7 +563,7 @@ public class MetaDataSync extends Operation {
                     if (!existingRecordAppended) {  
                         //Now add insertion to insert list.
                         // It may be possible to add more than one insert into DAMS for a single CIS      
-                        String valuesToInsert[] = metadataColumnData.getColumnValue().split(Pattern.quote("^MULTILINE_LIST_SEP^") );
+                        String valuesToInsert[] = dataValue.split(Pattern.quote("^MULTILINE_LIST_SEP^") );
             
                         for (int i =0; i < valuesToInsert.length; i++ ) {
                             Insertion insertion = new Insertion (dRec.getUois().getUoiid(), sqlCmd.getTableName());
@@ -567,13 +576,14 @@ public class MetaDataSync extends Operation {
                 case "U" :
                   
                     existingRecordAppended = false;
-                    for (Iterator<Update> it = updatesForDamsRecord.iterator(); it.hasNext();) {
+                    for (Iterator<Update> it = updatesForDamsRecord.iterator(); it.hasNext();) {   
                         Update update = it.next();
+                        
                         // see if the destincation table is already accounted for, if so add it to the existing update statement
                         if (update.getTableName().equals(sqlCmd.getTableName())) {
                             //remove then update existing record, then re-add to array
                             it.remove();
-                            update.appendToExistingSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue());
+                            update.appendToExistingSql(metadataColumnData.getColumnName(),  dataValue);
                             updatesForDamsRecord.add(update);
                             existingRecordAppended = true;
                             break;
@@ -582,7 +592,7 @@ public class MetaDataSync extends Operation {
                     
                     if (!existingRecordAppended) {
                         Update update = new Update(dRec.getUois().getUoiid(), sqlCmd.getTableName());
-                        update.populateSql(metadataColumnData.getColumnName(),  metadataColumnData.getColumnValue() );
+                        update.populateSql(metadataColumnData.getColumnName(),  dataValue );
                         updatesForDamsRecord.add(update);
                     }
                     break;
