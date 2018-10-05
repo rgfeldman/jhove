@@ -198,9 +198,10 @@ public class CreateCisMedia extends Operation {
         reqProps.add("cisUser");
         reqProps.add("cisPass");
         reqProps.add("createCisMediaXmlFile");
+        reqProps.add("damsRepo");
         reqProps.add("lccIdType");
         reqProps.add("mediaTypeConfigId");
-        
+ 
         //add more required props here
         return reqProps;    
     }
