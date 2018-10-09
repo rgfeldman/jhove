@@ -10,7 +10,6 @@ import edu.si.damsTools.utilities.Folders;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.DirectoryStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,13 +45,16 @@ public class HotIngestFolder {
         Path failedPath = null;
                 
         try {
-             failedPath = Paths.get(DamsTools.getProperty("failedFolderArea"));
-            
-            if (! DamsTools.getProperty("maxHotFolderIncrement").equals("0")) {
-            
-                failedPath = failedPath.resolve(basePath.toString().substring(basePath.toString().lastIndexOf("_")) );
+                 
+            if (DamsTools.getProperty("maxHotFolderIncrement").equals("0")) {
+                 failedPath = Paths.get(DamsTools.getProperty("failedFolderArea"));
             }
-            
+            else {              
+                failedPath = Paths.get(DamsTools.getProperty("failedFolderArea") + 
+                        basePath.toString().substring(basePath.toString().lastIndexOf("_") ));
+            }  
+            failedPath = failedPath.resolve("FAILED");
+                   
         } catch (Exception e) {
             logger.log(Level.FINER, "Invalid or not-existing failed path " + basePath);
             return null;
@@ -140,6 +142,7 @@ public class HotIngestFolder {
             // If the number of failed files is OVER the threshold, we keep looping until we no longer have that condition
             int numFailedFiles = Folders.returnCount(this.returnAssociatedFailedPath());
             if (numFailedFiles < Integer.parseInt(DamsTools.getProperty("failedIngestThreshold") )) {
+                //We have a hotfolder selected
                 break;
             }
             else {

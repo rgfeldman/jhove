@@ -35,15 +35,16 @@ public class Folders {
     public static int returnCount (Path pathDir) {
        
         int numFiles = 0;
-        
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(pathDir)) {
-            while(stream.iterator().hasNext() ) {
-               numFiles = numFiles ++;
+            for (Path p : stream) {
+               ++numFiles;
             }
+            
         } catch (Exception e) {
            // I/O error encounted during the iteration, the cause is an IOException
-           logger.log(Level.FINER, "Unable to count failed files");
-       }
+           logger.log(Level.FINER, "Unable to count files for " + pathDir.toString(), e);
+        }
+        logger.log(Level.FINER, "Number of Files in : " + pathDir.toString() + ": " + numFiles);
         
         return numFiles;
     } 

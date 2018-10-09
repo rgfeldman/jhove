@@ -7,9 +7,6 @@ package edu.si.damsTools.vfcu.delivery.files;
 
 import com.twmacinta.util.MD5;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.vfcu.database.VfcuActivityLog;
-import edu.si.damsTools.vfcu.delivery.SourceFileListing;
-import edu.si.damsTools.vfcu.utilities.ErrorLog;
 import edu.si.damsTools.vfcu.utilities.JhoveConnection;
 import java.io.File;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -17,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.DecimalFormat;
 
 /**
  * Class : MediaFile.java
@@ -29,7 +27,7 @@ public class MediaFile extends DeliveryFile {
     
     private String md5Hash;
     private String mediaFileDate;
-    private String mediaFileSize;
+    private Long mbFileSize;
     boolean jhoveValidated = false;
 
     public MediaFile (Path sourceNameAndPath) {
@@ -44,8 +42,8 @@ public class MediaFile extends DeliveryFile {
         return this.mediaFileDate;
     }
     
-    public String getMediaFileSize() {
-        return this.mediaFileSize;
+    public long getMbFileSize() {
+        return this.mbFileSize;
     }
     
     public boolean retJhoveValidated() {
@@ -59,7 +57,10 @@ public class MediaFile extends DeliveryFile {
         try {
             BasicFileAttributes attr = Files.readAttributes(mediaFile, BasicFileAttributes.class);    
             this.mediaFileDate = attr.lastModifiedTime().toString().substring(0,10);    
-            this.mediaFileSize = Long.toString(attr.size());
+            DecimalFormat formatter = new DecimalFormat();
+            formatter.setMaximumFractionDigits(2);
+            
+            this.mbFileSize = Long.valueOf(formatter.format(attr.size() / 1000000));
             
             //uses java fast md5
             MD5 md5 = new MD5();
@@ -76,7 +77,7 @@ public class MediaFile extends DeliveryFile {
     }
     
     boolean zeroByteChecksumVldt() {
-        return !(mediaFileSize == null || mediaFileSize.equals("0") || md5Hash.equals("d41d8cd98f00b204e9800998ecf8427e"));
+        return !(mbFileSize == null || mbFileSize.equals("0") || md5Hash.equals("d41d8cd98f00b204e9800998ecf8427e"));
     }
      
     

@@ -24,15 +24,13 @@ public class VfcuMediaFile {
     private Integer maxFiles;
     private String  mediaFileName;
     private String  mediaFileDate;
-    private String  mediaFileSize;
+    private Long  mbFileSize;
     private String  vendorChecksum;
     private String  vfcuChecksum;
     private Long    vfcuBatchNumber;
     private Integer vfcuMediaFileId;
     private Integer vfcuMd5FileId; 
     private Integer childVfcuMediaFileId;
-    
-    
         
     public Integer getChildVfcuMediaFileId () {
         return this.childVfcuMediaFileId;
@@ -46,8 +44,8 @@ public class VfcuMediaFile {
         return this.mediaFileDate;
     }
     
-    public String getMediaFileSize () {
-        return this.mediaFileSize;
+    public Long getMbFileSize () {
+        return this.mbFileSize;
     }
     
     public Integer getVfcuMd5FileId () {
@@ -87,8 +85,8 @@ public class VfcuMediaFile {
         this.mediaFileDate = mediaFileDate;
     }
     
-    public void setMediaFileSize (String mediaFileSize) {
-        this.mediaFileSize = mediaFileSize;
+    public void setMbFileSize (Long mbFileSize) {
+        this.mbFileSize = mbFileSize;
     }
         
     public void setVendorCheckSum (String vendorCheckSum) {
@@ -540,7 +538,7 @@ public class VfcuMediaFile {
     public boolean populateMediaFileAttr () {
     
         String sql = "SELECT  TO_CHAR(media_file_date,'YYYY-MM-DD'), " +
-                     "        media_file_size " +
+                     "        mb_file_size " +
                      "FROM     vfcu_media_file " +
                      "WHERE    vfcu_media_file_id = " + getVfcuMediaFileId() + " ";         
         
@@ -550,7 +548,7 @@ public class VfcuMediaFile {
             
             if (rs.next()) {
                  setMediaFileDate(rs.getString(1));
-                 setMediaFileSize(rs.getString(2));
+                 setMbFileSize(rs.getLong(2));
             }
             else {
                 return false;
@@ -659,7 +657,7 @@ public class VfcuMediaFile {
         String sql = "UPDATE    vfcu_media_file " +
                      "SET       vfcu_checksum = LOWER('" + getVfcuChecksum() + "'), " +
                      "          media_file_date = TO_DATE ('" + getMediaFileDate() + "','YYYY-MM-DD'), " +
-                     "          media_file_size = '" + getMediaFileSize() + "'" +
+                     "          mb_file_size = '" + getMbFileSize() + "'" +
                      "WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
             
         logger.log(Level.FINEST, "SQL: {0}", sql);       

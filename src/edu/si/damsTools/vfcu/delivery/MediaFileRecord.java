@@ -112,8 +112,7 @@ public class MediaFileRecord {
                     return false;
                 }
  
-            }
-            
+            }           
         }
         
         return true;
@@ -158,7 +157,7 @@ public class MediaFileRecord {
                 return false;
             }
             getVfcuMediaFile().setVfcuChecksum(mediaFile.getMd5Hash());
-            getVfcuMediaFile().setMediaFileSize(mediaFile.getMediaFileSize());
+            getVfcuMediaFile().setMbFileSize(mediaFile.getMbFileSize());
             getVfcuMediaFile().setMediaFileDate(mediaFile.getMediaFileDate());
             getVfcuMediaFile().updateVfcuMediaAttributes();           
             

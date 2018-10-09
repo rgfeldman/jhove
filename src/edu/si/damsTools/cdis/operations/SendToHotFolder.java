@@ -9,7 +9,6 @@ import edu.si.damsTools.cdis.dams.StagedFile;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
-import edu.si.damsTools.vfcu.delivery.files.MediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.cdis.dams.HotIngestFolder;
 
@@ -121,13 +120,11 @@ public class SendToHotFolder extends Operation {
                 
                 masterVfcuIngestRecords.removeIf(mapNotCreated -> !childProcessed);
                 
-            }
-            
+            }            
         }
         
         //commit so the last record is saved for this batch so another batch doesnt pick it up
-        try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
-        
+        try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }      
     }
 
     
@@ -150,10 +147,12 @@ public class SendToHotFolder extends Operation {
             return false;
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);
-            
+        
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
+            Long fileSizeSoFar = 0L;
+            
             //Add the value from the database to the list, as long as we are below the max number of records
             for (recordCount =0; 
                     rs.next() && recordCount <= Integer.parseInt(DamsTools.getProperty("maxNumMasterFiles")); 
@@ -162,7 +161,24 @@ public class SendToHotFolder extends Operation {
                 VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
                 vfcuMediaFile.setVfcuMediaFileId(rs.getInt(1));
                 vfcuMediaFile.populateBasicDbData();           
-                masterVfcuIngestRecords.add(vfcuMediaFile);          
+                masterVfcuIngestRecords.add(vfcuMediaFile);  
+      
+                //Now keep track of the total filesize we are using
+                vfcuMediaFile.populateMediaFileAttr();
+                fileSizeSoFar = fileSizeSoFar + vfcuMediaFile.getMbFileSize();
+                
+                if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
+                    VfcuMediaFile childVfcuMediaFile = new VfcuMediaFile();
+                    childVfcuMediaFile.setVfcuMediaFileId(vfcuMediaFile.getChildVfcuMediaFileId());
+                    childVfcuMediaFile.populateMediaFileAttr();
+                    fileSizeSoFar = fileSizeSoFar + childVfcuMediaFile.getMbFileSize();     
+                }
+                
+                if (fileSizeSoFar > Long.parseLong(DamsTools.getProperty("maxBatchMbSize")) ) {
+                    logger.log(Level.FINEST, "Ending batch size early, batch size is too large to continue");
+                    logger.log(Level.FINEST, "Current size: " + fileSizeSoFar + " Max Size: " + DamsTools.getProperty("maxBatchMbSize") );
+                    break;
+                }              
             }
         }
         catch(Exception e) {
@@ -215,8 +231,7 @@ public class SendToHotFolder extends Operation {
                 logger.log(Level.FINER, "Do not continue, number of subfiles != number of master files");
                 return;
             }      
-        }
-        
+        }      
         //if we have gotten this far, create the ready.txt file
         createReadyFile();
         
