@@ -25,14 +25,14 @@ public class StagedFile {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private String fileName;
-    private String basePath;
+    private Path basePath;
     private String pathEnding; 
     
     public String getFileName () {
         return this.fileName;
     }
     
-    public String getBasePath () {
+    public Path getBasePath () {
         return this.basePath;
     }
     
@@ -45,7 +45,7 @@ public class StagedFile {
         this.fileName = fileName;
     }
     
-    public void setBasePath (String basePath) {
+    public void setBasePath (Path basePath) {
         this.basePath = basePath;
     }
     
@@ -68,7 +68,7 @@ public class StagedFile {
 
             if (rs.next()) {
                 setFileName(rs.getString(1));
-                setBasePath(rs.getString(2));
+                setBasePath(Paths.get(rs.getString(2)) );
                 setPathEnding(rs.getString(3));
             }   
             else {
@@ -111,48 +111,36 @@ public class StagedFile {
     }
     
     // Moves the staged file to the MASTER folder
-    public boolean xferToHotFolder (String destination, Integer cdisMapId) {
+    public boolean xferToHotFolder (Path destination) {
         
-        String fileNamewithPath;
-        
-        if (getPathEnding() == null) {
-            fileNamewithPath = getBasePath() + "/" + getFileName();
-        }
-        else {
-            fileNamewithPath = getBasePath() + "/" + getPathEnding() + "/" + getFileName();
-        }
-        
-        String hotFolderDestStr = destination + "/" + getFileName();
-        
-        logger.log(Level.FINER,"File xferred from staging location: " + fileNamewithPath );
-        logger.log(Level.FINER,"File xferred to hotfolder location: " + hotFolderDestStr );
-            
-        //Determine file transfer type
-        CdisMap cdisMap = new CdisMap();
-        cdisMap.setCdisMapId(cdisMapId);
-        cdisMap.populateCdisCisMediaTypeId();
-        
-        MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
-        mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
-        
-        mediaTypeConfigR.populatePostIngestDelivery();
+        Path source;
         
         try {
-            Path source      = Paths.get(fileNamewithPath);
-            Path destWithFile = Paths.get(hotFolderDestStr);
             
-            if (mediaTypeConfigR.getPostIngestDelivery().equals("Y")) {
-                Files.copy(source, destWithFile);
+            if (getPathEnding() == null) {
+                source = getBasePath().resolve(getFileName());
             }
             else {
-                Files.move(source, destWithFile);
+                source = getBasePath().resolve(getPathEnding()).resolve(getFileName());
             }
-           
+        
+            Path destWithFileName = destination.resolve(getFileName());
+        
+            logger.log(Level.FINER,"File xferred from staging location: " + source.toString() );
+            logger.log(Level.FINER,"File xferred to hotfolder location: " + destWithFileName.toString() );
+            
+            if ((! DamsTools.getProperty("retainAfterImport").equals("false")) &&
+                getFileName().endsWith(DamsTools.getProperty("retainAfterImport")) ) {
+                   Files.copy(source, destWithFileName);
+            }
+            else {
+                Files.move(source, destWithFileName);      
+            }
         } catch (Exception e) {
             logger.log(Level.FINER,"ERROR encountered when xFerrring to hot folder",e);
             return false;
         }
-        
+
         return true;
     }
 }

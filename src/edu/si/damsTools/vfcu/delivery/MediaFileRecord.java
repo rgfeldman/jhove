@@ -71,7 +71,7 @@ public class MediaFileRecord {
         return true;
     }
     
-    public boolean checkAssociatedFiles(String hierarchyType) {
+    public boolean checkAssociatedFileForFailure(String hierarchyType) {
         
         logger.log(Level.FINEST,"Validating: " + hierarchyType); 
 

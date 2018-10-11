@@ -62,7 +62,7 @@ public class BatchCompletion extends Operation {
             for (Integer mediaId : masterMediaIds) {
                 //Check to see if 'PM' status has been done yet, if not skip this record.
                 MediaFileRecord masterMediaFileRecord = new MediaFileRecord(mediaId);
-                masterMediaFileRecord.checkAssociatedFiles("master");         
+                masterMediaFileRecord.checkAssociatedFileForFailure("master");         
             }
 
             //look to see if we should expect associated subfiles for the masters 
@@ -87,7 +87,7 @@ public class BatchCompletion extends Operation {
                 subMediaIds = subfileVfcuMediaFile.retrieveNoErrorIdsForMd5Id();
                 for (Integer subMediaId : subMediaIds) {
                     MediaFileRecord masterMediaFileRecord = new MediaFileRecord(subMediaId);
-                    masterMediaFileRecord.checkAssociatedFiles("subfile");         
+                    masterMediaFileRecord.checkAssociatedFileForFailure("subfile");         
                 }
             }
       

@@ -302,7 +302,7 @@ public class MetaDataSync extends Operation {
     
     
     
-    //Method: populateCisQueryResults
+    //Method: retrieveCisColumnValueData
     //Purpose: Populates the query results from the CIS into a structure that holds the dams column name and column name
     private ArrayList<MetadataColumnData> retrieveCisColumnValueData(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) {
 

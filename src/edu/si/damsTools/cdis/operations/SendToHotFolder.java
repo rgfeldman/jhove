@@ -34,11 +34,11 @@ public class SendToHotFolder extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private final ArrayList <VfcuMediaFile> masterVfcuIngestRecords; 
+    private final ArrayList <MediaFileRecord> masterMediaFileRecords; 
     private final HotIngestFolder hotIngestFolder;
             
     public SendToHotFolder() {
-        masterVfcuIngestRecords = new ArrayList();
+        masterMediaFileRecords = new ArrayList();
         hotIngestFolder = new HotIngestFolder();
     }
     
@@ -89,17 +89,17 @@ public class SendToHotFolder extends Operation {
     
     private void recordCdisMap () {
         
-        for (VfcuMediaFile vfcuMediaFile: masterVfcuIngestRecords ) {
+        for (MediaFileRecord mediaFileRecord: masterMediaFileRecords ) {
             
             //Make sure the last transaction is committed
             try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
-            logger.log(Level.FINEST, "Processing for vfcu_meda_file_id: " + vfcuMediaFile.getVfcuMediaFileId());
+            logger.log(Level.FINEST, "Processing for vfcu_meda_file_id: " + mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
               
             /*Create CDIS Map Entry*/
             CdisMap cdisMap = new CdisMap();                           
-            cdisMap.setFileName(vfcuMediaFile.getMediaFileName());
-            cdisMap.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
+            cdisMap.setFileName(mediaFileRecord.getVfcuMediaFile().getMediaFileName());
+            cdisMap.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
             
             cdisMap.populateMediaTypeId();
             
@@ -110,7 +110,7 @@ public class SendToHotFolder extends Operation {
                 ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "CRCDMP", "Could not create CDISMAP entry, retrieving next row");
                 
-                masterVfcuIngestRecords.removeIf(mapNotCreated -> true);
+                masterMediaFileRecords.removeIf(mapNotCreated -> true);
                 continue;
             }
             
@@ -118,7 +118,7 @@ public class SendToHotFolder extends Operation {
             if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
                 boolean childProcessed = logChildRecord(cdisMap.getVfcuMediaFileId());
                 
-                masterVfcuIngestRecords.removeIf(mapNotCreated -> !childProcessed);
+                masterMediaFileRecords.removeIf(mapNotCreated -> !childProcessed);
                 
             }            
         }
@@ -154,22 +154,22 @@ public class SendToHotFolder extends Operation {
             Long fileSizeSoFar = 0L;
             
             //Add the value from the database to the list, as long as we are below the max number of records
-            for (recordCount =0; 
+            for (recordCount =1; 
                     rs.next() && recordCount <= Integer.parseInt(DamsTools.getProperty("maxNumMasterFiles")); 
                     recordCount ++ ) {
-                
-                VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-                vfcuMediaFile.setVfcuMediaFileId(rs.getInt(1));
-                vfcuMediaFile.populateBasicDbData();           
-                masterVfcuIngestRecords.add(vfcuMediaFile);  
-      
+                        
+                MediaFileRecord mediaFileRecord = new MediaFileRecord(rs.getInt(1));
+                mediaFileRecord.populateBasicValuesFromDb();
+                 
                 //Now keep track of the total filesize we are using
-                vfcuMediaFile.populateMediaFileAttr();
-                fileSizeSoFar = fileSizeSoFar + vfcuMediaFile.getMbFileSize();
+                mediaFileRecord.getVfcuMediaFile().populateMediaFileAttr();
+                fileSizeSoFar = fileSizeSoFar + mediaFileRecord.getVfcuMediaFile().getMbFileSize();
+                
+                masterMediaFileRecords.add(mediaFileRecord);
                 
                 if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
                     VfcuMediaFile childVfcuMediaFile = new VfcuMediaFile();
-                    childVfcuMediaFile.setVfcuMediaFileId(vfcuMediaFile.getChildVfcuMediaFileId());
+                    childVfcuMediaFile.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId());
                     childVfcuMediaFile.populateMediaFileAttr();
                     fileSizeSoFar = fileSizeSoFar + childVfcuMediaFile.getMbFileSize();     
                 }
@@ -196,7 +196,7 @@ public class SendToHotFolder extends Operation {
         
         // Get the list of new Media to add to DAMS
         boolean masterListGenerated = populateVfcuListToIngest ();
-        if  (! masterListGenerated || masterVfcuIngestRecords.isEmpty()) {
+        if  (! masterListGenerated || masterMediaFileRecords.isEmpty()) {
              logger.log(Level.FINER, "No Media Found to process in this batch.  Exiting");
              return;
         }
@@ -241,86 +241,82 @@ public class SendToHotFolder extends Operation {
     private boolean xferFilesToHotFolder () {
             
         //loop through the NotLinked Master Media and transfer the files
-        for (VfcuMediaFile vfcuMediaFile : masterVfcuIngestRecords  ) {       
+        for (MediaFileRecord mediaFileRecord : masterMediaFileRecords  ) {       
             
             try {
+                
+                StagedFile stagedFile = new StagedFile();
+                
+                CdisMap masterCdisMap = new CdisMap();
+                masterCdisMap.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
+                masterCdisMap.populateIdFromVfcuId();
                 
                 try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 
                 if (DamsTools.getProperty("useMasterSubPairs").equals("true") )  {
-                    //send subfile to hotfolder first
                     
-                    Integer subFileId = vfcuMediaFile.getChildVfcuMediaFileId();
-                            
+                    CdisMap childCdisMap = new CdisMap();
+                    childCdisMap.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId());
+                    childCdisMap.populateIdFromVfcuId();
+                    
+                    //send subfile to hotfolder first             
+                    Integer subFileId = mediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId();
                     MediaFileRecord subFileMediaRecord = new MediaFileRecord(subFileId); 
                     subFileMediaRecord.populateBasicValuesFromDb();
                     
+                    //Get the file path for the vfcu_id
+                    boolean infoPopulated = stagedFile.populateNameStagingPathFromId(subFileMediaRecord.getVfcuMediaFile().getVfcuMediaFileId());
+                    if (! infoPopulated) {
+                        ErrorLog errorLog = new ErrorLog ();
+                        errorLog.capture(childCdisMap, "XFHOTF ", "Error, unable to populate name and path from database for subfile ");
+                        continue;
+                    }
+                    
                     logger.log(Level.FINER, "MediaFile xfer: " + subFileMediaRecord.getVfcuMediaFile().getMediaFileName() );
-                    
-                    
-                    /* 
-                    boolean fileXferred;
-                    //Find the image and move/copy to hotfolder
-
-                    fileXferred = stagedFile.xferToHotFolder(hotFolderBaseName + "/" + "SUBFILES", cdisMapChild.getCdisMapId()); 
+                    boolean fileXferred = stagedFile.xferToHotFolder(hotIngestFolder.returnSubfilePath()); 
                     
                       
                     if (! fileXferred) {
                         ErrorLog errorLog = new ErrorLog ();
-                        errorLog.capture(cdisMapChild, "XFHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
+                        errorLog.capture(childCdisMap, "XFHOTF", "Error, unable to copy file to subfile: " + stagedFile.getFileName());
                         continue;
                     }
                 
                     CdisActivityLog cdisActivity = new CdisActivityLog();
-                    cdisActivity.setCdisMapId(cdisMapChild.getCdisMapId());
+                    cdisActivity.setCdisMapId(childCdisMap.getCdisMapId());
                     cdisActivity.setCdisStatusCd("FXS");
                     boolean activityLogged = cdisActivity.insertActivity();
                     if (!activityLogged) {
                         logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                         continue;
                     }
-                }*/
-                    
-                    
                 }
                 
-                MediaFileRecord masterFileMediaRecord = new MediaFileRecord(vfcuMediaFile.getVfcuMediaFileId()); 
-                masterFileMediaRecord.populateBasicValuesFromDb();
-                    
-                logger.log(Level.FINER, "MediaFile xfer: " + masterFileMediaRecord.getVfcuMediaFile().getMediaFileName() );
-                    
-                /*
-                
-                //now send the master file to the hotfolder
-                boolean infoPopulated = stagedFile.populateNameStagingPathFromId(Integer.parseInt(masterMediaId));
+                //now populate information needed for the master
+                boolean infoPopulated = stagedFile.populateNameStagingPathFromId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId() );
                 if (! infoPopulated) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "MVHOTF", "Error, unable to populate name and path from database for master file ");
+                    errorLog.capture(masterCdisMap, "MVHOTF", "Error, unable to populate name and path from database for master file ");
                     continue;
                 }
-               
-                //Get the CDIS_ID 
-                cdisMap.setVfcuMediaFileId(Integer.parseInt(masterMediaId));
-                cdisMap.populateIdFromVfcuId();
-               
-                //Decide whether to move file or to copy it
-                boolean fileMoved = stagedFile.xferToHotFolder(hotFolderBaseName + "/" + "MASTER", cdisMap.getCdisMapId());  
+                
+                //Decide move or to copy master file
+                boolean fileMoved = stagedFile.xferToHotFolder(hotIngestFolder.returnMasterPath());  
                 if (! fileMoved) {
                     ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "MVHOTF", "Error, unable to move file to master: " + stagedFile.getFileName());
+                    errorLog.capture(masterCdisMap, "MVHOTF", "Error, unable to move file to master: " + stagedFile.getFileName());
                     continue;
                 }
                 
                 CdisActivityLog cdisActivity = new CdisActivityLog();
-                cdisActivity.setCdisMapId(cdisMap.getCdisMapId());   
+                cdisActivity.setCdisMapId(masterCdisMap.getCdisMapId());   
                 cdisActivity.setCdisStatusCd("FMM");
                 boolean activityLogged = cdisActivity.insertActivity();
                 if (!activityLogged) {
                     logger.log(Level.FINER, "Could not create CDIS Activity entry, retrieving next row");
                     continue;
                 }
-                */
-                
+                            
             }  finally {
                 
                 //make sure we commit the final time through the loop
@@ -340,6 +336,7 @@ public class SendToHotFolder extends Operation {
         reqProps.add("maxBatchMbSize");
         reqProps.add("maxNumMasterFiles");
         reqProps.add("maxHotFolderIncrement");
+        reqProps.add("retainAfterImport");
         reqProps.add("useMasterSubPairs");
         return reqProps;    
     }
