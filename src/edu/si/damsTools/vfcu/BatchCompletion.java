@@ -45,6 +45,9 @@ public class BatchCompletion extends Operation {
         
         //Examine each master md5 file
         for (SourceFileListing sourceFileListing : masterMd5FileList ) {
+            
+            //perform commit at start of loop, so it is commited for each md5 file
+            try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                     
             VfcuMediaFile masterVfcuMediaFile = new VfcuMediaFile();
             VfcuMediaFile subfileVfcuMediaFile = new VfcuMediaFile();

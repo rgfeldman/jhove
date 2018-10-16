@@ -27,7 +27,7 @@ public class MediaFile extends DeliveryFile {
     
     private String md5Hash;
     private String mediaFileDate;
-    private Long mbFileSize;
+    private Double mbFileSize;
     boolean jhoveValidated = false;
 
     public MediaFile (Path sourceNameAndPath) {
@@ -42,7 +42,7 @@ public class MediaFile extends DeliveryFile {
         return this.mediaFileDate;
     }
     
-    public long getMbFileSize() {
+    public Double getMbFileSize() {
         return this.mbFileSize;
     }
     
@@ -60,7 +60,7 @@ public class MediaFile extends DeliveryFile {
             DecimalFormat formatter = new DecimalFormat();
             formatter.setMaximumFractionDigits(2);
             
-            this.mbFileSize = Long.valueOf(formatter.format(attr.size() / 1000000));
+            this.mbFileSize = Double.parseDouble(formatter.format(attr.size() / 1000000f));
             
             //uses java fast md5
             MD5 md5 = new MD5();

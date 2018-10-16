@@ -24,7 +24,7 @@ public class VfcuMediaFile {
     private Integer maxFiles;
     private String  mediaFileName;
     private String  mediaFileDate;
-    private Long  mbFileSize;
+    private Double  mbFileSize;
     private String  vendorChecksum;
     private String  vfcuChecksum;
     private Long    vfcuBatchNumber;
@@ -44,7 +44,7 @@ public class VfcuMediaFile {
         return this.mediaFileDate;
     }
     
-    public Long getMbFileSize () {
+    public Double getMbFileSize () {
         return this.mbFileSize;
     }
     
@@ -85,7 +85,7 @@ public class VfcuMediaFile {
         this.mediaFileDate = mediaFileDate;
     }
     
-    public void setMbFileSize (Long mbFileSize) {
+    public void setMbFileSize (Double mbFileSize) {
         this.mbFileSize = mbFileSize;
     }
         
@@ -548,7 +548,7 @@ public class VfcuMediaFile {
             
             if (rs.next()) {
                  setMediaFileDate(rs.getString(1));
-                 setMbFileSize(rs.getLong(2));
+                 setMbFileSize(rs.getDouble(2));
             }
             else {
                 return false;

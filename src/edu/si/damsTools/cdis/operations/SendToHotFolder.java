@@ -151,7 +151,7 @@ public class SendToHotFolder extends Operation {
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 
-            Long fileSizeSoFar = 0L;
+            double fileSizeSoFar = 0L;
             
             //Add the value from the database to the list, as long as we are below the max number of records
             for (recordCount =1; 
@@ -174,7 +174,7 @@ public class SendToHotFolder extends Operation {
                     fileSizeSoFar = fileSizeSoFar + childVfcuMediaFile.getMbFileSize();     
                 }
                 
-                if (fileSizeSoFar > Long.parseLong(DamsTools.getProperty("maxBatchMbSize")) ) {
+                if (fileSizeSoFar > Double.parseDouble(DamsTools.getProperty("maxBatchMbSize")) ) {
                     logger.log(Level.FINEST, "Ending batch size early, batch size is too large to continue");
                     logger.log(Level.FINEST, "Current size: " + fileSizeSoFar + " Max Size: " + DamsTools.getProperty("maxBatchMbSize") );
                     break;
