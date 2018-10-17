@@ -139,33 +139,6 @@ public class VfcuMediaFile {
         return true;
     }
     
-    public Integer countIncompleteFiles() {
-        
-        Integer numFiles = null;
-        String sql =    "SELECT count(*) " +
-                            "FROM vfcu_media_file a  " +
-                            "WHERE a.vfcu_md5_file_id = " + getVfcuMd5FileId() +
-                            " AND NOT EXISTS (" +
-                            "   SELECT 'X' " +
-                            "   FROM vfcu_activity_log b " +
-                            "   WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                            "   AND b.vfcu_status_cd in ('PM','ER'))";
-            
-        logger.log(Level.FINEST, "SQL: {0}", sql);        
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-           
-            while (rs.next()) {
-                 numFiles = rs.getInt(1);
-            }       
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to obtain vfcu_media_file_ids for current batch", e );
-            return -1;
-        }
-        
-        return numFiles;
-    }
-    
     public int returnCountFilesForMd5Id () {
         int numFiles = 0; 
         
@@ -221,106 +194,6 @@ public class VfcuMediaFile {
         }
         
         return numFiles;
-    }
-    
-    public HashMap returnSuccessFileNmsIdForMd5Id () {
-        
-        HashMap<Integer, String> fileNameId;
-        fileNameId = new HashMap<> ();
-        
-        String sql = "SELECT  vfcu_media_file_id, media_file_name " +
-                     "FROM     vfcu_media_file a " +
-                     "WHERE    vfcu_md5_file_id = " + getVfcuMd5FileId() + 
-                     " AND NOT EXISTS ( " +
-                     "  SELECT 'X' " +
-                     " FROM vfcu_error_log b " +
-                     " WHERE a.vfcu_media_file_id = b.vfcu_media_file_id) ";
-            
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-            
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-
-            while (rs.next()) {
-                 fileNameId.put(rs.getInt(1), rs.getString(2));
-            }
-                
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain vfcu_media_file_ids for current batch", e );
-        }
-         
-        return fileNameId;
-    }
-    
-    public int returnCountStatusNoErrorForMd5Id (String status) {
-        int mediaFileCount;
-        
-        String sql = "SELECT count(*) " +
-                     "FROM vfcu_media_file a " + 
-                     "WHERE vfcu_md5_file_id = " + getVfcuMd5FileId() +
-                     " AND EXISTS ( " +
-                        "SELECT 'X' " +
-                        "FROM vfcu_activity_log b " +
-                        "WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                        "AND b.vfcu_status_cd = '" + status + "' )" +
-                     " AND NOT EXISTS ( " +
-                        "SELECT 'X' FROM vfcu_error_log c " +
-                        "WHERE a.vfcu_media_file_id = c.vfcu_media_file_id ) " +
-                     " AND NOT EXISTS ( " +
-                        "SELECT 'X' " +
-                        "FROM vfcu_activity_log d " +
-                        "WHERE a.vfcu_media_file_id = d.vfcu_media_file_id " +
-                        "AND d.vfcu_status_cd = 'ER' )";
-          
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery()  ) {
-                       
-            logger.log(Level.FINEST,"SQL! " + sql); 
-           
-            if (rs.next()) {
-                mediaFileCount = (rs.getInt(1));
-            }
-            else {
-                return 0;
-            }
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to count number of media files in md5 file", e );
-            return -1;
-        }
-
-        return mediaFileCount;
-        
-    }
-    
-    public int returnCountErrorForMd5Id () {
-        int mediaFileCount;
-        
-        String sql = "SELECT count(*) " +
-                     "FROM vfcu_media_file a, " +
-                     "     vfcu_error_log b " + 
-                     "WHERE a.vfcu_md5_file_id = " + getVfcuMd5FileId() +
-                     " AND a.vfcu_media_file_id = b.vfcu_media_file_id";
-          
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery()  ) {
-                       
-            if (rs.next()) {
-                mediaFileCount = (rs.getInt(1));
-            }
-            else {
-                return 0;
-            }
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to count number of media files in md5 file", e );
-            return -1;
-        }
-
-        return mediaFileCount;
-        
     }
     
      public Integer returnAssociatedFileId () {
@@ -407,32 +280,6 @@ public class VfcuMediaFile {
         }
         
         return otherFile_id;
-    }
-    
-    
-    public Integer returnIdForMd5IdBaseName() {
-        
-        String sql = "SELECT    vfcu_media_file_id " +
-                     "FROM       vfcu_media_file a " +
-                     "WHERE      vfcu_md5_file_id =  " + getVfcuMd5FileId() +
-                     " AND       SUBSTR(media_file_name, 0, INSTR(media_file_name, '.')-1) = '" + FilenameUtils.getBaseName(getMediaFileName()) + "'";
-                      
-        logger.log(Level.FINEST, "SQL: {0}", sql);    
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-            
-            if (rs.next()) {
-                //found a matching filename
-                return rs.getInt(1);
-            }
-            else {
-                return 0;
-            }
-                
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain vfcu_media_file_ids for current batch", e );
-                return -1;
-        }
     }
     
     
