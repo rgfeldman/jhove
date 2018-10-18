@@ -55,11 +55,11 @@ public class Thumbnail {
             return false;
         }
  
-        if (DamsTools.getProperty("damsRepoLoc") == null) {
+        if (DamsTools.getProperty("damsRepo") == null) {
             logger.log(Level.FINER, "Not updating thumbnail, unable to get DAMS repository");
         }
         
-        String imageFile = DamsTools.getProperty("damsRepoLoc") + "/" + this.damsLocation; 
+        String imageFile = DamsTools.getProperty("damsRepo") + "/" + this.damsLocation; 
         
         logger.log(Level.FINER, "Need to Obtain imageLocation " + imageFile);
         
