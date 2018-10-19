@@ -9,10 +9,8 @@ import edu.si.damsTools.DamsTools;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
 import edu.si.damsTools.utilities.StringUtils;
 
 
@@ -171,13 +169,11 @@ public class VfcuMediaFile {
         }
               
         String sql =    "SELECT count(*) " +
-                            "FROM vfcu_media_file a " +
-                            "WHERE a.vfcu_md5_file_id = " + getVfcuMd5FileId() + " " +
-                            "AND EXISTS (" +
-                            "   SELECT 'X' " +
-                            "   FROM vfcu_activity_log b " +
-                            "   WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                            "   AND b.vfcu_status_cd in ('" + completedStatus + "','ER'))";
+                        "FROM vfcu_media_file vmf " +
+                        "INNER JOIN vfcu_activity_log val " +
+                        "ON val.vfcu_media_file_id = vmf.vfcu_media_file_id " +
+                        "WHERE vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() + 
+                        " AND val.vfcu_status_cd in ('" + completedStatus + "','ER'))";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
@@ -504,7 +500,7 @@ public class VfcuMediaFile {
         String sql = "UPDATE    vfcu_media_file " +
                      "SET       vfcu_checksum = LOWER('" + getVfcuChecksum() + "'), " +
                      "          media_file_date = TO_DATE ('" + getMediaFileDate() + "','YYYY-MM-DD'), " +
-                     "          mb_file_size = '" + getMbFileSize() + "'" +
+                     "          mb_file_size = '" + getMbFileSize() + "' " +
                      "WHERE     vfcu_media_file_id = " + getVfcuMediaFileId();
             
         logger.log(Level.FINEST, "SQL: {0}", sql);       

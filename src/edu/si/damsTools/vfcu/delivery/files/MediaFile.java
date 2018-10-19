@@ -59,6 +59,7 @@ public class MediaFile extends DeliveryFile {
             this.mediaFileDate = attr.lastModifiedTime().toString().substring(0,10);    
             DecimalFormat formatter = new DecimalFormat();
             formatter.setMaximumFractionDigits(2);
+            formatter.setGroupingUsed(false);
             
             this.mbFileSize = Double.parseDouble(formatter.format(attr.size() / 1000000f));
             

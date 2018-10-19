@@ -129,8 +129,8 @@ public class StagedFile {
             logger.log(Level.FINER,"File xferred from staging location: " + source.toString() );
             logger.log(Level.FINER,"File xferred to hotfolder location: " + destWithFileName.toString() );
             
-            if ((! DamsTools.getProperty("retainAfterImport").equals("false")) &&
-                getFileName().endsWith(DamsTools.getProperty("retainAfterImport")) ) {
+            if ((! DamsTools.getProperty("retainAfterIngest").equals("false")) &&
+                getFileName().endsWith(DamsTools.getProperty("retainAfterIngest")) ) {
                    Files.copy(source, destWithFileName);
             }
             else {

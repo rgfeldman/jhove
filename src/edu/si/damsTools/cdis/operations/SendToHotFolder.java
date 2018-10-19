@@ -336,7 +336,7 @@ public class SendToHotFolder extends Operation {
         reqProps.add("maxBatchMbSize");
         reqProps.add("maxNumMasterFiles");
         reqProps.add("maxHotFolderIncrement");
-        reqProps.add("retainAfterImport");
+        reqProps.add("retainAfterIngest");
         reqProps.add("useMasterSubPairs");
         return reqProps;    
     }
