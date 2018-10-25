@@ -28,7 +28,6 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
@@ -223,7 +222,7 @@ public class MetaDataSync extends Operation {
     
     //Method: processCdisMapListToSync
     //Purpose: Goes through the list of CdisMap records that require syncing, pull each one out, one at a time and process
-    private void processCdisMapListToSync() {
+    private void processCdisMapListToSync()  {
         // for each UOI_ID that was identified for sync
         for (Iterator<CdisMap> iter = cdisMapList.iterator(); iter.hasNext();) {
             CdisMap cdisMap = iter.next();
@@ -231,48 +230,55 @@ public class MetaDataSync extends Operation {
             //commit with each iteration
             try { if ( DamsTools.getDamsConn()!= null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
  
-            //Get the DamsRecord for this cdisMapId, and populate the required values
-            DamsRecord damsRecord = new DamsRecord();
-            damsRecord.setUoiId(cdisMap.getDamsUoiid());
-            damsRecord.setBasicData();
+            try {
+                //Get the DamsRecord for this cdisMapId, and populate the required values
+                DamsRecord damsRecord = new DamsRecord();
+                damsRecord.setUoiId(cdisMap.getDamsUoiid());
+                damsRecord.setBasicData();
             
-            deletesForDamsRecord = new ArrayList<>();
-            insertsForDamsRecord = new ArrayList<>();
-            updatesForDamsRecord =  new ArrayList<>();
+                deletesForDamsRecord = new ArrayList<>();
+                insertsForDamsRecord = new ArrayList<>();
+                updatesForDamsRecord =  new ArrayList<>();
             
-            //Replace the values based on the damsRecord
-            for (XmlCisSqlCommand xmlSqlCmd : cisSqlCommands) {
-                String sql = xmlSqlCmd.getSqlQuery();
-                sql = damsRecord.replaceSqlVars(sql);
-                sql = replaceCisVarsInString(sql, cdisMap);
+                //Replace the values based on the damsRecord
+                for (XmlCisSqlCommand xmlSqlCmd : cisSqlCommands) {
+                    String sql = xmlSqlCmd.getSqlQuery();
+                    sql = damsRecord.replaceSqlVars(sql);
+                    sql = replaceCisVarsInString(sql, cdisMap);
 
-                //Create hashmap containing column names and values for the current record
-                //MetadataColumnData metadataColumnDate = new ArrayList();
-                ArrayList<MetadataColumnData> metadataColumnDataArr = new ArrayList();
+                    //Create hashmap containing column names and values for the current record
+                    //MetadataColumnData metadataColumnDate = new ArrayList();
+                    ArrayList<MetadataColumnData> metadataColumnDataArr = new ArrayList();
                 
-                //HashMap<String, String> damsColumnValue = new HashMap<>();
-                metadataColumnDataArr = retrieveCisColumnValueData(xmlSqlCmd, sql, damsRecord);
+                    //HashMap<String, String> damsColumnValue = new HashMap<>();
+                    metadataColumnDataArr = retrieveCisColumnValueData(xmlSqlCmd, sql, damsRecord) ;
                 
-                // populate the query lists (deletesForDamsRecord, insertsByDamsRecord and updatesForDamsRecord
-                populateSyncCmds(damsRecord, metadataColumnDataArr, xmlSqlCmd); 
+                    // populate the query lists (deletesForDamsRecord, insertsByDamsRecord and updatesForDamsRecord
+                    populateSyncCmds(damsRecord, metadataColumnDataArr, xmlSqlCmd); 
                 
-            }
+                }
             
-            if (deletesForDamsRecord.isEmpty() && deletesForDamsRecord.isEmpty() && updatesForDamsRecord.isEmpty()) {
-                logger.log(Level.FINEST, "Nothing to modify for this record in DAMS, no need to continue ");
-                //get the next record
-                continue;
-            }
+                if (deletesForDamsRecord.isEmpty() && insertsForDamsRecord.isEmpty() && updatesForDamsRecord.isEmpty()) {
+                    logger.log(Level.FINEST, "Nothing to modify for this record in DAMS, no need to continue ");
+                    //get the next record
+                    continue;
+                }
             
-            //Perform the actual metadata sync
-            boolean recordsSynced = metadataSyncRecords(cdisMap, damsRecord);
-            if (recordsSynced) {
-                CdisActivityLog activityLog = new CdisActivityLog();
-                activityLog.setCdisMapId(cdisMap.getCdisMapId());
-                activityLog.setCdisStatusCd("MDS-" + DamsTools.getProperty("cis").toUpperCase());
-                activityLog.updateOrInsertActivityLog();
+                //Perform the actual metadata sync
+                boolean recordsSynced = metadataSyncRecords(cdisMap, damsRecord);
+                if (recordsSynced) {
+                    CdisActivityLog activityLog = new CdisActivityLog();
+                    activityLog.setCdisMapId(cdisMap.getCdisMapId());
+                    activityLog.setCdisStatusCd("MDS-" + DamsTools.getProperty("cis").toUpperCase());
+                    activityLog.updateOrInsertActivityLog();
+                }
             }
-
+            catch(Exception e) {
+                logger.log(Level.FINEST, "Error: Unable to Perform metadata sync", e);
+                ErrorLog errorLog = new ErrorLog ();
+                //Get CDISMAPID by uoiId
+                errorLog.capture(cdisMap, "UPDAMM", "Error, unable to insert DAMS metadata " + cdisMap.getFileName() );    
+            }      
         }
     }
     
@@ -304,7 +310,7 @@ public class MetaDataSync extends Operation {
     
     //Method: retrieveCisColumnValueData
     //Purpose: Populates the query results from the CIS into a structure that holds the dams column name and column name
-    private ArrayList<MetadataColumnData> retrieveCisColumnValueData(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) {
+    private ArrayList<MetadataColumnData> retrieveCisColumnValueData(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) throws Exception {
 
         if (DamsTools.getProjectCd().equals("aspace")) {
             callGetDescriptiveData(damsRecord.getSiAssetMetadata().getEadRefId());
@@ -362,7 +368,7 @@ public class MetaDataSync extends Operation {
                             
                             if (existingDataValue != null) {
                                 if (xmlSqlCmd.getAppendDelimiter() != null ) {
-                                    columnVal = returnAppendedColumnData(existingDataValue, columnVal, xmlSqlCmd.getAppendDelimiter());
+                                    columnVal = existingDataValue + xmlSqlCmd.getAppendDelimiter() + columnVal;
                                 }
                                 else {
                                     logger.log(Level.ALL, "Error: Select statement expected to return single row, returned multiple rows.");
@@ -390,7 +396,7 @@ public class MetaDataSync extends Operation {
             }        
         }
         catch(Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to Obtain info for metadata sync", e);
+            logger.log(Level.FINEST, "Error: Unable to Obtain info for metadata sync", e);
             return null;
         }      
         return metadataColumnDataArr;
@@ -406,10 +412,6 @@ public class MetaDataSync extends Operation {
         return null;
         
     }
-    
-    private String returnAppendedColumnData(String existingData, String dataToAppend, String delimiter) {
-        return  existingData + delimiter + dataToAppend;   
-    }
         
     //Method: metadataSyncRecords
     //Purpose: performs the actual metadata sync
@@ -417,6 +419,7 @@ public class MetaDataSync extends Operation {
     private boolean metadataSyncRecords(CdisMap cdisMap, DamsRecord dRec) {
         //Perform any deletes that need to be run on the current DAMSID
         for (ModificationsForDams modsToDelete :deletesForDamsRecord) {
+            logger.log(Level.ALL, "DEBUG: in delete loop ");
             modsToDelete.updateDamsData();
         }
         
@@ -530,7 +533,15 @@ public class MetaDataSync extends Operation {
     //Purpose: populates the delete, insert and update lists for metadata sync
     private boolean populateSyncCmds(DamsRecord dRec, ArrayList<MetadataColumnData> metadataColumnDataArr, XmlCisSqlCommand sqlCmd) {
 
-          for(MetadataColumnData metadataColumnData : metadataColumnDataArr) {
+        // We do not have to loop through each column for the delete code, we only have to do it once
+        if (sqlCmd.getOperationType().equals("DI")) {
+            //First add deletion to delete list
+            Deletion deletion = new Deletion(dRec.getUois().getUoiid(),sqlCmd.getTableName());   
+            deletion.populateSql(sqlCmd.getDelClause());
+            deletesForDamsRecord.add(deletion);
+        }
+        
+        for(MetadataColumnData metadataColumnData : metadataColumnDataArr) {
             
             logger.log(Level.FINEST, "DEBUG Column name: " + metadataColumnData.getColumnName());
             logger.log(Level.FINEST, "DEBUG Column value: " + metadataColumnData.getColumnValue());
@@ -542,11 +553,7 @@ public class MetaDataSync extends Operation {
             
             switch (sqlCmd.getOperationType()) {
                 case "DI" :
-                    //First add deletion to delete list
-                    Deletion deletion = new Deletion(dRec.getUois().getUoiid(),sqlCmd.getTableName());   
-                    deletion.populateSql(sqlCmd.getDelClause());
-                    deletesForDamsRecord.add(deletion);
-
+  
                     boolean existingRecordAppended = false;
                     for (Iterator<Insertion> it = insertsForDamsRecord.iterator(); it.hasNext();) {
                         Insertion insertion = it.next();

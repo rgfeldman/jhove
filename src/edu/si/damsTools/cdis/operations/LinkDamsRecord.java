@@ -94,7 +94,7 @@ public class LinkDamsRecord extends Operation {
         }
                    
         //Move file to the emu pickup area if necessary
-        if ( DamsTools.getProperty("retainAfterIngest").equals("true") ) {
+        if ( ! DamsTools.getProperty("retainAfterIngest").equals("false") ) {
          
             MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
             mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
