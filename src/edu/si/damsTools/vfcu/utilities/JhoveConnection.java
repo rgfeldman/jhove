@@ -93,8 +93,8 @@ public class JhoveConnection {
         
         try { 
             String NAME = new String( "Jhove" );
-            String RELEASE = new String( "1.16" );
-            int[] DATE = new int[] { 2016, 05, 1 };
+            String RELEASE = new String( "1.20" );
+            int[] DATE = new int[] { 2018, 03, 29 };
             String USAGE = new String( "no usage" );
             String RIGHTS = new String( "LGPL v2.1" );
             App app = new App( NAME, RELEASE, DATE, USAGE, RIGHTS );
