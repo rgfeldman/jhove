@@ -73,7 +73,6 @@ public class SendToHotFolder extends Operation {
         CdisMap cdisMap = new CdisMap();
         cdisMap.setFileName(vfcuMediafile.getMediaFileName());
         cdisMap.setVfcuMediaFileId(vfcuMediafile.getVfcuMediaFileId());
-        cdisMap.populateMediaTypeId();
         
         // put the entry into the CDIS_MAP table
         boolean mapEntryCreated = cdisMap.createRecord();
@@ -100,8 +99,6 @@ public class SendToHotFolder extends Operation {
             CdisMap cdisMap = new CdisMap();                           
             cdisMap.setFileName(mediaFileRecord.getVfcuMediaFile().getMediaFileName());
             cdisMap.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getVfcuMediaFileId());
-            
-            cdisMap.populateMediaTypeId();
             
              // Now that we have the cdismap info, Add the media to the CDIS_MAP table
             boolean mapEntryCreated = cdisMap.createRecord();          

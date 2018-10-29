@@ -19,7 +19,6 @@ public class CdisMap {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private Integer cdisMapId;
-    private Integer mediaTypeConfigId;
     private String fileName;
     private String damsUoiid;
     private Integer vfcuMediaFileId;
@@ -27,10 +26,6 @@ public class CdisMap {
     
     public Integer getCdisMapId () {
         return this.cdisMapId;
-    }
-    
-    public Integer getMediaTypeConfigId () {
-        return this.mediaTypeConfigId;
     }
     
     public String getDamsUoiid () {
@@ -59,10 +54,6 @@ public class CdisMap {
     
     public void setFileName (String fileName) {
         this.fileName = fileName;
-    }
-    
-    public void setCdisCisMediaTypeId (Integer mediaTypeConfigId) {
-        this.mediaTypeConfigId = mediaTypeConfigId;
     }
     
     public void setDamsUoiid (String damsUoiid) {
@@ -96,16 +87,14 @@ public class CdisMap {
                     "dams_uoi_id, " +
                     "file_name, " +
                     "batch_number, " +
-                    "vfcu_media_file_id, " +
-                    "media_type_config_id) " +
+                    "vfcu_media_file_id ) " +
                 "VALUES (" +
                     getCdisMapId() + ", " +
                     "'" + DamsTools.getProjectCd() + "', " +
                     "'" + getDamsUoiid() + "', " +
                     "'" + getFileName() + "', " +
                     DamsTools.getBatchNumber() + ", " +
-                    getVfcuMediaFileId() + ", " +
-                    getMediaTypeConfigId() + ")";
+                    getVfcuMediaFileId() + ")";
                  
         logger.log(Level.FINEST,"SQL! " + sql);      
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql)) {
@@ -121,52 +110,6 @@ public class CdisMap {
                 return false;
         }      
         return true;
-    }
-    
-    public boolean populateCdisCisMediaTypeId() {
-        String sql = "SELECT media_type_config_id FROM cdis_map " +
-                      "WHERE cdis_map_id = " + getCdisMapId();
-
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-               ResultSet rs = pStmt.executeQuery()) {
-            
-            if (rs.next()) {
-                setCdisCisMediaTypeId (rs.getInt(1));
-            }   
-            else {
-                // we need a map id, if we cant find one then raise error
-                throw new Exception();
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain cdisMediaType ", e );
-                return false;
-        }
-        return true;   
-    }
-    
-     public boolean populateMediaTypeId(){
-        try {
-            String mediaTypeId = DamsTools.getProperty("mediaTypeConfigId");
-            
-            if (mediaTypeId.contains(",") ) {
-                //find the right media type_id by the lookup table by matching the filename
-                MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
-                mediaTypeConfigR.populateIdFromFileName(getFileName());
-               
-                setCdisCisMediaTypeId(mediaTypeConfigR.getMediaTypeConfigId());
-            }
-            else {
-                //Send the string to numeric form
-                setCdisCisMediaTypeId(Integer.parseInt(mediaTypeId));          
-            }
-            return true;
-        }
-        catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to get mediaTypeId", e );
-                return false;
-        }
     }
     
     public boolean populateIdForNameNullUoiid () {
@@ -264,8 +207,7 @@ public class CdisMap {
     public boolean populateMapInfo () {
         
         String sql = "SELECT dams_uoi_id, " +
-                            "file_name, " +
-                            "media_type_config_id " +
+                            "file_name " +
                     "FROM cdis_map " +
                     "WHERE cdis_map_id = " + getCdisMapId();
         
@@ -276,7 +218,6 @@ public class CdisMap {
             if (rs != null && rs.next()) {
                 setDamsUoiid (rs.getString(1));
                 setFileName (rs.getString(2));
-                setCdisCisMediaTypeId (rs.getInt(3));
             }   
             
         } catch (Exception e) {

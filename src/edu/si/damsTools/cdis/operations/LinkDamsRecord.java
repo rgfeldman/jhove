@@ -16,7 +16,6 @@ import java.util.logging.Level;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.dams.StagedFile;
-import edu.si.damsTools.cdis.database.MediaTypeConfigR;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 
 
@@ -94,21 +93,16 @@ public class LinkDamsRecord extends Operation {
         }
                    
         //Move file to the emu pickup area if necessary
-        if ( ! DamsTools.getProperty("retainAfterIngest").equals("false") ) {
-         
-            MediaTypeConfigR mediaTypeConfigR = new MediaTypeConfigR();
-            mediaTypeConfigR.setMediaTypeConfigId(cdisMap.getMediaTypeConfigId());
-            mediaTypeConfigR.populatePostIngestDelivery();
+        if (! DamsTools.getProperty("retainAfterIngest").equals("false") &&
+            cdisMap.getFileName().endsWith(DamsTools.getProperty("retainAfterIngest")) ) {
             
-            if (mediaTypeConfigR.getPostIngestDelivery().equals("Y")) {
-                boolean fileMoved = postIngestMove(cdisMap);  
-                if (! fileMoved) {
-                    ErrorLog errorLog = new ErrorLog ();
-                    errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
-                    return false;
-                }
-            } 
-        }   
+            boolean fileMoved = postIngestMove(cdisMap);  
+            if (! fileMoved) {
+                ErrorLog errorLog = new ErrorLog ();
+                errorLog.capture(cdisMap, "CPDELP", "Error, unable to move file to pickup location");
+                return false;
+            }
+        }    
         
         return true;
     }
@@ -151,7 +145,6 @@ public class LinkDamsRecord extends Operation {
         
         cdisMap.setDamsUoiid(damsRecord.getUois().getUoiid());
         cdisMap.setFileName(damsRecord.getUois().getName());
-        cdisMap.populateMediaTypeId();
         
         boolean mediaCreated = cdisMap.createRecord();
         
@@ -216,7 +209,6 @@ public class LinkDamsRecord extends Operation {
                 CdisMap cdisMap = new CdisMap();
                 cdisMap.setCdisMapId(rs.getInt(1));
                 cdisMap.setDamsUoiid(rs.getString(2));
-                cdisMap.populateCdisCisMediaTypeId();
                 cdisMap.populateVfcuMediaFileId();
                 cdisMapList.add(cdisMap);
             }
