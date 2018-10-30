@@ -216,7 +216,7 @@ public class RptFile extends Report  {
     public List returnCdisMapList (DataSection section, String keyValue) {
         
         //start with a null list, if the list doesnt apply we want a null list rather than an empty list
-        List<CdisMap> idList = new ArrayList<CdisMap>();
+        List<CdisMap> idList = new ArrayList<>();
         
         String sql = null;
         for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {

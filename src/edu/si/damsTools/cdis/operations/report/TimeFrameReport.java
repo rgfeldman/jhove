@@ -51,12 +51,7 @@ public class TimeFrameReport implements DisplayFormat {
     
     public boolean returnSupressAttachFlag(String keyValue) {
         
-        if ( DamsTools.getProperty("tfRptSupressAttch") != null && DamsTools.getProperty("tfRptSupressAttch").equals("true")  ) { 
-            return true;
-        }
-        else {
-            return false;
-        }
+        return DamsTools.getProperty("tfRptSupressAttch") != null && DamsTools.getProperty("tfRptSupressAttch").equals("true");
     }
     
     public List<DataSection> sectionFactory() {

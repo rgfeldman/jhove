@@ -48,7 +48,7 @@ public class Objects {
       
         //Strip all characters in the barcode after the underscore to look up the label
         if (barcode.contains("_")) {
-           barcode = barcode.substring(0,barcode.indexOf("_")); 
+           barcode = barcode.substring(0,barcode.indexOf('_')); 
         }
         
         String sql = "Select ObjectID " +
@@ -92,7 +92,7 @@ public class Objects {
         
         try {
             
-            objID = Integer.parseInt(extensionlessFileName.substring(0, extensionlessFileName.indexOf("_")));
+            objID = Integer.parseInt(extensionlessFileName.substring(0, extensionlessFileName.indexOf('_')));
             
         } catch(Exception e) {
             logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", extensionlessFileName);
@@ -159,11 +159,7 @@ public class Objects {
     
         // Obtain the ObjectID based on the ObjectName that was determined above. 
         boolean objectNumPopulated = populateIdForObjectNumber();
-        if (! objectNumPopulated) {
-            return false;
-        }
-        
-        return true;
+        return objectNumPopulated;
         
     }
     
@@ -201,11 +197,7 @@ public class Objects {
     
         // Obtain the ObjectID based on the ObjectName that was determined above. 
         boolean objectNumPopulated = populateIdForObjectNumber();
-        if (! objectNumPopulated) {
-            return false;
-        }
-        
-        return true;
+        return objectNumPopulated;
     }
     
     

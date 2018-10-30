@@ -21,7 +21,7 @@ public class StringUtils {
     public static String getExtensionlessFileName(String fileName) {
         
         if (fileName.contains(".")) {
-            return fileName.substring(0, fileName.lastIndexOf(".")) ;
+            return fileName.substring(0, fileName.lastIndexOf('.')) ;
         }
         return fileName;
     }

@@ -253,8 +253,7 @@ public class DamsTools {
         File[] logs = logfolderDir.listFiles();
 	
         if (logs != null) {
-            for(int i = 0; i < logs.length; i++) {
-                File tempFile = logs[i];
+            for (File tempFile : logs) {
                 if(tempFile.getName().startsWith(fileNamePrefix)) {
                     
                     long diff = new Date().getTime() - tempFile.lastModified();

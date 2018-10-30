@@ -129,11 +129,7 @@ public class Thumbnail {
         cdisCisIdentifierMap.populateCisIdentifierValueForCdisMapIdType();
         boolean thumbUpdated = update(Integer.parseInt(cdisCisIdentifierMap.getCisIdentifierValue() ) );
             
-        if (! thumbUpdated ) {
-            return false;
-        }  
-        
-        return true;
+        return thumbUpdated;
         
     }    
     

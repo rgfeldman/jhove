@@ -114,14 +114,14 @@ public class MediaXrefs {
             int startPos = extensionlessFileName.lastIndexOf("-r") + 2;
             
             if (extensionlessFileName.substring(startPos).contains("-") ) {
-                charRank = extensionlessFileName.substring(startPos,extensionlessFileName.lastIndexOf("-"));
+                charRank = extensionlessFileName.substring(startPos,extensionlessFileName.lastIndexOf('-'));
             }
             else {
                 charRank = extensionlessFileName.substring(startPos);
             }
         }
         else if (extensionlessFileName.contains("_")) {
-            int pos = extensionlessFileName.lastIndexOf("_");
+            int pos = extensionlessFileName.lastIndexOf('_');
             charRank = extensionlessFileName.substring(pos+1);
         }
         

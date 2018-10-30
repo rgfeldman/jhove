@@ -572,9 +572,9 @@ public class MetaDataSync extends Operation {
                         // It may be possible to add more than one insert into DAMS for a single CIS      
                         String valuesToInsert[] = dataValue.split(Pattern.quote("^MULTILINE_LIST_SEP^") );
             
-                        for (int i =0; i < valuesToInsert.length; i++ ) {
+                        for (String valueToInsert : valuesToInsert) {
                             Insertion insertion = new Insertion (dRec.getUois().getUoiid(), sqlCmd.getTableName());
-                            insertion.populateSql(metadataColumnData.getColumnName(),  valuesToInsert[i]);
+                            insertion.populateSql(metadataColumnData.getColumnName(), valueToInsert);
                             insertsForDamsRecord.add(insertion);
                         }                
                     }

@@ -60,7 +60,7 @@ public class VfcuDirReport implements DisplayFormat {
 
             if (rs.next()) {
                 if (rs.getString(2) == null) {
-                    vendorDir = rs.getString(1).substring(rs.getString(1).lastIndexOf("/") + 1);
+                    vendorDir = rs.getString(1).substring(rs.getString(1).lastIndexOf('/') + 1);
                 }
                 else {
                     vendorDir = rs.getString(1) + "/" + rs.getString(2);

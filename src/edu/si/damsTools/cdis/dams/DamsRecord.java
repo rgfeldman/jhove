@@ -63,11 +63,7 @@ public class DamsRecord {
         prev.setUoiid(uois.getUoiid());
         prev.setPreservationIdNumber(vfcuMediaFile.getVendorChecksum());
         boolean preservationInserted = prev.insertRow();       
-        if (!preservationInserted) {
-            return false;
-        }
-        
-        return true;
+        return preservationInserted;
     }
      
     public String replaceSqlVars (String sql) {

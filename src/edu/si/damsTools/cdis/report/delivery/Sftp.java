@@ -27,10 +27,10 @@ public class Sftp implements DeliveryMethod{
         
         try{
             // derive the pathname and the filename from the filename and path concatenation 
-            String pathName = rptFile.getFileNameLoc().substring(0,rptFile.getFileNameLoc().lastIndexOf("/") );
-            String fileName = rptFile.getFileNameLoc().substring(rptFile.getFileNameLoc().lastIndexOf("/")+1);
+            String pathName = rptFile.getFileNameLoc().substring(0,rptFile.getFileNameLoc().lastIndexOf('/') );
+            String fileName = rptFile.getFileNameLoc().substring(rptFile.getFileNameLoc().lastIndexOf('/')+1);
 
-            logger.log(Level.FINEST, "Putting Report file " + rptFile.getFileNameLoc().toString() ); 
+            logger.log(Level.FINEST, "Putting Report file " + rptFile.getFileNameLoc() ); 
             logger.log(Level.FINEST, "sftpRpt.sh "  + pathName + " " + fileName ); 
             
             //run the script that has the commands in it
@@ -67,18 +67,17 @@ public class Sftp implements DeliveryMethod{
         int val = 0;
         
         //verify information by looking for key words in return message from Sftp
-        for (int i = 0; i < ftpMsgs.length; i++) {
-            
-            if (ftpMsgs[i].startsWith("Uploading")) {
+        for (String msg : ftpMsgs) {
+            if (msg.startsWith("Uploading")) {
                 val ++;
             }
-            if (ftpMsgs[i].startsWith("sftp> ls " + fileName)) {
-               val ++;
-            }
-            if (ftpMsgs[i].startsWith(fileName)) {
+            if (msg.startsWith("sftp> ls " + fileName)) {
                 val ++;
             }
-            if (ftpMsgs[i].startsWith("sftp> bye")) {
+            if (msg.startsWith(fileName)) {
+                val ++;
+            }
+            if (msg.startsWith("sftp> bye")) {
                 val ++;
             }
         }

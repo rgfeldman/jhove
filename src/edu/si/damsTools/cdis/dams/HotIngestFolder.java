@@ -51,7 +51,7 @@ public class HotIngestFolder {
             }
             else {              
                 failedPath = Paths.get(DamsTools.getProperty("failedFolderArea") + 
-                        basePath.toString().substring(basePath.toString().lastIndexOf("_") ));
+                        basePath.toString().substring(basePath.toString().lastIndexOf('_') ));
             }  
             failedPath = failedPath.resolve("FAILED");
                    

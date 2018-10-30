@@ -113,7 +113,7 @@ public class Report extends Operation {
                 String strFilePathEnding = rs.getString(2);
                   
                 if (strFilePathEnding == null) {
-                    this.rptShrtVendorDir = strBasePathVendor.substring(strBasePathVendor.lastIndexOf("/") + 1);
+                    this.rptShrtVendorDir = strBasePathVendor.substring(strBasePathVendor.lastIndexOf('/') + 1);
                     this.rptFullVendorDir = strBasePathVendor;
                 }
                 else {
@@ -421,8 +421,8 @@ public class Report extends Operation {
             MimeMessage message = new MimeMessage( session );
             message.setFrom(new InternetAddress("no-reply@dams.si.edu"));
             String[] toEmailAddrArray = DamsTools.getProperty("emailReportTo").split(",");
-            for (int i = 0; i < toEmailAddrArray.length; i++) {
-		message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
+            for (String toEmailAddr : toEmailAddrArray) {
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddr.trim()));
             }
             
             message.setSubject(DamsTools.getProjectCd().toUpperCase() + ": VFCU Activity Report - " + this.rptShrtVendorDir);  

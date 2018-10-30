@@ -47,8 +47,8 @@ public class Email implements DeliveryMethod {
             String emailContent = "";
 
             String[] toEmailAddrArray = displayFormat.returnEmailToList().split(",");
-            for (int i = 0; i < toEmailAddrArray.length; i++) {
-                message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddrArray[i].trim()));
+            for (String toEmailAddr : toEmailAddrArray) {
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddr.trim()));
             }
             
             String emailTitle = displayFormat.returnEmailTitle(rptFile.getKeyValue());

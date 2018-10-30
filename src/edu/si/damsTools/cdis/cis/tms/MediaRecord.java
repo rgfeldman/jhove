@@ -119,7 +119,7 @@ public class MediaRecord {
         //put the mediaType we have just received into the mediaRenditions record
         mediaRenditions.setMediaTypeId(mediaFormats.getMediaTypeId());
         
-        String extensionlessFileName = uois.getName().substring(0, uois.getName().lastIndexOf("."));
+        String extensionlessFileName = uois.getName().substring(0, uois.getName().lastIndexOf('.'));
         logger.log(Level.FINER, "extensionlessFileName: " + extensionlessFileName );
         
         mediaXrefs.calculateRank(extensionlessFileName);
