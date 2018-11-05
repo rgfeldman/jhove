@@ -73,7 +73,25 @@ public class ReportGenerator extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
-        reqProps.add("rptDeliveryMethod");
+        switch (DamsTools.getOperationType()) {
+             case "vfcuDirReport":
+               reqProps.add("rptDeliveryMethod");
+               if (DamsTools.getProperty("rptDeliveryMethod").equals("email") ) {
+                   reqProps.add("vfcuDirEmailList");
+               }
+               reqProps.add("vfcuDirRptSupressAttch");
+               reqProps.add("vfcuDirReportXmlFile");
+               break;
+            case "timeframeReport":
+               reqProps.add("rptHours"); 
+               reqProps.add("timeFrameEmailList");
+               reqProps.add("tfRptSupressAttch");
+               reqProps.add("timeframeReportXmlFile");
+               break;
+            default:
+                logger.log(Level.SEVERE, "Error: Additonal paramater required and not supplied");
+        }
+            
         //add more required props here
         return reqProps;    
     }

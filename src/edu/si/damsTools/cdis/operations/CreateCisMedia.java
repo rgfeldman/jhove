@@ -187,16 +187,29 @@ public class CreateCisMedia extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
+        reqProps.add("appendTimeToNumber");
         reqProps.add("cis");
-        reqProps.add("cisInstance");
-        reqProps.add("cisDriver");
         reqProps.add("cisConnString");
-        reqProps.add("cisUser");
+        reqProps.add("cisDriver");
+        reqProps.add("cisInstance");
         reqProps.add("cisPass");
+        reqProps.add("cisUser");
         reqProps.add("createCisMediaXmlFile");
         reqProps.add("damsRepo");
+        reqProps.add("dupRenditionCheck");
+        reqProps.add("idsPathId");
+        reqProps.add("mediaStatusID");
+        reqProps.add("mapAltColumnToObject");
+        reqProps.add("mapFileNameToBarcode");
+        reqProps.add("mapFileNameToObjectID");
+        reqProps.add("mapFileNameToObjectNumber");
+        
         reqProps.add("lccIdType");
-        reqProps.add("mediaTypeConfigId");
+        
+        if (DamsTools.getProperty("mapFileNameToObjectNumber").equals("true") ) {
+            reqProps.add("damsDelimiter");
+            reqProps.add("tmsDelimeter");
+        }
  
         //add more required props here
         return reqProps;    

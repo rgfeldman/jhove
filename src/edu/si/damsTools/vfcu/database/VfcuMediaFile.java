@@ -173,7 +173,7 @@ public class VfcuMediaFile {
                         "INNER JOIN vfcu_activity_log val " +
                         "ON val.vfcu_media_file_id = vmf.vfcu_media_file_id " +
                         "WHERE vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() + 
-                        " AND val.vfcu_status_cd in ('" + completedStatus + "','ER'))";
+                        " AND val.vfcu_status_cd in ('" + completedStatus + "','ER')";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             

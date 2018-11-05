@@ -213,11 +213,11 @@ public class MediaRecord {
         
         //get the uan and the filename, we will want to check that before we add the new media
         if (uois.getMasterObjMimeType().equals("application/pdf")) {
-                mediaFiles.setPathId(Integer.parseInt (DamsTools.getProperty("PDFPathId")));
+                mediaFiles.setPathId(Integer.parseInt (DamsTools.getProperty("pdfPathId")));
                 mediaFiles.setFileName (siAsst.getOwningUnitUniqueName() +  ".pdf");
         }
         else {
-            mediaFiles.setPathId (Integer.parseInt (DamsTools.getProperty("IDSPathId")));
+            mediaFiles.setPathId (Integer.parseInt (DamsTools.getProperty("idsPathId")));
             mediaFiles.setFileName(siAsst.getOwningUnitUniqueName());
         } 
         

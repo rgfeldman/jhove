@@ -98,7 +98,7 @@ public class LinkCisRecord extends Operation {
             }
 
             //update the thumbnail if needed.  This should probably belong in CIS Update tool
-            if ( ! (DamsTools.getProperty("updateTMSThumbnail") == null) && DamsTools.getProperty("updateTMSThumbnail").equals("true") ) {
+            if ( ! (DamsTools.getProperty("updateTmsThumbnail") == null) && DamsTools.getProperty("updateTmsThumbnail").equals("true") ) {
             boolean thumbnailUpdated = updateCisThumbnail(cdisMap.getCdisMapId());
                 if (!thumbnailUpdated) {
                     ErrorLog errorLog = new ErrorLog ();
@@ -240,6 +240,10 @@ public class LinkCisRecord extends Operation {
         reqProps.add("lccIdType");
         reqProps.add("cis");
         reqProps.add("cisInstance");
+        
+        if (DamsTools.getProperty("cis").equals("tms")) {
+            reqProps.add("updateTmsThumbnail");
+        }
         
         //add more required props here
         return reqProps;    
