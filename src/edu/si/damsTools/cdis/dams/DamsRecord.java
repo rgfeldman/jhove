@@ -92,6 +92,12 @@ public class DamsRecord {
             fileSizeView.populateFileSizeInfo();
             sql = sql.replace("?FILE_SIZE?", fileSizeView.getContentSize());
         }
+        if (sql.contains("?PIXEL_H?")) {
+            sql = sql.replace("?PIXEL_H?", getUois().getBitmapHeight().toString() ) ;
+        }
+        if (sql.contains("?PIXEL_W?")) {
+            sql = sql.replace("?PIXEL_W?", getUois().getBitmapWidth().toString() ) ;
+        }
         
         return (sql);
     }
