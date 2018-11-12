@@ -48,7 +48,7 @@ public class DamsRecord {
     }
     
     public void setBasicData() {
-        uois.populateName();
+        uois.populateUoisData();
         siAsst.populateSiAsstData();
     } 
     
