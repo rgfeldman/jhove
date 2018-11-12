@@ -208,7 +208,7 @@ public class CreateCisMedia extends Operation {
         
         if (DamsTools.getProperty("mapFileNameToObjectNumber").equals("true") ) {
             reqProps.add("damsDelimiter");
-            reqProps.add("tmsDelimeter");
+            reqProps.add("tmsDelimiter");
         }
  
         //add more required props here

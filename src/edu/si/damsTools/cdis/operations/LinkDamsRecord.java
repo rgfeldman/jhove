@@ -226,7 +226,7 @@ public class LinkDamsRecord extends Operation {
         reqProps.add("retainAfterIngest");
         reqProps.add("linkDamsRecordXmlFile");
         
-        if (! DamsTools.getProperty("postIngestDeliveryLoc").equals("false") ) {
+        if (! DamsTools.getProperty("retainAfterIngest").equals("false") ) {
             reqProps.add("postIngestDeliveryLoc");
         }
         //add more required props here
