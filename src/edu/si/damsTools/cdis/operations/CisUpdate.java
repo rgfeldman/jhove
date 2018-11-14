@@ -207,6 +207,7 @@ public class CisUpdate extends Operation {
         reqProps.add("cisUser");
         reqProps.add("cisPass");
         reqProps.add("cisUpdateXmlFile");
+        reqProps.add("lccIdType");
         
         //add more required props here
         return reqProps;    
