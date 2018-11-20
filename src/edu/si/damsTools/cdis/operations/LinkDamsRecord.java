@@ -91,7 +91,7 @@ public class LinkDamsRecord extends Operation {
             errorLog.capture(cdisMap, "UPDAMP", "Error, unable to insert preservation data");
             return false;
         }
-                   
+        
         //Move file to the emu pickup area if necessary
         if (! DamsTools.getProperty("retainAfterIngest").equals("false") &&
             cdisMap.getFileName().endsWith(DamsTools.getProperty("retainAfterIngest")) ) {
@@ -209,6 +209,7 @@ public class LinkDamsRecord extends Operation {
                 CdisMap cdisMap = new CdisMap();
                 cdisMap.setCdisMapId(rs.getInt(1));
                 cdisMap.setDamsUoiid(rs.getString(2));
+                cdisMap.populateFileName();
                 cdisMap.populateVfcuMediaFileId();
                 cdisMapList.add(cdisMap);
             }

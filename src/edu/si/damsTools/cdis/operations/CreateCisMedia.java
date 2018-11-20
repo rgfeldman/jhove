@@ -157,10 +157,8 @@ public class CreateCisMedia extends Operation {
     }
     
     
-    /*  Method :        createMedia
-        Arguments:      
+    /*  Method :        invoke
         Description:    The main driver for the ingest to CIS process 
-        RFeldman 2/2015
     */
     public void invoke () {
  

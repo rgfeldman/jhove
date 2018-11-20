@@ -204,6 +204,27 @@ public class CdisMap {
         return true;
     }
     
+    public boolean populateFileName () {
+        
+        String sql = "SELECT file_name " +
+                    "FROM cdis_map " +
+                    "WHERE cdis_map_id = " + getCdisMapId();
+        
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()){                   
+            
+            if (rs != null && rs.next()) {
+                setFileName (rs.getString(1));
+            }   
+            
+        } catch (Exception e) {
+                logger.log(Level.FINER, "Error: unable to obtain FileName from cdis_map", e );
+                return false;
+        }
+        return true;
+    }
+    
     public boolean populateMapInfo () {
         
         String sql = "SELECT dams_uoi_id, " +
