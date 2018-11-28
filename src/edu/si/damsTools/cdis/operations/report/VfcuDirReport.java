@@ -26,7 +26,7 @@ public class VfcuDirReport implements DisplayFormat {
 
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private ArrayList<String> multiReportKeyValues;
+    private final ArrayList<String> multiReportKeyValues;
    
     
     public VfcuDirReport() {

@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 
 
 /**
@@ -145,8 +146,9 @@ public class CdisErrorLog {
         return description;
     }
     
-    public String returnDescriptionForMapId () {
-        String description = null;
+    public ArrayList<String> returnDescriptionsForMapId () {
+        
+        ArrayList<String> descriptionList = new ArrayList<>();
 
         String sql = "SELECT a.description " +
                      "FROM cdis_error_code_r a, " + 
@@ -158,14 +160,14 @@ public class CdisErrorLog {
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
              ResultSet rs = pStmt.executeQuery();   ){
             
-            if (rs.next()) {
-                description = rs.getString(1);
+            while (rs.next()) {
+                descriptionList.add(rs.getString(1));
             }
             
         } catch (Exception e) {
             logger.log(Level.FINER, "Error: unable to get error description", e );
         }
-        return description;
+        return descriptionList;
     }
     
     

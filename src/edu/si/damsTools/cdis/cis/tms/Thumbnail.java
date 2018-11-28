@@ -166,7 +166,7 @@ public class Thumbnail {
         return true;                                                  
     }
     
-    /*  Method :        getDamsLocation
+    /*  Method :        getDamsNameLocation
         Arguments:      
         Description:    Obtains the location and name of the screen-size medium resoltion image from the DAMS databasae 
         RFeldman 3/2015
