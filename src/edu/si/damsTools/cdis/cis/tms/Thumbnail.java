@@ -47,61 +47,36 @@ public class Thumbnail {
         cdisMap.setCdisMapId(mapId);
         cdisMap.populateMapInfo();
         
-        //Get RenditionID from mapId
+        //Get image location from DAMS
+        boolean locationFound = false;
+        if (DamsTools.getProperty("damsImageSize") != null && DamsTools.getProperty("damsImageSize").equals("thumb")) {
+            locationFound = getDamsThumbNameLocation (cdisMap.getDamsUoiid());
+        }
+        else {  
+            locationFound = getDamsScreenNameLocation (cdisMap.getDamsUoiid());   
+        }    
         
-        boolean locationFound = getDamsNameLocation (cdisMap.getDamsUoiid());   
         if (! locationFound) {
             logger.log(Level.FINER, "Not updating thumbnail, image could not be located from database");
             return false;
         }
- 
-        if (DamsTools.getProperty("damsRepo") == null) {
-            logger.log(Level.FINER, "Not updating thumbnail, unable to get DAMS repository");
+        
+        String sourceImageFile = DamsTools.getProperty("damsRepo") + "/" + this.damsLocation; 
+        logger.log(Level.FINER, "Image Location in DAMS repository: " + sourceImageFile);
+        
+        String tempImage = resizeImage(sourceImageFile, cdisMap.getDamsUoiid());
+        if (tempImage == null) {
+            logger.log(Level.FINER, "Not updating thumbnail, unable to resize image");
         }
         
-        String imageFile = DamsTools.getProperty("damsRepo") + "/" + this.damsLocation; 
-        
-        logger.log(Level.FINER, "Need to Obtain imageLocation " + imageFile);
-        
-        ConvertCmd cmd=new ConvertCmd();
-        IMOperation opGenThumbnail = new IMOperation();
-        
-        //get the current image file specified as the DAMS screen location
-        opGenThumbnail.addImage(imageFile);
-        
-        //Set the resolution and resizing parameters
-        //We have to do an extra resize up because these steps are done sequentially
-        //and when we resample it reduces the size too much and we ended up with some blurred images....
-        opGenThumbnail.resize(9600,9600);
-        opGenThumbnail.resample(72);
-        opGenThumbnail.resize(192,192);
-        opGenThumbnail.units("PixelsPerInch");
-        opGenThumbnail.autoOrient();
-        opGenThumbnail.unsharp(0.0,1.0);
-        opGenThumbnail.colorspace("RGB");
- 
-        //save the thumbnail with the new parameters
-        String thumbImageName = cdisMap.getDamsUoiid() + ".jpg";
-        opGenThumbnail.addImage(thumbImageName);
-        
-        // Capture the image as a binary stream
-        try {        
-            // execute all the above imagemagick commands
-            cmd.run(opGenThumbnail);  
-            
-        } catch(Exception e) {
-            logger.log(Level.FINER, "Error, could not obtain thumbnail from DAMS ", e ); 
-            return false;
-        }
-       
         //Capture the image as a binary stream
-        try (InputStream is = new BufferedInputStream(new FileInputStream(thumbImageName)) ) {
+        try (InputStream is = new BufferedInputStream(new FileInputStream(tempImage)) ) {
             
             this.bytes = IOUtils.toByteArray(is);
             
             this.fileSize = this.bytes.length; 
                     
-            logger.log(Level.FINER, "Found DAMS file: " + thumbImageName + " Size: " + fileSize ); 
+            logger.log(Level.FINER, "Found DAMS file: " + tempImage + " Size: " + fileSize ); 
             
         } catch(Exception e) {
             logger.log(Level.FINER, "Error, could not obtain thumbnail from binary stream ", e ); 
@@ -109,7 +84,7 @@ public class Thumbnail {
             
 	} finally {
             try {
-                File thumbFile = new File (thumbImageName);
+                File thumbFile = new File (tempImage);
                 thumbFile.delete();
                 
             } catch(Exception e) {
@@ -132,6 +107,49 @@ public class Thumbnail {
         return thumbUpdated;
         
     }    
+    
+    private String resizeImage(String sourceImageFile, String uoiId) {
+        
+        if (DamsTools.getProperty("damsImageSize") != null && DamsTools.getProperty("damsImageSize").equals("thumb")) {
+            
+            return sourceImageFile;
+            
+        }
+        else {
+            ConvertCmd cmd=new ConvertCmd();
+            IMOperation opGenThumbnail = new IMOperation();
+        
+            //get the current image file specified as the DAMS screen location
+            opGenThumbnail.addImage(sourceImageFile);
+        
+            //Set the resolution and resizing parameters
+            //We have to do an extra resize up because these steps are done sequentially
+            //and when we resample it reduces the size too much and we ended up with some blurred images....
+            opGenThumbnail.resize(9600,9600);
+            opGenThumbnail.resample(72);
+            opGenThumbnail.resize(192,192);
+            opGenThumbnail.units("PixelsPerInch");
+            opGenThumbnail.autoOrient();
+            opGenThumbnail.unsharp(0.0,1.0);
+            opGenThumbnail.colorspace("RGB");
+ 
+            String tempImage = uoiId + ".jpg";
+            opGenThumbnail.addImage(tempImage);
+        
+            // Capture the image as a binary stream
+            try {        
+                // execute all the above imagemagick commands
+                cmd.run(opGenThumbnail);  
+            
+            } catch(Exception e) {
+                logger.log(Level.FINER, "Error, could not obtain thumbnail from DAMS ", e ); 
+                return null;
+            }
+        
+            return tempImage;
+        }
+        
+    }
     
     /*  Method :        update
         Arguments:      
@@ -166,12 +184,12 @@ public class Thumbnail {
         return true;                                                  
     }
     
-    /*  Method :        getDamsNameLocation
+    /*  Method :        getDamsScreenNameLocation
         Arguments:      
         Description:    Obtains the location and name of the screen-size medium resoltion image from the DAMS databasae 
         RFeldman 3/2015
     */
-    private boolean getDamsNameLocation (String uoiId) {
+    private boolean getDamsScreenNameLocation (String uoiId) {
         
         String sql = "SELECT o.object_name_location " + 
                      "FROM towner.uois u, " +
@@ -197,4 +215,32 @@ public class Thumbnail {
         return true;
         
     }
+    
+    private boolean getDamsThumbNameLocation (String uoiId) {
+        
+        String sql = "SELECT o.object_name_location " + 
+                     "FROM towner.uois u " +
+                     "INNER JOIN towner.object_stacks os " +
+                     "ON u.thumb_nail_obj_id = os.object_id " +
+                     "WHERE u.uoi_id = '" + uoiId + "'";
+                         
+        logger.log(Level.FINEST,"SQL! " + sql);
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+        
+            if(rs.next()) {
+                this.damsLocation = rs.getString(1);
+            }
+            else {
+                logger.log(Level.FINEST,"Error: Unable to obtain image location for uoiid: " + uoiId);
+                return false;
+            }
+        } catch(Exception e) {
+		e.printStackTrace();
+                return false;
+	}     
+        return true;
+        
+    }
+    
 }

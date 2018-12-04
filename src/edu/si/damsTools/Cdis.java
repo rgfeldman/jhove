@@ -5,7 +5,7 @@
  */
 package edu.si.damsTools;
 
-import edu.si.damsTools.cdis.operations.CISThumbnailSync;
+import edu.si.damsTools.cdis.operations.CisThumbnailSync;
 import edu.si.damsTools.cdis.operations.CisUpdate;
 import edu.si.damsTools.cdis.operations.CreateCisMedia;
 import edu.si.damsTools.cdis.operations.LinkCisRecord;
@@ -54,7 +54,7 @@ public class Cdis extends App {
                 break;  
                     
             case "thumbnailSync" :    
-                operation = new CISThumbnailSync();
+                operation = new CisThumbnailSync();
                 break;
                     
             case "cisUpdate" :

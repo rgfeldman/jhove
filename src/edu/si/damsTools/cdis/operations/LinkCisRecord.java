@@ -245,6 +245,10 @@ public class LinkCisRecord extends Operation {
             reqProps.add("updateTmsThumbnail");
         }
         
+        if (DamsTools.getProperty("updateTmsThumbnail") != null && DamsTools.getProperty("updateTmsThumbnail").equals("true")  ) {
+            reqProps.add("damsRepo");
+        }
+        
         //add more required props here
         return reqProps;    
     }
