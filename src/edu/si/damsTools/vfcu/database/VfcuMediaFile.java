@@ -168,7 +168,7 @@ public class VfcuMediaFile {
             completedStatus = "PS";
         }
               
-        String sql =    "SELECT count(*) " +
+        String sql =    "SELECT count(distinct vmf.vfcu_media_file_id) " +
                         "FROM vfcu_media_file vmf " +
                         "INNER JOIN vfcu_activity_log val " +
                         "ON val.vfcu_media_file_id = vmf.vfcu_media_file_id " +
