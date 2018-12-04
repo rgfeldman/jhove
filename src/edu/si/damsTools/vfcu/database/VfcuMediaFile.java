@@ -168,12 +168,13 @@ public class VfcuMediaFile {
             completedStatus = "PS";
         }
               
-        String sql =    "SELECT count(distinct vmf.vfcu_media_file_id) " +
+        String sql =    "SELECT count(*) " +
                         "FROM vfcu_media_file vmf " +
-                        "INNER JOIN vfcu_activity_log val " +
-                        "ON val.vfcu_media_file_id = vmf.vfcu_media_file_id " +
-                        "WHERE vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() + 
-                        " AND val.vfcu_status_cd in ('" + completedStatus + "','ER')";
+                        "WHERE vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() +
+                        "AND EXISTS ( " +
+                            "SELECT 'X' FROM vfcu_activity_log val " +
+                            "WHERE val.vfcu_media_file_id = vmf.vfcu_media_file_id " +
+                            "AND val.vfcu_status_cd in ('" + completedStatus + "','ER'))";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
