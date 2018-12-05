@@ -171,7 +171,7 @@ public class VfcuMediaFile {
         String sql =    "SELECT count(*) " +
                         "FROM vfcu_media_file vmf " +
                         "WHERE vmf.vfcu_md5_file_id = " + getVfcuMd5FileId() +
-                        "AND EXISTS ( " +
+                        " AND EXISTS ( " +
                             "SELECT 'X' FROM vfcu_activity_log val " +
                             "WHERE val.vfcu_media_file_id = vmf.vfcu_media_file_id " +
                             "AND val.vfcu_status_cd in ('" + completedStatus + "','ER'))";

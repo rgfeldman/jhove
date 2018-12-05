@@ -100,6 +100,14 @@ public class MediaRecord {
             case "application/pdf":
                 mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("pdfFormatId")));
                 break;
+            case "audio/x-mpeg" :
+            case "audio/x-wav" :
+                mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("audioFormatId")));
+                break;
+            case "video/mpeg" :
+            case "video/mxf" :
+                mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("videoFormatId")));
+                break;
             default :
                 logger.log(Level.FINER, "unable to get valid mimeType from DAMS: " + uois.getMasterObjMimeType() );
                 errorCode = "SELDAM";

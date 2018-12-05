@@ -160,7 +160,7 @@ public class Thumbnail {
        
         //Input the binary stream into the update statement for the table...and execute
         try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement("update MediaRenditions set ThumbBLOB = ?, ThumbBlobSize = ? " +
-                " where RenditionID in (SELECT RenditionID from MediaRenditions where RenditionID =  ? ) ") ) {									   
+                " where RenditionID  =  ?  ") ) {									   
 			
             pStmt.setBytes(1, this.bytes);
             pStmt.setInt(2, this.fileSize);
@@ -191,11 +191,11 @@ public class Thumbnail {
     */
     private boolean getDamsScreenNameLocation (String uoiId) {
         
-        String sql = "SELECT o.object_name_location " + 
+        String sql = "SELECT os.object_name_location " + 
                      "FROM towner.uois u, " +
-                     "     towner.object_stacks o " +
+                     "     towner.object_stacks os " +
                      "WHERE u.uoi_id = '" + uoiId + "'" +
-                     "AND   u.screen_res_obj_id = o.object_id ";
+                     "AND   u.screen_res_obj_id = os.object_id ";
            
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
@@ -218,7 +218,7 @@ public class Thumbnail {
     
     private boolean getDamsThumbNameLocation (String uoiId) {
         
-        String sql = "SELECT o.object_name_location " + 
+        String sql = "SELECT os.object_name_location " + 
                      "FROM towner.uois u " +
                      "INNER JOIN towner.object_stacks os " +
                      "ON u.thumb_nail_obj_id = os.object_id " +
