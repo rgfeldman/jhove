@@ -16,7 +16,7 @@ public class ErrorLog {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
 
-    public void capture (VfcuMediaFile vfcuMediaFile, String errorCode, String logMessage) {
+    public void capture (VfcuMediaFile vfcuMediaFile, String errorCode, String addlInfo, String logMessage) {
         
         logger.log(Level.FINER, logMessage);
         
@@ -25,6 +25,7 @@ public class ErrorLog {
         vfcuError.setVfcuMediaFileId(vfcuMediaFile.getVfcuMediaFileId());
         vfcuError.setFileName(vfcuMediaFile.getMediaFileName());
         vfcuError.setVfcuMd5FileId(vfcuMediaFile.getVfcuMd5FileId());
+        vfcuError.setAddlErrorInfo(addlInfo);
         vfcuError.setVfcuErrorCd(errorCode);
         vfcuError.insertRecord();
         

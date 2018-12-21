@@ -9,15 +9,12 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.vfcu.utilities.ErrorLog;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.vfcu.database.VfcuMd5File;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
-import java.util.HashMap;
 import java.util.logging.Level;
 import edu.si.damsTools.vfcu.database.VfcuActivityLog;
 import edu.si.damsTools.vfcu.delivery.files.MediaFile;
 import edu.si.damsTools.vfcu.files.xferType.XferType;
 import java.nio.file.Path;
-import java.util.ArrayList;
 
 /**
  *
@@ -49,7 +46,7 @@ public class MediaFileRecord {
             Integer otherFileName = vfcuMediaFile.returnIdForNameOtherMd5();
             if (otherFileName != null) {
                 ErrorLog errorLog = new ErrorLog();  
-                errorLog.capture(vfcuMediaFile, "DUP", "Error: Duplicate File Found");
+                errorLog.capture(vfcuMediaFile, "DUP", null, "Error: Duplicate File Found");
                 return false;
             }
         }
@@ -64,7 +61,7 @@ public class MediaFileRecord {
         }
         else {
             ErrorLog errorLog = new ErrorLog();  
-            errorLog.capture(vfcuMediaFile, "VMD", "MD5 checksum validation failure");
+            errorLog.capture(vfcuMediaFile, "VMD", null, "MD5 checksum validation failure");
             return false;
         }           
         
@@ -90,7 +87,7 @@ public class MediaFileRecord {
                 if (subfileInError) {
                     //Mark the master as an error as well
                     ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(vfcuMediaFile, "CFF", "Associated child File failed");
+                    errorLog.capture(vfcuMediaFile, "CFF", null, "Associated child File failed");
                     return false;
                 }
             }
@@ -100,7 +97,7 @@ public class MediaFileRecord {
                 masterfileActivityLog.setVfcuMediaFileId(vfcuMediaFile.retrieveParentVfcuMediafileId());
                 if (masterfileActivityLog.getVfcuMediaFileId() == null) {
                     ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(vfcuMediaFile, "VSM", "Associated file not found");
+                    errorLog.capture(vfcuMediaFile, "VSM", null, "Associated file not found");
                     return false;
                 }
                 masterfileActivityLog.setVfcuStatusCd("ER");
@@ -108,7 +105,7 @@ public class MediaFileRecord {
                 if (masterfileInError) {
                     //Mark the master as an error as well
                     ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(vfcuMediaFile, "MFF", "Associated master File failed");
+                    errorLog.capture(vfcuMediaFile, "MFF", null, "Associated master File failed");
                     return false;
                 }
  
@@ -139,7 +136,7 @@ public class MediaFileRecord {
             
             if (!mediaTransfered) {
                 ErrorLog errorLog = new ErrorLog(); 
-                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), "Failure to xfer Vendor File");        
+                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), null, "Failure to xfer Vendor File");        
                 return false;
             }
                 
@@ -153,7 +150,7 @@ public class MediaFileRecord {
             boolean attributesGathered = mediaFile.populateAttributes();
             if (!attributesGathered) {
                 ErrorLog errorLog = new ErrorLog(); 
-                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), "Attribute gathering failed");        
+                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), null, "Attribute gathering failed");        
                 return false;
             }
             getVfcuMediaFile().setVfcuChecksum(mediaFile.getMd5Hash());
@@ -164,9 +161,13 @@ public class MediaFileRecord {
             //Perform validations on the physical files
             String errorCode = mediaFile.validate();
             if (errorCode != null) {
-                ErrorLog errorLog = new ErrorLog();  
-                errorLog.capture(getVfcuMediaFile(), errorCode, "Validation Failure");
-                return false;
+                if (errorCode.contains(",")) {
+                    String[] errorInfo = errorCode.split(",");
+                    ErrorLog errorLog = new ErrorLog();  
+                    errorLog.capture(getVfcuMediaFile(), errorInfo[0], errorInfo[1], "Validation Failure");
+                    return false;        
+                }
+                
             }
             
             //If we validated with jhove, now we need to record this in the datbase

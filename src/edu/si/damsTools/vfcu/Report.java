@@ -53,12 +53,15 @@ public class Report extends Operation {
     private ArrayList<Integer> masterMd5Ids;
     private Integer childMd5Id;
     private LinkedHashMap<Integer, String> completedIdName;
-    private LinkedHashMap<Integer, String> failedIdName;
+    private ArrayList<Integer> failedIdList;  //Error IDs rather than media records, there can be failures that dont have media record
     private Document document;
     private String rptFile;
     private String rptShrtVendorDir;
     private String rptFullVendorDir;
     private String statsHeader;
+    
+    public Report() {
+    }
     
     private boolean create () {
         
@@ -180,11 +183,11 @@ public class Report extends Operation {
             genCompletedIdList ();
      
             //Get the failed records from the past increment
-            this.failedIdName = new LinkedHashMap<>();
+            this.failedIdList = new ArrayList<>();
             genFailedIdList ();
             
             //if both master and child md5 file are complete, generate the detailed lists.  
-            if (completedIdName.size() + failedIdName.size() == 0 ) {
+            if (completedIdName.size() + failedIdList.size() == 0 ) {
                 //no report to generate, do not sending anything, or even create the report
                 continue;
             }
@@ -205,7 +208,7 @@ public class Report extends Operation {
                 logger.log(Level.FINEST, "Unable to Obtain Header information");
             }
         
-            if (failedIdName.size() > 0) {
+            if (failedIdList.size() > 0) {
                 //failed list is to be displayed before successful list per Ken
                 writeFailed();
             }
@@ -329,20 +332,17 @@ public class Report extends Operation {
         } else {
             md5FileIdsToQuery = this.currentMd5FileId.toString();
         }
-        String sql = "SELECT a.vfcu_media_file_id, media_file_name " +
-                     "FROM vfcu_media_file a, " +
-                     "      vfcu_activity_log b " +
-                     "WHERE a.vfcu_media_file_id = b.vfcu_media_file_id " +
-                     "AND   vfcu_md5_file_id IN (" + md5FileIdsToQuery + ") " +
-                     "AND b.vfcu_status_cd = 'ER' " +
-                     "ORDER BY media_file_name ";
+        String sql = "SELECT vfcu_error_log_id " +
+                     "FROM vfcu_error_log " +
+                     "WHERE vfcu_md5_file_id in (" + md5FileIdsToQuery + ") " +
+                     "ORDER BY file_name ";
         
         logger.log(Level.FINEST, "SQL: {0}", sql);
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
              ResultSet rs = stmt.executeQuery() ) {
 
             while (rs.next()) {
-                this.failedIdName.put(rs.getInt(1), rs.getString(2));
+                this.failedIdList.add(rs.getInt(1));
             }        
         }
             
@@ -469,8 +469,8 @@ public class Report extends Operation {
             statsHeader = "\nNumber of Successful Media File Validation/Transfers : 0";
         }
             
-        if (failedIdName.size() > 0) {
-            statsHeader = statsHeader + "\nNumber of Failed Records : " + this.failedIdName.size();
+        if (failedIdList.size() > 0) {
+            statsHeader = statsHeader + "\nNumber of Failed Records : " + this.failedIdList.size();
         }
         else {
             statsHeader = statsHeader + "\nNumber of Failed Records : 0";
@@ -531,7 +531,7 @@ public class Report extends Operation {
             document.add(new Paragraph(sectionHeader,secHeaderFont));
             document.add(new Phrase("-------------------------------------------------------------------------",secHeaderFont));
 
-             if (! (failedIdName.size() > 0)) {
+             if (! (failedIdList.size() > 0)) {
                 RtfFont listElementFont=new RtfFont("Courier",8);
                 String listing = "No Errors reported";
                 document.add(new Phrase("\n" + listing,listElementFont));
@@ -543,22 +543,18 @@ public class Report extends Operation {
             logger.log(Level.FINEST, "ERROR",e);
         } 
         
-        for (Integer vfcuMediaId : failedIdName.keySet()) {  
+        for (Integer vfcuErrorLogId : failedIdList) {  
             
             try {
                 
-                VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-                VfcuErrorLog vfcuError = new VfcuErrorLog();
-                      
                 RtfFont listElementFont=new RtfFont("Courier",8);
             
-                vfcuMediaFile.setVfcuMediaFileId(vfcuMediaId);
-                vfcuMediaFile.setMediaFileName(failedIdName.get(vfcuMediaId));
-                
-                vfcuError.setVfcuMediaFileId(vfcuMediaId);
-                String errorDescription = vfcuError.returnDescriptionForMediaFileId();
-                
-                String listing = "File: " + vfcuMediaFile.getMediaFileName() +  "   Error: " + errorDescription ; 
+                VfcuErrorLog vfcuError = new VfcuErrorLog();
+                vfcuError.setVfcuErrorLogId(vfcuErrorLogId);
+                vfcuError.populateDescriptiveInfo();
+
+                String listing = "File: " + vfcuError.getFileName() +  "   Error: " + vfcuError.returnErrDescriptionForErrorCd()  + " " +
+                        vfcuError.getAddlErrorInfo(); 
     
                 document.add(new Phrase("\n" + listing,listElementFont));
             

@@ -20,7 +20,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
 import org.apache.commons.io.FilenameUtils;
+import edu.harvard.hul.ois.jhove.Message;
 
 /**
  *
@@ -32,6 +34,8 @@ public class JhoveConnection {
     
     private Module module;
     private final ArrayList <String> paramList;
+    private RepInfo repInfo;
+    private String errorMessageForVfcu;
     
     public JhoveConnection() {
         paramList  = new ArrayList <>();
@@ -43,6 +47,13 @@ public class JhoveConnection {
     
     public ArrayList <String> getParamList() {
         return this.paramList;
+    }
+    
+    public String getErrorMessageForVfcu () {
+        if (errorMessageForVfcu != null & errorMessageForVfcu.length() > 34 ) {
+            errorMessageForVfcu = errorMessageForVfcu.substring(0,34);
+        }
+        return errorMessageForVfcu;
     }
     
     public boolean populateRequiredData(String mediaFileName) {
@@ -117,23 +128,16 @@ public class JhoveConnection {
             
             try {
                 
-                RepInfo repInfo = new RepInfo (inputFileNamePath); 
+                repInfo = new RepInfo (inputFileNamePath); 
                 File inputfile = new File(inputFileNamePath);
                 jb.processFile( app, module, false, inputfile, repInfo );
                 
-                int isValid = repInfo.getValid();
-             
-                if (isValid != 1) {
-                    String[] pathArray;
-                    pathArray = new String[] {inputFileNamePath};
-                    String outputFileName = DamsTools.getDirectoryName() + "/log/" + FilenameUtils.getName(inputFileNamePath) + ".jhoveOut.txt"; 
-                    
-                    jb.dispatch(app, module, null, null, outputFileName, pathArray);
-                    logger.log(Level.FINER, "JHOVE validation failed for " + inputFileNamePath);
-                    return false;
+                if (repInfo.getValid() == 1) {
+                    logger.log(Level.FINER, "Jhove response successful");
                 }
-                
-                logger.log(Level.FINER, "Jhove response successful");
+                else {
+                    return isErrMessageIgnored();   
+                }
                 
             } catch ( Exception e ) {
                 logger.log(Level.FINER, "Error captured in dispatch areas", e);
@@ -144,6 +148,40 @@ public class JhoveConnection {
             logger.log(Level.FINER, "Error captured: ", e);
             return false;
         }
+        
+        return true;
+    }
+    
+    private boolean isErrMessageIgnored() {
+        
+        List<Message> messageList = repInfo.getMessage (); 
+        if (messageList.isEmpty()) {
+            // jhove failed if there is no repInfo message, we never skip if the message is blank, we want to report this case as eeror
+            return false;
+        }
+        
+        for (Message message : messageList) {
+            
+            logger.log(Level.FINER, "JHOVE messageType: " + message.toString());
+            logger.log(Level.FINER, "JHOVE message: " + message.getMessage());
+            
+            //Make sure we are only looking at Error messages, and ignore Info Messages
+            if (! message.toString().contains("ErrorMessage")) {
+                logger.log(Level.FINER, "Warning message, not an error, skipping: " + message.toString());
+                continue;
+            }
+            
+            // Store the jhove message as a legitamate error that needs to be handled by VFCU (if there is no supress flag set, or if 
+                //the error does not contain the supressed message, it is an error that we wish to report
+            if (DamsTools.getProperty("suppressJhoveErr") == null || ! message.getMessage().startsWith(DamsTools.getProperty("suppressJhoveErr"))) {
+                logger.log(Level.FINER, "Error message NOT supressed: " + message.getMessage());
+                errorMessageForVfcu = message.getMessage();
+                return false;
+            }
+            
+            logger.log(Level.FINER, "Error message supressed: " + message.getMessage());
+        }
+        
         
         return true;
     }

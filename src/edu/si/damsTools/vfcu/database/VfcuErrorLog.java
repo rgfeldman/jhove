@@ -18,12 +18,17 @@ import edu.si.damsTools.DamsTools;
 public class VfcuErrorLog {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
+    private String addlErrorInfo;
     private String fileName;
     private String vfcuErrorCd;
-    private Integer vfcuErrorId;
+    private Integer vfcuErrorLogId;
     private Integer vfcuMd5FileId;
     private Integer vfcuMediaFileId;
    
+    public String getAddlErrorInfo() {
+        return this.addlErrorInfo == null ? "" : this.addlErrorInfo;
+    }
+    
     public String getFileName () {
         return this.fileName;
     }
@@ -32,8 +37,8 @@ public class VfcuErrorLog {
         return this.vfcuErrorCd;
     }
     
-    public Integer getVfcuErrorId () {
-        return this.vfcuErrorId;
+    public Integer getVfcuErrorLogId () {
+        return this.vfcuErrorLogId;
     }
     
     public Integer getVfcuMd5FileId () {
@@ -42,6 +47,10 @@ public class VfcuErrorLog {
       
     public Integer getVfcuMediaFileId () {
         return this.vfcuMediaFileId;
+    }
+    
+    public void setAddlErrorInfo (String addlErrorInfo) {
+        this.addlErrorInfo = addlErrorInfo;
     }
         
     public void setFileName (String fileName) {
@@ -52,8 +61,8 @@ public class VfcuErrorLog {
         this.vfcuErrorCd = vfcuErrorCd;
     }
     
-    public void setVfcuErrorId (Integer vfcuErrorId) {
-        this.vfcuErrorId = vfcuErrorId;
+    public void setVfcuErrorLogId (Integer vfcuErrorLogId) {
+        this.vfcuErrorLogId = vfcuErrorLogId;
     }
             
     public void setVfcuMd5FileId (Integer vfcuMd5FileId) {
@@ -74,6 +83,7 @@ public class VfcuErrorLog {
                         "vfcu_md5_file_id, " +
                         "file_name, " +
                         "vfcu_error_cd, " +
+                        "addl_error_info, " +
                         "error_dt ) " +
                     "VALUES (" +  
                         "vfcu_error_id_seq.NextVal, " +
@@ -82,6 +92,7 @@ public class VfcuErrorLog {
                         getVfcuMd5FileId() + ", " +
                         "'" + getFileName() + "', " +
                         "'" + getVfcuErrorCd() + "', " +
+                        "'" + getAddlErrorInfo() + "', " +
                         "SYSDATE )"; 
         
         logger.log(Level.FINEST, "SQL: {0}", sql);     
@@ -101,52 +112,53 @@ public class VfcuErrorLog {
     }    
     
     
-    public String returnDescriptionForMediaFileId () {
-        String description = null;
+    public boolean populateDescriptiveInfo () {
 
-        String sql = "SELECT a.description " +
-                        "FROM vfcu_error_code_r a, " + 
-                        "       vfcu_error_log b " +
-                        "WHERE a.vfcu_error_cd = b.vfcu_error_cd " +
-                        "AND b.vfcu_media_file_id = " + getVfcuMediaFileId();
+        String sql = "SELECT file_name, vfcu_error_cd, addl_error_info " +
+                     "FROM vfcu_error_log " + 
+                     "WHERE vfcu_error_log_id =  " + getVfcuErrorLogId();
                      
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
              ResultSet rs = pStmt.executeQuery();   ){
             
             if (rs.next()) {
-                description = rs.getString(1);
+                this.fileName = rs.getString(1);
+                this.vfcuErrorCd = rs.getString(2);
+                this.addlErrorInfo = rs.getString(3);
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
+            return false;
+        }
+        
+        return true;
+
+    }
+    
+    public String returnErrDescriptionForErrorCd () {
+
+        String errorDescription = null;
+        
+        String sql = "SELECT description " +
+                     "FROM vfcu_error_code_r " + 
+                     "WHERE vfcu_error_cd = '" + getVfcuErrorCd() + "'";
+                     
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            if (rs.next()) {
+                errorDescription = rs.getString(1);
             }
             
         } catch (Exception e) {
             logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
         }
-        return description;
-    }
-    
-    public boolean populateVfcuMediaFileId () {
-
-        String sql = "SELECT vfcu_media_file_id " +
-                        "FROM vfcu_error_log " + 
-                        "WHERE vfcu_error_log_id = " + getVfcuErrorId();
         
-        logger.log(Level.FINEST,"SQL! " + sql);  
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery()) {
+        return errorDescription;
 
-            if (rs.next()) {
-                this.vfcuMediaFileId = rs.getInt(1);
-            }
-            else {
-                return false;
-            }
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
-                return false;
-        }
-        return true;
-  
     }
     
 }
