@@ -97,8 +97,8 @@ public class MediaFile extends DeliveryFile {
             
             boolean jhoveValidationSuccess = jhoveConnection.jhoveValidate(super.fileNameAndPath.toString());
             
-            if (!jhoveValidationSuccess) {
-                return "JHV";
+            if (!jhoveValidationSuccess) {   
+                return "JHV," + jhoveConnection.getErrorMessageForVfcu();
             }
             jhoveValidated = true;
         }
