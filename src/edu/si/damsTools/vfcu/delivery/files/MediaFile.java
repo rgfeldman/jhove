@@ -77,19 +77,14 @@ public class MediaFile extends DeliveryFile {
         return true;
     }
     
-    boolean zeroByteChecksumVldt() {
+    public boolean zeroByteVldt() {
+        //make sure the checksum is not equivalent to a zero-byte file
         return !(mbFileSize == null || mbFileSize.equals("0") || md5Hash.equals("d41d8cd98f00b204e9800998ecf8427e"));
     }
      
     
-    public String validate() {
+    public String validateFormat() {
                         
-        //make sure the checksum is not equivalent to a zero-byte file
-        boolean validFileSize = zeroByteChecksumVldt();
-        if (!validFileSize) {
-            return "ZBF";
-        }
- 
         JhoveConnection jhoveConnection = new JhoveConnection();
         boolean jhoveCheckRequired = jhoveConnection.populateRequiredData(super.fileNameAndPath.toString());  
         // perform jhove validation if needed 
@@ -98,7 +93,7 @@ public class MediaFile extends DeliveryFile {
             boolean jhoveValidationSuccess = jhoveConnection.jhoveValidate(super.fileNameAndPath.toString());
             
             if (!jhoveValidationSuccess) {   
-                return "JHV," + jhoveConnection.getErrorMessageForVfcu();
+                return jhoveConnection.getErrorMessageForVfcu();
             }
             jhoveValidated = true;
         }
