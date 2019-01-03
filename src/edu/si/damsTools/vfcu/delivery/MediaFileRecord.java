@@ -5,7 +5,6 @@
  */
 package edu.si.damsTools.vfcu.delivery;
 
-import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.vfcu.utilities.ErrorLog;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
@@ -158,16 +157,19 @@ public class MediaFileRecord {
             getVfcuMediaFile().setMediaFileDate(mediaFile.getMediaFileDate());
             getVfcuMediaFile().updateVfcuMediaAttributes();           
             
-            //Perform validations on the physical files
-            String errorCode = mediaFile.validate();
-            if (errorCode != null) {
-                if (errorCode.contains(",")) {
-                    String[] errorInfo = errorCode.split(",");
-                    ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(getVfcuMediaFile(), errorInfo[0], errorInfo[1], "Validation Failure");
-                    return false;        
-                }
-                
+            //Perform validations on the physical files.  make sure the file is not zero bytes (empty)
+            boolean validFileSize = mediaFile.zeroByteVldt();
+            if (! validFileSize) {
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(getVfcuMediaFile(), "ZBF", null, "Validation Failure");
+                return false;          
+            }
+            
+            String formatError = mediaFile.validateFormat();
+            if (formatError != null) {
+                ErrorLog errorLog = new ErrorLog();  
+                errorLog.capture(getVfcuMediaFile(), "JHV", formatError, "Validation Failure");
+                return false;          
             }
             
             //If we validated with jhove, now we need to record this in the datbase

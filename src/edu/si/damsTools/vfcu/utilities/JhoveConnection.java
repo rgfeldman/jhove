@@ -50,7 +50,10 @@ public class JhoveConnection {
     }
     
     public String getErrorMessageForVfcu () {
-        if (errorMessageForVfcu != null & errorMessageForVfcu.length() > 34 ) {
+        if (errorMessageForVfcu == null) {
+            return "Jhove execution failed";
+        }
+        if (errorMessageForVfcu.length() > 34 ) {
             errorMessageForVfcu = errorMessageForVfcu.substring(0,34);
         }
         return errorMessageForVfcu;
