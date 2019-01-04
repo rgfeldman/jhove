@@ -8,7 +8,6 @@ package edu.si.damsTools.vfcu.database;
 import edu.si.damsTools.DamsTools;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -278,5 +277,7 @@ public class VfcuMd5File {
         }
         return true;
     }
+     
+    
 }
 

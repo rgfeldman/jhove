@@ -14,6 +14,8 @@ public interface XferType {
     
     public String returnCompleteXferCode();
     
+    public String returnFailureMessage();
+    
     public String returnXferErrorCode();
     
     public boolean xferFile(Path source, Path destination);

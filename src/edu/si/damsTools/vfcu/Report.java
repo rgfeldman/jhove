@@ -553,10 +553,10 @@ public class Report extends Operation {
                 vfcuError.setVfcuErrorLogId(vfcuErrorLogId);
                 vfcuError.populateDescriptiveInfo();
 
-                String listing = "File: " + vfcuError.getFileName() +  "   Error: " + vfcuError.returnErrDescriptionForErrorCd()  + " " +
+                String listing = "File: " + vfcuError.getFileName() +  "   Error: " + vfcuError.returnErrDescriptionForErrorCd()  + ", " +
                         vfcuError.getAddlErrorInfo(); 
     
-                document.add(new Phrase("\n" + listing,listElementFont));
+                document.add(new Phrase("\n\n" + listing,listElementFont));
             
             } catch(Exception e) {
                 logger.log(Level.FINEST, "ERROR",e);

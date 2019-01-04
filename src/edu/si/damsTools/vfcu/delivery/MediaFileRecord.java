@@ -14,6 +14,8 @@ import edu.si.damsTools.vfcu.database.VfcuActivityLog;
 import edu.si.damsTools.vfcu.delivery.files.MediaFile;
 import edu.si.damsTools.vfcu.files.xferType.XferType;
 import java.nio.file.Path;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 /**
  *
@@ -42,10 +44,19 @@ public class MediaFileRecord {
         //validate the filename (duplicate check)
         if (DamsTools.getProperty("dupFileNmCheck").equals("true")) {
             //look to see if the file already exists that is not in error state
-            Integer otherFileName = vfcuMediaFile.returnIdForNameOtherMd5();
-            if (otherFileName != null) {
+            String otherPath = returnDupFilePath();
+            if (otherPath != null) {
+                //truncate the path if it is too long to remove elements
+                while (otherPath.length() > 70) {
+                    if (otherPath.contains("/")) {
+                        otherPath = otherPath.split("/",2)[1];
+                    }
+                    else {
+                        otherPath = otherPath.substring(0,70);
+                    }
+                }
                 ErrorLog errorLog = new ErrorLog();  
-                errorLog.capture(vfcuMediaFile, "DUP", null, "Error: Duplicate File Found");
+                errorLog.capture(vfcuMediaFile, "DUP", "File also found at: " + otherPath , "Error: Duplicate File Found");
                 return false;
             }
         }
@@ -60,7 +71,8 @@ public class MediaFileRecord {
         }
         else {
             ErrorLog errorLog = new ErrorLog();  
-            errorLog.capture(vfcuMediaFile, "VMD", null, "MD5 checksum validation failure");
+            String errorMessage = "provided: " + vfcuMediaFile.getVendorChecksum() + "  actual: " + vfcuMediaFile.getVfcuChecksum() ;
+            errorLog.capture(vfcuMediaFile, "VMD", errorMessage, "MD5 checksum validation failure");
             return false;
         }           
         
@@ -132,10 +144,9 @@ public class MediaFileRecord {
             MediaFile mediaFile = new MediaFile(pathFile);
             
             boolean mediaTransfered = mediaFile.transferToVfcuStaging(xferType, false);   
-            
             if (!mediaTransfered) {
                 ErrorLog errorLog = new ErrorLog(); 
-                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), null, "Failure to xfer Vendor File");        
+                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), xferType.returnFailureMessage(), "Failure to xfer Vendor File");        
                 return false;
             }
                 
@@ -183,5 +194,38 @@ public class MediaFileRecord {
             validateDbRecord();
             
         return true;
+    }
+    
+    
+    public String returnDupFilePath () {
+        
+        String otherFilePath = null;
+        
+        String sql = "SELECT  NVL(vmd.file_path_ending,vmd.base_path_staging) " +
+                     "FROM    vfcu_media_file vmf " +
+                     "INNER JOIN vfcu_md5_file vmd " +
+                     "ON      vmf.vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
+                     "WHERE   vmf.vfcu_md5_file_id != " + vfcuMediaFile.getVfcuMd5FileId() +
+                     " AND    media_file_name = '" + vfcuMediaFile.getMediaFileName() + "' " +
+                     "AND    vmd.project_cd = '" + DamsTools.getProjectCd() + "' " +
+                     "AND NOT EXISTS ( " +
+                        "SELECT 'X' FROM vfcu_error_log vel  " +
+                        "WHERE vmf.vfcu_media_file_id = vel.vfcu_media_file_id) ";
+            
+        logger.log(Level.FINEST, "SQL: {0}", sql);         
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery() ) {
+            
+            if (rs.next()) {
+                //found a matching filename
+                otherFilePath = rs.getString(1);
+            }
+
+        } catch (Exception e) {
+           logger.log(Level.FINER, "Error: unable to check for duplicate fileName", e );
+           otherFilePath = "DB Error";
+        }
+        
+        return otherFilePath;
     }
 }

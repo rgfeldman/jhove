@@ -248,38 +248,6 @@ public class VfcuMediaFile {
         return filesIdsForBatch;
     }
     
-     public Integer returnIdForNameOtherMd5 () {
-        
-        Integer otherFile_id = null;
-        
-        String sql = "SELECT  vfcu_media_file_id " +
-                     "FROM    vfcu_media_file vmf " +
-                     "INNER JOIN vfcu_md5_file md5 " +
-                     "ON      vmf.vfcu_md5_file_id = md5.vfcu_md5_file_id " +
-                     "WHERE   vmf.vfcu_md5_file_id != " + getVfcuMd5FileId() +
-                     " AND    media_file_name = '" + getMediaFileName() + "' " +
-                     "AND    md5.project_cd = '" + DamsTools.getProjectCd() + "' " +
-                     "AND NOT EXISTS ( " +
-                        "SELECT 'X' FROM vfcu_error_log vel  " +
-                        "WHERE vmf.vfcu_media_file_id = vel.vfcu_media_file_id) ";
-            
-        logger.log(Level.FINEST, "SQL: {0}", sql);         
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery() ) {
-            
-           if (rs.next()) {
-                //found a matching filename
-                otherFile_id = rs.getInt(1);
-            }
-
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to check for duplicate fileName", e );
-        }
-        
-        return otherFile_id;
-    }
-    
-    
     public ArrayList retrieveNoErrorIdsForMd5Id () {
         
         ArrayList<Integer> ids = new ArrayList<>();
