@@ -5,18 +5,22 @@
  */
 package edu.si.damsTools.vfcu.utilities;
 
+import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.vfcu.database.VfcuActivityLog;
+import edu.si.damsTools.vfcu.database.VfcuErrorLog;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileError;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
+import edu.si.damsTools.vfcu.database.VfcuMd5File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import edu.si.damsTools.vfcu.database.VfcuErrorLog;
-import edu.si.damsTools.vfcu.database.VfcuMediaFile;
-import edu.si.damsTools.DamsTools;
+
 
 public class ErrorLog {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
 
-    public void capture (VfcuMediaFile vfcuMediaFile, String errorCode, String addlInfo, String logMessage) {
+    public void captureMediaFileError (VfcuMediaFile vfcuMediaFile, String errorCode, String addlInfo, String logMessage) {
         
         logger.log(Level.FINER, logMessage);
         
@@ -34,4 +38,21 @@ public class ErrorLog {
         vfcuActivityLog.setVfcuStatusCd("ER");
         vfcuActivityLog.insertRow();
     }    
+    
+    public void captureMd5Error (VfcuMd5File vfcuMd5File, String errorCode, String logMessage) {
+        
+        logger.log(Level.FINER, logMessage);
+        
+        VfcuMd5FileError vfcuMd5Error = new VfcuMd5FileError();
+        
+        vfcuMd5Error.setVfcuMd5FileId(vfcuMd5File.getVfcuMd5FileId());
+        vfcuMd5Error.setVfcuMd5ErrorCd(errorCode);
+        vfcuMd5Error.insertRecord();
+        
+        VfcuMd5FileActivityLog vfcuMd5ActivityLog = new VfcuMd5FileActivityLog();
+        vfcuMd5ActivityLog.setVfcuMd5FileId(vfcuMd5File.getVfcuMd5FileId());
+        vfcuMd5ActivityLog.setVfcuMd5StatusCd("ER");
+        vfcuMd5ActivityLog.insertRecord();
+    }    
+        
 }

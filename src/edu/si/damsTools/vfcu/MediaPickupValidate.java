@@ -103,7 +103,7 @@ public class MediaPickupValidate extends Operation {
                if (assocVfcuMediaFileId == null) {
                    logger.log(Level.FINER, "Error, master found with no subfile");
                    ErrorLog errorLog = new ErrorLog();
-                   errorLog.capture(masterMediaFileRecord.getVfcuMediaFile(), "VMS", null, "Master has no subfile");
+                   errorLog.captureMediaFileError(masterMediaFileRecord.getVfcuMediaFile(), "VMS", null, "Master has no subfile");
                    continue;
                 }
                 masterMediaFileRecord.getVfcuMediaFile().setChildVfcuMediaFileId(assocVfcuMediaFileId);

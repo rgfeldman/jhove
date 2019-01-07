@@ -102,6 +102,7 @@ public class DeliveryFile {
         }
         catch(Exception e) {
              logger.log(Level.FINEST, "Unable to transfer to staging", e);
+             return false;
         }
         return true;
     }

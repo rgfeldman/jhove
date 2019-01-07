@@ -7,6 +7,8 @@ package edu.si.damsTools.vfcu.delivery;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.vfcu.database.VfcuMd5File;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
+import edu.si.damsTools.vfcu.utilities.ErrorLog;
 import edu.si.damsTools.vfcu.delivery.files.Md5File;
 import edu.si.damsTools.vfcu.files.xferType.XferType;
 import java.util.logging.Logger;
@@ -62,7 +64,6 @@ public class SourceFileListing {
         return true;          
     }
        
-//    public boolean populateBasicValuesFromDeliveryFile (String fileName, String filePathEnding) {
     public boolean populateBasicValuesFromDeliveryFile (Path nameAndPath) {
 
         md5File = new Md5File(nameAndPath);
@@ -85,26 +86,30 @@ public class SourceFileListing {
             return false;
         }
             
-        // transfer md5 file to staging
-        boolean fileXferred = getMd5File().transferToVfcuStaging(xferType, true);
-        if (!fileXferred) {
-            logger.log(Level.FINEST, "Error, unable to transfer md5 file to staging"); 
-            return false;
-        }
-            
         // Insert into Database
-        boolean recordInserted = insertDbRecord();
-        
-        //if md5 inserted successfully, add the files too
+        boolean recordInserted = vfcuMd5File.insertRecord();        
         if (!recordInserted) {
             logger.log(Level.FINEST, "Error, unable to insert md5 record into database"); 
             return false;
         }
+        
+        // transfer md5 file to staging
+        boolean fileXferred = getMd5File().transferToVfcuStaging(xferType, true);
+        if (!fileXferred) {
+            logger.log(Level.FINEST, "Error, unable to transfer md5 file to staging"); 
+            //Log error
+            ErrorLog errorLog = new ErrorLog();
+            errorLog.captureMd5Error(vfcuMd5File, "UXM", "Unable to Transfer VFCU md5 file");
+            return false;
+        }
             
+        //since md5 inserted successfully, add the files too
         boolean contentMapPopulated = getMd5File().populateContentsHashMap();
         if (!contentMapPopulated) {
-                logger.log(Level.FINEST, "Error, unable to pull contents into HashMap"); 
-                return false;
+            logger.log(Level.FINEST, "Error, unable to pull contents into Array"); 
+            ErrorLog errorLog = new ErrorLog();
+            errorLog.captureMd5Error(vfcuMd5File, "UED", "Unable to Extract data frin md5 file");
+            return false;
         }
             
         for (String filename : getMd5File().getContentsMap().keySet()) {
@@ -128,13 +133,6 @@ public class SourceFileListing {
         md5File = new Md5File(Paths.get(fileNamePath));
        
         return true;
-    }
-    
-
-    public boolean insertDbRecord() {
-
-        boolean recordInserted = vfcuMd5File.insertRecord();
-        return recordInserted;
     }
     
     public int retrieveCountProcessed() {

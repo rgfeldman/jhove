@@ -56,7 +56,7 @@ public class MediaFileRecord {
                     }
                 }
                 ErrorLog errorLog = new ErrorLog();  
-                errorLog.capture(vfcuMediaFile, "DUP", "File also found at: " + otherPath , "Error: Duplicate File Found");
+                errorLog.captureMediaFileError(vfcuMediaFile, "DUP", "File also found at: " + otherPath , "Error: Duplicate File Found");
                 return false;
             }
         }
@@ -72,7 +72,7 @@ public class MediaFileRecord {
         else {
             ErrorLog errorLog = new ErrorLog();  
             String errorMessage = "provided: " + vfcuMediaFile.getVendorChecksum() + "  actual: " + vfcuMediaFile.getVfcuChecksum() ;
-            errorLog.capture(vfcuMediaFile, "VMD", errorMessage, "MD5 checksum validation failure");
+            errorLog.captureMediaFileError(vfcuMediaFile, "VMD", errorMessage, "MD5 checksum validation failure");
             return false;
         }           
         
@@ -98,7 +98,7 @@ public class MediaFileRecord {
                 if (subfileInError) {
                     //Mark the master as an error as well
                     ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(vfcuMediaFile, "CFF", null, "Associated child File failed");
+                    errorLog.captureMediaFileError(vfcuMediaFile, "CFF", null, "Associated child File failed");
                     return false;
                 }
             }
@@ -108,7 +108,7 @@ public class MediaFileRecord {
                 masterfileActivityLog.setVfcuMediaFileId(vfcuMediaFile.retrieveParentVfcuMediafileId());
                 if (masterfileActivityLog.getVfcuMediaFileId() == null) {
                     ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(vfcuMediaFile, "VSM", null, "Associated file not found");
+                    errorLog.captureMediaFileError(vfcuMediaFile, "VSM", null, "Associated file not found");
                     return false;
                 }
                 masterfileActivityLog.setVfcuStatusCd("ER");
@@ -116,7 +116,7 @@ public class MediaFileRecord {
                 if (masterfileInError) {
                     //Mark the master as an error as well
                     ErrorLog errorLog = new ErrorLog();  
-                    errorLog.capture(vfcuMediaFile, "MFF", null, "Associated master File failed");
+                    errorLog.captureMediaFileError(vfcuMediaFile, "MFF", null, "Associated master File failed");
                     return false;
                 }
  
@@ -146,7 +146,7 @@ public class MediaFileRecord {
             boolean mediaTransfered = mediaFile.transferToVfcuStaging(xferType, false);   
             if (!mediaTransfered) {
                 ErrorLog errorLog = new ErrorLog(); 
-                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), xferType.returnFailureMessage(), "Failure to xfer Vendor File");        
+                errorLog.captureMediaFileError(getVfcuMediaFile(), xferType.returnXferErrorCode(), xferType.returnFailureMessage(), "Failure to xfer Vendor File");        
                 return false;
             }
                 
@@ -160,7 +160,7 @@ public class MediaFileRecord {
             boolean attributesGathered = mediaFile.populateAttributes();
             if (!attributesGathered) {
                 ErrorLog errorLog = new ErrorLog(); 
-                errorLog.capture(getVfcuMediaFile(), xferType.returnXferErrorCode(), null, "Attribute gathering failed");        
+                errorLog.captureMediaFileError(getVfcuMediaFile(), xferType.returnXferErrorCode(), null, "Attribute gathering failed");        
                 return false;
             }
             getVfcuMediaFile().setVfcuChecksum(mediaFile.getMd5Hash());
@@ -172,14 +172,14 @@ public class MediaFileRecord {
             boolean validFileSize = mediaFile.zeroByteVldt();
             if (! validFileSize) {
                 ErrorLog errorLog = new ErrorLog();  
-                errorLog.capture(getVfcuMediaFile(), "ZBF", null, "Validation Failure");
+                errorLog.captureMediaFileError(getVfcuMediaFile(), "ZBF", null, "Validation Failure");
                 return false;          
             }
             
             String formatError = mediaFile.validateFormat();
             if (formatError != null) {
                 ErrorLog errorLog = new ErrorLog();  
-                errorLog.capture(getVfcuMediaFile(), "JHV", formatError, "Validation Failure");
+                errorLog.captureMediaFileError(getVfcuMediaFile(), "JHV", formatError, "Validation Failure");
                 return false;          
             }
             
