@@ -35,7 +35,7 @@ public class XmlReader {
             
     public ArrayList parser(String mainXmlBlock, String tag) {
       
-        String xmlFilename = DamsTools.getProperty(DamsTools.getOperationType() + "XmlFile");
+        String xmlFilename = DamsTools.getProperty(DamsTools.getOperationType() + "-" + DamsTools.getSubOperation() + "XmlFile");
         
         logger.log(Level.FINEST, "Reading xmlFile: " + DamsTools.getDirectoryName() + "/" + xmlFilename);
         String inputfile = DamsTools.getDirectoryName() + "/" + xmlFilename;

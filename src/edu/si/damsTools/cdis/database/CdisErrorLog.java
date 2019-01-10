@@ -121,8 +121,6 @@ public class CdisErrorLog {
         return true;
     }
     
-    
-    
     public String returnDescription () {
         String description = null;
 

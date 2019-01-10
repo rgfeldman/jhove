@@ -3,17 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.damsTools.cdis.operations;
+package edu.si.damsTools.report;
 
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.operations.Operation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
-import edu.si.damsTools.cdis.operations.report.DisplayFormat;
-import edu.si.damsTools.cdis.operations.report.Report;
-import edu.si.damsTools.cdis.operations.report.TimeFrameReport;
-import edu.si.damsTools.cdis.operations.report.VfcuDirReport;
 
 /**
  *
@@ -26,14 +23,17 @@ public class ReportGenerator extends Operation {
     Report[] reportObjectList;
 
     public ReportGenerator() {   
-         switch (DamsTools.getOperationType()) {
-            case "vfcuDirReport":
-                //Get the bundle of reports
+       
+        switch (DamsTools.getSubOperation()) {
+            case "cdisVfcuDir":
                 // Get the md5 file ids for each genDisplayFormat
-                displayFormat = new VfcuDirReport();
+                displayFormat = new CdisVfcuDirReport();
                 break;
-            case "timeframeReport":
+            case "timeframe":
                 displayFormat = new TimeFrameReport();
+                break;
+             case "vfcuMedia":
+                displayFormat = new VfcuMediaReport();
                 break;
             default:
                 logger.log(Level.SEVERE, "Error: Additonal paramater required and not supplied");
@@ -56,15 +56,16 @@ public class ReportGenerator extends Operation {
                 rpt.setKeyValue(keyValue);
                 logger.log(Level.FINEST, "MultRpt Key Value: " + keyValue);
 
-                //check if all of the files have been physically moved
-            
                 //Generate and Send the attachment
                 boolean reportSuccess = rpt.generate();
             
-                if (reportSuccess) {
-                    //update the database
-                    boolean dbUpdated = displayFormat.updateDbComplete(keyValue);
+                if (!reportSuccess) {
+                    logger.log(Level.SEVERE, "Error generating report for MultRpt Key Value: " + keyValue);
+                    continue;
                 }
+                //update the database
+                boolean dbUpdated = displayFormat.updateDbComplete(keyValue);
+                
             }
         }        
     }
@@ -73,21 +74,27 @@ public class ReportGenerator extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
-        switch (DamsTools.getOperationType()) {
-             case "vfcuDirReport":
+        switch (DamsTools.getSubOperation()) {
+             case "cdisVfcuDir":
+               reqProps.add("cdisVfcuDirReportXmlFile");
                reqProps.add("rptDeliveryMethod");
                if (DamsTools.getProperty("rptDeliveryMethod").equals("email") ) {
                    reqProps.add("vfcuDirEmailList");
                }
                reqProps.add("vfcuDirRptSupressAttch");
-               reqProps.add("vfcuDirReportXmlFile");
+               reqProps.add("useMasterSubPairs");
                break;
-            case "timeframeReport":
+            case "timeframe":
                reqProps.add("rptHours"); 
                reqProps.add("timeFrameEmailList");
                reqProps.add("tfRptSupressAttch");
                reqProps.add("timeframeReportXmlFile");
                break;
+            case "vfcuMedia":
+                reqProps.add("report-vfcuMediaXmlFile");
+                reqProps.add("useMasterSubPairs");
+                break;             
+               
             default:
                 logger.log(Level.SEVERE, "Error: Additonal paramater required and not supplied");
         }

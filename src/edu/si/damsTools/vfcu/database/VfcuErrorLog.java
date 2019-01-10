@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import java.util.ArrayList;
 
 /**
  *
@@ -136,6 +137,32 @@ public class VfcuErrorLog {
         return true;
 
     }
+    
+    public ArrayList<String> returnDescriptionsForMediaId () {
+        
+        ArrayList<String> descriptionList = new ArrayList<>();
+
+        String sql = "SELECT vec.description " +
+                     "FROM vfcu_error_code_r vec " + 
+                     "INNER JOIN vfcu_error_log vel " +
+                     "ON vec.vfcu_error_cd = vel.vfcu_error_cd " +
+                     "AND vel.vfcu_media_file_id = " + this.vfcuMediaFileId;
+                     
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            while (rs.next()) {
+                descriptionList.add(rs.getString(1));
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to get error description", e );
+        }
+        return descriptionList;
+    }
+    
+    
     
     public String returnErrDescriptionForErrorCd () {
 
