@@ -37,22 +37,27 @@ public class DamsTools {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
    
+    private static String application;
     private static Long batchNumber;
+    private static String configFile;
     private static Connection cisConn;
     private static Connection damsConn;
+    private static String directoryName;
     private static String projectCd;
     private static String operationType;
     private static Properties properties;
-    private static String directoryName;
-    private static String configFile;
-    private static String application;
+    private static String subOperation;
     private static ArrayList <XmlQueryData> xmlQueryDataObjList;
     
     private App app;
     private Operation operation;
     
-    public static String getProjectCd() {
-        return DamsTools.projectCd;
+    public static String getApplication() {
+        return DamsTools.application;
+    }
+           
+    public static Long getBatchNumber() {
+        return DamsTools.batchNumber;
     }
     
     public static Connection getCisConn() {
@@ -62,36 +67,35 @@ public class DamsTools {
     public static Connection getDamsConn() {
         return DamsTools.damsConn;
     }
-        
-    public static Long getBatchNumber() {
-        return DamsTools.batchNumber;
+    
+    public static String getDirectoryName() {
+       return DamsTools.directoryName;
     }
     
     public static String getOperationType() {
         return DamsTools.operationType;
     }
     
+    public static String getProjectCd() {
+        return DamsTools.projectCd;
+    }
+    
+    public static String getSubOperation() {
+        return DamsTools.subOperation;
+    }
+    
     public static ArrayList <XmlQueryData> getSqlQueryObjList() {
         return DamsTools.xmlQueryDataObjList;
-    }
-        
-    public static Properties getProperties() {
-        return DamsTools.properties;
     }
     
     public static String getProperty (String property) {
         return DamsTools.properties.getProperty(property);
     }
 
-    public static String getDirectoryName() {
-       return DamsTools.directoryName;
-    }
-
     private void setBatchNumber (Long batchExecutionNumber) {
         DamsTools.batchNumber = batchExecutionNumber;
     }
-    
-    
+
     
     /*  Method :        connectToDatabases
         Arguments:      
@@ -342,10 +346,13 @@ public class DamsTools {
                 }
             } 
             
-            if (DamsTools.getProperty(DamsTools.operationType + "XmlFile") != null) {
-                XmlReader xmlReader = new XmlReader();
-                damsTool.xmlQueryDataObjList = new ArrayList();
+            XmlReader xmlReader = new XmlReader();
+            damsTool.xmlQueryDataObjList = new ArrayList();
+            if (DamsTools.getSubOperation() == null ) {
                 damsTool.xmlQueryDataObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
+            }
+            else {
+                damsTool.xmlQueryDataObjList = xmlReader.parser(DamsTools.getOperationType() + "-" + DamsTools.getSubOperation(), "query");
             }
             
             damsTool.operation.invoke();
@@ -393,6 +400,12 @@ public class DamsTools {
             .build();
         options.addOption( option );
         
+        option = Option.builder("s")
+            .hasArg()
+            .argName("subOperation")
+            .build();
+        options.addOption( option );
+        
         // create the parser
         CommandLineParser parser = new DefaultParser();
         try {
@@ -403,6 +416,7 @@ public class DamsTools {
             DamsTools.configFile = line.getOptionValue( "c" );
             DamsTools.directoryName = line.getOptionValue( "d" );
             DamsTools.operationType = line.getOptionValue("o");
+            DamsTools.subOperation = line.getOptionValue("s");
         }
         catch( Exception e ) {
             // oops, something went wrong

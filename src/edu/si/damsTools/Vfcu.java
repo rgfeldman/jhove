@@ -5,9 +5,9 @@
  */
 package edu.si.damsTools;
 
-import edu.si.damsTools.vfcu.Report;
 import edu.si.damsTools.vfcu.Watcher; 
 import edu.si.damsTools.cdis.operations.Operation;
+import edu.si.damsTools.report.ReportGenerator;
 import edu.si.damsTools.vfcu.MediaPickupValidate;
 import edu.si.damsTools.vfcu.BatchCompletion;
 import java.util.logging.Level;
@@ -36,7 +36,7 @@ public class Vfcu extends App {
                 break;
             
             case "report" :  
-                operation = new Report();       
+                operation = new ReportGenerator();       
                 break;
             
             case "watcher" :
