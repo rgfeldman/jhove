@@ -172,4 +172,8 @@ public class BatchCompletion extends Operation {
         return reqProps;
     }
     
+    public boolean requireSqlCriteria () {
+        return false;
+    }
+    
 }

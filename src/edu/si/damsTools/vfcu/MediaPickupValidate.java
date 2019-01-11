@@ -149,4 +149,8 @@ public class MediaPickupValidate extends Operation {
         //add more required props here
         return reqProps;    
     }
+    
+    public boolean requireSqlCriteria () {
+        return false;
+    }
 }

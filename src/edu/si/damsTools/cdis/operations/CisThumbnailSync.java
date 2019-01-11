@@ -23,6 +23,7 @@ public class CisThumbnailSync extends Operation {
 
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
+    
     private ArrayList <Integer> mapIdsToSync;  
      
     /*  Method :        populateRenditionsToUpdate
@@ -33,7 +34,6 @@ public class CisThumbnailSync extends Operation {
             
     public CisThumbnailSync() {
     }
-   
     
     private boolean populateIdsToUpdate () {
         
@@ -123,5 +123,9 @@ public class CisThumbnailSync extends Operation {
         
         //add more required props here
         return reqProps;    
+    }
+    
+    public boolean requireSqlCriteria () {
+        return true;
     }
 }

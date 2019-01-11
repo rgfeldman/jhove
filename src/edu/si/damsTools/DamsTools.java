@@ -52,6 +52,8 @@ public class DamsTools {
     private App app;
     private Operation operation;
     
+    private XmlReader xmlReader;
+    
     public static String getApplication() {
         return DamsTools.application;
     }
@@ -346,13 +348,16 @@ public class DamsTools {
                 }
             } 
             
-            XmlReader xmlReader = new XmlReader();
-            damsTool.xmlQueryDataObjList = new ArrayList();
-            if (DamsTools.getSubOperation() == null ) {
-                damsTool.xmlQueryDataObjList = xmlReader.parser(DamsTools.getOperationType(), "query");
-            }
-            else {
-                damsTool.xmlQueryDataObjList = xmlReader.parser(DamsTools.getOperationType() + "-" + DamsTools.getSubOperation(), "query");
+            if (damsTool.operation.requireSqlCriteria() ) {
+             
+                damsTool.xmlQueryDataObjList = new ArrayList();    
+                if (DamsTools.getSubOperation() == null ) {
+                    damsTool.xmlReader = new XmlReader(DamsTools.getOperationType(), "", "query");
+                }
+                else {
+                    damsTool.xmlReader = new XmlReader(DamsTools.getOperationType(), DamsTools.getSubOperation(), "query");
+                }                    
+                damsTool.xmlQueryDataObjList = damsTool.xmlReader.parser();
             }
             
             damsTool.operation.invoke();

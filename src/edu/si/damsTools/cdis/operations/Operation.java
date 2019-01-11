@@ -5,6 +5,7 @@
  */
 package edu.si.damsTools.cdis.operations;
 
+import edu.si.damsTools.DamsTools;
 import java.util.ArrayList;
 
 /**
@@ -17,4 +18,5 @@ public abstract class Operation {
      
     public abstract void invoke();
     
+    public abstract boolean requireSqlCriteria () ;
 }

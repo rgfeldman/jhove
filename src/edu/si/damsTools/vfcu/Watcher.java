@@ -229,4 +229,9 @@ public class Watcher extends Operation {
         }
         return reqProps;    
     }
+    
+    public boolean requireSqlCriteria () {
+        return false;
+    }
+    
 }

@@ -646,6 +646,11 @@ public class MetaDataSync extends Operation {
        
        return true; 
                  
-     }
+    }
+    
+    public boolean requireSqlCriteria () {
+        return true;
+    }
+      
 }
 

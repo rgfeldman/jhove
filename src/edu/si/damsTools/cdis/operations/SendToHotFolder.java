@@ -337,5 +337,9 @@ public class SendToHotFolder extends Operation {
         reqProps.add("useMasterSubPairs");
         return reqProps;    
     }
+    
+    public boolean requireSqlCriteria () {
+        return true;
+    }
 
 }
