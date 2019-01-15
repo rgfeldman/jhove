@@ -13,7 +13,7 @@ import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -130,8 +130,8 @@ public class LinkCisRecord extends Operation {
     private boolean populateCdisMapListToLink() {
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveMapIds");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveMapIds");
             if (sql != null) {
                 break;
             }
@@ -169,8 +169,8 @@ public class LinkCisRecord extends Operation {
         Connection dbConn = null;
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveCisIds");         
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveCisIds");         
 
             if (sql != null) {
                 dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  

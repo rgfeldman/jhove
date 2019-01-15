@@ -18,7 +18,7 @@ import edu.si.damsTools.cdis.operations.metadataSync.damsModifications.Deletion;
 import edu.si.damsTools.cdis.operations.metadataSync.damsModifications.Insertion;
 import edu.si.damsTools.cdis.operations.metadataSync.damsModifications.Update;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.utilities.DbUtils;
 import edu.si.damsTools.utilities.StringUtils;
 import java.sql.Connection;
@@ -116,8 +116,8 @@ public class MetaDataSync extends Operation {
         Connection dbConn = null;
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","getRecordsForResync");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","getRecordsForResync");
             if (sql != null) {
                 dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  
                 break;
@@ -170,7 +170,7 @@ public class MetaDataSync extends Operation {
     */
     private void populateCisSqlList() {
         
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
             if (! xmlInfo.getAttributeData("type").equals("metadataMap")) {    
                 continue;
             }
@@ -189,8 +189,8 @@ public class MetaDataSync extends Operation {
     private boolean populateNeverSyncedMapIds() {
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList() ) {
-            sql = xmlInfo.getDataForAttribute("type","getNeverSyncedRecords");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList() ) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","getNeverSyncedRecords");
             if (sql != null) {
                 break;
             }

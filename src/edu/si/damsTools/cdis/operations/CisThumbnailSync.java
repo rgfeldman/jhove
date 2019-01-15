@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
 
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 
 public class CisThumbnailSync extends Operation {
 
@@ -38,8 +38,8 @@ public class CisThumbnailSync extends Operation {
     private boolean populateIdsToUpdate () {
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveMapIds");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query", "type","retrieveMapIds");
             if (sql != null) {
                 break;
             }

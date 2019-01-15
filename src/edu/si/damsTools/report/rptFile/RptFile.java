@@ -22,7 +22,7 @@ import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.report.DisplayFormat;
 import edu.si.damsTools.report.Report;
 import edu.si.damsTools.vfcu.database.VfcuMd5FileHierarchy;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -225,8 +225,8 @@ public class RptFile extends Report  {
     public boolean returnRecordIdList (DataSection section, String keyValue) {
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type",section.returnXmlTag());
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type",section.returnXmlTag());
             if (sql != null) {
                 break;
             }

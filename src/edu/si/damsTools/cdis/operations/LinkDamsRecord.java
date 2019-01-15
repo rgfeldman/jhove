@@ -8,7 +8,7 @@ package edu.si.damsTools.cdis.operations;
 import edu.si.damsTools.DamsTools;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.dams.DamsRecord;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -157,8 +157,8 @@ public class LinkDamsRecord extends Operation {
     
     private boolean populateDamsMediaList () {
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveDamsIds");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveDamsIds");
             if (sql != null) {
                 break;
             }
@@ -189,8 +189,8 @@ public class LinkDamsRecord extends Operation {
     
     private boolean populateCdisMediaList () {
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveVfcuIngestedIds");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveVfcuIngestedIds");
             if (sql != null) {
                 break;
             }

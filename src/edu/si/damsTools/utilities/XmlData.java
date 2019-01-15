@@ -16,14 +16,16 @@ import java.util.logging.Logger;
  * @author rfeldman
  */
 
-public class XmlQueryData {
+public class XmlData {
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private String dataValue;
     private HashMap<String, String> attributes;
+    private final String tagName;
     
-    public XmlQueryData () {
+    public XmlData (String tagName) {
         attributes = new HashMap<>();
+        this.tagName = tagName;
     }
     
     /*public SqlQuery (String query, String type) {
@@ -42,13 +44,20 @@ public class XmlQueryData {
     public void setDataValue(String dataValue) {
         this.dataValue = dataValue;
     }
+    
+    public String getTag() {
+        return this.tagName;
+    }
         
     public void addAttribute (String attribute, String value) {
         attributes.put(attribute, value);
     }
     
-    public String getDataForAttribute(String attributeType, String attributeValue) {
+    public String getDataAttributeForTag(String tag, String attributeType, String attributeValue) {
         
+        if (! tagName.equals(tag)) {
+            return null;
+        }
         for (String attribute : attributes.keySet()) {
             if (attribute.equals(attributeType) && attributes.get(attribute).equals(attributeValue)) {
                 logger.log(Level.FINEST, "Data Value Match " + dataValue);

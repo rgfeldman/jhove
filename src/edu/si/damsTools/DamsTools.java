@@ -21,6 +21,9 @@ import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
 import java.util.ArrayList;
 import java.util.Properties; 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -29,7 +32,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.DefaultParser;
 
 import edu.si.damsTools.cdis.operations.Operation;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.utilities.XmlReader;
 
 
@@ -47,7 +50,7 @@ public class DamsTools {
     private static String operationType;
     private static Properties properties;
     private static String subOperation;
-    private static ArrayList <XmlQueryData> xmlQueryDataObjList;
+    private static ArrayList <XmlData> xmlQueryDataObjList;
     
     private App app;
     private Operation operation;
@@ -86,7 +89,7 @@ public class DamsTools {
         return DamsTools.subOperation;
     }
     
-    public static ArrayList <XmlQueryData> getSqlQueryObjList() {
+    public static ArrayList <XmlData> getSqlQueryObjList() {
         return DamsTools.xmlQueryDataObjList;
     }
     
@@ -348,16 +351,11 @@ public class DamsTools {
                 }
             } 
             
+            
             if (damsTool.operation.requireSqlCriteria() ) {
+                
+                damsTool.populateSqlXmlQueryDataList();
              
-                damsTool.xmlQueryDataObjList = new ArrayList();    
-                if (DamsTools.getSubOperation() == null ) {
-                    damsTool.xmlReader = new XmlReader(DamsTools.getOperationType(), "", "query");
-                }
-                else {
-                    damsTool.xmlReader = new XmlReader(DamsTools.getOperationType(), DamsTools.getSubOperation(), "query");
-                }                    
-                damsTool.xmlQueryDataObjList = damsTool.xmlReader.parser();
             }
             
             damsTool.operation.invoke();
@@ -370,6 +368,29 @@ public class DamsTools {
             try { if ( DamsTools.cisConn != null)  DamsTools.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.damsConn != null)  DamsTools.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
+    }
+    
+    private void populateSqlXmlQueryDataList () {
+        
+        DamsTools.xmlQueryDataObjList = new ArrayList();
+        Path xmlFile = Paths.get(DamsTools.directoryName);
+        
+        if (DamsTools.getSubOperation() == null ) {
+            xmlFile = xmlFile.resolve(DamsTools.getProperty(DamsTools.getOperationType() + "XmlFile"));
+                    
+            logger.log(Level.FINEST, "Looking for xml at: " + xmlFile );
+                    
+            xmlReader = new XmlReader(xmlFile.toString(), DamsTools.getOperationType());
+        }
+        else {
+            xmlFile = xmlFile.resolve(DamsTools.getProperty(DamsTools.getOperationType() + "-" + DamsTools.getSubOperation() + "XmlFile"));
+                                   
+            logger.log(Level.FINEST, "Looking for xml at: " + xmlFile );
+                    
+            xmlReader = new XmlReader(xmlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
+        }                  
+        xmlQueryDataObjList = xmlReader.parseReturnXmlObjectList();
+                
     }
     
     private void handleArguments (String[] args) {

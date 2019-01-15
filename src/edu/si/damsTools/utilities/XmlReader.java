@@ -31,144 +31,149 @@ import java.util.ArrayList;
  */
 public class XmlReader {
     
-    private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
+     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
     private XMLEventReader eventReader;
     private XMLInputFactory factory;
-    private final String mainXmlBlock;
+    private final String mainOperationXmlBlock;
     private final String subXmlBlock;
-    private final String tag;
-    private XmlQueryData xmlTagData;
+    private final String xmlFile;
+    private final ArrayList <XmlData> xmlObjList;
     
-    public XmlReader (String mainXmlBlock, String subXmlBlock, String tag) {
-        this.mainXmlBlock = mainXmlBlock;
+    // This constructor has subOperation
+    public XmlReader (String xmlFile, String mainXmlBlock, String subXmlBlock) {
+        this.xmlFile = xmlFile;
+        this.mainOperationXmlBlock = mainXmlBlock;
         this.subXmlBlock = subXmlBlock;
-        this.tag = tag;
+        xmlObjList = new ArrayList();
     }
     
-    public XmlReader (String mainXmlBlock, String tag) {
-        this.mainXmlBlock = mainXmlBlock;
+    //This constructor has no subOperation
+    public XmlReader (String xmlFile, String mainXmlBlock) {
+        this.xmlFile = xmlFile;
+        this.mainOperationXmlBlock = mainXmlBlock;
         this.subXmlBlock = null;
-        this.tag = tag;
+        xmlObjList = new ArrayList();
     }
             
-    public ArrayList parser() {
-      
-        String xmlFilename = DamsTools.getProperty(DamsTools.getOperationType() + "-" + DamsTools.getSubOperation() + "XmlFile");
+    public ArrayList returnXmlObjList () {
+        return this.xmlObjList;
+    }
+    
+    public ArrayList <XmlData> parseReturnXmlObjectList() {
+
+        logger.log(Level.FINEST, "XML file is at: " + xmlFile );
         
-        logger.log(Level.FINEST, "Reading xmlFile: " + DamsTools.getDirectoryName() + "/" + xmlFilename);
-        String inputfile = DamsTools.getDirectoryName() + "/" + xmlFilename;
-        
-        ArrayList xmlObjList = new ArrayList();
-                
         try {
-        factory = XMLInputFactory.newInstance();
-        factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
+            factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
 
-        eventReader = factory.createXMLEventReader(new FileReader(inputfile));
+            eventReader = factory.createXMLEventReader(new FileReader(xmlFile));
          
-        boolean queryInd = false;
-        boolean operationInd = false;
-        boolean subOperationInd = false;
-        boolean finished = false;
-        
-        while(eventReader.hasNext() && !finished) {
-            XMLEvent event = eventReader.nextEvent();
+            boolean insideOpBlockInd = false;
+            boolean insideSubBlock = false;
+            boolean finished = false;
+            XmlData xmlTagData = null;
+            
+            while(eventReader.hasNext() && !finished) {
+                XMLEvent event = eventReader.nextEvent();
                
-            switch(event.getEventType()) {
+                switch(event.getEventType()) {
                
-                case XMLStreamConstants.START_ELEMENT:
-                    StartElement startElement = event.asStartElement();
-                    String qName = startElement.getName().getLocalPart();
+                    case XMLStreamConstants.START_ELEMENT:
+                        StartElement startElement = event.asStartElement();
+                        String qName = startElement.getName().getLocalPart();
 
-                    // If we are already identified as being inside the block we need,
-                    //once we set this, we loop through this again and next iteration we get the tag info
-                    if (qName.equals(mainXmlBlock)) {
-                        operationInd = true;
-                        //Loop through again to see if we can set the data
-                        continue;
-                    }
-                   
-                    if (operationInd) {
-                    //Now that we are in the main block that we need...
-                        if (subXmlBlock == null ) {
-                            //we have found the tag data we need
-                            if (qName.equals(tag)) {
-                                queryInd = getAttributeInfo(event);
-                            }
+                        // If we are already identified as being inside the block we need,
+                        //once we set this, we loop through this again and next iteration we get the tag info
+                        if (qName.equals(mainOperationXmlBlock)) {
+                            insideOpBlockInd = true;
+                            //Loop through again to see if we can set the data
+                            continue;
                         }
-                        else {
-                            if (subOperationInd) {
-                                if (qName.equals(tag)) {
-                                    queryInd = getAttributeInfo(event);
-                                }
-                            }
-                            if (qName.equals(subXmlBlock) ) {
-                                //We are at the suboperation level, next time through we get the tag data
-                                subOperationInd = true;
-                                continue;
-                            }
+                        
+                        if (insideOpBlockInd && !insideSubBlock) {
+                             insideSubBlock = checkCorrectSubBlock(qName);
+                             //Loop through again to get the data fro this subBlock
+                             continue;
                         }
-                    }
-                                                  
-                break;
+                        
+                        //populate the name and attribures
+                        if (insideSubBlock) {
+                            logger.log(Level.FINEST,"DEBUG Setting tag: " + qName);
+                            xmlTagData = new XmlData(qName);
+                            Iterator<Attribute> attributes = event.asStartElement().getAttributes();
+                            while(attributes.hasNext()){
+                                Attribute attribute = attributes.next();
+                                logger.log(Level.FINEST, "DEBUG: Attribute info: " + attribute.getName().toString() + " VALUE " + attribute.getValue());
+                            
+                                xmlTagData.addAttribute(attribute.getName().toString(), attribute.getValue());
+                            }                
+                        }                                           
+                    break;
 
-                case XMLStreamConstants.CHARACTERS:
-                    Characters characters = event.asCharacters();
-                    if(queryInd) {          
-                        xmlTagData.setDataValue(characters.getData());
-                        xmlObjList.add(xmlTagData);    
-                        queryInd = false;
-                    }
-                break;
+                    case XMLStreamConstants.CHARACTERS:
+                        Characters characters = event.asCharacters();
+                        if (characters.isWhiteSpace()) {
+                        //skip if this is blank space
+                            continue;
+                        }
+ 
+                        if(xmlTagData != null) {
+                            logger.log(Level.FINEST,"DEBUG setting data: " + characters.getData() + " For Tag: " + xmlTagData.getTag() );
+                             
+                            xmlTagData.setDataValue(characters.getData().trim());
+                            xmlObjList.add(xmlTagData);                
+                        }
+                    break;
 
-                case XMLStreamConstants.END_ELEMENT:
-                    EndElement endElement = event.asEndElement();
-                    finished = markFinished(endElement.getName().getLocalPart(), operationInd, subOperationInd );
-                       
-                break;
-            } 
-        }
-        } catch (FileNotFoundException e) {
-         e.printStackTrace();
-        } catch (XMLStreamException e) {
-         e.printStackTrace();
+                    case XMLStreamConstants.END_ELEMENT:
+                        // If we are finished, then mark as finished.  we can ignore the rest of the file
+                        EndElement endElement = event.asEndElement();
+                        finished = markFinished(endElement.getName().getLocalPart(), insideOpBlockInd, insideSubBlock );
+                        
+                    break;
+                } 
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
         
         return xmlObjList;
     }
     
-    private boolean getAttributeInfo(XMLEvent event) {
+    private boolean checkCorrectSubBlock (String tagName) {
         
-        xmlTagData = new XmlQueryData();
-        Iterator<Attribute> attributes = event.asStartElement().getAttributes();
-        while(attributes.hasNext()){
-
-            Attribute attribute = attributes.next();
-            logger.log(Level.FINEST, "Attribute info: " + attribute.getName().toString() + "VALUE " + attribute.getValue());
-                            
-            xmlTagData.addAttribute(attribute.getName().toString(), attribute.getValue());
+        //Now that we are in the main block that we need...
+        if (subXmlBlock == null ) {
+            //subXmlBlock Does not apply, so we are good.
+            return true;
+        }    
+        else if (tagName.equals(subXmlBlock) ) {
+            //We are at the suboperation level, next time through we get the tag data
+            return true;
         }
-        //System.out.println("Type : " + type);
-        return true;
+        return false;
     }
     
     private boolean markFinished (String endElementName, boolean mainBlock, boolean subBlock) {
         
+        // If we need to get data from the main block, but we are not in the main block, we cannot possibly be finished
         if (!mainBlock) {
             return false;
         }
         
-         if (this.subXmlBlock != null && !subBlock) {
+        // If we need to get data from the sub block, but we are not in the sub block, we cannot possibly be finished
+        if (this.subXmlBlock != null && !subBlock) {
              return false;
-         }
+        }
         
         if (this.subXmlBlock == null) {
-            return endElementName.equals(mainXmlBlock);
+            return endElementName.equals(this.mainOperationXmlBlock);
         }
         else {
-            return endElementName.equals(mainXmlBlock);
+            return endElementName.equals(this.subXmlBlock);
         }
     }
-
 }

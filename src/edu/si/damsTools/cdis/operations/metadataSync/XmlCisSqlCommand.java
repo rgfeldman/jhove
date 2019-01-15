@@ -6,7 +6,7 @@
 package edu.si.damsTools.cdis.operations.metadataSync;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,7 +78,7 @@ public class XmlCisSqlCommand {
         this.tableName = tableName;
     }
     
-    public boolean setValuesFromXml(XmlQueryData xmlInfo) {
+    public boolean setValuesFromXml(XmlData xmlInfo) {
         setSqlQuery(xmlInfo.getDataValue());
         setAppendDelimeter(xmlInfo.getAttributeData("multiResultDelim"));
         setTableName(xmlInfo.getAttributeData("destTableName"));

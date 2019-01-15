@@ -9,7 +9,7 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.report.rptFile.DataSection;
 import edu.si.damsTools.report.rptFile.CdisMapFailedSection;
 import edu.si.damsTools.report.rptFile.LinkedDamsSection;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -37,8 +37,8 @@ public class CdisVfcuDirReport implements DisplayFormat {
     public boolean populateMultiReportKeyValues() {
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","getMultiReportKeyValue");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","getMultiReportKeyValue");
             if (sql != null) {
                 break;
             }

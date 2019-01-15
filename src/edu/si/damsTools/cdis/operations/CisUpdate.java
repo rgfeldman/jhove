@@ -12,7 +12,7 @@ import edu.si.damsTools.cdis.cis.identifier.IdentifierType;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.cdisutilities.ErrorLog;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,8 +46,8 @@ public class CisUpdate extends Operation {
     private String generateCisSql() {
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","updateCis");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","updateCis");
             if (sql != null) {
                 break;
             }
@@ -86,8 +86,8 @@ public class CisUpdate extends Operation {
     private boolean populateDamsRecordList() {
         
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","retrieveDamsIds");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveDamsIds");
             if (sql != null) {
                 break;
             }

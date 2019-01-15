@@ -23,7 +23,7 @@ import java.util.ArrayList;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.Folders;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.vfcu.delivery.MediaFileRecord;
 
 /**
@@ -133,8 +133,8 @@ public class SendToHotFolder extends Operation {
         String sql = null;
         int recordCount;
         
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","idListToSend");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","idListToSend");
             if (sql != null) {
                 break;
             }

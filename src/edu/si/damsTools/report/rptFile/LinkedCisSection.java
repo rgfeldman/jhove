@@ -9,7 +9,7 @@ import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -74,8 +74,8 @@ public class LinkedCisSection implements DataSection {
         
         String sql = null;
         String rptInfo = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataForAttribute("type","getCisLinkedRptInfo");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","getCisLinkedRptInfo");
             if (sql != null) {
                 break;
             }

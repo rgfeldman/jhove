@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 
 public class CreateCisMedia extends Operation {
     
@@ -41,8 +41,8 @@ public class CreateCisMedia extends Operation {
     private boolean populateNeverLinkedImages () {
            
         String sql = null;
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList() ) {
-            sql = xmlInfo.getDataForAttribute("type","DamsSelectList");
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList() ) {
+            sql = xmlInfo.getDataAttributeForTag("query","type","DamsSelectList");
             if (sql != null) {
                 break;
             }

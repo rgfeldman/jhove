@@ -12,7 +12,7 @@ import edu.si.damsTools.report.rptFile.MediaCreatedSection;
 import edu.si.damsTools.report.rptFile.LinkedCisSection;
 import edu.si.damsTools.report.rptFile.LinkedDamsSection;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlQueryData;
+import edu.si.damsTools.utilities.XmlData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -62,18 +62,18 @@ public class TimeFrameReport implements DisplayFormat {
         
         sections.add(new CdisMapFailedSection());
         
-        for(XmlQueryData xmlInfo : DamsTools.getSqlQueryObjList()) {
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
             
-            if (xmlInfo.getDataForAttribute("type","getCisMediaCreatedRecords") != null) {
+            if (xmlInfo.getDataAttributeForTag("query","type","getCisMediaCreatedRecords") != null) {
                 sections.add(new MediaCreatedSection());
             }
-            if (xmlInfo.getDataForAttribute("type","getDamsLinkedRecords") != null) {
+            if (xmlInfo.getDataAttributeForTag("query","type","getDamsLinkedRecords") != null) {
                 sections.add(new LinkedDamsSection());
             }
-            if (xmlInfo.getDataForAttribute("type","getCisLinkedRecords") != null) { 
+            if (xmlInfo.getDataAttributeForTag("query","type","getCisLinkedRecords") != null) { 
                 sections.add(new LinkedCisSection());
             }
-            if (xmlInfo.getDataForAttribute("type","getMetaDataSyncRecords") != null) {
+            if (xmlInfo.getDataAttributeForTag("query","type","getMetaDataSyncRecords") != null) {
                 sections.add(new MetaSyncSection());
             }
         }
