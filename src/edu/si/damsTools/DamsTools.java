@@ -6,8 +6,13 @@
 package edu.si.damsTools;
 
 import com.artesia.common.encryption.encryption.EncryptDecrypt;
-import java.io.File;
+import edu.si.damsTools.cdis.operations.Operation;
+import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlReader;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.text.DateFormat;
@@ -21,19 +26,16 @@ import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
 import java.util.ArrayList;
 import java.util.Properties; 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
-
+import java.nio.file.DirectoryStream;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.time.ZoneId;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.DefaultParser;
-
-import edu.si.damsTools.cdis.operations.Operation;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlReader;
+import static java.time.temporal.ChronoUnit.DAYS;
 
 
 public class DamsTools {
@@ -54,8 +56,8 @@ public class DamsTools {
     
     private App app;
     private Operation operation;
-    
     private XmlReader xmlReader;
+    private final ZoneId zoneId = ZoneId.of("America/New_York");
     
     public static String getApplication() {
         return DamsTools.application;
@@ -256,21 +258,23 @@ public class DamsTools {
         RFeldman 2/2015
     */
     public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
-                
-        File logfolderDir = new File(DamsTools.directoryName + "/" + folder);
         
-        File[] logs = logfolderDir.listFiles();
-	
-        if (logs != null) {
-            for (File tempFile : logs) {
-                if(tempFile.getName().startsWith(fileNamePrefix)) {
-                    
-                    long diff = new Date().getTime() - tempFile.lastModified();
-                    if (diff > numDays * 24 * 60 * 60 * 1000) {
-                        tempFile.delete();
-                    }
-                }				
+        Path directoryPath = Paths.get(DamsTools.directoryName).resolve(folder);
+        
+        try {
+            DirectoryStream<Path> fileListing = Files.newDirectoryStream( directoryPath, fileNamePrefix + "*.{txt,rtf}" );
+        
+            for (Path fileName : fileListing) { 
+                BasicFileAttributes attr = Files.readAttributes(fileName, BasicFileAttributes.class);
+                
+                if ( attr.creationTime().toInstant().atZone(zoneId).compareTo(Instant.now().minus(numDays, DAYS).atZone(zoneId)) < 0 ) {
+                    //System.out.println("Removing file: " + fileName.getFileName().toString());
+                    Files.delete(fileName);
+                }                   
             }
+        
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
     

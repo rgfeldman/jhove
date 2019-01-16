@@ -12,8 +12,8 @@ import edu.si.damsTools.cdis.cis.identifier.IdentifierType;
 import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
-import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.cdisutilities.ErrorLog;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -38,26 +38,6 @@ public class CisUpdate extends Operation {
             
     public CisUpdate() {
         damsRecordList = new ArrayList<>();
-    }
-    
-    /* Member Funtion: generateCisSql
-     * Purpose: obtains the SQL to perform the update on the CIS sourced from the XML file
-     */
-    private String generateCisSql() {
-        
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","updateCis");
-            if (sql != null) {
-                break;
-            }
-        }
-        if (sql == null) {
-            logger.log(Level.FINEST, "Cis Update sql not found");
-            return null;
-        }
-
-        return (sql);
     }
     
     /* Member Function: invoke
@@ -85,13 +65,7 @@ public class CisUpdate extends Operation {
      */
     private boolean populateDamsRecordList() {
         
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveDamsIds");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("retrieveDamsIds");          
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
             return false;
@@ -129,7 +103,7 @@ public class CisUpdate extends Operation {
             cdisMap.populateMapInfo();
 
             //populate the Cis
-            String cisSql = generateCisSql();
+            String cisSql = XmlUtils.returnFirstSqlForTag("updateCis");          
             if (cisSql == null) {
                  //unable to generate SQL, generate error
                 continue;

@@ -5,7 +5,6 @@
  */
 package edu.si.damsTools.report.rptFile;
 
-import edu.si.damsTools.cdis.database.CdisMap;
 import java.util.ArrayList;
 
 /**

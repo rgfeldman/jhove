@@ -21,6 +21,7 @@ import edu.si.damsTools.cdisutilities.ErrorLog;
 import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.utilities.DbUtils;
 import edu.si.damsTools.utilities.StringUtils;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -117,7 +118,7 @@ public class MetaDataSync extends Operation {
         
         String sql = null;
         for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","getRecordsForResync");
+            sql = xmlInfo.getDataValuesForAttribute("type","getRecordsForResync");
             if (sql != null) {
                 dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  
                 break;
@@ -188,13 +189,7 @@ public class MetaDataSync extends Operation {
     // Purpose: Populates the list of CdisMap records that have never been metadata synced and require syncing
     private boolean populateNeverSyncedMapIds() {
         
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList() ) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","getNeverSyncedRecords");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("getNeverSyncedRecords");          
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
             return false;

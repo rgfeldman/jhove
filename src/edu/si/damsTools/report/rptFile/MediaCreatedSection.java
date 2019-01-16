@@ -10,6 +10,7 @@ import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -74,19 +75,13 @@ public class MediaCreatedSection implements DataSection {
     // Purpose: Populates the list of CdisMap records that require linking using the criteria in the xml file
     private String getCisHierReportInfo(CdisMap cdisMap) {
         
-        String sql = null;
-        String rptInfo = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","getMediaCreatedRptInfo");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("getMediaCreatedRptInfo");    
         if (sql == null) {
             logger.log(Level.FINEST, "getMediaCreatedRptInfo sql not found");
             return null;
         }
-
+        String rptInfo = null;
+        
         if (sql.contains("?CISID")) {
             Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
             Matcher m = p.matcher(sql);

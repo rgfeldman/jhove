@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlUtils;
 
 public class CreateCisMedia extends Operation {
     
@@ -40,13 +40,7 @@ public class CreateCisMedia extends Operation {
     
     private boolean populateNeverLinkedImages () {
            
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList() ) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","DamsSelectList");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("DamsSelectList");          
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
             return false;

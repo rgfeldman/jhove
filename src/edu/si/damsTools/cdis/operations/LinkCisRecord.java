@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.utilities.DbUtils;
+import edu.si.damsTools.utilities.XmlUtils;
 
 
 /**
@@ -129,15 +130,9 @@ public class LinkCisRecord extends Operation {
     // Purpose: Populates the list of CdisMap records that require linking using the criteria in the xml file
     private boolean populateCdisMapListToLink() {
         
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveMapIds");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("retrieveMapIds");          
         if (sql == null) {
-            logger.log(Level.FINEST, "retrieveMapIds sql not found");
+            logger.log(Level.SEVERE, "Error: Required sql not found");
             return false;
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -169,8 +164,11 @@ public class LinkCisRecord extends Operation {
         Connection dbConn = null;
         
         String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveCisIds");         
+        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) { 
+            if (! xmlInfo.getTag().equals("query")) {
+                continue;
+            }    
+            xmlInfo.getDataValuesForAttribute("type","retrieveCisIds");         
 
             if (sql != null) {
                 dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  

@@ -10,6 +10,7 @@ import edu.si.damsTools.report.rptFile.DataSection;
 import edu.si.damsTools.report.rptFile.CompletedSection;
 import edu.si.damsTools.report.rptFile.VfcuMediaFailedSection;
 import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -35,21 +36,13 @@ public class VfcuMediaReport implements DisplayFormat {
     
     
     public boolean populateMultiReportKeyValues() {
-        
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","getMultiReportKeyValue");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("getMultiReportKeyValue");    
         if (sql == null) {
             logger.log(Level.FINEST, "Error: Required sql not found");
             return false;
         }
         logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-            
+                 
         try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
 

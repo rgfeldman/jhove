@@ -53,11 +53,8 @@ public class XmlData {
         attributes.put(attribute, value);
     }
     
-    public String getDataAttributeForTag(String tag, String attributeType, String attributeValue) {
+    public String getDataValuesForAttribute(String attributeType, String attributeValue) {
         
-        if (! tagName.equals(tag)) {
-            return null;
-        }
         for (String attribute : attributes.keySet()) {
             if (attribute.equals(attributeType) && attributes.get(attribute).equals(attributeValue)) {
                 logger.log(Level.FINEST, "Data Value Match " + dataValue);

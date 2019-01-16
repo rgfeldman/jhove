@@ -13,6 +13,7 @@ import edu.si.damsTools.report.rptFile.LinkedCisSection;
 import edu.si.damsTools.report.rptFile.LinkedDamsSection;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -64,16 +65,16 @@ public class TimeFrameReport implements DisplayFormat {
         
         for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
             
-            if (xmlInfo.getDataAttributeForTag("query","type","getCisMediaCreatedRecords") != null) {
+            if (XmlUtils.returnFirstSqlForTag("getCisMediaCreatedRecords") != null) {
                 sections.add(new MediaCreatedSection());
             }
-            if (xmlInfo.getDataAttributeForTag("query","type","getDamsLinkedRecords") != null) {
+            if (XmlUtils.returnFirstSqlForTag("getDamsLinkedRecords") != null) {
                 sections.add(new LinkedDamsSection());
             }
-            if (xmlInfo.getDataAttributeForTag("query","type","getCisLinkedRecords") != null) { 
+            if (XmlUtils.returnFirstSqlForTag("getCisLinkedRecords") != null) { 
                 sections.add(new LinkedCisSection());
             }
-            if (xmlInfo.getDataAttributeForTag("query","type","getMetaDataSyncRecords") != null) {
+            if (XmlUtils.returnFirstSqlForTag("getMetaDataSyncRecords") != null) {
                 sections.add(new MetaSyncSection());
             }
         }

@@ -17,6 +17,7 @@ import edu.si.damsTools.cdis.database.CdisMap;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.dams.StagedFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
+import edu.si.damsTools.utilities.XmlUtils;
 
 
 /**
@@ -156,13 +157,7 @@ public class LinkDamsRecord extends Operation {
     }
     
     private boolean populateDamsMediaList () {
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveDamsIds");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("retrieveDamsIds");    
         if (sql == null) {
             logger.log(Level.FINEST, "retrieveDamsIds sql not found");
             return false;
@@ -188,13 +183,8 @@ public class LinkDamsRecord extends Operation {
     }
     
     private boolean populateCdisMediaList () {
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","retrieveVfcuIngestedIds");
-            if (sql != null) {
-                break;
-            }
-        }
+        
+        String sql = XmlUtils.returnFirstSqlForTag("retrieveVfcuIngestedIds");   
         if (sql == null) {
             logger.log(Level.FINEST, "retrieveVfcuIngestedIds sql not found");
             return false;

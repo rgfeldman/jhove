@@ -17,12 +17,10 @@ import com.lowagie.text.Phrase;
 import com.lowagie.text.rtf.RtfWriter2;
 import com.lowagie.text.rtf.style.RtfFont;
 import edu.si.damsTools.DamsTools; 
-import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.report.DisplayFormat;
 import edu.si.damsTools.report.Report;
 import edu.si.damsTools.vfcu.database.VfcuMd5FileHierarchy;
-import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.io.FileOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -224,13 +222,7 @@ public class RptFile extends Report  {
     
     public boolean returnRecordIdList (DataSection section, String keyValue) {
         
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type",section.returnXmlTag());
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag(section.returnXmlTag());
         if (sql == null) {
             logger.log(Level.FINEST, "sql not found for " + section.returnXmlTag());
             return false;

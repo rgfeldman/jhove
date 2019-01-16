@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
 
-import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlUtils;
 
 public class CisThumbnailSync extends Operation {
 
@@ -37,15 +37,9 @@ public class CisThumbnailSync extends Operation {
     
     private boolean populateIdsToUpdate () {
         
-        String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query", "type","retrieveMapIds");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("retrieveMapIds");
         if (sql == null) {
-            logger.log(Level.SEVERE, "Error: Required sql not found");
+            logger.log(Level.FINEST, "SQL: unable to obtain sql criteria");
             return false;
         }
         

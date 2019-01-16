@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.Folders;
 import edu.si.damsTools.utilities.XmlData;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.delivery.MediaFileRecord;
 
 /**
@@ -130,15 +131,8 @@ public class SendToHotFolder extends Operation {
     */
     private boolean populateVfcuListToIngest () {
         
-        String sql = null;
         int recordCount;
-        
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
-            sql = xmlInfo.getDataAttributeForTag("query","type","idListToSend");
-            if (sql != null) {
-                break;
-            }
-        }
+        String sql = XmlUtils.returnFirstSqlForTag("idListToSend");
         if (sql == null) {
             logger.log(Level.SEVERE, "Error: Required sql not found");
             return false;
