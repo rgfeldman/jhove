@@ -32,11 +32,11 @@ public class ReportGenerator extends Operation {
             case "timeframe":
                 displayFormat = new TimeFrameReport();
                 break;
-             case "vfcuMedia":
+             case "vfcuMediaFile":
                 displayFormat = new VfcuMediaReport();
                 break;
             default:
-                logger.log(Level.SEVERE, "Error: Additonal paramater required and not supplied");
+                logger.log(Level.SEVERE, "Critical Error: Invalid Report type");
         }
     }
 
@@ -90,13 +90,13 @@ public class ReportGenerator extends Operation {
                reqProps.add("tfRptSupressAttch");
                reqProps.add("timeframeReportXmlFile");
                break;
-            case "vfcuMedia":
-                reqProps.add("report-vfcuMediaXmlFile");
+            case "vfcuMediaFile":
+                reqProps.add("reportXmlFile");
                 reqProps.add("useMasterSubPairs");
                 break;             
                
             default:
-                logger.log(Level.SEVERE, "Error: Additonal paramater required and not supplied");
+                logger.log(Level.SEVERE, "Fatal Error, Invalid report type: " + DamsTools.getSubOperation());
         }
             
         //add more required props here

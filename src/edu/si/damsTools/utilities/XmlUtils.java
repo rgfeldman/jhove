@@ -14,9 +14,13 @@ import java.util.logging.Level;
  */
 public class XmlUtils {
         
+    // Method : returnFirstSqlForTag
+    // Purpose : Loops through the entire xml query structure and 
+    //              returns the first query (data associated with the xml tag 'query'
+    //              that matches the supplied tag  
     public static String returnFirstSqlForTag(String tag) {
         String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+        for(XmlData xmlInfo : DamsTools.getXmlQueryDataList()) {
             if (! xmlInfo.getTag().equals("query")) {
                 continue;
             }
@@ -25,7 +29,24 @@ public class XmlUtils {
                 break;
             }
         }
-        return (sql);
+        return sql;
+    }
+    
+    // Method : returnConfigValueForTag
+    // Purpose : Loops through the entire xml config structure and 
+    //              returns the first data associated with the xml tag specified  
+    public static String returnConfigValueForTag (String tag) {
+        String data = null;
+        for(XmlData xmlInfo : DamsTools.getXmlConfigDataList()) {
+            if (! xmlInfo.getTag().equals(tag)) {
+                continue;
+            }
+            data = xmlInfo.getDataValuesForAttribute("type",tag);
+            if (data != null) {
+                break;
+            }
+        }
+        return data;
     }
 
 }

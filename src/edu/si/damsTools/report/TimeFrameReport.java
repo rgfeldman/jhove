@@ -63,7 +63,7 @@ public class TimeFrameReport implements DisplayFormat {
         
         sections.add(new CdisMapFailedSection());
         
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+        for(XmlData xmlInfo : DamsTools.getXmlQueryDataList()) {
             
             if (XmlUtils.returnFirstSqlForTag("getCisMediaCreatedRecords") != null) {
                 sections.add(new MediaCreatedSection());

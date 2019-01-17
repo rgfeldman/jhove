@@ -164,7 +164,7 @@ public class LinkCisRecord extends Operation {
         Connection dbConn = null;
         
         String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) { 
+        for(XmlData xmlInfo : DamsTools.getXmlQueryDataList()) { 
             if (! xmlInfo.getTag().equals("query")) {
                 continue;
             }    

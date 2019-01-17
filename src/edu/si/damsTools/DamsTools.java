@@ -52,11 +52,11 @@ public class DamsTools {
     private static String operationType;
     private static Properties properties;
     private static String subOperation;
-    private static ArrayList <XmlData> xmlQueryDataObjList;
+    private static ArrayList <XmlData> xmlQueryDataList;
+    private static ArrayList <XmlData> xmlConfigDataList;
     
     private App app;
     private Operation operation;
-    private XmlReader xmlReader;
     private final ZoneId zoneId = ZoneId.of("America/New_York");
     
     public static String getApplication() {
@@ -91,8 +91,12 @@ public class DamsTools {
         return DamsTools.subOperation;
     }
     
-    public static ArrayList <XmlData> getSqlQueryObjList() {
-        return DamsTools.xmlQueryDataObjList;
+    public static ArrayList <XmlData> getXmlQueryDataList() {
+        return DamsTools.xmlQueryDataList;
+    }
+    
+    public static ArrayList <XmlData> getXmlConfigDataList() {
+        return DamsTools.xmlConfigDataList;
     }
     
     public static String getProperty (String property) {
@@ -102,7 +106,41 @@ public class DamsTools {
     private void setBatchNumber (Long batchExecutionNumber) {
         DamsTools.batchNumber = batchExecutionNumber;
     }
-
+    
+    public void applicationFactory() {
+        
+        switch (DamsTools.application) {
+            case "CDIS":
+                app = new Cdis();
+                break;
+            case "VFCU":   
+                app = new Vfcu();
+                break;
+        }      
+    }
+    
+    
+    /*  Method :        calcBatchExecutionNumber
+        Arguments:      
+        Description:    calculates and assigns a batch Execution number based on date/time to uniquely define this execution batch
+        RFeldman 7/2015
+    */
+    private boolean calcBatchExecutionNumber () {    
+        try {
+        
+            DateFormat df = new SimpleDateFormat("yyyyMMddkkmmssSSS");
+            
+            Random rand = new Random();
+            String batchNum = df.format(new Date()) + rand.nextInt(100);
+            
+            setBatchNumber (Long.parseLong(batchNum));
+            
+        } catch (Exception e) {
+              System.out.println("Error: obtaining Batch Execution number" + e );
+             return false;
+        }
+        return true;
+    }
     
     /*  Method :        connectToDatabases
         Arguments:      
@@ -143,34 +181,30 @@ public class DamsTools {
         return dbConn;
     }
     
-    
-    /*  Method :        setLogger
+    /*  Method :        deleteLogs
         Arguments:      
-        Description:    establishes logger settings
+        Description:    deletes old logfiles...or any other file types based on the date
         RFeldman 2/2015
     */
-    private boolean setLogger () {
-
-        //log All events
-        logger.setLevel(Level.ALL);
-        Handler fh;
-            
+    public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
+        
+        Path directoryPath = Paths.get(DamsTools.directoryName).resolve(folder);
+        
         try {
-            fh = new FileHandler(DamsTools.directoryName + "/log/" + DamsTools.application + "Log-" + DamsTools.operationType + "_" + DamsTools.configFile + "_" + DamsTools.batchNumber + ".txt");
-            
+            DirectoryStream<Path> fileListing = Files.newDirectoryStream( directoryPath, fileNamePrefix + "*.{txt,rtf}" );
+        
+            for (Path fileName : fileListing) { 
+                BasicFileAttributes attr = Files.readAttributes(fileName, BasicFileAttributes.class);
+                
+                if ( attr.creationTime().toInstant().atZone(zoneId).compareTo(Instant.now().minus(numDays, DAYS).atZone(zoneId)) < 0 ) {
+                    //System.out.println("Removing file: " + fileName.getFileName().toString());
+                    Files.delete(fileName);
+                }                   
+            }
+        
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
-	}
-        
-        fh.setFormatter(new SimpleFormatter());          
-	logger.addHandler(fh);
-	
-        logger.log(Level.FINER, "Logging Established");
-        fh.flush();
-        
-        return true;
-        
+        }
     }
     
     /*  Method :        readIni
@@ -203,26 +237,33 @@ public class DamsTools {
         return true;
     }
     
-    /*  Method :        calcBatchExecutionNumber
+    /*  Method :        setLogger
         Arguments:      
-        Description:    calculates and assigns a batch Execution number based on date/time to uniquely define this execution batch
-        RFeldman 7/2015
+        Description:    establishes logger settings
+        RFeldman 2/2015
     */
-    private boolean calcBatchExecutionNumber () {    
+    private boolean setLogger () {
+
+        //log All events
+        logger.setLevel(Level.ALL);
+        Handler fh;
+            
         try {
-        
-            DateFormat df = new SimpleDateFormat("yyyyMMddkkmmssSSS");
-            
-            Random rand = new Random();
-            String batchNum = df.format(new Date()) + rand.nextInt(100);
-            
-            setBatchNumber (Long.parseLong(batchNum));
+            fh = new FileHandler(DamsTools.directoryName + "/log/" + DamsTools.application + "Log-" + DamsTools.operationType + "_" + DamsTools.configFile + "_" + DamsTools.batchNumber + ".txt");
             
         } catch (Exception e) {
-              System.out.println("Error: obtaining Batch Execution number" + e );
-             return false;
-        }
+            e.printStackTrace();
+            return false;
+	}
+        
+        fh.setFormatter(new SimpleFormatter());          
+	logger.addHandler(fh);
+	
+        logger.log(Level.FINER, "Logging Established");
+        fh.flush();
+        
         return true;
+        
     }
     
     /*  Method :        verifyProps
@@ -252,44 +293,6 @@ public class DamsTools {
         return true;
     }    
     
-    /*  Method :        deleteLogs
-        Arguments:      
-        Description:    deletes old logfiles...or any other file types based on the date
-        RFeldman 2/2015
-    */
-    public void deleteLogs (String folder, String fileNamePrefix, int numDays) {	
-        
-        Path directoryPath = Paths.get(DamsTools.directoryName).resolve(folder);
-        
-        try {
-            DirectoryStream<Path> fileListing = Files.newDirectoryStream( directoryPath, fileNamePrefix + "*.{txt,rtf}" );
-        
-            for (Path fileName : fileListing) { 
-                BasicFileAttributes attr = Files.readAttributes(fileName, BasicFileAttributes.class);
-                
-                if ( attr.creationTime().toInstant().atZone(zoneId).compareTo(Instant.now().minus(numDays, DAYS).atZone(zoneId)) < 0 ) {
-                    //System.out.println("Removing file: " + fileName.getFileName().toString());
-                    Files.delete(fileName);
-                }                   
-            }
-        
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    public void applicationFactory() {
-        
-        switch (DamsTools.application) {
-            case "CDIS":
-                app = new Cdis();
-                break;
-            case "VFCU":   
-                app = new Vfcu();
-                break;
-        }      
-    }
-
     /*  Method :        main
         Arguments:      
         Description:    starting point of the CDIS application
@@ -304,7 +307,7 @@ public class DamsTools {
         if (damsTool.app == null) {
             System.out.println( "invalid damsTool specified");
         }
-  
+        
         // Delete old log and report files
         damsTool.deleteLogs("rpt", damsTool.application + "",21);
         damsTool.deleteLogs("log", damsTool.application + "",21);
@@ -325,6 +328,18 @@ public class DamsTools {
                 return;
             }
             
+            damsTool.operation = damsTool.app.operationFactiory();
+            if (damsTool.operation == null) {
+               logger.log(Level.SEVERE, DamsTools.getOperationType() + " Critical error setting up operation type");
+               return;
+            }
+             
+            Path configDir = Paths.get(DamsTools.directoryName).resolve("conf");
+
+            Path xmlFile = configDir.resolve(DamsTools.configFile + ".xml");
+            XmlReader xmlReader = new XmlReader(xmlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
+            DamsTools.xmlConfigDataList = xmlReader.parseReturnXmlObjectList();
+            
             //handle the ini file
             boolean iniRead = damsTool.readIni ();
             if (! iniRead) {
@@ -333,7 +348,6 @@ public class DamsTools {
             }
             
             DamsTools.projectCd = DamsTools.getProperty("projectCd");
-            damsTool.operation = damsTool.app.operationFactiory();
             
             boolean propsVerified = damsTool.verifyProps ();
             if (! propsVerified) {
@@ -355,11 +369,11 @@ public class DamsTools {
                 }
             } 
             
-            
-            if (damsTool.operation.requireSqlCriteria() ) {
+            if (damsTool.operation.requireSqlCriteria() ) {          
                 
-                damsTool.populateSqlXmlQueryDataList();
-             
+                Path xmlSqlFile = configDir.resolve(DamsTools.getProperty(DamsTools.getOperationType() + "XmlFile")); 
+                xmlReader = new XmlReader(xmlSqlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
+                DamsTools.xmlQueryDataList = xmlReader.parseReturnXmlObjectList();  
             }
             
             damsTool.operation.invoke();
@@ -372,29 +386,6 @@ public class DamsTools {
             try { if ( DamsTools.cisConn != null)  DamsTools.cisConn.close(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.damsConn != null)  DamsTools.damsConn.close(); } catch (Exception e) { e.printStackTrace(); }
         }         
-    }
-    
-    private void populateSqlXmlQueryDataList () {
-        
-        DamsTools.xmlQueryDataObjList = new ArrayList();
-        Path xmlFile = Paths.get(DamsTools.directoryName);
-        
-        if (DamsTools.getSubOperation() == null ) {
-            xmlFile = xmlFile.resolve(DamsTools.getProperty(DamsTools.getOperationType() + "XmlFile"));
-                    
-            logger.log(Level.FINEST, "Looking for xml at: " + xmlFile );
-                    
-            xmlReader = new XmlReader(xmlFile.toString(), DamsTools.getOperationType());
-        }
-        else {
-            xmlFile = xmlFile.resolve(DamsTools.getProperty(DamsTools.getOperationType() + "-" + DamsTools.getSubOperation() + "XmlFile"));
-                                   
-            logger.log(Level.FINEST, "Looking for xml at: " + xmlFile );
-                    
-            xmlReader = new XmlReader(xmlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
-        }                  
-        xmlQueryDataObjList = xmlReader.parseReturnXmlObjectList();
-                
     }
     
     private void handleArguments (String[] args) {

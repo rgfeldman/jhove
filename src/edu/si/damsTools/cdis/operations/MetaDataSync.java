@@ -117,7 +117,7 @@ public class MetaDataSync extends Operation {
         Connection dbConn = null;
         
         String sql = null;
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+        for(XmlData xmlInfo : DamsTools.getXmlQueryDataList()) {
             sql = xmlInfo.getDataValuesForAttribute("type","getRecordsForResync");
             if (sql != null) {
                 dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  
@@ -171,7 +171,7 @@ public class MetaDataSync extends Operation {
     */
     private void populateCisSqlList() {
         
-        for(XmlData xmlInfo : DamsTools.getSqlQueryObjList()) {
+        for(XmlData xmlInfo : DamsTools.getXmlQueryDataList()) {
             if (! xmlInfo.getAttributeData("type").equals("metadataMap")) {    
                 continue;
             }

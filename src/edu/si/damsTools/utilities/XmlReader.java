@@ -47,14 +47,6 @@ public class XmlReader {
         this.subXmlBlock = subXmlBlock;
         xmlObjList = new ArrayList();
     }
-    
-    //This constructor has no subOperation
-    public XmlReader (String xmlFile, String mainXmlBlock) {
-        this.xmlFile = xmlFile;
-        this.mainOperationXmlBlock = mainXmlBlock;
-        this.subXmlBlock = null;
-        xmlObjList = new ArrayList();
-    }
             
     public ArrayList returnXmlObjList () {
         return this.xmlObjList;
@@ -81,6 +73,7 @@ public class XmlReader {
                 switch(event.getEventType()) {
                
                     case XMLStreamConstants.START_ELEMENT:
+
                         StartElement startElement = event.asStartElement();
                         String qName = startElement.getName().getLocalPart();
 
@@ -89,12 +82,14 @@ public class XmlReader {
                         if (qName.equals(mainOperationXmlBlock)) {
                             insideOpBlockInd = true;
                             //Loop through again to see if we can set the data
+                            logger.log(Level.FINEST,"DEBUG In Main operation");
                             continue;
                         }
                         
                         if (insideOpBlockInd && !insideSubBlock) {
                              insideSubBlock = checkCorrectSubBlock(qName);
                              //Loop through again to get the data fro this subBlock
+                            logger.log(Level.FINEST,"DEBUG In Sub operation");
                              continue;
                         }
                         
