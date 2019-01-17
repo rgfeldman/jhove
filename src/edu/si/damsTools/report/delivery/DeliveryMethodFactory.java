@@ -6,6 +6,7 @@
 package edu.si.damsTools.report.delivery;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 
 /**
  * Class: DeliveryMethodFactory
@@ -22,7 +23,7 @@ public class DeliveryMethodFactory {
         
         DeliveryMethod deliveryMethod = null;
         
-        switch (DamsTools.getProperty("rptDeliveryMethod")) {
+        switch (XmlUtils.getConfigValue("deliveryMethod")) {
             case "email" :
                 deliveryMethod = new Email();
                 break;

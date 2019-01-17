@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.cis.tms.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -72,7 +73,7 @@ public class MediaXrefs {
         this.primary = 0; 
         int numRows = 0;
         
-        if (this.getRank() == 1 || DamsTools.getProperty("rankOverride") != null) {
+        if (this.getRank() == 1 || XmlUtils.getConfigValue("rankOverride") != null) {
             //Check to make sure if we dont have a rank 1 for this object already
             
             String sql = "SELECT count(*) from MediaXrefs" + 
@@ -103,8 +104,8 @@ public class MediaXrefs {
     
     public void calculateRank(String extensionlessFileName) {
         
-        if (DamsTools.getProperty("rankOverride") != null) {
-            this.setRank(Integer.parseInt(DamsTools.getProperty("rankOverride")));
+        if (XmlUtils.getConfigValue("rankOverride") != null) {
+            this.setRank(Integer.parseInt(XmlUtils.getConfigValue("rankOverride")));
             return;
         }
         

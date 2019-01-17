@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.util.ArrayList;
 
 /**
@@ -88,7 +89,7 @@ public class VfcuErrorLog {
                         "error_dt ) " +
                     "VALUES (" +  
                         "vfcu_error_id_seq.NextVal, " +
-                        "'" + DamsTools.getProjectCd() + "', " +
+                        "'" + XmlUtils.getConfigValue("projectCd") + "', " +
                         getVfcuMediaFileId() + ", " +
                         getVfcuMd5FileId() + ", " +
                         "'" + getFileName() + "', " +

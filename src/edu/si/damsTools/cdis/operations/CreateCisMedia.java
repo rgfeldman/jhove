@@ -140,7 +140,7 @@ public class CreateCisMedia extends Operation {
         // Add activity record indicating Media Has been Linked
         activityLog = new CdisActivityLog();
         activityLog.setCdisMapId(cdisMap.getCdisMapId());
-        activityLog.setCdisStatusCd("LCC-" + DamsTools.getProperty("lccIdType").toUpperCase());
+        activityLog.setCdisStatusCd("LCC-" + XmlUtils.getConfigValue("lccIdType").toUpperCase());
         activityLog.insertActivity();
             
         // Add activity record indicating Media Has been Thumbnail Synced
@@ -186,7 +186,7 @@ public class CreateCisMedia extends Operation {
         reqProps.add("cisInstance");
         reqProps.add("cisPass");
         reqProps.add("cisUser");
-        reqProps.add("createCisMediaXmlFile");
+        reqProps.add("xmlFile");
         reqProps.add("damsRepo");
         reqProps.add("dupRenditionCheck");
         reqProps.add("idsPathId");
@@ -198,7 +198,7 @@ public class CreateCisMedia extends Operation {
         
         reqProps.add("lccIdType");
         
-        if (DamsTools.getProperty("mapFileNameToObjectNumber").equals("true") ) {
+        if (XmlUtils.getConfigValue("mapFileNameToObjectNumber").equals("true") ) {
             reqProps.add("damsDelimiter");
             reqProps.add("tmsDelimiter");
         }

@@ -7,6 +7,7 @@ package edu.si.damsTools.vfcu;
 
 import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.database.VfcuActivityLog;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.vfcu.delivery.MediaFileRecord;
@@ -48,7 +49,7 @@ public class MediaPickupValidate extends Operation {
         
         //Assign database entry rows to a batch
         VfcuMediaFile vfcuMediaFile = new VfcuMediaFile();
-        vfcuMediaFile.setMaxFiles(Integer.parseInt(DamsTools.getProperty("maxMasterFilesBatch")));
+        vfcuMediaFile.setMaxFiles(Integer.parseInt(XmlUtils.getConfigValue("maxMasterFilesBatch")));
         vfcuMediaFile.setVfcuBatchNumber(DamsTools.getBatchNumber());
         
         int rowsUpdated = vfcuMediaFile.updatePickupValidateBatch();
@@ -98,7 +99,7 @@ public class MediaPickupValidate extends Operation {
             }
             
             // Now must do the same for the subfile...and sub-subfile
-            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
                Integer assocVfcuMediaFileId = masterMediaFileRecord.getVfcuMediaFile().returnAssociatedFileId();
                if (assocVfcuMediaFileId == null) {
                    logger.log(Level.FINER, "Error, master found with no subfile");

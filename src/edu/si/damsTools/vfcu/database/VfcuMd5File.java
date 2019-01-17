@@ -6,6 +6,7 @@
 package edu.si.damsTools.vfcu.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -84,7 +85,7 @@ public class VfcuMd5File {
                         "md5_file_retrieval_dt) " +
                     "VALUES (" +
                         getVfcuMd5FileId() + ", " +
-                        "'" + DamsTools.getProjectCd() + "', " +
+                        "'" + XmlUtils.getConfigValue("projectCd") + "', " +
                         "'" + getVendorMd5FileName() + "'," +
                         "'" + getBasePathVendor() + "', " +
                         "'" + getBasePathStaging() + "', " +

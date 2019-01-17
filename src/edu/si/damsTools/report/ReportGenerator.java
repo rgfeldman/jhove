@@ -8,6 +8,7 @@ package edu.si.damsTools.report;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.operations.Operation;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -74,12 +75,13 @@ public class ReportGenerator extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
+        reqProps.add("xmlFile");
+
         switch (DamsTools.getSubOperation()) {
              case "cdisVfcuDir":
-               reqProps.add("cdisVfcuDirReportXmlFile");
-               reqProps.add("rptDeliveryMethod");
-               if (DamsTools.getProperty("rptDeliveryMethod").equals("email") ) {
-                   reqProps.add("vfcuDirEmailList");
+               reqProps.add("deliveryMethod");
+               if (XmlUtils.getConfigValue("deliveryMethod").equals("email") ) {
+                   reqProps.add("emailToList");
                }
                reqProps.add("vfcuDirRptSupressAttch");
                reqProps.add("useMasterSubPairs");
@@ -88,10 +90,8 @@ public class ReportGenerator extends Operation {
                reqProps.add("rptHours"); 
                reqProps.add("timeFrameEmailList");
                reqProps.add("tfRptSupressAttch");
-               reqProps.add("timeframeReportXmlFile");
                break;
             case "vfcuMediaFile":
-                reqProps.add("reportXmlFile");
                 reqProps.add("useMasterSubPairs");
                 break;             
                

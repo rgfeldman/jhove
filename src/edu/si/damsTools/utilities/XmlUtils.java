@@ -32,16 +32,16 @@ public class XmlUtils {
         return sql;
     }
     
-    // Method : returnConfigValueForTag
+    // Method : getConfigValue
     // Purpose : Loops through the entire xml config structure and 
     //              returns the first data associated with the xml tag specified  
-    public static String returnConfigValueForTag (String tag) {
+    public static String getConfigValue (String tag) {
         String data = null;
         for(XmlData xmlInfo : DamsTools.getXmlConfigDataList()) {
             if (! xmlInfo.getTag().equals(tag)) {
                 continue;
             }
-            data = xmlInfo.getDataValuesForAttribute("type",tag);
+            data = xmlInfo.getDataValue();
             if (data != null) {
                 break;
             }

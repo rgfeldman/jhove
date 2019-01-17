@@ -8,6 +8,7 @@ package edu.si.damsTools.report.delivery;
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.report.rptFile.RptFile;
 import edu.si.damsTools.report.DisplayFormat;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.io.File;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -46,7 +47,7 @@ public class Email implements DeliveryMethod {
             
             String emailContent = "";
 
-            String[] toEmailAddrArray = displayFormat.returnEmailToList().split(",");
+            String[] toEmailAddrArray = XmlUtils.getConfigValue("emailToList").split(",");
             for (String toEmailAddr : toEmailAddrArray) {
                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmailAddr.trim()));
             }

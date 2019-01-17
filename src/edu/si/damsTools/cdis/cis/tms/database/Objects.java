@@ -7,6 +7,7 @@ package edu.si.damsTools.cdis.cis.tms.database;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdisutilities.Transform;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -139,9 +140,9 @@ public class Objects {
         
         try {
             // populate ObjectNumber using various formats specified in the config file
-            damsDelimiter = DamsTools.getProperty("damsDelimiter");
-            tmsDelimiter = DamsTools.getProperty("tmsDelimiter");
-            imageObjectTrunc = Integer.parseInt(DamsTools.getProperty("imageObjectTrunc"));
+            damsDelimiter = XmlUtils.getConfigValue("damsDelimiter");
+            tmsDelimiter = XmlUtils.getConfigValue("tmsDelimiter");
+            imageObjectTrunc = Integer.parseInt(XmlUtils.getConfigValue("imageObjectTrunc"));
         } catch (Exception e) {
                 e.printStackTrace();
                 return false;
@@ -165,7 +166,7 @@ public class Objects {
     
     public boolean mapAltColumnToObject(String uoiId) {
         
-        String[] tableAndColumn = DamsTools.getProperty("altObjTabCol").split(",");
+        String[] tableAndColumn = XmlUtils.getConfigValue("altObjTabCol").split(",");
         
         String table = tableAndColumn[0];
         String column = tableAndColumn[1];

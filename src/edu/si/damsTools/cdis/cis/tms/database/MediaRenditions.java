@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.cis.tms.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -77,7 +78,7 @@ public class MediaRenditions {
         
         // Get variables from the properties list
         try {
-            mediaStatusID = Integer.parseInt (DamsTools.getProperty("mediaStatusID"));
+            mediaStatusID = Integer.parseInt (XmlUtils.getConfigValue("mediaStatusID"));
         } catch (Exception e) {
                 e.printStackTrace();
                 return false;

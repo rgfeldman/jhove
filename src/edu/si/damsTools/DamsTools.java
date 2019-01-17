@@ -9,7 +9,7 @@ import com.artesia.common.encryption.encryption.EncryptDecrypt;
 import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.utilities.XmlReader;
-import java.io.FileInputStream;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +25,6 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
 import java.util.ArrayList;
-import java.util.Properties; 
 import java.nio.file.DirectoryStream;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
@@ -48,13 +47,10 @@ public class DamsTools {
     private static Connection cisConn;
     private static Connection damsConn;
     private static String directoryName;
-    private static String projectCd;
     private static String operationType;
-    private static Properties properties;
     private static String subOperation;
     private static ArrayList <XmlData> xmlQueryDataList;
     private static ArrayList <XmlData> xmlConfigDataList;
-    
     private App app;
     private Operation operation;
     private final ZoneId zoneId = ZoneId.of("America/New_York");
@@ -83,10 +79,6 @@ public class DamsTools {
         return DamsTools.operationType;
     }
     
-    public static String getProjectCd() {
-        return DamsTools.projectCd;
-    }
-    
     public static String getSubOperation() {
         return DamsTools.subOperation;
     }
@@ -97,10 +89,6 @@ public class DamsTools {
     
     public static ArrayList <XmlData> getXmlConfigDataList() {
         return DamsTools.xmlConfigDataList;
-    }
-    
-    public static String getProperty (String property) {
-        return DamsTools.properties.getProperty(property);
     }
 
     private void setBatchNumber (Long batchExecutionNumber) {
@@ -154,14 +142,14 @@ public class DamsTools {
         try {
             //connect to DAMS DB
                 //connect to CIS DB
-                String passwd = EncryptDecrypt.decryptString(DamsTools.getProperty(dbName + "Pass"));
+                String passwd = EncryptDecrypt.decryptString(XmlUtils.getConfigValue(dbName + "Pass"));
             
-                Class.forName(DamsTools.getProperty(dbName + "Driver"));
-                dbConn = DriverManager.getConnection(DamsTools.getProperty(dbName + "ConnString"), 
-                                DamsTools.getProperty(dbName +"User"), passwd);
+                Class.forName(XmlUtils.getConfigValue(dbName + "Driver"));
+                dbConn = DriverManager.getConnection(XmlUtils.getConfigValue(dbName + "ConnString"), 
+                                XmlUtils.getConfigValue(dbName +"User"), passwd);
             
-                if (DamsTools.getProperty("cisDbAutoCommit") != null && 
-                        DamsTools.getProperty("cisDbAutoCommit").equals("true") && 
+                if (XmlUtils.getConfigValue("cisDbAutoCommit") != null && 
+                        XmlUtils.getConfigValue("cisDbAutoCommit").equals("true") && 
                         dbName.equals("cis") ) {
                     dbConn.setAutoCommit(true);
                     logger.log(Level.INFO, "Setting autocommit to true");
@@ -207,35 +195,6 @@ public class DamsTools {
         }
     }
     
-    /*  Method :        readIni
-        Arguments:      
-        Description:    assigns values from the .ini file into the properties object
-        RFeldman 2/2015
-    */
-    private boolean readIni () {
-        
-        String iniFile = DamsTools.directoryName + "/conf/" + DamsTools.configFile + ".ini";
-        
-        logger.log(Level.FINER, "Loading ini file: " + iniFile);
-                
-        try (FileInputStream fis = new FileInputStream(iniFile)) {
-            
-            DamsTools.properties.load(fis);
-            logger.log(Level.FINER, "Ini File loaded");
-            
-            //send all properties to the logfile
-            for (String key : DamsTools.properties.stringPropertyNames()) {
-                String value = DamsTools.properties.getProperty(key);
-                logger.log(Level.FINER, "Property: " + key + " value: " + value);
-            }
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: obtaining config information", e );
-            return false;
-        }
-        
-        return true;
-    }
     
     /*  Method :        setLogger
         Arguments:      
@@ -283,7 +242,7 @@ public class DamsTools {
         
         if (reqProps != null) {
             for(String reqProp : reqProps) {
-                if(! DamsTools.properties.containsKey(reqProp)) {
+                if(XmlUtils.getConfigValue(reqProp) == null) {
                     logger.log(Level.SEVERE, "Missing required property: {0}", reqProp);
                     return false;
                 }
@@ -312,9 +271,7 @@ public class DamsTools {
         damsTool.deleteLogs("rpt", damsTool.application + "",21);
         damsTool.deleteLogs("log", damsTool.application + "",21);
         
-        try {
-            DamsTools.properties = new Properties();
-            
+        try {            
             boolean batchExecutionNumberSet = damsTool.calcBatchExecutionNumber();
             if (! batchExecutionNumberSet) {
                 System.out.println("Fatal Error: Batch Execution number could not be generated");
@@ -336,19 +293,14 @@ public class DamsTools {
              
             Path configDir = Paths.get(DamsTools.directoryName).resolve("conf");
 
+            //Add the global values from the xml configuration file
             Path xmlFile = configDir.resolve(DamsTools.configFile + ".xml");
-            XmlReader xmlReader = new XmlReader(xmlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
+            XmlReader xmlReader = new XmlReader(xmlFile.toString(), "global", null);
             DamsTools.xmlConfigDataList = xmlReader.parseReturnXmlObjectList();
-            
-            //handle the ini file
-            boolean iniRead = damsTool.readIni ();
-            if (! iniRead) {
-                logger.log(Level.SEVERE, "Fatal Error: Failure to Load ini file, exiting");
-                return;
-            }
-            
-            DamsTools.projectCd = DamsTools.getProperty("projectCd");
-            
+            //Add the operation specific values from the xml configuration file
+            xmlReader = new XmlReader(xmlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
+            DamsTools.xmlConfigDataList.addAll(xmlReader.parseReturnXmlObjectList());
+                        
             boolean propsVerified = damsTool.verifyProps ();
             if (! propsVerified) {
                 logger.log(Level.SEVERE, "Fatal Error: Required Property missing.  Exiting");
@@ -361,7 +313,7 @@ public class DamsTools {
                 return;
             }
 
-            if (DamsTools.getProperty("cisDriver") != null) {
+            if (XmlUtils.getConfigValue("cisDriver") != null) {
                 cisConn = damsTool.connectToDatabases("cis");
                 if (cisConn == null ) {
                     logger.log(Level.SEVERE, "Fatal Error: unable to connect to cisDb. Exiting");
@@ -371,7 +323,7 @@ public class DamsTools {
             
             if (damsTool.operation.requireSqlCriteria() ) {          
                 
-                Path xmlSqlFile = configDir.resolve(DamsTools.getProperty(DamsTools.getOperationType() + "XmlFile")); 
+                Path xmlSqlFile = configDir.resolve(XmlUtils.getConfigValue("xmlFile")); 
                 xmlReader = new XmlReader(xmlSqlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
                 DamsTools.xmlQueryDataList = xmlReader.parseReturnXmlObjectList();  
             }

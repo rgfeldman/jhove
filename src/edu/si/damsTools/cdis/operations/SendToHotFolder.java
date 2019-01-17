@@ -113,7 +113,7 @@ public class SendToHotFolder extends Operation {
             }
             
             //Take care of any child file attached to this master
-            if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
+            if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true") ) {
                 boolean childProcessed = logChildRecord(cdisMap.getVfcuMediaFileId());
                 
                 masterMediaFileRecords.removeIf(mapNotCreated -> !childProcessed);
@@ -146,7 +146,7 @@ public class SendToHotFolder extends Operation {
             
             //Add the value from the database to the list, as long as we are below the max number of records
             for (recordCount =1; 
-                    rs.next() && recordCount <= Integer.parseInt(DamsTools.getProperty("maxNumMasterFiles")); 
+                    rs.next() && recordCount <= Integer.parseInt(XmlUtils.getConfigValue("maxNumMasterFiles")); 
                     recordCount ++ ) {
                         
                 MediaFileRecord mediaFileRecord = new MediaFileRecord(rs.getInt(1));
@@ -158,16 +158,16 @@ public class SendToHotFolder extends Operation {
                 
                 masterMediaFileRecords.add(mediaFileRecord);
                 
-                if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
+                if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true") ) {
                     VfcuMediaFile childVfcuMediaFile = new VfcuMediaFile();
                     childVfcuMediaFile.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId());
                     childVfcuMediaFile.populateMediaFileAttr();
                     fileSizeSoFar = fileSizeSoFar + childVfcuMediaFile.getMbFileSize();     
                 }
                 
-                if (fileSizeSoFar > Double.parseDouble(DamsTools.getProperty("maxBatchMbSize")) ) {
+                if (fileSizeSoFar > Double.parseDouble(XmlUtils.getConfigValue("maxBatchMbSize")) ) {
                     logger.log(Level.FINEST, "Ending batch size early, batch size is too large to continue");
-                    logger.log(Level.FINEST, "Current size: " + fileSizeSoFar + " Max Size: " + DamsTools.getProperty("maxBatchMbSize") );
+                    logger.log(Level.FINEST, "Current size: " + fileSizeSoFar + " Max Size: " + XmlUtils.getConfigValue("maxBatchMbSize") );
                     break;
                 }              
             }
@@ -217,7 +217,7 @@ public class SendToHotFolder extends Operation {
         }    
                
         //Perform an extra validation, make sure the number of files in MASTER is the same as the number of files in SUBFILE
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true") ) {
             if  (numMasterFiles !=  Folders.returnCount(hotIngestFolder.returnSubfilePath()) ) {
                 logger.log(Level.FINER, "Do not continue, number of subfiles != number of master files");
                 return;
@@ -244,7 +244,7 @@ public class SendToHotFolder extends Operation {
                 
                 try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
                 
-                if (DamsTools.getProperty("useMasterSubPairs").equals("true") )  {
+                if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true") )  {
                     
                     CdisMap childCdisMap = new CdisMap();
                     childCdisMap.setVfcuMediaFileId(mediaFileRecord.getVfcuMediaFile().getChildVfcuMediaFileId());

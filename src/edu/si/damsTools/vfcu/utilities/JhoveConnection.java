@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import java.util.List;
 import org.apache.commons.io.FilenameUtils;
 import edu.harvard.hul.ois.jhove.Message;
+import edu.si.damsTools.utilities.XmlUtils;
 
 /**
  *
@@ -176,7 +177,7 @@ public class JhoveConnection {
             
             // Store the jhove message as a legitamate error that needs to be handled by VFCU (if there is no supress flag set, or if 
                 //the error does not contain the supressed message, it is an error that we wish to report
-            if (DamsTools.getProperty("suppressJhoveErr") == null || ! message.getMessage().startsWith(DamsTools.getProperty("suppressJhoveErr"))) {
+            if (XmlUtils.getConfigValue("suppressJhoveErr") == null || ! message.getMessage().startsWith(XmlUtils.getConfigValue("suppressJhoveErr"))) {
                 logger.log(Level.FINER, "Error message NOT supressed: " + message.getMessage());
                 errorMessageForVfcu = message.getMessage();
                 return false;

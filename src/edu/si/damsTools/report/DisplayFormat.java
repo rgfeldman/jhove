@@ -20,9 +20,7 @@ public interface DisplayFormat  {
     public String returnDocHeader(String multiRptkeyValue);
     
     public String returnEmailTitle(String multiRptkeyValue);
-    
-    public String returnEmailToList();
-    
+       
     public ArrayList<String> returnKeyValueList();
     
     public String returnStatsListsHeader(String multiRptkeyValue);

@@ -8,6 +8,7 @@ package edu.si.damsTools.vfcu.delivery;
 import edu.si.damsTools.vfcu.utilities.ErrorLog;
 import java.util.logging.Logger;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import java.util.logging.Level;
 import edu.si.damsTools.vfcu.database.VfcuActivityLog;
@@ -42,7 +43,7 @@ public class MediaFileRecord {
      
     public boolean validateDbRecord() {
         //validate the filename (duplicate check)
-        if (DamsTools.getProperty("dupFileNmCheck").equals("true")) {
+        if (XmlUtils.getConfigValue("dupFileNmCheck").equals("true")) {
             //look to see if the file already exists that is not in error state
             String otherPath = returnDupFilePath();
             if (otherPath != null) {
@@ -86,7 +87,7 @@ public class MediaFileRecord {
         populateBasicValuesFromDb();
         
         //Look to see if the associated file is in error, if it is then mark the current one as an error as well.        
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
         
             // if one member of a pair was an error, mark the other of the pair an error as well
             if(hierarchyType.equals("master")) {
@@ -207,7 +208,7 @@ public class MediaFileRecord {
                      "ON      vmf.vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
                      "WHERE   vmf.vfcu_md5_file_id != " + vfcuMediaFile.getVfcuMd5FileId() +
                      " AND    media_file_name = '" + vfcuMediaFile.getMediaFileName() + "' " +
-                     "AND    vmd.project_cd = '" + DamsTools.getProjectCd() + "' " +
+                     "AND    vmd.project_cd = '" + XmlUtils.getConfigValue("projectCd") + "' " +
                      "AND NOT EXISTS ( " +
                         "SELECT 'X' FROM vfcu_error_log vel  " +
                         "WHERE vmf.vfcu_media_file_id = vel.vfcu_media_file_id) ";

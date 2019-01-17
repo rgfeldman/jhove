@@ -6,6 +6,7 @@
 package edu.si.damsTools.vfcu.delivery;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.database.VfcuMd5File;
 import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
 import edu.si.damsTools.vfcu.utilities.ErrorLog;
@@ -71,8 +72,8 @@ public class SourceFileListing {
         vfcuMd5File.setVendorMd5FileName(md5File.getFileName().toString());
         vfcuMd5File.setFilePathEnding(md5File.getFilePathEnding("source").toString() );
             
-        vfcuMd5File.setBasePathStaging(DamsTools.getProperty("vfcuStaging"));  
-        vfcuMd5File.setBasePathVendor(DamsTools.getProperty("sourceBaseDir"));
+        vfcuMd5File.setBasePathStaging(XmlUtils.getConfigValue("vfcuStaging"));  
+        vfcuMd5File.setBasePathVendor(XmlUtils.getConfigValue("sourceBaseDir"));
             
         return true;
     }
@@ -138,7 +139,7 @@ public class SourceFileListing {
     public int retrieveCountProcessed() {
         int numProcessed = 0;
         String statusToCheck = "PM";
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
              statusToCheck = "PS";
         }
         

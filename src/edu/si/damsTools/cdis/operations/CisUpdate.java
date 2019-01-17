@@ -110,7 +110,7 @@ public class CisUpdate extends Operation {
             }
             
             IdentifierFactory cisIdentFact = new IdentifierFactory();
-            IdentifierType cisIdentifierType = cisIdentFact.identifierChooser(DamsTools.getProperty("lccIdType"));
+            IdentifierType cisIdentifierType = cisIdentFact.identifierChooser(XmlUtils.getConfigValue("lccIdType"));
             
             if (cisSql.contains("?CISID")) {
                 Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
@@ -156,7 +156,7 @@ public class CisUpdate extends Operation {
             //Insert row in the activity_log as completed. COMMENTED OUT FOR NOW
             CdisActivityLog cdisActivity = new CdisActivityLog(); 
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("CSU-" + DamsTools.getProperty("cis").toUpperCase()); 
+            cdisActivity.setCdisStatusCd("CSU-" + XmlUtils.getConfigValue("cis").toUpperCase()); 
             boolean activityLogged = cdisActivity.updateOrInsertActivityLog();
             if (!activityLogged) {
                 logger.log(Level.FINER, "Error, unable to create CDIS activity record ");
@@ -180,7 +180,7 @@ public class CisUpdate extends Operation {
         reqProps.add("cisConnString");
         reqProps.add("cisUser");
         reqProps.add("cisPass");
-        reqProps.add("cisUpdateXmlFile");
+        reqProps.add("xmlFile");
         reqProps.add("lccIdType");
         
         //add more required props here

@@ -6,6 +6,7 @@
 package edu.si.damsTools.vfcu.files.xferType;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 
 /**
  *
@@ -16,7 +17,7 @@ public class XferTypeFactory {
     public XferType XferTypeChooser() {
         XferType xferType = null;
         
-        switch (DamsTools.getProperty("fileXferType")) {
+        switch (XmlUtils.getConfigValue("fileXferType")) {
             case "move" :
                 xferType = new XferMove();  
                 break;

@@ -94,8 +94,8 @@ public class LinkDamsRecord extends Operation {
         }
         
         //Move file to the emu pickup area if necessary
-        if (! DamsTools.getProperty("retainAfterIngest").equals("false") &&
-            cdisMap.getFileName().endsWith(DamsTools.getProperty("retainAfterIngest")) ) {
+        if (! XmlUtils.getConfigValue("retainAfterIngest").equals("false") &&
+            cdisMap.getFileName().endsWith(XmlUtils.getConfigValue("retainAfterIngest")) ) {
             
             boolean fileMoved = postIngestMove(cdisMap);  
             if (! fileMoved) {
@@ -110,14 +110,14 @@ public class LinkDamsRecord extends Operation {
     
     private boolean postIngestMove(CdisMap cdisMap) {
         
-        if (DamsTools.getProperty("postIngestDeliveryLoc") == null) {
+        if (XmlUtils.getConfigValue("postIngestDeliveryLoc") == null) {
             logger.log(Level.FINEST, "Error, Post ingest delivery site never specified");
             return false;
         }
   
         StagedFile stagedFile = new StagedFile();
         stagedFile.populateNameStagingPathFromId(cdisMap.getVfcuMediaFileId());
-        boolean fileDelivered = stagedFile.deliverForPickup(DamsTools.getProperty("postIngestDeliveryLoc"));
+        boolean fileDelivered = stagedFile.deliverForPickup(XmlUtils.getConfigValue("postIngestDeliveryLoc"));
  
         if (!fileDelivered) {
             return false;
@@ -215,9 +215,9 @@ public class LinkDamsRecord extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("retainAfterIngest");
-        reqProps.add("linkDamsRecordXmlFile");
+        reqProps.add("xmlFile");
         
-        if (! DamsTools.getProperty("retainAfterIngest").equals("false") ) {
+        if (! XmlUtils.getConfigValue("retainAfterIngest").equals("false") ) {
             reqProps.add("postIngestDeliveryLoc");
         }
         //add more required props here

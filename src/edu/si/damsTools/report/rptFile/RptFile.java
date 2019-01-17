@@ -95,7 +95,7 @@ public class RptFile extends Report  {
         DateFormat dfWords = new SimpleDateFormat();
         timeStampWords = dfWords.format(new Date());
         
-        this.fileNameLoc =  DamsTools.getDirectoryName()+ "/rpt/CDISRPT-" + DamsTools.getProjectCd().toUpperCase() + "-" + fileDtNum + ".rtf";
+        this.fileNameLoc =  DamsTools.getDirectoryName()+ "/rpt/CDISRPT-" + XmlUtils.getConfigValue("projectCd").toUpperCase() + "-" + fileDtNum + ".rtf";
         this.document = new Document();
          
         try {
@@ -230,11 +230,11 @@ public class RptFile extends Report  {
         logger.log(Level.FINEST, "SQL: " + sql);;
         
         if (sql.contains("?RPT_HOURS?")) {
-            sql = sql.replace("?RPT_HOURS?", DamsTools.getProperty("rptHours"));
+            sql = sql.replace("?RPT_HOURS?", XmlUtils.getConfigValue("rptHours"));
         }
         if (sql.contains("?MULTIRPT_KEYVAL?")) {
             
-            if (DamsTools.getProperty("useMasterSubPairs").equals("true") ) {
+            if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true") ) {
                 VfcuMd5FileHierarchy vfcuMd5FileHierarchy = new VfcuMd5FileHierarchy();
                 vfcuMd5FileHierarchy.setMasterFileVfcuMd5FileId(Integer.parseInt(keyValue));
                 vfcuMd5FileHierarchy.populateSubfileIdForMasterId();

@@ -7,6 +7,7 @@ package edu.si.damsTools.cdis.dams;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.utilities.Folders;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,11 +47,11 @@ public class HotIngestFolder {
                 
         try {
                  
-            if (DamsTools.getProperty("maxHotFolderIncrement").equals("0")) {
-                 failedPath = Paths.get(DamsTools.getProperty("failedFolderArea"));
+            if (XmlUtils.getConfigValue("maxHotFolderIncrement").equals("0")) {
+                 failedPath = Paths.get(XmlUtils.getConfigValue("failedFolderArea"));
             }
             else {              
-                failedPath = Paths.get(DamsTools.getProperty("failedFolderArea") + 
+                failedPath = Paths.get(XmlUtils.getConfigValue("failedFolderArea") + 
                         basePath.toString().substring(basePath.toString().lastIndexOf('_') ));
             }  
             failedPath = failedPath.resolve("FAILED");
@@ -94,11 +95,11 @@ public class HotIngestFolder {
 
         int maxHotFolderIncrement;
         
-        if (DamsTools.getProperty("maxHotFolderIncrement").equals("0")) {
+        if (XmlUtils.getConfigValue("maxHotFolderIncrement").equals("0")) {
             maxHotFolderIncrement = 1;
         }
         else {
-            maxHotFolderIncrement = Integer.parseInt(DamsTools.getProperty("maxHotFolderIncrement"));
+            maxHotFolderIncrement = Integer.parseInt(XmlUtils.getConfigValue("maxHotFolderIncrement"));
         }
            
         for (int currentFolderIncrement = 1;; currentFolderIncrement ++) {
@@ -115,14 +116,14 @@ public class HotIngestFolder {
                 }               
             }
             
-            if (DamsTools.getProperty("maxHotFolderIncrement").equals("0")) {
+            if (XmlUtils.getConfigValue("maxHotFolderIncrement").equals("0")) {
                 //If we have a '0' in the configuration file, we do not use incrementally named hotfolders
                 // There is no increment, we do not append any number to the hot folder name
-                setValidateBasePath(DamsTools.getProperty("hotFolderArea"));
+                setValidateBasePath(XmlUtils.getConfigValue("hotFolderArea"));
                 
             } else {
                 // We use incremental hot folder names
-                setValidateBasePath(DamsTools.getProperty("hotFolderArea") + "_" + currentFolderIncrement);
+                setValidateBasePath(XmlUtils.getConfigValue("hotFolderArea") + "_" + currentFolderIncrement);
             }
             
             if (getBasePath() == null) {
@@ -141,7 +142,7 @@ public class HotIngestFolder {
             //See if the number of failed files in the failed area is over the provided threshold.
             // If the number of failed files is OVER the threshold, we keep looping until we no longer have that condition
             int numFailedFiles = Folders.returnCount(this.returnAssociatedFailedPath());
-            if (numFailedFiles < Integer.parseInt(DamsTools.getProperty("failedIngestThreshold") )) {
+            if (numFailedFiles < Integer.parseInt(XmlUtils.getConfigValue("failedIngestThreshold") )) {
                 //We have a hotfolder selected
                 break;
             }

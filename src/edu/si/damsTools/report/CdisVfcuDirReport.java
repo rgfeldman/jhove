@@ -68,7 +68,7 @@ public class CdisVfcuDirReport implements DisplayFormat {
         String sql = null;
         String vendorDir = null;
         
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
             sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8), SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', -1, 1)-1) " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + md5FileId;
@@ -105,22 +105,18 @@ public class CdisVfcuDirReport implements DisplayFormat {
     
    public String returnDocHeader(String multiRptkeyValue) {
         
-        return DamsTools.getProjectCd().toUpperCase() + " CDIS Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue) );
+        return XmlUtils.getConfigValue("projectCd").toUpperCase() + " CDIS Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue) );
             
     }
     
-    public String returnEmailToList () {
-        return DamsTools.getProperty("vfcuDirEmailList");
-    }
-    
     public String returnEmailTitle(String multiRptkeyValue) {
-       return DamsTools.getProjectCd().toUpperCase()+ ": Batch Hot Folder Import Activity Report - " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue) );
+       return XmlUtils.getConfigValue("projectCd").toUpperCase()+ ": Batch Hot Folder Import Activity Report - " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue) );
 
     }
    
     
     public boolean returnSupressAttachFlag(String masterMd5FileId) {
-        if ( DamsTools.getProperty("vfcuDirRptSupressAttch").equals("true")  ) { 
+        if ( XmlUtils.getConfigValue("vfcuDirRptSupressAttch").equals("true")  ) { 
            
             int numErrors = 0;
             
@@ -181,7 +177,7 @@ public class CdisVfcuDirReport implements DisplayFormat {
         
         VfcuMd5FileActivityLog vfcuMd5FileActivityLog = new VfcuMd5FileActivityLog();
         vfcuMd5FileActivityLog.setVfcuMd5FileId(Integer.parseInt(md5FileId));
-        if (DamsTools.getProperty("rptDeliveryMethod").equals("email")) {
+        if (XmlUtils.getConfigValue("deliveryMethod").equals("email")) {
             vfcuMd5FileActivityLog.setVfcuMd5StatusCd("CE");
         }
         else {
@@ -197,7 +193,7 @@ public class CdisVfcuDirReport implements DisplayFormat {
         String sql;
         String sdir = null;
         
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
             sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8) || '/' || SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', -1, 1)-1) " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + multiRptkeyValue;

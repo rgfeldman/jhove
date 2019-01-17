@@ -15,6 +15,7 @@ import edu.si.damsTools.cdis.cis.tms.database.MediaFormats;
 
 import edu.si.damsTools.cdis.dams.database.SiAssetMetadata;
 import edu.si.damsTools.cdis.dams.database.Uois;
+import edu.si.damsTools.utilities.XmlUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -43,8 +44,8 @@ public class MediaRecord {
         
         String newRenditionNumber;
         
-        String tmsDelimiter = DamsTools.getProperty("tmsDelimiter");
-        String damsDelimiter = DamsTools.getProperty("damsDelimiter");
+        String tmsDelimiter = XmlUtils.getConfigValue("tmsDelimiter");
+        String damsDelimiter = XmlUtils.getConfigValue("damsDelimiter");
         
         // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
         if (tmsDelimiter.equals (damsDelimiter) ) {
@@ -92,21 +93,21 @@ public class MediaRecord {
         
         switch  (uois.getMasterObjMimeType()) {
             case "image/jpeg" :
-                mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("jpgFormatId")));
+                mediaFiles.setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("jpgFormatId")));
                 break;
             case "image/tiff" :
-                mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("tifFormatId")));
+                mediaFiles.setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("tifFormatId")));
                 break;
             case "application/pdf":
-                mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("pdfFormatId")));
+                mediaFiles.setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("pdfFormatId")));
                 break;
             case "audio/x-mpeg" :
             case "audio/x-wav" :
-                mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("audioFormatId")));
+                mediaFiles.setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("audioFormatId")));
                 break;
             case "video/mpeg" :
             case "video/mxf" :
-                mediaFiles.setMediaFormatId(Integer.parseInt(DamsTools.getProperty("videoFormatId")));
+                mediaFiles.setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("videoFormatId")));
                 break;
             default :
                 logger.log(Level.FINER, "unable to get valid mimeType from DAMS: " + uois.getMasterObjMimeType() );
@@ -132,8 +133,8 @@ public class MediaRecord {
         
         mediaXrefs.calculateRank(extensionlessFileName);
         
-        if (Integer.parseInt(DamsTools.getProperty("assignToObjectID")) > 0) {
-            tmsObject.setObjectId (Integer.parseInt(DamsTools.getProperty("assignToObjectID")));
+        if (Integer.parseInt(XmlUtils.getConfigValue("assignToObjectID")) > 0) {
+            tmsObject.setObjectId (Integer.parseInt(XmlUtils.getConfigValue("assignToObjectID")));
             objectIdPopulated = true;
             
             String newRenditionNumber = formatNewRenditionNumber (extensionlessFileName);
@@ -143,13 +144,13 @@ public class MediaRecord {
         }
                 
         if (! objectIdPopulated) {
-            if (DamsTools.getProperty("mapFileNameToBarcode").equals("true")) {
+            if (XmlUtils.getConfigValue("mapFileNameToBarcode").equals("true")) {
                 objectIdPopulated = tmsObject.mapFileNameToBarcode(extensionlessFileName);
                 
                 if (objectIdPopulated) {
                 
                     // For NASM, we have to append the timestamp to the renditionName only on barcoded objects for uniqueness
-                    if (DamsTools.getProperty("appendTimeToNumber").equals("true"))  {
+                    if (XmlUtils.getConfigValue("appendTimeToNumber").equals("true"))  {
                         DateFormat df = new SimpleDateFormat("kkmmss");
                         mediaRenditions.setRenditionNumber(tmsObject.getObjectId() + "_" + String.format("%03d", mediaXrefs.getRank()) + "_" + df.format(new Date()));
                     }
@@ -161,7 +162,7 @@ public class MediaRecord {
             }
         }
         if (! objectIdPopulated) {
-            if (DamsTools.getProperty("mapFileNameToObjectNumber").equals("true")) {
+            if (XmlUtils.getConfigValue("mapFileNameToObjectNumber").equals("true")) {
             
                 objectIdPopulated = tmsObject.mapFileNameToObjectNumber(extensionlessFileName);
                 if (objectIdPopulated) {
@@ -174,7 +175,7 @@ public class MediaRecord {
         }
         
         if (! objectIdPopulated) {
-            if (DamsTools.getProperty("mapFileNameToObjectID").equals("true")) {
+            if (XmlUtils.getConfigValue("mapFileNameToObjectID").equals("true")) {
                
                 objectIdPopulated = tmsObject.mapFileNameToObjectID(uois.getName());
                 if (objectIdPopulated) {
@@ -184,7 +185,7 @@ public class MediaRecord {
         }
         
         if (! objectIdPopulated) {
-            if (DamsTools.getProperty("mapAltColumnToObject").equals("true")) {
+            if (XmlUtils.getConfigValue("mapAltColumnToObject").equals("true")) {
                 objectIdPopulated = tmsObject.mapAltColumnToObject(uois.getUoiid());
                 
                 if (objectIdPopulated) {
@@ -221,11 +222,11 @@ public class MediaRecord {
         
         //get the uan and the filename, we will want to check that before we add the new media
         if (uois.getMasterObjMimeType().equals("application/pdf")) {
-                mediaFiles.setPathId(Integer.parseInt (DamsTools.getProperty("pdfPathId")));
+                mediaFiles.setPathId(Integer.parseInt (XmlUtils.getConfigValue("pdfPathId")));
                 mediaFiles.setFileName (siAsst.getOwningUnitUniqueName() +  ".pdf");
         }
         else {
-            mediaFiles.setPathId (Integer.parseInt (DamsTools.getProperty("idsPathId")));
+            mediaFiles.setPathId (Integer.parseInt (XmlUtils.getConfigValue("idsPathId")));
             mediaFiles.setFileName(siAsst.getOwningUnitUniqueName());
         } 
         
@@ -237,7 +238,7 @@ public class MediaRecord {
         }
         
         //check if a record with the renditionNumber to create already exists before we create the new media
-        if (DamsTools.getProperty("dupRenditionCheck").equals("true") ) {
+        if (XmlUtils.getConfigValue("dupRenditionCheck").equals("true") ) {
             int existingRenditionId = mediaRenditions.returnIDForRenditionNumber();
             if (existingRenditionId > 0) {
                 errorCode = "AFRCIS";

@@ -99,7 +99,7 @@ public class LinkCisRecord extends Operation {
             }
 
             //update the thumbnail if needed.  This should probably belong in CIS Update tool
-            if ( ! (DamsTools.getProperty("updateTmsThumbnail") == null) && DamsTools.getProperty("updateTmsThumbnail").equals("true") ) {
+            if ( ! (XmlUtils.getConfigValue("updateTmsThumbnail") == null) && XmlUtils.getConfigValue("updateTmsThumbnail").equals("true") ) {
             boolean thumbnailUpdated = updateCisThumbnail(cdisMap.getCdisMapId());
                 if (!thumbnailUpdated) {
                     ErrorLog errorLog = new ErrorLog ();
@@ -111,7 +111,7 @@ public class LinkCisRecord extends Operation {
             //Add the status
             CdisActivityLog cdisActivity = new CdisActivityLog();
             cdisActivity.setCdisMapId(cdisMap.getCdisMapId());
-            cdisActivity.setCdisStatusCd("LCC-" + DamsTools.getProperty("lccIdType").toUpperCase());
+            cdisActivity.setCdisStatusCd("LCC-" + XmlUtils.getConfigValue("lccIdType").toUpperCase());
         
             boolean statusLogged = cdisActivity.updateOrInsertActivityLog();
                
@@ -234,16 +234,16 @@ public class LinkCisRecord extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        reqProps.add("linkCisRecordXmlFile");
+        reqProps.add("xmlFile");
         reqProps.add("lccIdType");
         reqProps.add("cis");
         reqProps.add("cisInstance");
         
-        if (DamsTools.getProperty("cis").equals("tms")) {
+        if (XmlUtils.getConfigValue("cis").equals("tms")) {
             reqProps.add("updateTmsThumbnail");
         }
         
-        if (DamsTools.getProperty("updateTmsThumbnail") != null && DamsTools.getProperty("updateTmsThumbnail").equals("true")  ) {
+        if (XmlUtils.getConfigValue("updateTmsThumbnail") != null && XmlUtils.getConfigValue("updateTmsThumbnail").equals("true")  ) {
             reqProps.add("damsRepo");
         }
         

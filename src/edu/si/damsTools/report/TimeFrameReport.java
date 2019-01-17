@@ -38,21 +38,17 @@ public class TimeFrameReport implements DisplayFormat {
     
     public String returnDocHeader(String multiRptkeyValue) {
         
-        return (DamsTools.getProjectCd().toUpperCase() + " CDIS Activity Report- Past " + DamsTools.getProperty("rptHours") + " Hours");
+        return (XmlUtils.getConfigValue("projectCd").toUpperCase() + " CDIS Activity Report- Past " + XmlUtils.getConfigValue("rptHours") + " Hours");
                 
-    }
-    
-    public String returnEmailToList () {
-        return DamsTools.getProperty("timeFrameEmailList");
     }
 
     public String returnEmailTitle(String multiRptkeyValue) {
-        return "CDIS Activity Report for " + DamsTools.getProjectCd().toUpperCase() + "- Past " + DamsTools.getProperty("rptHours") + " Hours";
+        return "CDIS Activity Report for " + XmlUtils.getConfigValue("projectCd").toUpperCase() + "- Past " + XmlUtils.getConfigValue("rptHours") + " Hours";
     }
     
     public boolean returnSupressAttachFlag(String keyValue) {
         
-        return DamsTools.getProperty("tfRptSupressAttch") != null && DamsTools.getProperty("tfRptSupressAttch").equals("true");
+        return XmlUtils.getConfigValue("tfRptSupressAttch") != null && XmlUtils.getConfigValue("tfRptSupressAttch").equals("true");
     }
     
     public List<DataSection> sectionFactory() {

@@ -7,6 +7,7 @@ package edu.si.damsTools.vfcu;
 
 import edu.si.damsTools.cdis.operations.Operation;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.delivery.SourceFileListing;
 import edu.si.damsTools.vfcu.database.VfcuMd5FileHierarchy;
 import edu.si.damsTools.vfcu.files.xferType.XferType;
@@ -80,7 +81,7 @@ public class Watcher extends Operation {
             vfcuMd5FileHierarchy.insertRow();
 
             
-            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
                 //record subFileInfo
                 insertSubfileInfo(sourceMasterFileListing, vfcuMd5FileHierarchy);
             }
@@ -150,7 +151,7 @@ public class Watcher extends Operation {
     public void populateFileListingArr(Path nameAndPath) {
         
         //If we are not using master/subfile pairs, we set all files to master
-        if (DamsTools.getProperty("useMasterSubPairs").equals("false")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("false")) {
             SourceFileListing sourceFileListing = new SourceFileListing();
             sourceFileListing.populateBasicValuesFromDeliveryFile(nameAndPath);
             this.sourceMasterFileListingArr.add(sourceFileListing);
@@ -158,17 +159,17 @@ public class Watcher extends Operation {
         }
         
         String lastDirLevel = nameAndPath.getParent().getFileName().toString();
-        if ( lastDirLevel.equals(DamsTools.getProperty("masterFileDir"))) {
+        if ( lastDirLevel.equals(XmlUtils.getConfigValue("masterFileDir"))) {
             SourceFileListing sourceFileListing = new SourceFileListing();
             sourceFileListing.populateBasicValuesFromDeliveryFile(nameAndPath);
             this.sourceMasterFileListingArr.add(sourceFileListing);
         }
-        else if (lastDirLevel.equals(DamsTools.getProperty("subFileDir"))) {
+        else if (lastDirLevel.equals(XmlUtils.getConfigValue("subFileDir"))) {
             SourceFileListing sourceFileListing = new SourceFileListing();
             sourceFileListing.populateBasicValuesFromDeliveryFile(nameAndPath);
             this.sourceSubFileListingArr.add(sourceFileListing);
         }
-        else if (lastDirLevel.equals(DamsTools.getProperty("subSubFileDir"))) {
+        else if (lastDirLevel.equals(XmlUtils.getConfigValue("subSubFileDir"))) {
             SourceFileListing sourceFileListing = new SourceFileListing();
             sourceFileListing.populateBasicValuesFromDeliveryFile(nameAndPath);
             this.sourceSubSubFileListingArr.add(sourceFileListing);
@@ -183,8 +184,8 @@ public class Watcher extends Operation {
     public boolean traversePopulateSourceBatchList () {
        
         // walk directory tree starting at the directory specified in config file
-        Path startDir = Paths.get(DamsTools.getProperty("sourceBaseDir"));
-        logger.log(Level.FINEST, "Starting at: " + DamsTools.getProperty("sourceBaseDir") ); 
+        Path startDir = Paths.get(XmlUtils.getConfigValue("sourceBaseDir"));
+        logger.log(Level.FINEST, "Starting at: " + XmlUtils.getConfigValue("sourceBaseDir") ); 
 
         FileSystem fs = FileSystems.getDefault();
         //we are only interested in picking up md5 files
@@ -223,7 +224,7 @@ public class Watcher extends Operation {
         reqProps.add("sourceBaseDir");
         reqProps.add("vfcuStaging");
         reqProps.add("useMasterSubPairs");
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
             reqProps.add("masterFileDir");
             reqProps.add("subFileDir");
         }

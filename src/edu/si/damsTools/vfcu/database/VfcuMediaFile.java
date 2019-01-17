@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.si.damsTools.utilities.StringUtils;
+import edu.si.damsTools.utilities.XmlUtils;
 
 
 
@@ -164,7 +165,7 @@ public class VfcuMediaFile {
         Integer numFiles = 0;
         
         String completedStatus = "PM";
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
             completedStatus = "PS";
         }
               
@@ -444,7 +445,7 @@ public class VfcuMediaFile {
                     "ON vmf2.vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
                     "INNER JOIN vfcu_md5_file_hierarchy vmdh " +
                     "ON vmdh.masterFile_vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
-                    "AND vmd.project_cd = '" + DamsTools.getProjectCd() + "' " +
+                    "AND vmd.project_cd = '" + XmlUtils.getConfigValue("projectCd") + "' " +
                     "AND vmf2.vfcu_batch_number IS NULL " +
                     "ORDER BY vmf2.vfcu_md5_file_id ) " +
                 "WHERE ROWNUM < " + this.maxFiles + "+ 1) ";

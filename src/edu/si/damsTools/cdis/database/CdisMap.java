@@ -10,6 +10,7 @@ package edu.si.damsTools.cdis.database;
  * @author rfeldman
  */
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
@@ -90,7 +91,7 @@ public class CdisMap {
                     "vfcu_media_file_id ) " +
                 "VALUES (" +
                     getCdisMapId() + ", " +
-                    "'" + DamsTools.getProjectCd() + "', " +
+                    "'" + XmlUtils.getConfigValue("projectCd") + "', " +
                     "'" + getDamsUoiid() + "', " +
                     "'" + getFileName() + "', " +
                     DamsTools.getBatchNumber() + ", " +
@@ -116,7 +117,7 @@ public class CdisMap {
 
         String sql = "SELECT cdis_map_id FROM cdis_map " +
                     "WHERE file_name = '" + getFileName() + "' " +
-                    "AND project_cd = '" + DamsTools.getProjectCd() + "' " +
+                    "AND project_cd = '" + XmlUtils.getConfigValue("projectCd") + "' " +
                     "AND dams_uoi_id IS NULL ";
         
         logger.log(Level.FINEST,"SQL! " + sql);

@@ -264,7 +264,7 @@ public class MetaDataSync extends Operation {
                 if (recordsSynced) {
                     CdisActivityLog activityLog = new CdisActivityLog();
                     activityLog.setCdisMapId(cdisMap.getCdisMapId());
-                    activityLog.setCdisStatusCd("MDS-" + DamsTools.getProperty("cis").toUpperCase());
+                    activityLog.setCdisStatusCd("MDS-" + XmlUtils.getConfigValue("cis").toUpperCase());
                     activityLog.updateOrInsertActivityLog();
                 }
             }
@@ -307,7 +307,7 @@ public class MetaDataSync extends Operation {
     //Purpose: Populates the query results from the CIS into a structure that holds the dams column name and column name
     private ArrayList<MetadataColumnData> retrieveCisColumnValueData(XmlCisSqlCommand xmlSqlCmd, String sql, DamsRecord damsRecord ) throws Exception {
 
-        if (DamsTools.getProjectCd().equals("aspace")) {
+        if (XmlUtils.getConfigValue("projectCd").equals("aspace")) {
             callGetDescriptiveData(damsRecord.getSiAssetMetadata().getEadRefId());
         }
         
@@ -442,7 +442,7 @@ public class MetaDataSync extends Operation {
             }   
         }
      
-        dRec.getUois().setMetadataStateDt(DamsTools.getProperty("mdsUpdtDt"));
+        dRec.getUois().setMetadataStateDt(XmlUtils.getConfigValue("mdsUpdtDt"));
                 
         int updateCount = dRec.getUois().updateMetaDataStateDate();
         if (updateCount != 1) {
@@ -614,8 +614,8 @@ public class MetaDataSync extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        reqProps.add("metadataSyncXmlFile");
-        reqProps.add("mdsUpdtDt");
+        reqProps.add("xmlFile");
+        reqProps.add("damsLastModified");
         
         //add more required props here
         return reqProps;    

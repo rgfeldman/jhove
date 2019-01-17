@@ -58,15 +58,11 @@ public class VfcuMediaReport implements DisplayFormat {
     }
     
     public String returnDocHeader(String multiRptkeyValue) {
-        return (DamsTools.getProjectCd().toUpperCase() + " VFCU Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue)) );
-    }
-    
-    public String returnEmailToList() {
-        return DamsTools.getProperty("emailReportTo");
+        return (XmlUtils.getConfigValue("projectCd").toUpperCase() + " VFCU Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue)) );
     }
     
     public String returnEmailTitle(String multiRptkeyValue) {
-        return (DamsTools.getProjectCd().toUpperCase() + " VFCU Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue)) );
+        return (XmlUtils.getConfigValue("projectCd").toUpperCase() + " VFCU Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue)) );
     }
     
     public boolean returnSupressAttachFlag(String multiRptkeyValue) {
@@ -102,7 +98,7 @@ public class VfcuMediaReport implements DisplayFormat {
         String sql;
         String sdir = null;
         
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
             sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8) || '/' || SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', -1, 1)-1) " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + multiRptkeyValue;
@@ -140,7 +136,7 @@ public class VfcuMediaReport implements DisplayFormat {
         String sql = null;
         String vendorDir = null;
         
-        if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+        if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
             sql = "SELECT SUBSTR(base_path_vendor,INSTR(base_path_vendor,'sources')+8), SUBSTR (file_path_ending, 1, INSTR(file_path_ending, '/', -1, 1)-1) " +
                     "FROM vfcu_md5_file " +
                     "WHERE vfcu_md5_file_id = " + md5FileId;

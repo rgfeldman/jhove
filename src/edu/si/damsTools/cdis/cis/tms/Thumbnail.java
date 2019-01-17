@@ -20,6 +20,7 @@ import org.im4java.core.IMOperation;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 
 import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.utilities.XmlUtils;
 
 /**
  *
@@ -49,7 +50,7 @@ public class Thumbnail {
         
         //Get image location from DAMS
         boolean locationFound = false;
-        if (DamsTools.getProperty("damsImageSize") != null && DamsTools.getProperty("damsImageSize").equals("thumb")) {
+        if (XmlUtils.getConfigValue("damsImageSize") != null && XmlUtils.getConfigValue("damsImageSize").equals("thumb")) {
             locationFound = getDamsThumbNameLocation (cdisMap.getDamsUoiid());
         }
         else {  
@@ -61,7 +62,7 @@ public class Thumbnail {
             return false;
         }
         
-        String sourceImageFile = DamsTools.getProperty("damsRepo") + "/" + this.damsLocation; 
+        String sourceImageFile = XmlUtils.getConfigValue("damsRepo") + "/" + this.damsLocation; 
         logger.log(Level.FINER, "Image Location in DAMS repository: " + sourceImageFile);
         
         String tempImage = resizeImage(sourceImageFile, cdisMap.getDamsUoiid());
@@ -110,7 +111,7 @@ public class Thumbnail {
     
     private String resizeImage(String sourceImageFile, String uoiId) {
         
-        if (DamsTools.getProperty("damsImageSize") != null && DamsTools.getProperty("damsImageSize").equals("thumb")) {
+        if (XmlUtils.getConfigValue("damsImageSize") != null && XmlUtils.getConfigValue("damsImageSize").equals("thumb")) {
             
             return sourceImageFile;
             

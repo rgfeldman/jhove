@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
@@ -28,7 +29,7 @@ public class ProjectHoldingUnitR {
         
         String sql = "SELECT si_holding_unit " +
                     "FROM project_holding_unit_r " +
-                    "WHERE project_cd = '" + DamsTools.getProjectCd() + "'";
+                    "WHERE project_cd = '" + XmlUtils.getConfigValue("projectCd") + "'";
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);

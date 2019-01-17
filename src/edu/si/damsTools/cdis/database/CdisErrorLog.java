@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,7 +77,7 @@ public class CdisErrorLog {
                     "values ( " + 
                         "cdis_error_log_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
-                        "'" + DamsTools.getProjectCd() + "', " +
+                        "'" + XmlUtils.getConfigValue("projectCd") + "', " +
                         "'" + getFileName() + "', " +
                         "'" + getCdisErrorCd() + "', " +
                         "SYSDATE, " +

@@ -7,6 +7,7 @@ package edu.si.damsTools.vfcu;
 
 import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.cdis.operations.Operation;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.util.ArrayList;
 import edu.si.damsTools.vfcu.delivery.SourceFileListing;
 import edu.si.damsTools.vfcu.delivery.MediaFileRecord;
@@ -69,7 +70,7 @@ public class BatchCompletion extends Operation {
             }
 
             //look to see if we should expect associated subfiles for the masters 
-            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
                 
                 //Check to see if master is complete, we only validate subfile if master is complete (or errored)
                 if (totalFilesInDbBatch != numFilesProcessed ) {
@@ -96,7 +97,7 @@ public class BatchCompletion extends Operation {
       
             //Check to see if the batch is complete
             //Get the subfile from the database
-            if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+            if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
 
                 totalFilesInDbBatch = totalFilesInDbBatch + subfileVfcuMediaFile.returnCountFilesForMd5Id();
                 numFilesProcessed = numFilesProcessed + subfileVfcuMediaFile.getNumCompleteFilesForMd5FileId();           
@@ -106,7 +107,7 @@ public class BatchCompletion extends Operation {
             if (totalFilesInDbBatch == numFilesProcessed) {
                 
                 //Look for any files 'left behind' on the file server
-                if (DamsTools.getProperty("vldtAllMediaXfered").equals("true")) {
+                if (XmlUtils.getConfigValue("vldtAllMediaXfered").equals("true")) {
                     int countInSourceLocation = sourceFileListing.retrieveCountInVendorFileSystem();
                     logger.log(Level.FINEST,"Count in SourceLocation! " + countInSourceLocation);                    
                 }
@@ -118,7 +119,7 @@ public class BatchCompletion extends Operation {
                 vfcuMd5ActivityLog.insertRecord();
                 
                 //Mark child as completed as well
-                if (DamsTools.getProperty("useMasterSubPairs").equals("true")) {
+                if (XmlUtils.getConfigValue("useMasterSubPairs").equals("true")) {
   
                     vfcuMd5ActivityLog = new VfcuMd5FileActivityLog();
                     vfcuMd5ActivityLog.setVfcuMd5FileId(subfileVfcuMediaFile.getVfcuMd5FileId());
@@ -140,7 +141,7 @@ public class BatchCompletion extends Operation {
                      "FROM vfcu_md5_file vmd " + 
                      "INNER JOIN vfcu_md5_file_hierarchy vmfh " +
                      "ON vmfh.masterfile_vfcu_md5_file_id = vmd.vfcu_md5_file_id " +
-                     "WHERE vmd.project_cd = '" + DamsTools.getProjectCd() + "' " +
+                     "WHERE vmd.project_cd = '" + XmlUtils.getConfigValue("projectCd") + "' " +
                      "AND NOT EXISTS ( " +
                         "SELECT 'X' from vfcu_md5_file_activity_log vmal " +
                         "WHERE vmal.vfcu_md5_file_id = vmd.vfcu_md5_file_id " +

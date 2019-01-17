@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.dams;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -127,8 +128,8 @@ public class StagedFile {
             logger.log(Level.FINER,"File xferred from staging location: " + source.toString() );
             logger.log(Level.FINER,"File xferred to hotfolder location: " + destWithFileName.toString() );
             
-            if ((! DamsTools.getProperty("retainAfterIngest").equals("false")) &&
-                getFileName().endsWith(DamsTools.getProperty("retainAfterIngest")) ) {
+            if ((! XmlUtils.getConfigValue("retainAfterIngest").equals("false")) &&
+                getFileName().endsWith(XmlUtils.getConfigValue("retainAfterIngest")) ) {
                    Files.copy(source, destWithFileName);
             }
             else {

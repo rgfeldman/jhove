@@ -6,7 +6,6 @@
 package edu.si.damsTools.utilities;
 
 import edu.si.damsTools.DamsTools;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -15,7 +14,6 @@ import java.util.logging.Logger;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.EndElement;
@@ -82,15 +80,19 @@ public class XmlReader {
                         if (qName.equals(mainOperationXmlBlock)) {
                             insideOpBlockInd = true;
                             //Loop through again to see if we can set the data
-                            logger.log(Level.FINEST,"DEBUG In Main operation");
+                            //logger.log(Level.FINEST,"DEBUG In Main operation");
                             continue;
                         }
                         
                         if (insideOpBlockInd && !insideSubBlock) {
                              insideSubBlock = checkCorrectSubBlock(qName);
                              //Loop through again to get the data fro this subBlock
-                            logger.log(Level.FINEST,"DEBUG In Sub operation");
-                             continue;
+                             if (insideSubBlock) {
+                                if (! mainOperationXmlBlock.equals("global")) {
+                                    //logger.log(Level.FINEST,"DEBUG In Sub-operation");
+                                    continue;
+                                }
+                             }
                         }
                         
                         //populate the name and attribures
@@ -101,7 +103,6 @@ public class XmlReader {
                             while(attributes.hasNext()){
                                 Attribute attribute = attributes.next();
                                 logger.log(Level.FINEST, "DEBUG: Attribute info: " + attribute.getName().toString() + " VALUE " + attribute.getValue());
-                            
                                 xmlTagData.addAttribute(attribute.getName().toString(), attribute.getValue());
                             }                
                         }                                           
@@ -114,9 +115,7 @@ public class XmlReader {
                             continue;
                         }
  
-                        if(xmlTagData != null) {
-                            logger.log(Level.FINEST,"DEBUG setting data: " + characters.getData() + " For Tag: " + xmlTagData.getTag() );
-                             
+                        if(xmlTagData != null) {                             
                             xmlTagData.setDataValue(characters.getData().trim());
                             xmlObjList.add(xmlTagData);                
                         }
@@ -142,7 +141,7 @@ public class XmlReader {
         
         //Now that we are in the main block that we need...
         if (subXmlBlock == null ) {
-            //subXmlBlock Does not apply, so we are good.
+            //subXmlBlock Does not apply, so we are good to start grabbing data
             return true;
         }    
         else if (tagName.equals(subXmlBlock) ) {

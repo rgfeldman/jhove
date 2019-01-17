@@ -77,7 +77,7 @@ public class XmlData {
     
     public void replaceVarSqlData() {
         if (dataValue.contains("?PROJECT_CD?")) {
-            dataValue = dataValue.replace("?PROJECT_CD?", DamsTools.getProjectCd() );
+            dataValue = dataValue.replace("?PROJECT_CD?", XmlUtils.getConfigValue("projectCd") );
         }
     }
  

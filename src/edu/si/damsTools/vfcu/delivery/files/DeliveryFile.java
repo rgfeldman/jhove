@@ -11,6 +11,7 @@ package edu.si.damsTools.vfcu.delivery.files;
  * @author rfeldman
  */
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.files.xferType.XferType;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,10 +51,10 @@ public class DeliveryFile {
         
         switch (locationArea) {            
             case "source" :
-                vfcuBaseCount = Paths.get(DamsTools.getProperty("sourceBaseDir")).getNameCount();
+                vfcuBaseCount = Paths.get(XmlUtils.getConfigValue("sourceBaseDir")).getNameCount();
                 break;
             case "staging" :
-                vfcuBaseCount = Paths.get(DamsTools.getProperty("vfcuStaging")).getNameCount();
+                vfcuBaseCount = Paths.get(XmlUtils.getConfigValue("vfcuStaging")).getNameCount();
         }
         
         int fileNameAndPathCount = fileNameAndPath.getNameCount();
@@ -75,7 +76,7 @@ public class DeliveryFile {
     */
     public boolean transferToVfcuStaging(XferType xferType, boolean createMissingDir) {
 
-        Path destinationDir = Paths.get(DamsTools.getProperty("vfcuStaging"));
+        Path destinationDir = Paths.get(XmlUtils.getConfigValue("vfcuStaging"));
         if ( getFilePathEnding("source").getNameCount() > 0) {
             destinationDir = destinationDir.resolve(getFilePathEnding("source"));
         }

@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -70,10 +71,10 @@ public class CdisCisIdentifierMap {
                     "VALUES (" +
                         "cdis_cis_identifier_map_id_seq.NextVal, " +
                         getCdisMapId() + ", " +
-                        "'" + DamsTools.getProperty("cis") + "', " +
+                        "'" + XmlUtils.getConfigValue("cis") + "', " +
                         "'" + getCisIdentifierCd() + "', " +
                         "'" + getCisIdentifierValue () + "'," +
-                        "'" + DamsTools.getProperty("cisInstance") + "')";
+                        "'" + XmlUtils.getConfigValue("cisInstance") + "')";
                  
         logger.log(Level.FINEST,"SQL! " + sql);      
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql)) {
@@ -118,7 +119,7 @@ public class CdisCisIdentifierMap {
                      "FROM cdis_cis_identifier_map " +
                      "WHERE cdis_map_id = " + getCdisMapId() + 
                      " AND cis_identifier_cd = '" + getCisIdentifierCd() + "' " +
-                     "AND cis_name = '" + DamsTools.getProperty("cis") + "'";
+                     "AND cis_name = '" + XmlUtils.getConfigValue("cis") + "'";
 
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
@@ -142,9 +143,9 @@ public class CdisCisIdentifierMap {
         String sql = "SELECT    ccim.cdis_map_id " +
                      "FROM      cdis_cis_identifier_map ccim " +
                      "WHERE     ccim.cis_identifier_cd = '" + this.cisIdentifierCd + "' " +
-                     "AND       ccim.cis_name = '" + DamsTools.getProperty("cis") + "' " +
+                     "AND       ccim.cis_name = '" + XmlUtils.getConfigValue("cis") + "' " +
                      "AND       ccim.cis_identifier_value = '" + this.cisIdentifierValue + "'" +
-                     "AND       ccim.cis_instance = '"  + DamsTools.getProperty("cisInstance") +"'" ;
+                     "AND       ccim.cis_instance = '"  + XmlUtils.getConfigValue("cisInstance") +"'" ;
         
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
