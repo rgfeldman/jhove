@@ -75,7 +75,7 @@ public class ReportGenerator extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         
-        reqProps.add("xmlFile");
+        reqProps.add("sqlFile");
 
         switch (DamsTools.getSubOperation()) {
              case "cdisVfcuDir":
@@ -87,11 +87,13 @@ public class ReportGenerator extends Operation {
                reqProps.add("useMasterSubPairs");
                break;
             case "timeframe":
-               reqProps.add("rptHours"); 
-               reqProps.add("timeFrameEmailList");
-               reqProps.add("tfRptSupressAttch");
-               break;
+                reqProps.add("emailToList");
+                reqProps.add("rptHours"); 
+                reqProps.add("timeFrameEmailList");
+                reqProps.add("tfRptSupressAttch");
+                break;
             case "vfcuMediaFile":
+                reqProps.add("emailToList");
                 reqProps.add("useMasterSubPairs");
                 break;             
                

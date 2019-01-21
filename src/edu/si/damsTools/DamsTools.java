@@ -323,7 +323,7 @@ public class DamsTools {
             
             if (damsTool.operation.requireSqlCriteria() ) {          
                 
-                Path xmlSqlFile = configDir.resolve(XmlUtils.getConfigValue("xmlFile")); 
+                Path xmlSqlFile = configDir.resolve(XmlUtils.getConfigValue("sqlFile")); 
                 xmlReader = new XmlReader(xmlSqlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
                 DamsTools.xmlQueryDataList = xmlReader.parseReturnXmlObjectList();  
             }

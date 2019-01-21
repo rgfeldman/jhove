@@ -614,7 +614,7 @@ public class MetaDataSync extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        reqProps.add("xmlFile");
+        reqProps.add("sqlFile");
         reqProps.add("damsLastModified");
         
         //add more required props here

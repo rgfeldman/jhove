@@ -234,7 +234,7 @@ public class LinkCisRecord extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        reqProps.add("xmlFile");
+        reqProps.add("sqlFile");
         reqProps.add("lccIdType");
         reqProps.add("cis");
         reqProps.add("cisInstance");

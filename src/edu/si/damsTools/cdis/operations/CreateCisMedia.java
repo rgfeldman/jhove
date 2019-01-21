@@ -186,7 +186,7 @@ public class CreateCisMedia extends Operation {
         reqProps.add("cisInstance");
         reqProps.add("cisPass");
         reqProps.add("cisUser");
-        reqProps.add("xmlFile");
+        reqProps.add("sqlFile");
         reqProps.add("damsRepo");
         reqProps.add("dupRenditionCheck");
         reqProps.add("idsPathId");

@@ -180,7 +180,7 @@ public class CisUpdate extends Operation {
         reqProps.add("cisConnString");
         reqProps.add("cisUser");
         reqProps.add("cisPass");
-        reqProps.add("xmlFile");
+        reqProps.add("sqFile");
         reqProps.add("lccIdType");
         
         //add more required props here
