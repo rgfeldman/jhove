@@ -442,7 +442,7 @@ public class MetaDataSync extends Operation {
             }   
         }
      
-        dRec.getUois().setMetadataStateDt(XmlUtils.getConfigValue("mdsUpdtDt"));
+        dRec.getUois().setMetadataStateDt(XmlUtils.getConfigValue("damsLastModifiedDt"));
                 
         int updateCount = dRec.getUois().updateMetaDataStateDate();
         if (updateCount != 1) {
@@ -615,7 +615,7 @@ public class MetaDataSync extends Operation {
         
         ArrayList<String> reqProps = new ArrayList<>();
         reqProps.add("sqlFile");
-        reqProps.add("damsLastModified");
+        reqProps.add("damsLastModifiedDt");
         
         //add more required props here
         return reqProps;    

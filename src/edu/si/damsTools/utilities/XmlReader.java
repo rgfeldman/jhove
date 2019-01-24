@@ -83,12 +83,12 @@ public class XmlReader {
                             //logger.log(Level.FINEST,"DEBUG In Main operation");
                             continue;
                         }
-                        
+
                         if (insideOpBlockInd && !insideSubBlock) {
                              insideSubBlock = checkCorrectSubBlock(qName);
                              //Loop through again to get the data fro this subBlock
                              if (insideSubBlock) {
-                                if (! mainOperationXmlBlock.equals("global")) {
+                                if (! mainOperationXmlBlock.equals("global") && subXmlBlock != null) {
                                     //logger.log(Level.FINEST,"DEBUG In Sub-operation");
                                     continue;
                                 }

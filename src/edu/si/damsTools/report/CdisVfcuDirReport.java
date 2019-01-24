@@ -9,7 +9,6 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.report.rptFile.DataSection;
 import edu.si.damsTools.report.rptFile.CdisMapFailedSection;
 import edu.si.damsTools.report.rptFile.LinkedDamsSection;
-import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,42 +24,11 @@ import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
  */
 public class CdisVfcuDirReport implements DisplayFormat {
 
-    private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
-    
-    private final ArrayList<String> multiReportKeyValues;
-   
+    private final static Logger logger = Logger.getLogger(DamsTools.class.getName());   
     
     public CdisVfcuDirReport() {
-       multiReportKeyValues = new ArrayList();
+      
        logger.log(Level.FINEST,"Creating VFCUDir-based object"); 
-    }
-        
-    public boolean populateMultiReportKeyValues() {
-        
-        String sql = XmlUtils.returnFirstSqlForTag("getMultiReportKeyValue");          
-        if (sql == null) {
-            logger.log(Level.FINEST, "Error: Required sql not found");
-            return false;
-        }
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-        
-            
-        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery() ) {
-
-            while (rs.next()) {     
-                multiReportKeyValues.add(rs.getString(1));
-            }
-        }
-        catch(Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
-            return false; 
-        }            
-        return true;
-    }
-    
-    public ArrayList<String> returnKeyValueList() {
-        return this.multiReportKeyValues;
     }
      
     private String returnRptVendorDir(Integer md5FileId) {
@@ -115,8 +83,8 @@ public class CdisVfcuDirReport implements DisplayFormat {
     }
    
     
-    public boolean returnSupressAttachFlag(String masterMd5FileId) {
-        if ( XmlUtils.getConfigValue("vfcuDirRptSupressAttch").equals("true")  ) { 
+    public boolean returnSuppressAttachFlag(String masterMd5FileId) {
+        if ( XmlUtils.getConfigValue("supressAttch").equals("true")  ) { 
            
             int numErrors = 0;
             
@@ -185,9 +153,9 @@ public class CdisVfcuDirReport implements DisplayFormat {
         }
         boolean rowInserted = vfcuMd5FileActivityLog.insertRecord();
         
-        return true;
-                
+        return true;   
     }
+    
     
     public String returnStatsListsHeader(String multiRptkeyValue) {
         String sql;
@@ -224,6 +192,10 @@ public class CdisVfcuDirReport implements DisplayFormat {
         String sourceDir = "Source Directory: " + sdir;
         
         return sourceDir;
+    }
+    
+    public boolean returnMultiReportInd() {
+        return true;
     }
           
 }

@@ -71,7 +71,7 @@ public class Email implements DeliveryMethod {
             // create the Body 
             MimeBodyPart bodyPart = new MimeBodyPart();
 
-            if (! displayFormat.returnSupressAttachFlag(rptFile.getKeyValue())) { //|| (this.failedIdName.size() > 0) {
+            if (! displayFormat.returnSuppressAttachFlag(rptFile.getKeyValue())) { //|| (this.failedIdName.size() > 0) {
                 emailContent = emailContent + "<br>Please see the attached CDIS Activity Report for details <br>";
           
                 //add the attachment

@@ -34,29 +34,6 @@ public class VfcuMediaReport implements DisplayFormat {
        logger.log(Level.FINEST,"Creating VFCUDir-based object"); 
     }
     
-    
-    public boolean populateMultiReportKeyValues() {
-        String sql = XmlUtils.returnFirstSqlForTag("getMultiReportKeyValue");    
-        if (sql == null) {
-            logger.log(Level.FINEST, "Error: Required sql not found");
-            return false;
-        }
-        logger.log(Level.FINEST, "SQL: {0}", sql);
-                 
-        try (PreparedStatement stmt = DamsTools.getDamsConn().prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery() ) {
-
-            while (rs.next()) {     
-                multiReportKeyValues.add(rs.getString(1));
-            }
-        }
-        catch(Exception e) {
-            logger.log(Level.SEVERE, "Error: Unable to Obtain list for failed report, returning", e);
-            return false; 
-        }            
-        return true;
-    }
-    
     public String returnDocHeader(String multiRptkeyValue) {
         return (XmlUtils.getConfigValue("projectCd").toUpperCase() + " VFCU Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue)) );
     }
@@ -65,22 +42,17 @@ public class VfcuMediaReport implements DisplayFormat {
         return (XmlUtils.getConfigValue("projectCd").toUpperCase() + " VFCU Activity Report- " + returnRptVendorDir(Integer.valueOf(multiRptkeyValue)) );
     }
     
-    public boolean returnSupressAttachFlag(String multiRptkeyValue) {
+    public boolean returnSuppressAttachFlag(String multiRptkeyValue) {
         return false;
     }
     
     public List<DataSection> sectionFactory() {
-         List<DataSection> sections = new ArrayList<>();
+        List<DataSection> sections = new ArrayList<>();
         
         sections.add(new VfcuMediaFailedSection());
         sections.add(new CompletedSection());
         
         return sections;
-    }
-    
-    
-    public ArrayList<String> returnKeyValueList() {
-        return this.multiReportKeyValues;
     }
     
     public boolean updateDbComplete (String md5FileId) {
@@ -168,6 +140,10 @@ public class VfcuMediaReport implements DisplayFormat {
 	}
         
         return vendorDir;
+    }
+    
+    public boolean returnMultiReportInd() {
+        return true;
     }
     
 }

@@ -5,25 +5,26 @@
  */
 package edu.si.damsTools.report.rptFile;
 
-import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.CdisErrorLog;
-import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.vfcu.database.VfcuMd5FileError;
+import edu.si.damsTools.vfcu.database.VfcuMd5File;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.ArrayList;
 
 /**
  *
  * @author rfeldman
  */
-public class CdisMapFailedSection implements DataSection {
+public class VfcuMd5FailSection implements DataSection {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
    
     private final ArrayList sectionTextData;
      
-    public CdisMapFailedSection () {
+    public VfcuMd5FailSection () {
         sectionTextData = new ArrayList<>();
     }
    
@@ -40,20 +41,21 @@ public class CdisMapFailedSection implements DataSection {
     }
     
     public boolean generateTextForRecord(Integer dataId) {
-           
-        CdisMap cdisMap = new CdisMap();
-        cdisMap.setCdisMapId(dataId);
-        cdisMap.populateFileName();
+                   
+        VfcuMd5File vfcuMd5File = new VfcuMd5File();
+        vfcuMd5File.setVfcuMd5FileId(dataId);
+        vfcuMd5File.populateBasicDbData();
         
-        CdisErrorLog cdisErrorLog = new CdisErrorLog();
-        cdisErrorLog.setCdisMapId(dataId);
+        VfcuMd5FileError vfcuMd5ErrorLog = new VfcuMd5FileError();
+        vfcuMd5ErrorLog.setVfcuMd5FileId(dataId);
         
         ArrayList<String> errorDescList = new ArrayList<>();
-        errorDescList = cdisErrorLog.returnDescriptionsForMapId();
+        errorDescList = vfcuMd5ErrorLog.returnDescriptionsForId();
         
         for (String errorDesc : errorDescList ) {
-            sectionTextData.add("File: " + cdisMap.getFileName() + " Error: " + errorDesc) ;       
+            sectionTextData.add("Md5 File: " + vfcuMd5File.getFilePathEnding()+ "/" + vfcuMd5File.getVendorMd5FileName() + " Error: " + errorDesc) ;
         }
+
         return true;
         
     }
@@ -61,5 +63,6 @@ public class CdisMapFailedSection implements DataSection {
     public ArrayList getSectionTextData () {
         return this.sectionTextData;
     }
+    
 
 }

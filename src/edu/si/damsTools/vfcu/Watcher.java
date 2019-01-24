@@ -43,7 +43,7 @@ public class Watcher extends Operation {
     private final ArrayList <SourceFileListing> sourceSubFileListingArr; 
     private final ArrayList <SourceFileListing> sourceSubSubFileListingArr;
     private final XferTypeFactory xferTypeFactory;
-    private final XferType xferType;
+    private XferType xferType;
     
     public Watcher() {
         sourceMasterFileListingArr = new ArrayList();
@@ -51,7 +51,6 @@ public class Watcher extends Operation {
         sourceSubSubFileListingArr = new ArrayList();
         
         xferTypeFactory = new XferTypeFactory();
-        xferType = xferTypeFactory.XferTypeChooser();
         
     }
     
@@ -60,6 +59,8 @@ public class Watcher extends Operation {
     * Purpose: This Is the main driver method for the Watcher tool
     */
     public void invoke() {  
+        
+        xferType = xferTypeFactory.XferTypeChooser();
         
         // We need to obtain a list of md5Files by traversing through the directory tree
         //  Each file we could potentially process is added into a list that we process later on

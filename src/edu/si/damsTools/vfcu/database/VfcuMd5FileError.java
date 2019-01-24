@@ -7,6 +7,8 @@ package edu.si.damsTools.vfcu.database;
 
 import edu.si.damsTools.DamsTools;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,5 +68,30 @@ public class VfcuMd5FileError {
         } 
         return true;
     }    
+    
+    public ArrayList<String> returnDescriptionsForId () {
+        
+        ArrayList<String> descriptionList = new ArrayList<>();
+
+        String sql = "SELECT vec.description " +
+                     "FROM vfcu_md5_file_error_code_r vec " + 
+                     "INNER JOIN vfcu_md5_file_error_log vmfel " +
+                     "ON vec.vfcu_md5_file_error_cd = vmfel.vfcu_md5_error_cd " +
+                     "AND vmfel.vfcu_md5_file_id = " + this.vfcuMd5FileId;
+                     
+        logger.log(Level.FINEST,"SQL! " + sql); 
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery();   ){
+            
+            while (rs.next()) {
+                descriptionList.add(rs.getString(1));
+            }
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to get error description", e );
+        }
+        return descriptionList;
+    }
+         
     
 }

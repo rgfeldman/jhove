@@ -27,10 +27,6 @@ public class TimeFrameReport implements DisplayFormat {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-     public ArrayList<String> returnKeyValueList() {
-         return null;
-     }
-    
     public TimeFrameReport() {
        
     }
@@ -46,9 +42,9 @@ public class TimeFrameReport implements DisplayFormat {
         return "CDIS Activity Report for " + XmlUtils.getConfigValue("projectCd").toUpperCase() + "- Past " + XmlUtils.getConfigValue("rptHours") + " Hours";
     }
     
-    public boolean returnSupressAttachFlag(String keyValue) {
+    public boolean returnSuppressAttachFlag(String keyValue) {
         
-        return XmlUtils.getConfigValue("tfRptSupressAttch") != null && XmlUtils.getConfigValue("tfRptSupressAttch").equals("true");
+        return XmlUtils.getConfigValue("suppressAttch").equals("true");
     }
     
     public List<DataSection> sectionFactory() {
@@ -58,30 +54,21 @@ public class TimeFrameReport implements DisplayFormat {
         logger.log(Level.FINEST,"In TF SectionFactory"); 
         
         sections.add(new CdisMapFailedSection());
-        
-        for(XmlData xmlInfo : DamsTools.getXmlQueryDataList()) {
-            
-            if (XmlUtils.returnFirstSqlForTag("getCisMediaCreatedRecords") != null) {
-                sections.add(new MediaCreatedSection());
-            }
-            if (XmlUtils.returnFirstSqlForTag("getDamsLinkedRecords") != null) {
-                sections.add(new LinkedDamsSection());
-            }
-            if (XmlUtils.returnFirstSqlForTag("getCisLinkedRecords") != null) { 
-                sections.add(new LinkedCisSection());
-            }
-            if (XmlUtils.returnFirstSqlForTag("getMetaDataSyncRecords") != null) {
-                sections.add(new MetaSyncSection());
-            }
+          
+        if (XmlUtils.returnFirstSqlForTag("getCisMediaCreatedRecords") != null) {
+            sections.add(new MediaCreatedSection());
+        }
+        if (XmlUtils.returnFirstSqlForTag("getDamsLinkedRecords") != null) {
+            sections.add(new LinkedDamsSection());
+        }
+        if (XmlUtils.returnFirstSqlForTag("getCisLinkedRecords") != null) { 
+            sections.add(new LinkedCisSection());
+        }
+        if (XmlUtils.returnFirstSqlForTag("getMetaDataSyncRecords") != null) {
+            sections.add(new MetaSyncSection());
         }
         
         return sections;
-    }
-    
-    
-    public boolean populateMultiReportKeyValues() {
-       
-        return false;
     }
     
     public boolean updateDbComplete (String multiRptkeyValue) {
@@ -91,5 +78,9 @@ public class TimeFrameReport implements DisplayFormat {
     public String returnStatsListsHeader(String multiRptkeyValue) {
         return "Statistics For the Report:";
     }
-           
+    
+    public boolean returnMultiReportInd() {
+        return false;
+    }
+                 
 }

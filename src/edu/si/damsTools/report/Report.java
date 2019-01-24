@@ -50,7 +50,6 @@ public class Report extends ReportGenerator {
         logger.log(Level.FINEST, "Attachment fileName: " + rptFile.getFileNameLoc());  
         
         //Set the delivery Method for the the report
-        
         DeliveryMethodFactory deliveryMethodFact = new DeliveryMethodFactory();
         DeliveryMethod deliveryMethod = deliveryMethodFact.deliveryMethodChooser();
         

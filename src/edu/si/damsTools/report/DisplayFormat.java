@@ -14,18 +14,16 @@ import java.util.ArrayList;
  * @author rfeldman
  */
 public interface DisplayFormat  {
-    
-    public boolean populateMultiReportKeyValues();
-    
+        
     public String returnDocHeader(String multiRptkeyValue);
     
     public String returnEmailTitle(String multiRptkeyValue);
-       
-    public ArrayList<String> returnKeyValueList();
-    
+           
     public String returnStatsListsHeader(String multiRptkeyValue);
     
-    public boolean returnSupressAttachFlag(String multiRptkeyValue);
+    public boolean returnSuppressAttachFlag(String multiRptkeyValue);
+    
+    public boolean returnMultiReportInd();
     
     public List<DataSection> sectionFactory();
     

@@ -178,12 +178,12 @@ public class JhoveConnection {
             // Store the jhove message as a legitamate error that needs to be handled by VFCU (if there is no supress flag set, or if 
                 //the error does not contain the supressed message, it is an error that we wish to report
             if (XmlUtils.getConfigValue("suppressJhoveErr") == null || ! message.getMessage().startsWith(XmlUtils.getConfigValue("suppressJhoveErr"))) {
-                logger.log(Level.FINER, "Error message NOT supressed: " + message.getMessage());
+                logger.log(Level.FINER, "Error message NOT suppressed: " + message.getMessage());
                 errorMessageForVfcu = message.getMessage();
                 return false;
             }
             
-            logger.log(Level.FINER, "Error message supressed: " + message.getMessage());
+            logger.log(Level.FINER, "Error message suppressed: " + message.getMessage());
         }
         
         
