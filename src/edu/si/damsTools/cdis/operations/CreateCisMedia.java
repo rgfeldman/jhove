@@ -5,10 +5,11 @@
  */
 package edu.si.damsTools.cdis.operations;
 
-import edu.si.damsTools.cdis.cis.tms.database.MediaRenditions;
 import edu.si.damsTools.cdis.cis.tms.MediaRecord;
 import edu.si.damsTools.cdis.cis.tms.Thumbnail;
-import edu.si.damsTools.cdis.dams.database.Uois;
+import edu.si.damsTools.cdis.cis.tms.modules.ModuleFactory;
+import edu.si.damsTools.cdis.cis.tms.modules.ModuleType;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.database.CdisMap;
@@ -25,10 +26,13 @@ public class CreateCisMedia extends Operation {
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private ArrayList <String> uoiidsToLink;  
+    private final ArrayList <DamsRecord> damsRecordForCisCreate;
+    private final ModuleType module;
         
     public CreateCisMedia() {
-        
+        damsRecordForCisCreate = new ArrayList();
+        ModuleFactory moduleFactory = new ModuleFactory();
+        module = moduleFactory.moduleChooser();  
     }
     
     
@@ -38,7 +42,7 @@ public class CreateCisMedia extends Operation {
         RFeldman 2/2015
     */
     
-    private boolean populateNeverLinkedImages () {
+    private boolean populateDamsImagesList () {
            
         String sql = XmlUtils.returnFirstSqlForTag("DamsSelectList");          
         if (sql == null) {
@@ -52,7 +56,10 @@ public class CreateCisMedia extends Operation {
 
             //Add the value from the database to the list
             while (rs.next()) {
-                uoiidsToLink.add(rs.getString("UOI_ID"));
+                DamsRecord damsRecord = new DamsRecord();
+                damsRecord.setUoiId(rs.getString(1));
+                damsRecord.setBasicData();
+                damsRecordForCisCreate.add(damsRecord);
             }
         }
         catch(Exception e) {
@@ -62,21 +69,17 @@ public class CreateCisMedia extends Operation {
         return true;
     }
     
-    /*  Method :        processUAN
+    /*  Method :        processDamsRecord
         Arguments:      
-        Description:    prcoesses the DAMS uans one at a time from the list  
+        Description:    prcoesses the DAMS record one at a time from the list  
         RFeldman 2/2015
     */
-    private void processUoiid (String uoiId) { 
-
-        Uois uois = new Uois();
-        uois.setUoiid(uoiId);
-        uois.populateName(); 
+    private boolean processDamsRecord (DamsRecord damsRecord) { 
             
         //Create CDISMap entry for the record
         CdisMap cdisMap = new CdisMap();
-        cdisMap.setDamsUoiid(uoiId);
-        cdisMap.setFileName(uois.getName());
+        cdisMap.setDamsUoiid(damsRecord.getUois().getUoiid());
+        cdisMap.setFileName(damsRecord.getUois().getName());
             
         //Find existing CDISMAP record, and store the cdis_map_id in object by using the uoiid
         //  If CDIS sent it to DAMS with the sendToHotfolder tool initially, there should be a record there already....so in that case
@@ -91,16 +94,21 @@ public class CreateCisMedia extends Operation {
             if (!mapCreated) {
                 ErrorLog errorLog = new ErrorLog ();
                 errorLog.capture(cdisMap, "CRCDMP", "Error, Unable to create CDISMAP entry");  
-                return;
+                return false;
             }
         } 
             
-        MediaRenditions mediaRendition = new MediaRenditions();
+        // populate modileId info, and get the recordID for the module
+        if (! module.populateRecordId(damsRecord) ) {
+            logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain Module ID Data");
+            ErrorLog errorLog = new ErrorLog ();
+            errorLog.capture(cdisMap, "UNLCIS", "ERROR: Media Creation Failed"); 
+        }
+        
         MediaRecord mediaRecord = new MediaRecord();
-            
-        Integer objectId = mediaRecord.create(uois, mediaRendition);
+        boolean mediaCreated = mediaRecord.create(damsRecord, module);
                             
-        if ( objectId == 0 ) {
+        if ( ! mediaCreated ) {
             ErrorLog errorLog = new ErrorLog ();
             if (mediaRecord.getErrorCode() != null) {
                 errorLog.capture(cdisMap, mediaRecord.getErrorCode() , "ERROR: Media Creation Failed"); 
@@ -108,19 +116,18 @@ public class CreateCisMedia extends Operation {
             else {
                 errorLog.capture(cdisMap, "CRCISM", "ERROR: Media Creation Failed"); 
             }
-            return; //Go to the next record 
+            return false; //Go to the next record 
         }
                         
-        logger.log(Level.FINER, "Media Creation complete, RenditionNumber for newly created media: " + mediaRendition.getRenditionNumber() );
+        logger.log(Level.FINER, "Media Creation complete, RenditionNumber for newly created media: " + mediaRecord.getMediaRenditions().getRenditionNumber());
 
         // Update the record with the cis_id 
         CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
         cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
         cdisCisIdentifierMap.setCisIdentifierCd("rnd");
-        cdisCisIdentifierMap.setCisIdentifierValue(Integer.toString (mediaRendition.getRenditionId() ));
+        cdisCisIdentifierMap.setCisIdentifierValue(Integer.toString (mediaRecord.getMediaRenditions().getRenditionId()));
         cdisCisIdentifierMap.createRecord();
         
-  
         // Create the thumbnail in the CIS
         Thumbnail thumbnail = new Thumbnail();
         boolean thumbCreated = thumbnail.generate(cdisMap.getCdisMapId());
@@ -128,7 +135,7 @@ public class CreateCisMedia extends Operation {
         if (! thumbCreated) {
             ErrorLog errorLog = new ErrorLog ();
             errorLog.capture(cdisMap, "CRCIST", "ERROR: CIS Thumbnail Generation Failed"); 
-            return;
+            return false;
         }
             
         // Add activity record indicating Media Has been created
@@ -148,6 +155,8 @@ public class CreateCisMedia extends Operation {
         activityLog.setCdisMapId(cdisMap.getCdisMapId());
         activityLog.setCdisStatusCd("CTS");
         activityLog.insertActivity();
+       
+       return true;
     }
     
     
@@ -155,20 +164,18 @@ public class CreateCisMedia extends Operation {
         Description:    The main driver for the ingest to CIS process 
     */
     public void invoke () {
- 
-        this.uoiidsToLink = new ArrayList<>();
-        
+         
         // Get a list of Renditions from DAMS that may need to be brought to the collection system (CIS)
-        populateNeverLinkedImages ();
+        populateDamsImagesList ();
         
         //loop through the NotLinked RenditionList and obtain the UAN/UOIID pair 
-        for (String uoiId : uoiidsToLink) {
+        for (DamsRecord damsRecord  : this.damsRecordForCisCreate) {
             
             try { if ( DamsTools.getDamsConn() != null)  DamsTools.getDamsConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             try { if ( DamsTools.getCisConn() != null)  DamsTools.getCisConn().commit(); } catch (Exception e) { e.printStackTrace(); }
             
             // For all the rows in the hash containing unlinked DAMS assets, See if there is a corresponding row in TMS, if there is not, create it
-            processUoiid (uoiId);  
+            processDamsRecord (damsRecord);  
         
         }
         
@@ -179,7 +186,7 @@ public class CreateCisMedia extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
-        reqProps.add("appendTimeToNumber");
+        reqProps.add("assignCisRecordId");
         reqProps.add("cis");
         reqProps.add("cisConnString");
         reqProps.add("cisDriver");
@@ -190,19 +197,27 @@ public class CreateCisMedia extends Operation {
         reqProps.add("damsRepo");
         reqProps.add("dupRenditionCheck");
         reqProps.add("idsPathId");
-        reqProps.add("mediaStatusID");
-        reqProps.add("mapAltColumnToObject");
-        reqProps.add("mapFileNameToBarcode");
-        reqProps.add("mapFileNameToObjectID");
-        reqProps.add("mapFileNameToObjectNumber");
-        
         reqProps.add("lccIdType");
+        reqProps.add("mapDamsDataToCisRecordName");
+        reqProps.add("mapFileNameToCisBarcode");
+        reqProps.add("mapFileNameToCisRecordId");
+        reqProps.add("mapFileNameToCisRecordName");
+        reqProps.add("mediaStatusID");
         
-        if (XmlUtils.getConfigValue("mapFileNameToObjectNumber").equals("true") ) {
+        if (XmlUtils.getConfigValue("mapFileNameToCisRecordName").equals("true") ) {
             reqProps.add("damsDelimiter");
+            reqProps.add("damsToCisTrunc");
             reqProps.add("tmsDelimiter");
         }
- 
+        
+        if (XmlUtils.getConfigValue("mapDamsDataToCisRecordName").equals("true") ) {
+            reqProps.add("damsTablColToMap");
+        }
+        
+        if (XmlUtils.getConfigValue("mapFileNameToCisBarcode").equals("true") ) {
+                    reqProps.add("appendTimeToNumber");
+        }
+        
         //add more required props here
         return reqProps;    
     }

@@ -6,6 +6,8 @@
 package edu.si.damsTools.cdis.cis.tms.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,7 +23,7 @@ public class MediaFiles {
     private int fileId;
     private String fileName;
     private Integer pathId;
-    private int mediaFormatId;
+    private Integer mediaFormatId;
     private int pixelH;
     private int pixelW;
     private Integer renditionId;
@@ -34,7 +36,7 @@ public class MediaFiles {
         return this.fileName;
     }
     
-    public int getMediaFormatId () {
+    public Integer getMediaFormatId () {
         return this.mediaFormatId;
     }
     
@@ -149,6 +151,46 @@ public class MediaFiles {
         }
         return id;
         
+    }
+    
+    public boolean setValuesFromDams (DamsRecord damsRecord) {
+        
+        switch  (damsRecord.getUois().getMasterObjMimeType()) {
+            case "image/jpeg" :
+                setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("jpgFormatId")));
+                break;
+            case "image/tiff" :
+                setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("tifFormatId")));
+                break;
+            case "application/pdf":
+                setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("pdfFormatId")));
+                break;
+            case "audio/x-mpeg" :
+            case "audio/x-wav" :
+                setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("audioFormatId")));
+                break;
+            case "video/mpeg" :
+            case "video/mxf" :
+                setMediaFormatId(Integer.parseInt(XmlUtils.getConfigValue("videoFormatId")));
+                break;
+            default :
+                logger.log(Level.FINER, "unable to get valid mimeType from DAMS: " + damsRecord.getUois().getMasterObjMimeType() );
+                return false;
+        }
+        
+        if (damsRecord.getUois().getMasterObjMimeType().equals("application/pdf")) {
+            setPathId(Integer.parseInt (XmlUtils.getConfigValue("pdfPathId")));
+            setFileName (damsRecord.getSiAssetMetadata().getOwningUnitUniqueName() +  ".pdf");
+        }
+        else {
+            setPathId (Integer.parseInt (XmlUtils.getConfigValue("idsPathId")));
+            setFileName(damsRecord.getSiAssetMetadata().getOwningUnitUniqueName());
+        } 
+        
+        setPixelH(damsRecord.getUois().getBitmapHeight());
+        setPixelW(damsRecord.getUois().getBitmapWidth());
+        
+        return true;
     }
 
 }

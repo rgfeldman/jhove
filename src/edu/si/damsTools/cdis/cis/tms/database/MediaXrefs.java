@@ -6,6 +6,8 @@
 package edu.si.damsTools.cdis.cis.tms.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.utilities.StringUtils;
 import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,6 +28,7 @@ public class MediaXrefs {
     private Integer primary;
     private Integer rank;
     private String charRank;
+    private String tableId;
         
     public Integer getMediaMasterId() {
         return this.mediaMasterId;
@@ -47,6 +50,10 @@ public class MediaXrefs {
         return this.charRank;
     }
     
+    public String getTableId() {
+        return this.tableId;
+    }
+    
     public void setMediaMasterId(Integer mediaMasterId) {
         this.mediaMasterId = mediaMasterId;
     }
@@ -60,6 +67,10 @@ public class MediaXrefs {
       
     private void setRank (Integer rank) {
         this.rank = rank;
+    }
+    
+    public void setTableId (String tableId) {
+        this.tableId = tableId;
     }
         
      /*  Method :        populateIsPrimary
@@ -79,7 +90,7 @@ public class MediaXrefs {
             String sql = "SELECT count(*) from MediaXrefs" + 
                          " WHERE ID = " + getObjectId() + 
                          " and PrimaryDisplay = 1" +
-                         " and TableID = '108'";
+                         " and TableID = '" + this.tableId + "'";
             
             logger.log(Level.FINEST, "SQL: {0}", sql);  
             try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
@@ -102,28 +113,29 @@ public class MediaXrefs {
     }
     
     
-    public void calculateRank(String extensionlessFileName) {
+    public void calculateRankFromDams(DamsRecord damsRecord) {
         
         if (XmlUtils.getConfigValue("rankOverride") != null) {
             this.setRank(Integer.parseInt(XmlUtils.getConfigValue("rankOverride")));
             return;
         }
         
+        String extensionlessName = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName());
         // Get the rank from the last number after the '_' 
         String charRank = null;
-        if (extensionlessFileName.contains("-r")) {
-            int startPos = extensionlessFileName.lastIndexOf("-r") + 2;
+        if (extensionlessName.contains("-r")) {
+            int startPos = extensionlessName.lastIndexOf("-r") + 2;
             
-            if (extensionlessFileName.substring(startPos).contains("-") ) {
-                charRank = extensionlessFileName.substring(startPos,extensionlessFileName.lastIndexOf('-'));
+            if (extensionlessName.substring(startPos).contains("-") ) {
+                charRank = extensionlessName.substring(startPos,extensionlessName.lastIndexOf('-'));
             }
             else {
-                charRank = extensionlessFileName.substring(startPos);
+                charRank = extensionlessName.substring(startPos);
             }
         }
-        else if (extensionlessFileName.contains("_")) {
-            int pos = extensionlessFileName.lastIndexOf('_');
-            charRank = extensionlessFileName.substring(pos+1);
+        else if (extensionlessName.contains("_")) {
+            int pos = extensionlessName.lastIndexOf('_');
+            charRank = extensionlessName.substring(pos+1);
         }
         
         logger.log(Level.FINER, "Char Rank: {0}", charRank);
@@ -143,7 +155,7 @@ public class MediaXrefs {
             this.setRank(1);     
         }
         
-        logger.log(Level.FINER, "DAMS imageFileName: {0}", extensionlessFileName);
+        logger.log(Level.FINER, "DAMS imageFileName: {0}", damsRecord.getUois().getName());
         logger.log(Level.FINER, "Rank: {0}", this.getRank());
     
     }
@@ -153,8 +165,8 @@ public class MediaXrefs {
         int insertCount;
         ResultSet rs = null;
         
-        String sql = "insert into MediaXrefs" +
-                        " (MediaMasterID, " +
+        String sql = "insert into MediaXrefs (" +
+                        "MediaMasterID, " +
                         "ID, " +
                         "TableID, " + 
                         "LoginID, " +
@@ -164,7 +176,7 @@ public class MediaXrefs {
                     "values(" +
                         getMediaMasterId() + ", " +
                         getObjectId() + ", " +  
-                        "108, " +
+                        getTableId() + ", " +
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
                         this.rank + ", " + 

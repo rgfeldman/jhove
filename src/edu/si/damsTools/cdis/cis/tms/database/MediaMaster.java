@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 
 /**
  *
@@ -46,6 +47,23 @@ public class MediaMaster {
         return publicAccess;
     }
     
+    
+    public void setPublicAccessFromDams (DamsRecord damsRecord) {
+        
+        //get the correct publicAccess value based on the is_restricted value in DAMS
+        // The only time the public access should not be set in TMS, is when the restricted flag in DAMS is set to "YES"
+        // The default behavior in DAMS IS PUBLIC
+        if (damsRecord.getSiAssetMetadata().getIsRestricted() == null ) {
+            setPublicAccess(1);
+        }
+        else if (damsRecord.getSiAssetMetadata().getIsRestricted().equals("Yes") ) {
+             setPublicAccess(0);
+        }
+        else  {
+           setPublicAccess(1);    
+        }
+    
+    }
     
     public boolean insertNewRecord() {
      

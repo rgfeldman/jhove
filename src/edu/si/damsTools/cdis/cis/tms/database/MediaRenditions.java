@@ -6,6 +6,7 @@
 package edu.si.damsTools.cdis.cis.tms.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -73,17 +74,7 @@ public class MediaRenditions {
     
     public boolean insertNewRecord(Integer mediaMasterID ) {
         
-        Integer mediaStatusID = null;
-        ResultSet rs = null;
-        
-        // Get variables from the properties list
-        try {
-            mediaStatusID = Integer.parseInt (XmlUtils.getConfigValue("mediaStatusID"));
-        } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-        }
-        
+        ResultSet rs = null;       
         String sql = "insert into MediaRenditions " +
                         "(MediaMasterID, " +
                         "RenditionNumber, " +
@@ -105,7 +96,7 @@ public class MediaRenditions {
                         "'CDIS', " +
                         "CURRENT_TIMESTAMP, " +
                         "'" + getRemarks() + "', " +
-                        mediaStatusID + ", " +
+                        Integer.parseInt (XmlUtils.getConfigValue("mediaStatusID")) + ", " +
                         "CONVERT (date,SYSDATETIME()))";
         
         logger.log(Level.FINER, "SQL: {0}", sql);
@@ -131,6 +122,16 @@ public class MediaRenditions {
         
         return true;         
     }
+    
+    
+    public void populateRemarksFromDams(DamsRecord damsRecord) {
+        if (! (damsRecord.getSiAssetMetadata().getMaxIdsSize() == null )) {
+            setRemarks("[MAX IDS SIZE = " + damsRecord.getSiAssetMetadata().getMaxIdsSize() + "]");
+        }
+    }
+
+    
+          
     
     public int returnIDForRenditionNumber () {
         

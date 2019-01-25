@@ -97,12 +97,12 @@ public class XmlReader {
                         
                         //populate the name and attribures
                         if (insideSubBlock) {
-                            logger.log(Level.FINEST,"DEBUG Setting tag: " + qName);
+                      //      logger.log(Level.FINEST,"DEBUG Setting tag: " + qName);
                             xmlTagData = new XmlData(qName);
                             Iterator<Attribute> attributes = event.asStartElement().getAttributes();
                             while(attributes.hasNext()){
                                 Attribute attribute = attributes.next();
-                                logger.log(Level.FINEST, "DEBUG: Attribute info: " + attribute.getName().toString() + " VALUE " + attribute.getValue());
+                        //        logger.log(Level.FINEST, "DEBUG: Attribute info: " + attribute.getName().toString() + " VALUE " + attribute.getValue());
                                 xmlTagData.addAttribute(attribute.getName().toString(), attribute.getValue());
                             }                
                         }                                           

@@ -538,8 +538,8 @@ public class MetaDataSync extends Operation {
         
         for(MetadataColumnData metadataColumnData : metadataColumnDataArr) {
             
-            logger.log(Level.FINEST, "DEBUG Column name: " + metadataColumnData.getColumnName());
-            logger.log(Level.FINEST, "DEBUG Column value: " + metadataColumnData.getColumnValue());
+           // logger.log(Level.FINEST, "DEBUG Column name: " + metadataColumnData.getColumnName());
+           // logger.log(Level.FINEST, "DEBUG Column value: " + metadataColumnData.getColumnValue());
             
             //change single quotes to double quotes or we cannot perform insert correctly.
             // NOTE: We cannot use the scrubSpecialChars for this purpose, because this has impact on string length, and it is possible to truncate
