@@ -29,15 +29,14 @@ public class MediaPickupValidate extends Operation {
     
     private final ArrayList<MediaFileRecord> masterListForBatch;
     private final XferTypeFactory xferTypeFactory;
-    private final XferType xferType;
+    private XferType xferType;
     private final ArrayList<String> reqProps;
     
     public MediaPickupValidate() {
         reqProps = new ArrayList<>();
          
         masterListForBatch = new ArrayList<>();
-        xferTypeFactory = new XferTypeFactory();
-        xferType = xferTypeFactory.XferTypeChooser();
+        xferTypeFactory = new XferTypeFactory();  
     }
     
     /*Method: assignToPickupValidateBatch 
@@ -76,6 +75,8 @@ public class MediaPickupValidate extends Operation {
     
     public void invoke () {
     
+        xferType = xferTypeFactory.XferTypeChooser();
+        
         //lock a set of records into this batch in the database.
         boolean filesAssignedToBatch = assignToPickupValidateBatch();
         if (! filesAssignedToBatch) {
@@ -143,10 +144,12 @@ public class MediaPickupValidate extends Operation {
      
     public ArrayList<String> returnRequiredProps () {
         
-        reqProps.add("maxMasterFilesBatch");
-        reqProps.add("fileXferType");
         reqProps.add("dupFileNmCheck");
+        reqProps.add("fileXferType");
+        reqProps.add("maxMasterFilesBatch");
+        reqProps.add("sourceBaseDir");
         reqProps.add("useMasterSubPairs");
+        reqProps.add("vfcuStaging");
         //add more required props here
         return reqProps;    
     }

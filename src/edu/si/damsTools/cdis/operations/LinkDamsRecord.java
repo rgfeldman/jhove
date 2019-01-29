@@ -217,7 +217,7 @@ public class LinkDamsRecord extends Operation {
         reqProps.add("retainAfterIngest");
         reqProps.add("sqlFile");
         
-        if (! XmlUtils.getConfigValue("retainAfterIngest").equals("false") ) {
+        if ( XmlUtils.getConfigValue("retainAfterIngest")!= null && ! XmlUtils.getConfigValue("retainAfterIngest").equals("false") ) {
             reqProps.add("postIngestDeliveryLoc");
         }
         //add more required props here

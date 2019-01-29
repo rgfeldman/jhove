@@ -114,7 +114,7 @@ public class ReportGenerator extends Operation {
         ArrayList<String> reqProps = new ArrayList<>();
         
         reqProps.add("deliveryMethod");
-        if (XmlUtils.getConfigValue("deliveryMethod").equals("email") ) {
+        if (XmlUtils.getConfigValue("deliveryMethod") != null && XmlUtils.getConfigValue("deliveryMethod").equals("email") ) {
             reqProps.add("emailToList");
         }
         reqProps.add("sqlFile");
@@ -126,7 +126,6 @@ public class ReportGenerator extends Operation {
                break;
             case "timeframe":
                 reqProps.add("rptHours"); 
-                reqProps.add("timeFrameEmailList");
                 reqProps.add("suppressAttch");
                 break;
             case "vfcuMd5Error":

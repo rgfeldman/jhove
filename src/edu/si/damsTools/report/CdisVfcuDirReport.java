@@ -84,7 +84,7 @@ public class CdisVfcuDirReport implements DisplayFormat {
    
     
     public boolean returnSuppressAttachFlag(String masterMd5FileId) {
-        if ( XmlUtils.getConfigValue("supressAttch").equals("true")  ) { 
+        if ( XmlUtils.getConfigValue("suppressAttch").equals("true")  ) { 
            
             int numErrors = 0;
             

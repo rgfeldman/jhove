@@ -168,7 +168,7 @@ public class LinkCisRecord extends Operation {
             if (! xmlInfo.getTag().equals("query")) {
                 continue;
             }    
-            xmlInfo.getDataValuesForAttribute("type","retrieveCisIds");         
+            sql = xmlInfo.getDataValuesForAttribute("type","retrieveCisIds");         
 
             if (sql != null) {
                 dbConn = DbUtils.returnDbConnFromString(xmlInfo.getAttributeData("dbConn"));  

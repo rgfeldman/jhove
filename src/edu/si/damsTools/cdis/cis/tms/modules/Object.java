@@ -53,7 +53,7 @@ public class Object implements ModuleType{
         
         if (! XmlUtils.getConfigValue("assignCisRecordId").equals("false")) {
             objects.setObjectId(Integer.parseInt(XmlUtils.getConfigValue("assignCisRecordId")));
-            logger.log(Level.FINER, "Set object to ObjectID");
+            logger.log(Level.FINER, "Set object to ObjectID, mapMethod = assigned");
             mappedMethod = "assigned";
             return true;
         }
@@ -61,6 +61,7 @@ public class Object implements ModuleType{
         if (XmlUtils.getConfigValue("mapFileNameToCisBarcode").equals("true")) {
             mapFileNameToBarcode(damsRecord.getUois().getName());
             if (objects.getObjectId() != null) {
+                logger.log(Level.FINER, "Set object to ObjectID, mapMethod = barcode");
                 mappedMethod = "barcode";
                 return true;
             }
@@ -69,6 +70,7 @@ public class Object implements ModuleType{
         if (XmlUtils.getConfigValue("mapFileNameToCisRecordName").equals("true")) {
             mapFileNameToObjectNumber(damsRecord.getUois().getName());
             if (objects.getObjectId() != null) {
+                logger.log(Level.FINER, "Set object to ObjectID, mapMethod = filenameToRecordName");
                 mappedMethod = "filenameToRecordName";
                 return true;
             }
@@ -77,6 +79,7 @@ public class Object implements ModuleType{
         if (XmlUtils.getConfigValue("mapFileNameToCisRecordId").equals("true")) {              
             mapFileNameToId(damsRecord.getUois().getName());
             if (objects.getObjectId() != null) {
+                logger.log(Level.FINER, "Set object to ObjectID, mapMethod = filenameToRecordId");
                 mappedMethod = "filenameToRecordId";
                 return true;
             }
@@ -85,6 +88,7 @@ public class Object implements ModuleType{
         if (XmlUtils.getConfigValue("mapDamsDataToCisRecordName").equals("true")) {
             mapAltColumnToObject(damsRecord.getUois().getUoiid());
             if (objects.getObjectId() != null) {
+                logger.log(Level.FINER, "Set object to ObjectID, mapMethod = damsDataToRecordName");
                 mappedMethod = "damsDataToRecordName";
                 return true;
             }

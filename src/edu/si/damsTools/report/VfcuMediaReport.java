@@ -9,7 +9,6 @@ import edu.si.damsTools.DamsTools;
 import edu.si.damsTools.report.rptFile.DataSection;
 import edu.si.damsTools.report.rptFile.CompletedSection;
 import edu.si.damsTools.report.rptFile.VfcuMediaFailedSection;
-import edu.si.damsTools.utilities.XmlData;
 import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.database.VfcuMd5FileActivityLog;
 import java.sql.PreparedStatement;

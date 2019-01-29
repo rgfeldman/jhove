@@ -76,7 +76,7 @@ public class MediaRecord {
         String damsDelimiter = XmlUtils.getConfigValue("damsDelimiter");
         
         // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
-        if (tmsDelimiter.equals (damsDelimiter) ) {
+        if (tmsDelimiter == null ||  tmsDelimiter.equals (damsDelimiter) ) {
             renditionNumber = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName());
         }
         else {

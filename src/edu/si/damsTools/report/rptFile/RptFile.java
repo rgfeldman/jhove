@@ -45,7 +45,7 @@ public class RptFile extends Report  {
     private final RtfFont headerFont;
     private final RtfFont SectionHeaderFont;
     private final RtfFont listElementFont;
-    private final ArrayList<Integer> recordIdList;
+    private ArrayList<Integer> recordIdList;
     
     private String keyValue;
     
@@ -149,15 +149,21 @@ public class RptFile extends Report  {
             DataSection section = it.next();
             try {
                  
-                boolean recordsObtained = returnRecordIdList(section, keyValue);
+                recordIdList = new ArrayList();
+                
+                boolean recordsObtained = populateRecordIdList(section, keyValue);
                 if (!recordsObtained) {
                     logger.log(Level.FINEST, "Error obtained while obtain mapId list, or list type does not apply");
                     return false;
                 }
                 
+                logger.log(Level.FINEST, "DEBUG records obtained meeting condition: " + recordIdList.size());
+                
+                
                 if (this.recordIdList.isEmpty() ) {
                     //this section returned an error
                     logger.log(Level.FINEST, "No records obtained meeting condition");
+                    statsList.add ("Number of Records " + section.returnTitlePhrase() + ": " + 0);
                     it.remove();
                     continue;
                 } 
@@ -220,7 +226,7 @@ public class RptFile extends Report  {
         
     }
     
-    public boolean returnRecordIdList (DataSection section, String keyValue) {
+    public boolean populateRecordIdList (DataSection section, String keyValue) {
         
         String sql = XmlUtils.returnFirstSqlForTag(section.returnXmlTag());
         if (sql == null) {
