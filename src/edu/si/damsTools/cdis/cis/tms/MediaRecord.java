@@ -55,37 +55,7 @@ public class MediaRecord {
         return this.mediaRenditions;
     }
     
-   public String returnNewRenditionNumber ( DamsRecord damsRecord, ModuleType module) {
-        
-       String renditionNumber = null;
-       
-        if (module.returnMappedMethod().equals("barcode")) {
-            if (XmlUtils.getConfigValue("appendTimeToNumber").equals("true"))  {
-                DateFormat df = new SimpleDateFormat("kkmmss");
-                renditionNumber = module.returnRecordId() + "_" + String.format("%03d", mediaXrefs.getRank()) + "_" + df.format(new Date()  );
-            }
-            else {
-                // For barcode objects, the renditionNumber is the objectID plus the rank
-                mediaRenditions.setRenditionNumber(module.returnRecordId() + "_" + mediaXrefs.getRank() );
-            }
-        }
-        
-        logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsRecord.getUois().getName());
-                
-        String tmsDelimiter = XmlUtils.getConfigValue("tmsDelimiter");
-        String damsDelimiter = XmlUtils.getConfigValue("damsDelimiter");
-        
-        // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
-        if (tmsDelimiter == null ||  tmsDelimiter.equals (damsDelimiter) ) {
-            renditionNumber = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName());
-        }
-        else {
-            renditionNumber = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName()).replaceAll(damsDelimiter, tmsDelimiter);
-        }
-        
-        return renditionNumber;
-          
-    }
+   
 
     
     /*  Method :        create    
@@ -112,7 +82,12 @@ public class MediaRecord {
         mediaXrefs.calculateRankFromDams(damsRecord);
         
         //Calculate the RenditionNumber
-        mediaRenditions.setRenditionNumber(returnNewRenditionNumber(damsRecord, module));
+        mediaRenditions.calculateRenditionNumber(damsRecord, module);
+        if (mediaRenditions.getRenditionNumber() == null ) {
+            logger.log(Level.FINER, "ERROR: unable to set Rendtion number");
+            errorCode = "INSCISM";
+            return false;
+        }
         
         //now that we know what the renditionNumber is, 
         // check if a record with the renditionNumber to create already exists before we create the new media

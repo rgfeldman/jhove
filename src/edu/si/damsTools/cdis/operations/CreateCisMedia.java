@@ -204,17 +204,17 @@ public class CreateCisMedia extends Operation {
         reqProps.add("mapFileNameToCisRecordName");
         reqProps.add("mediaStatusID");
         
-        if (XmlUtils.getConfigValue("mapFileNameToCisRecordName").equals("true") ) {
+        if (XmlUtils.getConfigValue("mapFileNameToCisRecordName") != null && XmlUtils.getConfigValue("mapFileNameToCisRecordName").equals("true") ) {
             reqProps.add("damsDelimiter");
             reqProps.add("damsToCisTrunc");
             reqProps.add("tmsDelimiter");
         }
         
-        if (XmlUtils.getConfigValue("mapDamsDataToCisRecordName").equals("true") ) {
+        if (XmlUtils.getConfigValue("mapDamsDataToCisRecordName") != null &&  XmlUtils.getConfigValue("mapDamsDataToCisRecordName").equals("true") ) {
             reqProps.add("damsTablColToMap");
         }
         
-        if (XmlUtils.getConfigValue("mapFileNameToCisBarcode").equals("true") ) {
+        if (XmlUtils.getConfigValue("mapFileNameToCisBarcode") != null && XmlUtils.getConfigValue("mapFileNameToCisBarcode").equals("true") ) {
                     reqProps.add("appendTimeToNumber");
         }
         

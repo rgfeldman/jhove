@@ -6,12 +6,17 @@
 package edu.si.damsTools.cdis.cis.tms.database;
 
 import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.cdis.cis.tms.modules.ModuleType;
 import edu.si.damsTools.cdis.dams.DamsRecord;
+import edu.si.damsTools.utilities.StringUtils;
 import edu.si.damsTools.utilities.XmlUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -179,4 +184,48 @@ public class MediaRenditions {
         
     }
     
+    public boolean calculateRenditionNumber ( DamsRecord damsRecord, ModuleType module) {
+       
+        String extensionlessName = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName());
+  
+        String charRank = null;
+        
+        if (extensionlessName.contains("_")) {               
+            charRank = extensionlessName.substring(extensionlessName.lastIndexOf('_') +1 );
+        }
+        
+        if (module.returnMappedMethod().equals("barcode")) {
+            
+            if (XmlUtils.getConfigValue("appendTimeToNumber").equals("true"))  {
+                DateFormat df = new SimpleDateFormat("kkmmss");
+                renditionNumber = module.returnRecordId() + "_" + String.format("%03d", charRank) + "_" + df.format(new Date()  );
+            }
+            else {
+                if (charRank == null) {
+                    renditionNumber = module.returnRecordId().toString();
+                }    
+                else {
+                    renditionNumber = module.returnRecordId() + "_" + charRank;
+                }    
+            }
+            
+            return true;
+        }
+        
+        logger.log(Level.FINER, "Dams Image fileName before formatting: {0}", damsRecord.getUois().getName());
+                
+        String tmsDelimiter = XmlUtils.getConfigValue("tmsDelimiter");
+        String damsDelimiter = XmlUtils.getConfigValue("damsDelimiter");
+        
+        // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
+        if (tmsDelimiter == null ||  tmsDelimiter.equals (damsDelimiter) ) {
+            renditionNumber = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName());
+        }
+        else {
+            renditionNumber = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName()).replaceAll(damsDelimiter, tmsDelimiter);
+        }
+        
+        return true;
+          
+    }
 }

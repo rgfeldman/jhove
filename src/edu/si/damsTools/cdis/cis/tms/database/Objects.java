@@ -27,7 +27,7 @@ public class Objects {
     }
     
    
-    public void setObjectId (int objectID) {
+    public void setObjectId (Integer objectID) {
         this.objectID = objectID;
     }
     

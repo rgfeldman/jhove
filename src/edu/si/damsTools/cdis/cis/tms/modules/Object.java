@@ -28,11 +28,11 @@ public class Object implements ModuleType{
     
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
     
-    private final Objects objects;  // Refers to 'Objects' table in Database
+    private Objects objects;  // Refers to 'Objects' table in Database
     private String mappedMethod;
     
     public Object () {
-        objects = new Objects();
+        
     }
     
     public String returnMappedMethod (){
@@ -48,7 +48,7 @@ public class Object implements ModuleType{
     }
     
     public boolean populateRecordId(DamsRecord damsRecord) {
-        
+        objects = new Objects();
         //There are several ways to obtain the objectID, we go through each one in the config file until we get an objectId match.
         
         if (! XmlUtils.getConfigValue("assignCisRecordId").equals("false")) {
