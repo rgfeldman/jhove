@@ -92,7 +92,7 @@ public class MediaRecord {
         //now that we know what the renditionNumber is, 
         // check if a record with the renditionNumber to create already exists before we create the new media
         if (XmlUtils.getConfigValue("dupRenditionCheck").equals("true") ) {
-            int existingRenditionId = mediaRenditions.returnIDForRenditionNumber();
+            int existingRenditionId = mediaRenditions.returnIDForRenditionNumberModule(module);
             if (existingRenditionId > 0) {
                 errorCode = "AFRCIS";
                 return false;

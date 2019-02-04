@@ -138,13 +138,16 @@ public class MediaRenditions {
     
           
     
-    public int returnIDForRenditionNumber () {
+    public int returnIDForRenditionNumberModule (ModuleType module) {
         
         int id = 0;
         
-        String sql = "SELECT RenditionId " +
-                     "FROM mediaRenditions " + 
-                     "WHERE RenditionNumber = '" + getRenditionNumber() + "'";
+        String sql = "SELECT mr.RenditionId " +
+                     "FROM mediaRenditions mr " +
+                     "INNER JOIN mediaXRefs mx " +
+                     "ON mx.mediaMasterId = mr.mediaMasterId " +
+                     "WHERE mr.RenditionNumber = '" + getRenditionNumber() + "'" +
+                     "AND mx.TableId = " + module.returnTableId();
                      
         logger.log(Level.FINEST,"SQL! " + sql); 
         try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
@@ -187,15 +190,15 @@ public class MediaRenditions {
     public boolean calculateRenditionNumber ( DamsRecord damsRecord, ModuleType module) {
        
         String extensionlessName = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName());
-  
-        String charRank = null;
-        
-        if (extensionlessName.contains("_")) {               
-            charRank = extensionlessName.substring(extensionlessName.lastIndexOf('_') +1 );
-        }
-        
+   
         if (module.returnMappedMethod().equals("barcode")) {
             
+            String charRank = null;
+        
+            if (extensionlessName.contains("_")) {               
+                charRank = extensionlessName.substring(extensionlessName.lastIndexOf('_') +1 );
+            }
+        
             if (XmlUtils.getConfigValue("appendTimeToNumber").equals("true"))  {
                 DateFormat df = new SimpleDateFormat("kkmmss");
                 renditionNumber = module.returnRecordId() + "_" + String.format("%03d", charRank) + "_" + df.format(new Date()  );
@@ -219,10 +222,10 @@ public class MediaRenditions {
         
         // If the delimeter is different from the image to the renditionNumber, we need to put the appropriate delimeter in the newly created name
         if (tmsDelimiter == null ||  tmsDelimiter.equals (damsDelimiter) ) {
-            renditionNumber = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName());
+            renditionNumber = extensionlessName;
         }
         else {
-            renditionNumber = StringUtils.getExtensionlessFileName(damsRecord.getUois().getName()).replaceAll(damsDelimiter, tmsDelimiter);
+            renditionNumber = extensionlessName.replaceAll(damsDelimiter, tmsDelimiter);
         }
         
         return true;
