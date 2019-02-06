@@ -103,6 +103,7 @@ public class CreateCisMedia extends Operation {
             logger.log(Level.FINER, "ERROR: Media Creation Failed. Unable to obtain Module ID Data");
             ErrorLog errorLog = new ErrorLog ();
             errorLog.capture(cdisMap, "UNLCIS", "ERROR: Media Creation Failed"); 
+            return false;
         }
         
         MediaRecord mediaRecord = new MediaRecord();
