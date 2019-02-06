@@ -155,16 +155,13 @@ public class RptFile extends Report  {
                 if (!recordsObtained) {
                     logger.log(Level.FINEST, "Error obtained while obtain mapId list, or list type does not apply");
                     return false;
-                }
-                
-                logger.log(Level.FINEST, "DEBUG records obtained meeting condition: " + recordIdList.size());
-                
+                }                
                 
                 if (this.recordIdList.isEmpty() ) {
                     //this section returned an error
                     logger.log(Level.FINEST, "No records obtained meeting condition");
                     statsList.add ("Number of Records " + section.returnTitlePhrase() + ": " + 0);
-                    it.remove();
+                    //it.remove();
                     continue;
                 } 
 
@@ -203,6 +200,7 @@ public class RptFile extends Report  {
                 ArrayList<String> dataForReport = new ArrayList();
                 
                 document.add(new Phrase("\n\n" + "The Following Records " + section.returnTitlePhrase() + ": \n",SectionHeaderFont));
+                                logger.log(Level.FINEST, "DEBUG: Added  " + section.returnTitlePhrase());
                 document.add(new Phrase("-------------------------------------------------------------------------------------\n",SectionHeaderFont));
                 
                 dataForReport = section.getSectionTextData();
