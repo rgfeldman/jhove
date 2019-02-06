@@ -223,16 +223,18 @@ public class Object implements ModuleType{
         Description:    Finds the objectID and populates object member variables based on the DAMS image filename to the TMS ObjectID
         RFeldman 2/2015
     */
-    public boolean mapFileNameToId(String extensionlessFileName) {
+    public boolean mapFileNameToId(String fileName) {
         
-        Integer objID;
-        
+        Integer objID;     
         try {
             
-            objID = Integer.parseInt(extensionlessFileName.substring(0, extensionlessFileName.indexOf('_')));
+            if (fileName.contains("_")) {
+                objID = Integer.parseInt(fileName.substring(0, fileName.indexOf('_')));
+            }
+            else objID = Integer.parseInt(StringUtils.getExtensionlessFileName(fileName));
             
         } catch(Exception e) {
-            logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", extensionlessFileName);
+            logger.log(Level.FINEST, "Unable to find ObjectID as part of damsFileName", fileName);
             return false;
 	}
 
