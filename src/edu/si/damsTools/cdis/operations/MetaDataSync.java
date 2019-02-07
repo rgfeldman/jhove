@@ -10,6 +10,7 @@ import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.database.CdisMap;
+import edu.si.damsTools.cdis.database.CdisOperationActivityLog;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
 import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
 import edu.si.damsTools.cdis.operations.metadataSync.MetadataColumnData;
@@ -50,11 +51,15 @@ public class MetaDataSync extends Operation {
     private ArrayList<Insertion> insertsForDamsRecord; 
     private ArrayList<Update> updatesForDamsRecord; 
     
-     
+    private final CdisOperationActivityLog cdisOperationActivityLog;
+
+    
     public MetaDataSync() {
         cdisMapList = new HashSet<>();
         cisSqlCommands = new ArrayList<>();
         damsTblSpecs = new HashSet<>();
+        cdisOperationActivityLog = new CdisOperationActivityLog();
+        
     }
      
     public void invoke() {
@@ -64,7 +69,12 @@ public class MetaDataSync extends Operation {
         //get list of CDIS records that need re-syncing
         populateCisUpdatedMapIds();
           
+        //Get list retrieval timestamp (start time as of when syncList was pulled
+        cdisOperationActivityLog.setActivityDt(DbUtils.returnDamsDbCurrentDateTime());
+        
         if (cdisMapList.isEmpty()) {
+            cdisOperationActivityLog.setprocessActivityCd("MPD");
+            cdisOperationActivityLog.createRecord();
             logger.log(Level.FINEST,"No Rows found to sync");
             return;
         }
@@ -82,9 +92,13 @@ public class MetaDataSync extends Operation {
             logger.log(Level.FINEST, "Error: unable to obtain statistics for DAMS tables");
             return;
         }
-
+        
         //perform the sync
         processCdisMapListToSync();
+        
+        //Batch is complete, Record the startTime in the Database
+        cdisOperationActivityLog.setprocessActivityCd("MPD");
+        cdisOperationActivityLog.createRecord();
                   
     }
     
@@ -129,11 +143,16 @@ public class MetaDataSync extends Operation {
             return false;
         }
         if (dbConn == null) {
-            logger.log(Level.SEVERE, "Error: :qDatabase to run query from is not specified");
+            logger.log(Level.SEVERE, "Error: Database to run query from is not specified");
             return false;
         }
+        
+        if (sql.contains("?LAST_SYNC_DT?")) {
+            sql = sql.replace("?LAST_SYNC_DT?",this.cdisOperationActivityLog.returnMaxDateTime());
+        }
+
         logger.log(Level.FINEST, "SQL: {0}", sql);
-            
+        
         try (PreparedStatement stmt = dbConn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery() ) {
             ResultSetMetaData rsmd = rs.getMetaData();
@@ -239,7 +258,7 @@ public class MetaDataSync extends Operation {
                 for (XmlCisSqlCommand xmlSqlCmd : cisSqlCommands) {
                     String sql = xmlSqlCmd.getSqlQuery();
                     sql = damsRecord.replaceSqlVars(sql);
-                    sql = replaceCisVarsInString(sql, cdisMap);
+                    sql = replaceVarsInCisSql(sql, cdisMap);
 
                     //Create hashmap containing column names and values for the current record
                     //MetadataColumnData metadataColumnDate = new ArrayList();
@@ -278,8 +297,7 @@ public class MetaDataSync extends Operation {
     }
     
     //*THIS SHOUKD BE MOVED TO CDISRECORD
-    private String replaceCisVarsInString(String sql, CdisMap cdisMap) {
-
+    private String replaceVarsInCisSql(String sql, CdisMap cdisMap) {
         if (sql.contains("?CISID")) {
             Pattern p = Pattern.compile("\\?CISID-([A-Z][A-Z][A-Z])\\?");
             Matcher m = p.matcher(sql);
