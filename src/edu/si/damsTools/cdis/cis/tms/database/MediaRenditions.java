@@ -195,19 +195,27 @@ public class MediaRenditions {
             
             String charRank = null;
         
-            if (extensionlessName.contains("_")) {               
-                charRank = extensionlessName.substring(extensionlessName.lastIndexOf('_') +1 );
+            if (extensionlessName.contains("_")) {
+                //set the charRank only if it is an integer value
+                if (extensionlessName.substring(extensionlessName.lastIndexOf('_') +1 ).matches("^\\d+$") ) {
+                    charRank = extensionlessName.substring(extensionlessName.lastIndexOf('_') +1 );
+                }
             }
         
             if (XmlUtils.getConfigValue("appendTimeToNumber").equals("true"))  {
+                if (charRank== null) {
+                    charRank ="1";
+                }
                 DateFormat df = new SimpleDateFormat("kkmmss");
-                renditionNumber = module.returnRecordId() + "_" + String.format("%03d", charRank) + "_" + df.format(new Date()  );
+                renditionNumber = module.returnRecordId() + "_" + String.format("%03d", Integer.parseInt(charRank)) + "_" + df.format(new Date()  );
             }
             else {
                 if (charRank == null) {
+                    //If there was no rank, the rendion number has no extension
                     renditionNumber = module.returnRecordId().toString();
                 }    
                 else {
+                    //If there is a rank, the renditon number ends in an underscore followed by the rank number
                     renditionNumber = module.returnRecordId() + "_" + charRank;
                 }    
             }
