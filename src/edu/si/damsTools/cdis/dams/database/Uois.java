@@ -171,8 +171,36 @@ public class Uois {
             
         } catch (Exception e) {
                 logger.log(Level.FINER, "Error: unable to obtain name from uois table", e );
-                return false;
-        
+                return false;      
         }
+    }
+    
+    public int markDelete() {
+
+        int recordsUpdated = 0;
+        
+        String sql = "UPDATE towner.uois SET " +
+                    "content_state = 'DELETED', " +
+                    "metadata_state = 'LOCKED', " +
+                    "metadata_lock_state_dt = SYSDATE, " +
+                    "metadata_lock_state_user_id = '22246', " +
+                    "deletion_state_dt = sysdate, " +
+                    "deletion_state_user_id = '22246' " +
+                    "WHERE uoi_id = '" + this.uoiid  + "'";
+        
+        logger.log(Level.ALL, "mark delete Statment: " + sql);
+        
+        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql) ) {
+            
+            recordsUpdated = pStmt.executeUpdate();
+            
+            logger.log(Level.FINEST,"Rows Updated in DAMS! {0}", recordsUpdated);
+            
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error: unable to update UOIS table with new date", e );
+        }
+            
+        return recordsUpdated;
+
     }
 }

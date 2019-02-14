@@ -223,7 +223,4 @@ public class CreateCisMedia extends Operation {
         return reqProps;    
     }
      
-    public boolean requireSqlCriteria () {
-        return true;
-    }
 }

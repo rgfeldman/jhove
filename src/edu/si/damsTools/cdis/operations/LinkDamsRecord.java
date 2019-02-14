@@ -224,8 +224,4 @@ public class LinkDamsRecord extends Operation {
         return reqProps;    
     }
      
-    public boolean requireSqlCriteria () {
-        return true;
-    } 
-     
 }

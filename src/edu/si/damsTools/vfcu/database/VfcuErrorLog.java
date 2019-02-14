@@ -114,36 +114,11 @@ public class VfcuErrorLog {
     }    
     
     
-    public boolean populateDescriptiveInfo () {
-
-        String sql = "SELECT file_name, vfcu_error_cd, addl_error_info " +
-                     "FROM vfcu_error_log " + 
-                     "WHERE vfcu_error_log_id =  " + getVfcuErrorLogId();
-                     
-        logger.log(Level.FINEST,"SQL! " + sql); 
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-             ResultSet rs = pStmt.executeQuery();   ){
-            
-            if (rs.next()) {
-                this.fileName = rs.getString(1);
-                this.vfcuErrorCd = rs.getString(2);
-                this.addlErrorInfo = rs.getString(3);
-            }
-            
-        } catch (Exception e) {
-            logger.log(Level.FINER, "Error: unable to check for existing Md5File in DB", e );
-            return false;
-        }
-        
-        return true;
-
-    }
-    
-    public ArrayList<String> returnDescriptionsForMediaId () {
+    public ArrayList<String> returnDescriptiveInfoForMediaId () {
         
         ArrayList<String> descriptionList = new ArrayList<>();
 
-        String sql = "SELECT vec.description " +
+        String sql = "SELECT vec.description || '   ' || addl_error_info " +
                      "FROM vfcu_error_code_r vec " + 
                      "INNER JOIN vfcu_error_log vel " +
                      "ON vec.vfcu_error_cd = vel.vfcu_error_cd " +

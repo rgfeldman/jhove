@@ -3,19 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.si.damsTools.cdis.operations;
+package edu.si.damsTools.cdis.cis.rdms;
 
 import edu.si.damsTools.DamsTools;
-import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  *
  * @author rfeldman
  */
-public abstract class Operation {
-    
-    public abstract void invoke();
-    
-    public abstract ArrayList<String> returnRequiredProps ();
-   
+public interface Rdms {
+            
+    public String returnDbDateTime(Integer numDays);
+         
 }

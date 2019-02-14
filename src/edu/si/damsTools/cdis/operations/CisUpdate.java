@@ -205,9 +205,5 @@ public class CisUpdate extends Operation {
         } 
         return recordsUpdated;
     }
-    
-    public boolean requireSqlCriteria () {
-        return true;
-    }
       
 }

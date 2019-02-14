@@ -307,12 +307,14 @@ public class DamsTools {
                 return;
             }
             
+            //Connect to DAMS datbase
             damsConn = damsTool.connectToDatabases("dams");
             if (damsConn == null ) {
                 logger.log(Level.SEVERE, "Fatal Error: unable to connect to damsDb.  Exiting");
                 return;
             }
 
+            //Connect to CIS databaae
             if (XmlUtils.getConfigValue("cisDriver") != null) {
                 cisConn = damsTool.connectToDatabases("cis");
                 if (cisConn == null ) {
@@ -320,9 +322,8 @@ public class DamsTools {
                     return;
                 }
             } 
-            
-            if (damsTool.operation.requireSqlCriteria() ) {          
-                
+                        
+            if (XmlUtils.getConfigValue("sqlFile") != null) {          
                 Path xmlSqlFile = configDir.resolve(XmlUtils.getConfigValue("sqlFile")); 
                 xmlReader = new XmlReader(xmlSqlFile.toString(), DamsTools.getOperationType(), DamsTools.getSubOperation());
                 DamsTools.xmlQueryDataList = xmlReader.parseReturnXmlObjectList();  

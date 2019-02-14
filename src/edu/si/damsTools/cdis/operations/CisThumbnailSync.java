@@ -114,12 +114,10 @@ public class CisThumbnailSync extends Operation {
         reqProps.add("cisUser");
         reqProps.add("cisPass");
         reqProps.add("damsRepo");
+        reqProps.add("sqlFile");
         
         //add more required props here
         return reqProps;    
     }
     
-    public boolean requireSqlCriteria () {
-        return true;
-    }
 }

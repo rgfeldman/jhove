@@ -10,7 +10,7 @@ import edu.si.damsTools.cdis.dams.DamsRecord;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisCisIdentifierMap;
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.cdis.database.CdisOperationActivityLog;
+import edu.si.damsTools.cdis.database.CdisCisMdsPullLog;
 import edu.si.damsTools.cdis.operations.metadataSync.DamsTblColSpecs;
 import edu.si.damsTools.cdis.operations.metadataSync.XmlCisSqlCommand;
 import edu.si.damsTools.cdis.operations.metadataSync.MetadataColumnData;
@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import edu.si.damsTools.cdis.cis.rdms.Rdms;
+import edu.si.damsTools.cdis.cis.rdms.RdmsFactory;
 
 /**
  *
@@ -51,30 +53,47 @@ public class MetaDataSync extends Operation {
     private ArrayList<Insertion> insertsForDamsRecord; 
     private ArrayList<Update> updatesForDamsRecord; 
     
-    private final CdisOperationActivityLog cdisOperationActivityLog;
+    private final RdmsFactory rdmsFact;
+    
+    private final CdisCisMdsPullLog priorCdisCisMdsPullLog;
+    private final CdisCisMdsPullLog currentCdisCisMdsPullLog;
+    
+    private Rdms cisRdms;
 
     
     public MetaDataSync() {
         cdisMapList = new HashSet<>();
         cisSqlCommands = new ArrayList<>();
         damsTblSpecs = new HashSet<>();
-        cdisOperationActivityLog = new CdisOperationActivityLog();
-        
+        priorCdisCisMdsPullLog = new CdisCisMdsPullLog();
+        currentCdisCisMdsPullLog = new CdisCisMdsPullLog();
+        rdmsFact = new RdmsFactory();
     }
      
     public void invoke() {
         //get list of CDIS reocrds that have never been synced
         populateNeverSyncedMapIds();
           
+        //assign the CIS
+        cisRdms = rdmsFact.rdmsChooser();
+        if (cisRdms == null ) {
+           logger.log(Level.FINEST, "Error: Unknown cis database type: " + XmlUtils.getConfigValue("cisRdms") );
+           return; 
+        }
+        boolean lastDatePopulated = priorCdisCisMdsPullLog.populateLastMdsDateTime(cisRdms);
+        if (!lastDatePopulated) {
+            logger.log(Level.FINEST, "Error: Unable to return last pull date");
+            return; 
+        }
+            
         //get list of CDIS records that need re-syncing
-        populateCisUpdatedMapIds();
-          
-        //Get list retrieval timestamp (start time as of when syncList was pulled
-        cdisOperationActivityLog.setActivityDt(DbUtils.returnDamsDbCurrentDateTime());
+        boolean cisValuesPopulated = populateCisUpdatedMapIds();
+        if (cisValuesPopulated) {
+            //Get list retrieval timestamp (start time as of when syncList was pulled
+            currentCdisCisMdsPullLog.setLastPullDt(cisRdms.returnDbDateTime(null));
+        }
         
         if (cdisMapList.isEmpty()) {
-            cdisOperationActivityLog.setprocessActivityCd("MPD");
-            cdisOperationActivityLog.createRecord();
             logger.log(Level.FINEST,"No Rows found to sync");
             return;
         }
@@ -96,10 +115,11 @@ public class MetaDataSync extends Operation {
         //perform the sync
         processCdisMapListToSync();
         
-        //Batch is complete, Record the startTime in the Database
-        cdisOperationActivityLog.setprocessActivityCd("MPD");
-        cdisOperationActivityLog.createRecord();
-                  
+        // If we pulled any data from the CIS in the form of an update from the CIS, retain the date that we pulled the data.
+        if (cisValuesPopulated) {
+            //Batch is complete, Record the startTime in the Database:q
+            currentCdisCisMdsPullLog.updateOrInsertPullDt();
+        }          
     }
     
     // Method: populateDamsTblColList()
@@ -148,7 +168,7 @@ public class MetaDataSync extends Operation {
         }
         
         if (sql.contains("?LAST_SYNC_DT?")) {
-            sql = sql.replace("?LAST_SYNC_DT?",this.cdisOperationActivityLog.returnMaxDateTime());
+            sql = sql.replace("?LAST_SYNC_DT?",this.priorCdisCisMdsPullLog.getLastPullDt());
         }
 
         logger.log(Level.FINEST, "SQL: {0}", sql);
@@ -159,6 +179,9 @@ public class MetaDataSync extends Operation {
             
             String columnName = rsmd.getColumnLabel(1).toLowerCase();
             
+            if (!rs.next ()) {
+                return false;
+            }
             while (rs.next()) {
 
                 ArrayList<Integer> cdisMapIds = new ArrayList<>();
@@ -181,6 +204,7 @@ public class MetaDataSync extends Operation {
             logger.log(Level.FINEST, "Error obtaining list to re-sync", e);
             return false;
         }    
+        
        return true;
     }
     
@@ -632,6 +656,7 @@ public class MetaDataSync extends Operation {
     public ArrayList<String> returnRequiredProps () {
         
         ArrayList<String> reqProps = new ArrayList<>();
+        reqProps.add("cisRdms");
         reqProps.add("sqlFile");
         reqProps.add("damsLastModifiedDt");
         
@@ -661,9 +686,6 @@ public class MetaDataSync extends Operation {
                  
     }
     
-    public boolean requireSqlCriteria () {
-        return true;
-    }
       
 }
 

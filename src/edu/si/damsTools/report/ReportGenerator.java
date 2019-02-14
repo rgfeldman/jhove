@@ -142,8 +142,4 @@ public class ReportGenerator extends Operation {
         return reqProps;    
     }
     
-    public boolean requireSqlCriteria () {
-        return true;
-    }
-    
 }

@@ -47,7 +47,7 @@ public class VfcuMediaFailedSection implements DataSection {
         vfcuErrorLog.setVfcuMediaFileId(dataId);
         
         ArrayList<String> errorDescList = new ArrayList<>();
-        errorDescList = vfcuErrorLog.returnDescriptionsForMediaId();
+        errorDescList = vfcuErrorLog.returnDescriptiveInfoForMediaId();
         
         for (String errorDesc : errorDescList ) {
             sectionTextData.add("File: " + vfcuMediaFile.getMediaFileName() + " Error: " + errorDesc) ;

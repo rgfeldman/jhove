@@ -5,27 +5,22 @@
  */
 package edu.si.damsTools.cdis.operations;
 
+import edu.si.damsTools.cdis.dams.HotIngestFolder;
 import edu.si.damsTools.cdis.dams.StagedFile;
 import edu.si.damsTools.cdis.database.CdisActivityLog;
 import edu.si.damsTools.cdis.database.CdisMap;
-import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import edu.si.damsTools.cdisutilities.ErrorLog;
-import edu.si.damsTools.cdis.dams.HotIngestFolder;
-
+import edu.si.damsTools.DamsTools;
+import edu.si.damsTools.utilities.Folders;
+import edu.si.damsTools.utilities.XmlUtils;
+import edu.si.damsTools.vfcu.delivery.MediaFileRecord;
+import edu.si.damsTools.vfcu.database.VfcuMediaFile;
 import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Iterator;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.ArrayList;
-
-import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.utilities.Folders;
-import edu.si.damsTools.utilities.XmlData;
-import edu.si.damsTools.utilities.XmlUtils;
-import edu.si.damsTools.vfcu.delivery.MediaFileRecord;
 
 /**
  *
@@ -329,11 +324,8 @@ public class SendToHotFolder extends Operation {
         reqProps.add("maxHotFolderIncrement");
         reqProps.add("retainAfterIngest");
         reqProps.add("useMasterSubPairs");
+        reqProps.add("sqlFile");
         return reqProps;    
-    }
-    
-    public boolean requireSqlCriteria () {
-        return true;
     }
 
 }

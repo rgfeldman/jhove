@@ -34,24 +34,4 @@ public class DbUtils {
         return null;
     }
     
-    public static String returnDamsDbCurrentDateTime () {
-        
-        String timestamp = null;
-        
-        String sql = "SELECT TO_CHAR(SYSDATE,'YYYY-MM-DD HH24:MI:SS') " +
-                    "FROM dual";
-        
-        logger.log(Level.FINEST,"SQL! " + sql);
-        try (PreparedStatement pStmt = DamsTools.getDamsConn().prepareStatement(sql);
-               ResultSet rs = pStmt.executeQuery()) {
-            
-            if (rs.next()) {
-                timestamp =  (rs.getString(1));
-            }  
-            
-        } catch (Exception e) {
-                logger.log(Level.FINER, "Error: unable to obtain timestamp from DB", e );
-        }
-        return timestamp;
-    }
 }
