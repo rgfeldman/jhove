@@ -182,8 +182,8 @@ public class MetaDataSync extends Operation {
             if (!rs.next ()) {
                 return false;
             }
-            while (rs.next()) {
-
+            else { do {
+                
                 ArrayList<Integer> cdisMapIds = new ArrayList<>();
                     
                 CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
@@ -197,7 +197,8 @@ public class MetaDataSync extends Operation {
                     cdisMap.setCdisMapId(cdisMapId);
                     cdisMap.populateMapInfo();
                     cdisMapList.add(cdisMap);
-                }          
+                }
+            } while (rs.next());
             }
         }
         catch(Exception e) {
