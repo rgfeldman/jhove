@@ -125,6 +125,7 @@ public class ReportGenerator extends Operation {
                reqProps.add("useMasterSubPairs");
                break;
             case "timeframe":
+                reqProps.add("lccIdType");
                 reqProps.add("rptHours"); 
                 reqProps.add("suppressAttch");
                 break;
