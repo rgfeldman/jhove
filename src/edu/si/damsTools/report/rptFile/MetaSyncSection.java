@@ -11,6 +11,7 @@ import edu.si.damsTools.DamsTools;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import edu.si.damsTools.utilities.XmlUtils;
 
 /**
  *
@@ -49,7 +50,13 @@ public class MetaSyncSection implements DataSection {
         siAsst.setUoiid(cdisMap.getDamsUoiid());
         siAsst.populateSiAsstData();
         
-        sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + siAsst.getSourceSystemId());
+        //Put this in until we have multiple source system Ids
+        if ( XmlUtils.getConfigValue("lccIdType").equals("ead")) {
+            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with Aspace");
+        }
+        else {
+            sectionTextData.add("UAN: " + siAsst.getOwningUnitUniqueName() + " Synced with " + siAsst.getSourceSystemId());
+        }
 
         return true;
         
