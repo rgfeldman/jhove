@@ -30,7 +30,7 @@ public class MySql implements Rdms {
         }
         String timestamp = null;
         
-        String sql = "SELECT NOW() " + numDaysStr;
+        String sql = "SELECT DATE_FORMAT(NOW(),'%Y-%m-%d %H:%i:%s') " + numDaysStr;
         logger.log(Level.FINEST,"SQL! " + sql);
         try (PreparedStatement pStmt = DamsTools.getCisConn().prepareStatement(sql);
             ResultSet rs = pStmt.executeQuery()) {
