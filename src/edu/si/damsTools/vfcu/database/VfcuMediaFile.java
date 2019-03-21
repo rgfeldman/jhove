@@ -232,7 +232,7 @@ public class VfcuMediaFile {
         ArrayList<Integer> filesIdsForBatch = new ArrayList<>();  
         String sql = "SELECT    vfcu_media_file_id " +
                      "FROM      vfcu_media_file " +
-                     "WHERE     vfcu_batch_number = " + getVfcuBatchNumber() + " ";
+                     "WHERE     vfcu_batch_number = '" + getVfcuBatchNumber() + "' ";
             
         logger.log(Level.FINEST, "SQL: {0}", sql);
             
