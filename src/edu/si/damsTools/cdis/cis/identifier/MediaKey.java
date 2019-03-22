@@ -16,10 +16,6 @@ public class MediaKey implements IdentifierType{
     
     private String mediaKey;
     
-    public String getIdentifierCd() {
-        return "mky";
-    }
-    
     public String getIdentifierValue() {
         return mediaKey;
     }

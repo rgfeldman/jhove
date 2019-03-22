@@ -16,10 +16,6 @@ public class DigitalResourceId implements IdentifierType {
     
     private String digitalResourceId;
     
-    public String getIdentifierCd() {
-        return "dri";
-    }
-    
     public String getIdentifierValue() {
         return digitalResourceId;
     }

@@ -16,10 +16,6 @@ public class OralHistoryMediaResourceId implements IdentifierType {
     
     private String digitalMediaResourceId;
     
-    public String getIdentifierCd() {
-        return "ohm";
-    }
-    
     public String getIdentifierValue() {
         return digitalMediaResourceId;
     }

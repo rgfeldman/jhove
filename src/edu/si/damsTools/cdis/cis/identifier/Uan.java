@@ -16,10 +16,6 @@ public class Uan implements IdentifierType {
     
     private String uan;
     
-    public String getIdentifierCd() {
-        return "uan";
-    }
-    
     public String getIdentifierValue() {
         return uan;
     }

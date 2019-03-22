@@ -71,7 +71,7 @@ public class LinkCisRecord extends Operation {
             //See if this cdis_map_id already exists in the table for any refid
             CdisCisIdentifierMap cdisCisIdentifierMap = new CdisCisIdentifierMap();
             cdisCisIdentifierMap.setCdisMapId(cdisMap.getCdisMapId());
-            cdisCisIdentifierMap.setCisIdentifierCd(identType.getIdentifierCd());        
+            cdisCisIdentifierMap.setCisIdentifierCd(XmlUtils.getConfigValue("lccIdType"));        
             cdisCisIdentifierMap.setCisIdentifierValue(identType.getIdentifierValue());
                    
             if (identType.overwriteExistingLinkId()) {

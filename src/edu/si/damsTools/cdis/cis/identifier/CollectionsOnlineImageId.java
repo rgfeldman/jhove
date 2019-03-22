@@ -16,10 +16,6 @@ public class CollectionsOnlineImageId implements IdentifierType {
     
     private String collectionsOnlineImageId;
     
-    public String getIdentifierCd() {
-        return "coi";
-    }
-    
     public String getIdentifierValue() {
         return collectionsOnlineImageId;
     }

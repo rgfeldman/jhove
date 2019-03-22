@@ -23,10 +23,6 @@ public class RenditionId implements IdentifierType {
     
     private String renditionId;
     
-    public String getIdentifierCd() {
-        return "rnd";
-    }
-    
     public String getIdentifierValue() {
         return renditionId;
     }

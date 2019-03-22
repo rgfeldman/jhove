@@ -16,10 +16,6 @@ public class ControlRecordId implements IdentifierType {
     
     private String hcr;
     
-    public String getIdentifierCd() {
-        return "hcr";
-    }
-    
     public String getIdentifierValue() {
         return hcr;
     }

@@ -14,8 +14,6 @@ import edu.si.damsTools.cdis.database.CdisMap;
  */
 public interface IdentifierType {
     
-    public String getIdentifierCd();
-    
     public String getIdentifierValue();
     
     public void setIdentifierValue(String identifierValue);

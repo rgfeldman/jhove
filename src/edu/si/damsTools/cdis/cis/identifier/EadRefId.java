@@ -25,10 +25,6 @@ public class EadRefId implements IdentifierType {
     
     private String eadRefId;
     
-    public String getIdentifierCd() {
-        return "ead";
-    }
-    
     public String getIdentifierValue() {
         return eadRefId;
     }

@@ -16,10 +16,6 @@ public class Irn implements IdentifierType {
     
     private String irn;
     
-    public String getIdentifierCd() {
-        return "irn";
-    }
-    
     public String getIdentifierValue() {
         return irn;
     }

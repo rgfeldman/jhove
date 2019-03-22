@@ -17,10 +17,6 @@ public class OralHistoryTranscriptId implements IdentifierType {
     
     private String ohTranscriptId;
     
-    public String getIdentifierCd() {
-        return "oht";
-    }
-    
     public String getIdentifierValue() {
         return ohTranscriptId;
     }
