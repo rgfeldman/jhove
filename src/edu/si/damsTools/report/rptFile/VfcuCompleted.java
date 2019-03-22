@@ -6,54 +6,43 @@
 package edu.si.damsTools.report.rptFile;
 
 import edu.si.damsTools.DamsTools;
-import edu.si.damsTools.vfcu.database.VfcuMd5FileError;
+import edu.si.damsTools.utilities.XmlUtils;
 import edu.si.damsTools.vfcu.database.VfcuMd5File;
-
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
  * @author rfeldman
  */
-public class VfcuMd5FailSection implements DataSection {
-    
+public class VfcuCompleted implements DataSection{
     private final static Logger logger = Logger.getLogger(DamsTools.class.getName());
    
     private final ArrayList sectionTextData;
      
-    public VfcuMd5FailSection () {
+    public VfcuCompleted () {
         sectionTextData = new ArrayList<>();
     }
    
     public String returnTitlePhrase() {
-        return "Generated Errors";
+        return "Are VFCU Completed Directories in Past " + XmlUtils.getConfigValue("rptHours") + " Hours";
     }
     
     public String returnXmlTag () {  
-        return "getFailedRecords";
+        return "getCompletedMd5s";
     }
     
     public String returnEmptyListString() {
-        return "There were no Failed Records";
+        return "There were no newly completed MD5 Files";
     }
     
     public boolean generateTextForRecord(Integer dataId) {
-                   
-        VfcuMd5File vfcuMd5File = new VfcuMd5File();
-        vfcuMd5File.setVfcuMd5FileId(dataId);
-        vfcuMd5File.populateBasicDbData();
+    
+        VfcuMd5File vfcuMd5FileId = new VfcuMd5File();
+        vfcuMd5FileId.setVfcuMd5FileId(dataId);
+        vfcuMd5FileId.populateBasicDbData();
         
-        VfcuMd5FileError vfcuMd5ErrorLog = new VfcuMd5FileError();
-        vfcuMd5ErrorLog.setVfcuMd5FileId(dataId);
-        
-        ArrayList<String> errorDescList = new ArrayList<>();
-        errorDescList = vfcuMd5ErrorLog.returnDescriptionsForId();
-        
-        for (String errorDesc : errorDescList ) {
-            sectionTextData.add("Md5 File: " + vfcuMd5File.getFilePathEnding()+ "/" + vfcuMd5File.getVendorMd5FileName() + " Error: " + errorDesc) ;
-        }
+        sectionTextData.add("Md5 File: " + vfcuMd5FileId.getFilePathEnding()+ "/" + vfcuMd5FileId.getVendorMd5FileName());
 
         return true;
         
@@ -62,6 +51,4 @@ public class VfcuMd5FailSection implements DataSection {
     public ArrayList getSectionTextData () {
         return this.sectionTextData;
     }
-    
-
 }

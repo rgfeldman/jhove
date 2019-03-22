@@ -37,8 +37,8 @@ public class ReportGenerator extends Operation {
             case "timeframe":
                 displayFormat = new TimeFrameReport();
                 break;
-            case "vfcuMd5Error":
-                displayFormat = new VfcuMd5Error();
+            case "vfcuConsolidated":
+                displayFormat = new VfcuConsolidated();
                 break;
             case "vfcuMediaFile":
                 displayFormat = new VfcuMediaReport();
@@ -129,8 +129,9 @@ public class ReportGenerator extends Operation {
                 reqProps.add("rptHours"); 
                 reqProps.add("suppressAttch");
                 break;
-            case "vfcuMd5Error":
+            case "vfcuConsolidated":
                 reqProps.add("rptHours"); 
+                break;
             case "vfcuMediaFile":
                 reqProps.add("useMasterSubPairs");
                 break;             
