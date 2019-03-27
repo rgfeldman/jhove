@@ -26,7 +26,7 @@ public class VfcuMediaFailedSection implements DataSection {
     }
    
     public String returnTitlePhrase() {
-        return "Generated Errors";
+        return "Records Generated Errors";
     }
     
     public String returnXmlTag () {  

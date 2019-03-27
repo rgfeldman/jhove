@@ -26,7 +26,7 @@ public class VfcuMd5InProcess implements DataSection {
     }
    
     public String returnTitlePhrase() {
-        return "Currently Processing or Incomplete";
+        return "MD5 batches Currently Processing or Incomplete";
     }
     
     public String returnXmlTag () {  

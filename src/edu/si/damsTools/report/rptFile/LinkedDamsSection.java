@@ -26,7 +26,7 @@ public class LinkedDamsSection implements DataSection {
     }
     
     public String returnTitlePhrase() {
-        return "Successfully Validated and Linked in DAMS";
+        return "Records Successfully Validated and Linked in DAMS";
     }
     
     public String returnXmlTag () {

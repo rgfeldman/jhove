@@ -34,7 +34,7 @@ public class MediaCreatedSection implements DataSection {
     }
     
     public String returnTitlePhrase() {
-        return "Created in the CIS and Linked by CDIS";
+        return "Records Created in the CIS and Linked by CDIS";
     }
     
     public String returnXmlTag () {

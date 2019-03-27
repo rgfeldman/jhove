@@ -34,7 +34,7 @@ public class LinkedCisSection implements DataSection {
     }
     
     public String returnTitlePhrase() {
-        return "in DAMS Linked to a prior-Existing CIS Record";
+        return "Records in DAMS Linked to a prior-Existing CIS Record";
     }
     
     public String returnXmlTag () {

@@ -160,7 +160,7 @@ public class RptFile extends Report  {
                 if (this.recordIdList.isEmpty() ) {
                     //this section returned an error
                     logger.log(Level.FINEST, "No records obtained meeting condition");
-                    statsList.add ("Number of Records " + section.returnTitlePhrase() + ": " + 0);
+                    statsList.add ("Number of " + section.returnTitlePhrase() + ": " + 0);
                     //it.remove();
                     continue;
                 } 
@@ -169,7 +169,7 @@ public class RptFile extends Report  {
                     section.generateTextForRecord(dataId);
                 }
        
-                statsList.add ("Number of Records " + section.returnTitlePhrase() + ": " + section.getSectionTextData().size());
+                statsList.add ("Number of " + section.returnTitlePhrase() + ": " + section.getSectionTextData().size());
             
             } catch(Exception e) {
                 logger.log(Level.FINEST, "ERROR, cannot create report ", e);
@@ -199,7 +199,7 @@ public class RptFile extends Report  {
                 
                 ArrayList<String> dataForReport = new ArrayList();
                 
-                document.add(new Phrase("\n\n" + "The Following Records " + section.returnTitlePhrase() + ": \n",SectionHeaderFont));
+                document.add(new Phrase("\n\n" + "The Following " + section.returnTitlePhrase() + ": \n",SectionHeaderFont));
                                 logger.log(Level.FINEST, "DEBUG: Added  " + section.returnTitlePhrase());
                 document.add(new Phrase("-------------------------------------------------------------------------------------\n",SectionHeaderFont));
                 

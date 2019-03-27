@@ -25,7 +25,7 @@ public class VfcuCompleted implements DataSection{
     }
    
     public String returnTitlePhrase() {
-        return "Are VFCU Completed Directories in Past " + XmlUtils.getConfigValue("rptHours") + " Hours";
+        return "VFCU Md5 files Completed (Past " + XmlUtils.getConfigValue("rptHours") + " Hours)";
     }
     
     public String returnXmlTag () {  

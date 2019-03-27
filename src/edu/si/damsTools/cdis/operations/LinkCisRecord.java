@@ -76,7 +76,7 @@ public class LinkCisRecord extends Operation {
                    
             if (identType.overwriteExistingLinkId()) {
                 
-                //for ead we can update the group_value to the new one if we find it
+                //for ead we can update the cis value to the new one if we find it
                 cdisCisIdentifierMap.populateIdForMapIDIdentifierCdCis();
                 if (cdisCisIdentifierMap.getCdisCisIdentifierMapId() != null) {
                     //We found an existing groupID for the cdis_map_id. We overwite existing link rather than create a new one

@@ -28,7 +28,7 @@ public class MetaSyncSection implements DataSection {
     }
     
     public String returnTitlePhrase() {
-        return "in DAMS Metadata Synced from the CIS";
+        return "Records in DAMS Metadata Synced from the CIS";
     }
     
     public String returnXmlTag () {

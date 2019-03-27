@@ -28,7 +28,7 @@ public class VfcuMd5FailSection implements DataSection {
     }
    
     public String returnTitlePhrase() {
-        return "Generated Errors";
+        return "Md5 Files in Error";
     }
     
     public String returnXmlTag () {  
